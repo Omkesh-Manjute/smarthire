@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import SmartHireAiAgent, { IconGeminiSparkle } from '../components/SmartHireAiAgent'
+import { generateWordDocxBlob, generateWordRtfBlob, triggerFileDownload } from '../utils/docxExport'
 
 // ─── SVG Icons (Enterprise Line Icons, Rule 8 Compliant) ────────────────────
 const IconHome = () => (
@@ -203,6 +204,137 @@ export function extractResumeMetadata(rawText) {
   return { name, role, phone, email, visa, location, experience, education, skills };
 }
 
+// ─── Robust Skills Category Parser & Table Generator ────────────────────────
+export function parseTechnicalSkillsRobust(input) {
+  const text = Array.isArray(input) ? input.join('\n') : String(input || '');
+  if (!text.trim()) return [];
+
+  const KNOWN_CATS = [
+    'Domain Knowledge', 'Domain / Industry Knowledge', 'Technologies', 'Core Technologies',
+    'GIS Software', 'GIS Tools & Platforms', 'Utilities & Frameworks', 'Frameworks & Libraries',
+    'Frameworks', 'Databases', 'Database Technologies', 'RDBMS', 'Programming Languages',
+    'Languages', 'GUI', 'IDEs & Editors', 'Development Tools', 'OS & Cloud', 'Operating Systems',
+    'Cloud Technologies', 'Cloud & DevOps', 'DevOps Tools', 'Other Tools', 'Tools & Utilities',
+    'Web Related', 'Web Technologies', 'Frontend Technologies', 'Methodologies', 'Big Data',
+    'Testing Tools', 'Version Control', 'Security', 'Architecture'
+  ];
+  KNOWN_CATS.sort((a, b) => b.length - a.length);
+
+  const rawLines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  const explodedLines = [];
+
+  for (const line of rawLines) {
+    let sub = line;
+    for (const cat of KNOWN_CATS) {
+      const rx = new RegExp('(\\s+)(' + cat.replace(/[&/\\^$*+?.()|[\]{}]/g, '\\$&') + ')\\b', 'gi');
+      sub = sub.replace(rx, '\n$2');
+    }
+    explodedLines.push(...sub.split('\n').map(l => l.trim()).filter(Boolean));
+  }
+
+  const pairs = [];
+  let currentCat = '';
+  let currentSkills = [];
+
+  for (let i = 0; i < explodedLines.length; i++) {
+    const line = explodedLines[i];
+
+    const colonIdx = line.indexOf(':');
+    if (colonIdx > 1 && colonIdx < 40 && !line.includes(',') && !line.substring(0, colonIdx).includes(';')) {
+      if (currentCat && currentSkills.length > 0) {
+        pairs.push({ category: currentCat, skills: currentSkills.join(' ').replace(/\s+/g, ' ').trim() });
+        currentSkills = [];
+      }
+      currentCat = line.substring(0, colonIdx).trim();
+      const rest = line.substring(colonIdx + 1).trim();
+      if (rest) currentSkills.push(rest);
+      continue;
+    }
+
+    let foundCat = null;
+    let foundRest = '';
+    for (const cat of KNOWN_CATS) {
+      const rx = new RegExp('^(' + cat.replace(/[&/\\^$*+?.()|[\]{}]/g, '\\$&') + ')\\b(?::|\\s+)?(.*)$', 'i');
+      const m = line.match(rx);
+      if (m) {
+        foundCat = m[1].trim();
+        foundRest = (m[2] || '').trim();
+        break;
+      }
+    }
+
+    if (foundCat) {
+      if (currentCat && currentSkills.length > 0) {
+        pairs.push({ category: currentCat, skills: currentSkills.join(' ').replace(/\s+/g, ' ').trim() });
+        currentSkills = [];
+      }
+      currentCat = foundCat;
+      if (foundRest) currentSkills.push(foundRest);
+      continue;
+    }
+
+    const isCategoryHeader = line.length <= 35 && !line.includes(',') && !line.includes(';') && !line.startsWith('•') && !line.startsWith('-');
+    if (isCategoryHeader && i + 1 < explodedLines.length) {
+      if (currentCat && currentSkills.length > 0) {
+        pairs.push({ category: currentCat, skills: currentSkills.join(' ').replace(/\s+/g, ' ').trim() });
+        currentSkills = [];
+      }
+      currentCat = line;
+      continue;
+    }
+
+    if (!currentCat) currentCat = 'Technical Competencies';
+    currentSkills.push(line);
+  }
+
+  if (currentCat && currentSkills.length > 0) {
+    pairs.push({ category: currentCat, skills: currentSkills.join(' ').replace(/\s+/g, ' ').trim() });
+  }
+
+  return pairs;
+}
+
+export function renderSkillsMatrixTableHtml(skillsInput) {
+  const pairs = parseTechnicalSkillsRobust(skillsInput);
+  if (!pairs || pairs.length === 0) return '';
+
+  let tableHtml = `
+    <table class="skills-matrix-table" cellspacing="0" cellpadding="0" style="border-collapse: collapse; width: 100%; border: 1px solid #CBD5E1; margin: 8px 0 16px 0; font-family: Verdana, Geneva, sans-serif;">
+      <thead>
+        <tr style="background-color: #F1F5F9;">
+          <th style="border: 1px solid #CBD5E1; width: 28%; text-align: left; padding: 7px 10px; font-size: 11px; font-weight: bold; color: #0F172A; text-transform: uppercase; letter-spacing: 0.04em;">
+            Category
+          </th>
+          <th style="border: 1px solid #CBD5E1; width: 72%; text-align: left; padding: 7px 10px; font-size: 11px; font-weight: bold; color: #0F172A; text-transform: uppercase; letter-spacing: 0.04em;">
+            Skills / Technologies
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  pairs.forEach((p, idx) => {
+    const bg = idx % 2 === 0 ? '#FFFFFF' : '#F8FAFC';
+    tableHtml += `
+      <tr style="background-color: ${bg};">
+        <td style="border: 1px solid #CBD5E1; padding: 7px 10px; font-size: 11px; font-weight: bold; color: #1E293B; vertical-align: top; width: 28%;">
+          ${p.category}
+        </td>
+        <td style="border: 1px solid #CBD5E1; padding: 7px 10px; font-size: 11px; color: #0F172A; vertical-align: top; line-height: 1.5; width: 72%;">
+          ${p.skills}
+        </td>
+      </tr>
+    `;
+  });
+
+  tableHtml += `
+      </tbody>
+    </table>
+  `;
+
+  return tableHtml;
+}
+
 // ─── Format Candidate Resume Text with Authentic Word Styling & Bullets ────
 export function formatStructuredWordResume(resumeText, blindResume = false) {
   if (!resumeText) return '<p><i>No resume experience provided.</i></p>';
@@ -246,12 +378,21 @@ export function formatStructuredWordResume(resumeText, blindResume = false) {
   let currentSection = ''; // 'summary', 'skills', 'experience', 'education'
   let inList = false;
   let inResp = false;
+  let skillsBuffer = [];
+
+  const flushSkills = () => {
+    if (skillsBuffer.length > 0) {
+      html += renderSkillsMatrixTableHtml(skillsBuffer);
+      skillsBuffer = [];
+    }
+  };
 
   for (let i = 0; i < mergedLines.length; i++) {
     const l = mergedLines[i];
 
     // Check main section headers
     if (/^(PROFESSIONAL SUMMARY|SUMMARY OF QUALIFICATIONS|SUMMARY):?/i.test(l)) {
+      flushSkills();
       if (inList) { html += '</ul>'; inList = false; }
       currentSection = 'summary';
       inResp = false;
@@ -259,6 +400,7 @@ export function formatStructuredWordResume(resumeText, blindResume = false) {
       continue;
     }
     if (/^(TECHNICAL SKILLS|SKILLS & ABILITIES|CORE COMPETENCIES|AREAS OF EXPERTISE):?/i.test(l)) {
+      flushSkills();
       if (inList) { html += '</ul>'; inList = false; }
       currentSection = 'skills';
       inResp = false;
@@ -266,6 +408,7 @@ export function formatStructuredWordResume(resumeText, blindResume = false) {
       continue;
     }
     if (/^(PROFESSIONAL EXPERIENCE|EMPLOYMENT HISTORY|WORK EXPERIENCE|WORK HISTORY):?/i.test(l)) {
+      flushSkills();
       if (inList) { html += '</ul>'; inList = false; }
       currentSection = 'experience';
       inResp = false;
@@ -273,6 +416,7 @@ export function formatStructuredWordResume(resumeText, blindResume = false) {
       continue;
     }
     if (/^(EDUCATION|EDUCATION & CERTIFICATIONS|ACADEMIC BACKGROUND):?/i.test(l)) {
+      flushSkills();
       if (inList) { html += '</ul>'; inList = false; }
       currentSection = 'education';
       inResp = false;
@@ -282,6 +426,12 @@ export function formatStructuredWordResume(resumeText, blindResume = false) {
 
     // Skip redundant top lines (e.g. name or phone if before summary)
     if (!currentSection && i < 4 && (/phone|email|authorization|contact/i.test(l) || l.length < 35)) {
+      continue;
+    }
+
+    // Collect skills lines for structured table rendering
+    if (currentSection === 'skills') {
+      skillsBuffer.push(l);
       continue;
     }
 
@@ -335,20 +485,6 @@ export function formatStructuredWordResume(resumeText, blindResume = false) {
       continue;
     }
 
-    // Format skills categories with bold label
-    if (currentSection === 'skills') {
-      if (inList) { html += '</ul>'; inList = false; }
-      const colonIdx = l.indexOf(':');
-      if (colonIdx > 0 && colonIdx < 35) {
-        const cat = l.substring(0, colonIdx);
-        const vals = l.substring(colonIdx + 1);
-        html += '<p style="margin: 3px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11.5px; line-height: 1.5; color: #000000;"><b>' + cat + ':</b>' + vals + '</p>';
-      } else {
-        html += '<p style="margin: 3px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11.5px; line-height: 1.5; color: #000000;">' + l + '</p>';
-      }
-      continue;
-    }
-
     // Detect bullet points for summary, responsibilities, or lines with bullet symbols/verbs
     const hasBulletSymbol = l.startsWith('•') || l.startsWith('-') || l.startsWith('*');
     const isBulletItem = currentSection === 'summary' || inResp || hasBulletSymbol || currentSection === 'education';
@@ -367,6 +503,7 @@ export function formatStructuredWordResume(resumeText, blindResume = false) {
     html += '<p style="margin: 3px 0 5px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11.5px; line-height: 1.5; color: #000000;">' + l + '</p>';
   }
 
+  flushSkills();
   if (inList) html += '</ul>';
   return html;
 }
@@ -629,7 +766,7 @@ export function formatStructuredNebraskaResume(resumeText, blindResume = false) 
               Technical Qualifications/Skills List
             </p>
             <div style="font-family: Arial, sans-serif; font-size: 10pt; line-height: 1.4; color: #000000;">
-              ${renderSkillsTable(skillsLines)}
+              ${renderSkillsMatrixTableHtml(skillsLines)}
             </div>
           </td>
         </tr>
@@ -2047,63 +2184,32 @@ ${coversheet.references}
     setShowEmailModal(true)
   }
 
-  // ─── Download Formatted Word Resume (.doc) ────────────────────────────────
-  const handleDownloadResumeWord = () => {
-    const content = resumeEditorRef.current ? resumeEditorRef.current.innerHTML : generatedResumeTemplateHtml
-    const docHtml = `<!DOCTYPE html>
-<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-<head>
-  <meta charset="utf-8">
-  <title>${coversheet.candidateLegalName || 'Candidate'} - Resume</title>
-  <!--[if gte mso 9]>
-  <xml>
-    <w:WordDocument>
-      <w:View>Print</w:View>
-      <w:Zoom>100</w:Zoom>
-      <w:DoNotOptimizeForBrowser/>
-    </w:WordDocument>
-  </xml>
-  <![endif]-->
-  <style>
-    @page Section1 {
-      size: 8.5in 11.0in;
-      margin: 0.75in 0.75in 0.75in 0.75in;
-      mso-header-margin: 0.5in;
-      mso-footer-margin: 0.5in;
-      mso-paper-source: 0;
-    }
-    div.Section1 { page: Section1; }
-    body {
-      font-family: Verdana, Geneva, sans-serif;
-      font-size: 11pt;
-      line-height: 1.4;
-      color: #000000;
-    }
-    table { border-collapse: collapse; width: 100%; }
-    td, th { padding: 4px; }
-    p { margin: 0 0 6pt 0; }
-    ul { margin: 0 0 8pt 18pt; padding: 0; }
-    li { margin-bottom: 4pt; }
-  </style>
-</head>
-<body>
-  <div class="Section1">
-    ${content}
-  </div>
-</body>
-</html>`
+  // ─── Download Formatted Word Resume (.docx & .doc) ─────────────────────────
+  const [isExportingDocx, setIsExportingDocx] = useState(false)
 
-    const blob = new Blob(['\ufeff', docHtml], { type: 'application/msword;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    const cleanName = (coversheet.candidateLegalName || 'Candidate').replace(/[^a-zA-Z0-9_-]/g, '_')
-    link.href = url
-    link.download = `${cleanName}_Formatted_Resume_${vmsNumber || 'Submittal'}.doc`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
-    showToast('Formatted Word resume (.doc) downloaded!')
+  const handleDownloadResumeWord = async (format = 'docx') => {
+    try {
+      setIsExportingDocx(true)
+      const content = resumeEditorRef.current ? resumeEditorRef.current.innerHTML : generatedResumeTemplateHtml
+      const candName = coversheet.candidateLegalName || 'Candidate'
+      const cleanName = candName.replace(/[^a-zA-Z0-9_-]/g, '_')
+      const fileName = `${cleanName}_Formatted_Resume_${vmsNumber || 'Submittal'}.${format}`
+
+      if (format === 'docx') {
+        const blob = await generateWordDocxBlob(content, candName)
+        triggerFileDownload(blob, fileName)
+        showToast('Microsoft Word (.docx) resume downloaded!')
+      } else {
+        const blob = generateWordRtfBlob(content, candName)
+        triggerFileDownload(blob, fileName)
+        showToast('Word (.doc) resume downloaded!')
+      }
+    } catch (err) {
+      console.error('Word export error:', err)
+      alert('Error generating document: ' + err.message)
+    } finally {
+      setIsExportingDocx(false)
+    }
   }
 
   // ─── Instant Digital Signature Link Generation ────────────────────────────
@@ -2645,14 +2751,24 @@ ${coversheet.references}
               <IconCopy /> <span>{activePreviewTab === 'rtr' ? 'Copy RTR Email' : 'Copy Coversheet'}</span>
             </button>
 
-            {/* 2. Formatted Word (.doc) Download */}
+            {/* 2. Formatted Word (.docx / .doc) Download */}
             <button
               type="button"
-              onClick={handleDownloadResumeWord}
-              style={styles.actionBtnSecondary}
-              title="Download client-ready formatted resume in Microsoft Word (.doc) format"
+              disabled={isExportingDocx}
+              onClick={() => handleDownloadResumeWord('docx')}
+              style={{ ...styles.actionBtnSecondary, borderColor: '#BFDBFE', color: '#1D4ED8', backgroundColor: '#EFF6FF', fontWeight: '700' }}
+              title="Download client-ready formatted resume in genuine Microsoft Word (.docx) format"
             >
-              <IconDownload /> <span>Download .doc</span>
+              <IconDownload /> <span>{isExportingDocx ? 'Generating...' : 'Download .docx'}</span>
+            </button>
+            <button
+              type="button"
+              disabled={isExportingDocx}
+              onClick={() => handleDownloadResumeWord('doc')}
+              style={styles.actionBtnSecondary}
+              title="Download formatted resume in legacy Word / RTF (.doc) format"
+            >
+              <IconDownload /> <span>.doc</span>
             </button>
 
             {/* 3. SmartSign RTR Digital Signature Workflow */}
@@ -3645,9 +3761,19 @@ ${coversheet.references}
               </button>
               <button
                 type="button"
-                onClick={handleDownloadResumeWord}
+                disabled={isExportingDocx}
+                onClick={() => handleDownloadResumeWord('docx')}
+                style={{ ...styles.toolbarBtn, color: '#1D4ED8', fontWeight: '700', gap: 4, backgroundColor: '#EFF6FF', border: '1px solid #BFDBFE' }}
+                title="Download Formatted Resume as Microsoft Word .docx"
+              >
+                <IconDownload /> .docx
+              </button>
+              <button
+                type="button"
+                disabled={isExportingDocx}
+                onClick={() => handleDownloadResumeWord('doc')}
                 style={{ ...styles.toolbarBtn, color: '#059669', fontWeight: '700', gap: 4 }}
-                title="Download Formatted Resume as Microsoft Word .doc"
+                title="Download Formatted Resume as Word / RTF .doc"
               >
                 <IconDownload /> .doc
               </button>
