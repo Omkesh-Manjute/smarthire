@@ -1,0 +1,894 @@
+import React, { useState } from 'react'
+
+export default function PricingSection({ onAuthClick, showIntegrationGuide = true, isStandalonePage = false }) {
+  const [productTab, setProductTab] = useState('smartscreen') // 'smartscreen' | 'ats'
+  const [isYearly, setIsYearly] = useState(true)
+  const [activeIntegrationTab, setActiveIntegrationTab] = useState('curl')
+  const [copiedSnippet, setCopiedSnippet] = useState(false)
+
+  const handleCopyCode = (text) => {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text)
+      setCopiedSnippet(true)
+      setTimeout(() => setCopiedSnippet(false), 2200)
+    }
+  }
+
+  // Standalone SmartScreen AI Plans (for teams using Bullhorn, Greenhouse, Lever, etc.)
+  const smartScreenPlans = [
+    {
+      name: 'Basic Screen',
+      tier: 'Starter',
+      priceMonthly: 79,
+      priceYearly: 59,
+      interviewLimit: '50 Candidate AI Video & Voice Interviews / mo',
+      limitSubtext: 'Ideal for solo recruiters & boutique agencies',
+      description: 'Plug AI video & audio screening into your recruiting workflow with zero ATS changes.',
+      badge: null,
+      highlight: '#0284c7',
+      popular: false,
+      features: [
+        { title: '50 AI Video & Audio Interviews / month', note: 'Multi-format: 1-way video, audio, or text' },
+        { title: 'Groq Whisper Automated Transcripts', note: 'Accurate speech-to-text transcription' },
+        { title: 'AI Match Score & Question Scorecards', note: '0–100% fit score with instant summary' },
+        { title: 'Anti-Cheat Tab Switch Lock', note: 'Monitors candidate browser focus' },
+        { title: 'Candidate Self-Scheduling Links', note: 'Async 24/7 completion for candidates' },
+        { title: 'Direct Email Candidate Invites', note: 'Send 1-click screening invites' },
+        { title: '30-Day Cloud Video Storage', note: 'Encrypted storage with instant replay' },
+        { title: 'Standard Email & Ticket Support', note: null },
+      ],
+      systemIntegration: null,
+      notIncluded: [
+        'Universal ATS Webhooks (Bullhorn, Greenhouse)',
+        'Sub-15ms REST API Link Generation',
+        'Custom Agency White-Label Branding',
+      ],
+      ctaText: 'Start 14-Day Free Trial',
+      ctaType: 'outline'
+    },
+    {
+      name: 'Growth Screen',
+      tier: 'Professional',
+      priceMonthly: 199,
+      priceYearly: 159,
+      interviewLimit: '200 Candidate AI Video & Voice Interviews / mo',
+      limitSubtext: 'Only $0.79 per completed candidate interview',
+      description: 'For growing staffing firms requiring automated ATS webhooks & branded scorecards.',
+      badge: 'RECOMMENDED',
+      highlight: '#2563eb',
+      popular: true,
+      features: [
+        { title: '200 AI Video & Audio Interviews / month', note: 'Scalable candidate evaluation pipeline' },
+        { title: 'Universal ATS Webhook Sync', note: 'Auto-syncs scorecards to Bullhorn, Greenhouse, Lever' },
+        { title: 'Sub-15ms REST API Access', note: 'Programmatic link creation from your backend' },
+        { title: 'Custom Agency White-Label Branding', note: 'Your logo, primary color & company name' },
+        { title: 'Downloadable Branded PDF Scorecards', note: 'Client-ready candidate evaluation dossier' },
+        { title: 'AI Audio Voice Question Prompts', note: 'Speaks questions out loud to candidates' },
+        { title: 'Work Auth & Salary Expectation Intake', note: 'Auto-captures visa & compensation fit' },
+        { title: '90-Day Cloud Video Storage', note: 'Extended cloud retention' },
+        { title: 'Priority Recruiter Chat & Email Support', note: '<2hr response SLA' },
+      ],
+      systemIntegration: 'Universal ATS Webhooks + REST API Included',
+      notIncluded: [
+        'Custom Subdomain (screen.youragency.com)',
+        'Embedded ATS Iframe Studio'
+      ],
+      ctaText: 'Start 14-Day Free Trial',
+      ctaType: 'primary'
+    },
+    {
+      name: 'Business Screen',
+      tier: 'Scale & Operations',
+      priceMonthly: 399,
+      priceYearly: 319,
+      interviewLimit: '600 Candidate AI Video & Voice Interviews / mo',
+      limitSubtext: 'High-volume agency desks & client submittals',
+      description: 'For high-volume staffing agencies needing deep custom integrations & security audit trails.',
+      badge: null,
+      highlight: '#7c3aed',
+      popular: false,
+      features: [
+        { title: '600 AI Video & Audio Interviews / month', note: 'Extra interviews at just $0.50/ea' },
+        { title: 'Deep System Integration & HMAC Webhooks', note: 'Cryptographically verified payload security' },
+        { title: 'ATS Embedded Iframe Studio', note: 'Run screening directly inside your custom CRM' },
+        { title: 'Full Anti-Cheat Proctoring Engine', note: 'Desktop screen share & suspicious activity audit' },
+        { title: 'Custom Subdomain Routing', note: 'screen.youragency.com link branding' },
+        { title: 'Custom Job Description Question Generator', note: 'AI tailors questions to client JDs' },
+        { title: '1-Year Long-Term Cloud Storage', note: 'Compliance-ready archive' },
+        { title: 'Dedicated Solutions Engineer & Slack Channel', note: 'Hands-on ATS webhook setup' },
+      ],
+      systemIntegration: 'HMAC Webhooks + Embedded Iframe + Custom API',
+      notIncluded: [],
+      ctaText: 'Start 14-Day Free Trial',
+      ctaType: 'outline'
+    },
+    {
+      name: 'Enterprise & API',
+      tier: 'Enterprise',
+      priceMonthly: null,
+      priceYearly: null,
+      interviewLimit: 'Unlimited Candidate Interviews & Custom Seats',
+      limitSubtext: 'Dedicated infrastructure with 99.9% uptime SLA',
+      description: 'Custom architecture for enterprise staffing corporations, MSPs & high-volume VMS suppliers.',
+      badge: 'ENTERPRISE',
+      highlight: '#0f172a',
+      popular: false,
+      features: [
+        { title: 'Unlimited AI Video & Audio Candidate Screens', note: 'Zero per-interview overage fees' },
+        { title: 'Custom ATS & VMS Direct Integrations', note: 'Fieldglass, Beeline, Workday, SAP integration' },
+        { title: 'Dedicated Isolated Cloud Infrastructure', note: 'Single-tenant instance & private endpoints' },
+        { title: 'Single Sign-On (SSO / SAML 2.0 / Okta)', note: 'Enterprise identity security' },
+        { title: 'EEOC & Regulatory Compliance Auditing', note: 'Unbiased AI scoring certifications' },
+        { title: 'Custom AI Model Fine-Tuning', note: 'Calibrated to your agency scoring rubrics' },
+        { title: '99.9% SLA & Dedicated 24/7 Account Director', note: 'Direct executive escalation' },
+      ],
+      systemIntegration: 'Custom Enterprise VMS/ATS Architecture',
+      notIncluded: [],
+      ctaText: 'Contact Enterprise Sales',
+      ctaType: 'dark'
+    }
+  ]
+
+  // All-In-One SmartHire ATS OS Plans
+  const atsPlans = [
+    {
+      name: 'Starter ATS',
+      tier: 'Solo Recruiter',
+      priceMonthly: 59,
+      priceYearly: 49,
+      interviewLimit: '3 Active Jobs · Includes 25 AI Video Interviews/mo',
+      limitSubtext: 'Full recruiting pipeline for boutique staffing desks',
+      description: 'Complete ATS candidate pipeline, resume parsing, and embedded video screening.',
+      badge: null,
+      highlight: '#0284c7',
+      popular: false,
+      features: [
+        { title: 'Full ATS Pipeline & Candidate Kanban', note: 'Track applicants from sourcing to placement' },
+        { title: '25 AI Video & Audio Screenings / month', note: 'Embedded directly into applicant profile' },
+        { title: 'Automated Resume & Email Parser', note: 'Instant intake from PDF, Word & TXT' },
+        { title: 'AI Match Score & Candidate Ranking', note: 'Requisition fit rating 0–100%' },
+        { title: '3 Active Requisitions & 2 Recruiter Seats', note: 'Unlimited applications' },
+        { title: 'Location Tracker & Anti-Cheat Tab Lock', note: null },
+        { title: 'Candidate Email Automation', note: 'Status updates & interview links' },
+        { title: 'Standard Recruiter Support', note: null },
+      ],
+      systemIntegration: 'Full SmartHire In-App Architecture',
+      notIncluded: [
+        'SmartSign RTR Digital Signature',
+        'Vendor Hotlist Excel Grid Ingestion',
+        'Submittal Pack Generator'
+      ],
+      ctaText: 'Start 14-Day Free Trial',
+      ctaType: 'outline'
+    },
+    {
+      name: 'Growth Pro ATS',
+      tier: 'Recruiting Teams',
+      priceMonthly: 149,
+      priceYearly: 119,
+      interviewLimit: '15 Active Jobs · 5 Seats · 100 AI Video Interviews/mo',
+      limitSubtext: 'Most complete recruiting stack on the market',
+      badge: 'RECOMMENDED',
+      highlight: '#2563eb',
+      popular: true,
+      description: 'Replaces Bullhorn ($165/seat) + DocuSign ($45/user) + HireVue ($35k/yr) under one login.',
+      features: [
+        { title: 'Everything in Starter ATS included', note: null },
+        { title: '15 Active Requisitions & Up to 5 Team Members', note: 'Multi-seat recruiting hierarchy' },
+        { title: '100 AI Video & Voice Interviews / month', note: 'Full studio screening with screen share' },
+        { title: 'SmartSign RTR Digital Signatures', note: 'Zero-cost candidate Right-To-Represent signing' },
+        { title: 'Vendor Hotlist Excel Grid Ingestion', note: 'Instant bench & vendor candidate matching' },
+        { title: '1-Click Client Submittal Pack Generator', note: 'Formatted client coversheet & branded resume' },
+        { title: 'Automated 6-min Job Ingestion Engine', note: 'Auto-fetches high-margin client jobs' },
+        { title: 'Anti-Cheat Full Screen Lock & Telemetry', note: null },
+        { title: 'Priority Recruiter Chat & Phone Support', note: null },
+      ],
+      systemIntegration: 'Full ATS Suite + RTR + Hotlists + Screening',
+      notIncluded: [
+        'White-Label Custom Domain Links'
+      ],
+      ctaText: 'Start 14-Day Free Trial',
+      ctaType: 'primary'
+    },
+    {
+      name: 'Business ATS',
+      tier: 'Agency Scaling',
+      priceMonthly: 349,
+      priceYearly: 279,
+      interviewLimit: 'Unlimited Jobs · Unlimited Seats · 300 AI Video Screens/mo',
+      limitSubtext: 'Built for enterprise staffing agencies & multi-client ops',
+      description: 'Zero seat penalties, unlimited requisitions, and daily direct client acquisition.',
+      badge: null,
+      highlight: '#7c3aed',
+      popular: false,
+      features: [
+        { title: 'Everything in Growth Pro ATS included', note: null },
+        { title: 'Unlimited Active Requisitions & Recruiter Seats', note: 'Scale your team without per-seat fees' },
+        { title: '300 AI Video & Voice Interviews / month', note: 'Extra interviews at $0.40/ea' },
+        { title: 'Full Anti-Cheat Lockout Engine', note: 'Strict proctoring & tab violation enforcement' },
+        { title: 'AI Document Verification (Driver License / Visa)', note: 'Groq Vision document validation' },
+        { title: 'White-Label Branding (Custom Domain & Email)', note: 'Your agency brand front & center' },
+        { title: 'Automated Daily Trending Direct Clients', note: 'Real-time hiring manager discovery' },
+        { title: 'Webhooks, REST API & ATS Data Export', note: 'Integrate with external payroll & CRM' },
+        { title: 'Dedicated Account Manager & 24/7 SLA Support', note: null },
+      ],
+      systemIntegration: 'Full ATS API + Webhooks + White-label Portal',
+      notIncluded: [],
+      ctaText: 'Start 14-Day Free Trial',
+      ctaType: 'outline'
+    },
+    {
+      name: 'Enterprise ATS',
+      tier: 'Enterprise Custom',
+      priceMonthly: null,
+      priceYearly: null,
+      interviewLimit: 'Unlimited Everything & Custom VMS Integrations',
+      limitSubtext: 'Enterprise security & dedicated infrastructure',
+      description: 'Tailored contracts for enterprise staffing firms with 25+ recruiters and VMS pipelines.',
+      badge: 'ENTERPRISE',
+      highlight: '#0f172a',
+      popular: false,
+      features: [
+        { title: 'Everything in Business ATS included', note: null },
+        { title: 'Dedicated Isolated Cloud Server Instance', note: 'Private database & custom storage' },
+        { title: 'Direct VMS Integration (Fieldglass, Beeline, Tapfin)', note: 'Automated submittal routing' },
+        { title: 'SSO / SAML 2.0 Identity Management', note: 'Okta, Azure AD, Ping Identity' },
+        { title: 'Custom Data Migration & Dedicated Onboarding', note: 'Migrate from Bullhorn/Ceipal seamlessly' },
+        { title: 'EEOC & US Legal Compliance Reporting', note: 'Automated audit reports' },
+        { title: 'SLA-backed 99.9% Uptime Guarantee', note: null },
+      ],
+      systemIntegration: 'Dedicated Cloud Instance + VMS Sync',
+      notIncluded: [],
+      ctaText: 'Contact Enterprise Sales',
+      ctaType: 'dark'
+    }
+  ]
+
+  const activePlans = productTab === 'smartscreen' ? smartScreenPlans : atsPlans
+
+  const codeSnippets = {
+    curl: `curl -X POST https://smarthireus.com/api/v1/screening/create \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "candidateName": "Sarah Jenkins",
+    "candidateEmail": "sarah.j@example.com",
+    "jobTitle": "Senior Full-Stack Engineer",
+    "companyName": "Apex Talent Group",
+    "webhookUrl": "https://api.youragency.com/webhooks/screening-completed",
+    "allowedFormats": ["video", "audio", "text"]
+  }'`,
+    node: `// Sub-15ms REST API call from your backend or cloud function
+import fetch from 'node-fetch';
+
+export async function createScreeningLink(candidate, requisition) {
+  const response = await fetch('https://smarthireus.com/api/v1/screening/create', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      candidateName: candidate.name,
+      candidateEmail: candidate.email,
+      jobTitle: requisition.title,
+      companyName: 'Apex Talent Group',
+      webhookUrl: 'https://api.youragency.com/webhooks/screening-completed',
+      allowedFormats: ['video', 'audio', 'text']
+    })
+  });
+
+  const data = await response.json();
+  // Returns: { success: true, sessionId: "SCR-...", screeningUrl: "https://smarthireus.com/candidate-chat/SCR-..." }
+  return data.screeningUrl;
+}`,
+    webhook: `// Real-Time Webhook Payload delivered to your webhookUrl when candidate completes
+{
+  "event": "screening.completed",
+  "sessionId": "SCR-EXT-1791823901",
+  "candidateName": "Sarah Jenkins",
+  "candidateEmail": "sarah.j@example.com",
+  "jobTitle": "Senior Full-Stack Engineer",
+  "aiScore": 91,
+  "recommendation": "Strong Fit",
+  "aiSummary": "Candidate demonstrated deep proficiency in React, TypeScript, and microservices architecture...",
+  "proctoring": {
+    "flaggedCount": 0,
+    "suspicious": false
+  },
+  "screeningUrl": "https://smarthireus.com/candidate-chat/SCR-EXT-1791823901",
+  "submittedAt": "2026-10-13T01:10:00.000Z"
+}`,
+    nocode: `// No-Code Recruiter Workflow (Zero Engineering Required)
+1. Recruiter opens SmartScreen Studio in their browser.
+2. Selects role & inputs Candidate Name + Email.
+3. Copies generated instant link (e.g. smarthireus.com/candidate-chat/SCR-...).
+4. Pastes link directly into LinkedIn InMail, Bullhorn email template, or WhatsApp.
+5. When candidate completes, full AI dossier & scorecard is emailed instantly to recruiter.`
+  }
+
+  const handleCta = (plan) => {
+    if (plan.name.includes('Enterprise')) {
+      window.location.href = '/about?section=inquiry#inquiry'
+    } else if (onAuthClick) {
+      onAuthClick()
+    } else {
+      window.location.href = '/ats'
+    }
+  }
+
+  return (
+    <div style={{ maxWidth: '1240px', margin: '0 auto', padding: '0 16px' }}>
+
+      {/* ── Product Switcher (Sleek Apple/Linear style segmented control) ── */}
+      <div style={{ textAlign: 'center', marginBottom: '18px' }}>
+        <div style={{
+          display: 'inline-flex',
+          background: '#f1f5f9',
+          padding: '5px',
+          borderRadius: '9999px',
+          border: '1px solid #e2e8f0',
+          boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.04)',
+          gap: '4px',
+          maxWidth: '100%',
+          overflowX: 'auto'
+        }}>
+          <button
+            type="button"
+            onClick={() => setProductTab('smartscreen')}
+            style={{
+              padding: '10px 22px',
+              borderRadius: '9999px',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: '13.5px',
+              fontWeight: '700',
+              transition: 'all 0.2s ease',
+              background: productTab === 'smartscreen' ? '#2563eb' : 'transparent',
+              color: productTab === 'smartscreen' ? '#ffffff' : '#475569',
+              boxShadow: productTab === 'smartscreen' ? '0 2px 8px rgba(37,99,235,0.3)' : 'none',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            <span>SmartScreen AI (Standalone SaaS)</span>
+            <span style={{
+              background: productTab === 'smartscreen' ? 'rgba(255,255,255,0.22)' : '#e2e8f0',
+              color: productTab === 'smartscreen' ? '#ffffff' : '#0f172a',
+              fontSize: '10.5px',
+              fontWeight: '800',
+              padding: '2px 8px',
+              borderRadius: '10px',
+              textTransform: 'uppercase',
+              letterSpacing: '0.04em'
+            }}>
+              Works with Any ATS
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setProductTab('ats')}
+            style={{
+              padding: '10px 22px',
+              borderRadius: '9999px',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: '13.5px',
+              fontWeight: '700',
+              transition: 'all 0.2s ease',
+              background: productTab === 'ats' ? '#0f172a' : 'transparent',
+              color: productTab === 'ats' ? '#ffffff' : '#475569',
+              boxShadow: productTab === 'ats' ? '0 2px 8px rgba(15,23,42,0.25)' : 'none',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            SmartHire ATS OS (All-In-One Recruiting)
+          </button>
+        </div>
+      </div>
+
+      {/* ── Modern Minimal Header ── */}
+      <div style={{ textAlign: 'center', maxWidth: '780px', margin: '0 auto 28px' }}>
+        <div style={{
+          display: 'inline-block',
+          fontSize: '11px',
+          fontWeight: '800',
+          letterSpacing: '0.1em',
+          textTransform: 'uppercase',
+          color: '#2563eb',
+          background: '#eff6ff',
+          border: '1px solid #dbeafe',
+          padding: '5px 14px',
+          borderRadius: '9999px',
+          marginBottom: '12px'
+        }}>
+          {productTab === 'smartscreen'
+            ? 'UNIVERSAL CANDIDATE SCREENING · INTEGRATES WITH ANY ATS'
+            : 'COMPLETE RECRUITING OS · ZERO SEAT PENALTIES'}
+        </div>
+
+        <h2 style={{
+          fontFamily: "'Plus Jakarta Sans', sans-serif",
+          fontSize: '32px',
+          fontWeight: '800',
+          letterSpacing: '-0.03em',
+          color: '#0f172a',
+          margin: '0 0 10px',
+          lineHeight: '1.25'
+        }}>
+          {productTab === 'smartscreen'
+            ? 'Market-Leading AI Screening with Transparent Limits'
+            : 'One Complete Recruiting Platform. Zero Extra Add-Ons.'}
+        </h2>
+
+        <p style={{
+          fontSize: '15px',
+          color: '#64748b',
+          lineHeight: '1.6',
+          margin: '0 auto 20px',
+          maxWidth: '640px'
+        }}>
+          {productTab === 'smartscreen'
+            ? 'Plug asynchronous AI video, voice, and proctored evaluations directly into Bullhorn, Greenhouse, Lever, or Workday in minutes.'
+            : 'Unify candidate pipeline, resume parsing, SmartSign RTR digital signatures, vendor hotlists, and client submittal packs in one subscription.'}
+        </p>
+
+        {/* ── Monthly / Yearly Billing Toggle ── */}
+        <div style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '12px',
+          background: '#ffffff',
+          padding: '6px 14px',
+          borderRadius: '30px',
+          border: '1px solid #e2e8f0',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
+        }}>
+          <span style={{
+            fontSize: '13px',
+            fontWeight: !isYearly ? '700' : '500',
+            color: !isYearly ? '#0f172a' : '#64748b',
+            cursor: 'pointer'
+          }} onClick={() => setIsYearly(false)}>
+            Monthly Billing
+          </span>
+
+          <button
+            type="button"
+            onClick={() => setIsYearly(!isYearly)}
+            style={{
+              position: 'relative',
+              width: '46px',
+              height: '24px',
+              borderRadius: '9999px',
+              background: isYearly ? '#2563eb' : '#cbd5e1',
+              border: 'none',
+              cursor: 'pointer',
+              transition: 'background 0.2s ease',
+              padding: 0
+            }}
+            aria-label="Toggle Billing Frequency"
+          >
+            <span style={{
+              position: 'absolute',
+              top: '2px',
+              left: isYearly ? '24px' : '2px',
+              width: '20px',
+              height: '20px',
+              borderRadius: '50%',
+              background: '#ffffff',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+              transition: 'left 0.2s ease'
+            }} />
+          </button>
+
+          <span style={{
+            fontSize: '13px',
+            fontWeight: isYearly ? '700' : '500',
+            color: isYearly ? '#0f172a' : '#64748b',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            cursor: 'pointer'
+          }} onClick={() => setIsYearly(true)}>
+            <span>Annual Billing</span>
+            <span style={{
+              background: '#dcfce7',
+              color: '#15803d',
+              fontSize: '10.5px',
+              fontWeight: '800',
+              padding: '2px 8px',
+              borderRadius: '10px',
+              letterSpacing: '0.02em'
+            }}>
+              Save up to 25%
+            </span>
+          </span>
+        </div>
+      </div>
+
+      {/* ── ATS + SmartScreen Combined Bundle Banner (Save 35%) ── */}
+      <div style={{
+        background: '#f8fafc',
+        border: '1.5px dashed #93c5fd',
+        borderRadius: '14px',
+        padding: '14px 22px',
+        margin: '0 auto 36px',
+        maxWidth: '1020px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: '14px'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{
+            width: '36px',
+            height: '36px',
+            borderRadius: '9px',
+            background: '#eff6ff',
+            color: '#2563eb',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0
+          }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+            </svg>
+          </div>
+          <div>
+            <div style={{ fontSize: '13.5px', fontWeight: '800', color: '#0f172a' }}>
+              Want Both? Combine SmartHire ATS + SmartScreen AI and get 35% OFF
+            </div>
+            <div style={{ fontSize: '12.5px', color: '#64748b', marginTop: '2px' }}>
+              Get unlimited candidate video screening + full recruitment ATS pipeline under one unified enterprise license.
+            </div>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => {
+            setProductTab('ats')
+            setIsYearly(true)
+          }}
+          style={{
+            background: '#2563eb',
+            color: '#ffffff',
+            border: 'none',
+            borderRadius: '8px',
+            padding: '8px 16px',
+            fontSize: '12.5px',
+            fontWeight: '700',
+            cursor: 'pointer',
+            whiteSpace: 'nowrap',
+            transition: 'background 0.15s ease'
+          }}
+        >
+          View Combined Plans ➔
+        </button>
+      </div>
+
+      {/* ── Modern Pricing Cards Grid ── */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+        gap: '20px',
+        alignItems: 'stretch',
+        marginBottom: '48px'
+      }}>
+        {activePlans.map((plan, idx) => {
+          const price = isYearly ? plan.priceYearly : plan.priceMonthly
+          const isEnterprise = !price
+
+          return (
+            <div
+              key={plan.name}
+              style={{
+                background: '#ffffff',
+                borderRadius: '16px',
+                border: plan.popular ? '2px solid #2563eb' : '1px solid #e2e8f0',
+                padding: '28px 24px',
+                display: 'flex',
+                flexDirection: 'column',
+                position: 'relative',
+                boxShadow: plan.popular
+                  ? '0 12px 30px rgba(37,99,235,0.12)'
+                  : '0 4px 14px rgba(15,23,42,0.03)',
+                transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+              }}
+            >
+              {/* Badge */}
+              {plan.badge && (
+                <div style={{
+                  position: 'absolute',
+                  top: '-12px',
+                  right: '20px',
+                  background: plan.popular ? '#2563eb' : '#0f172a',
+                  color: '#ffffff',
+                  fontSize: '10.5px',
+                  fontWeight: '800',
+                  letterSpacing: '0.06em',
+                  padding: '4px 12px',
+                  borderRadius: '9999px',
+                  textTransform: 'uppercase',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.15)'
+                }}>
+                  {plan.badge}
+                </div>
+              )}
+
+              {/* Plan Title & Subtitle */}
+              <div style={{ marginBottom: '16px' }}>
+                <div style={{ fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', color: plan.popular ? '#2563eb' : '#64748b', letterSpacing: '0.06em', marginBottom: '4px' }}>
+                  {plan.tier}
+                </div>
+                <h3 style={{
+                  fontFamily: "'Plus Jakarta Sans', sans-serif",
+                  fontSize: '22px',
+                  fontWeight: '800',
+                  color: '#0f172a',
+                  margin: 0
+                }}>
+                  {plan.name}
+                </h3>
+                <p style={{ fontSize: '13px', color: '#64748b', marginTop: '6px', marginBottom: 0, minHeight: '38px', lineHeight: 1.45 }}>
+                  {plan.description}
+                </p>
+              </div>
+
+              {/* Price Display */}
+              <div style={{ paddingBottom: '16px', borderBottom: '1px solid #f1f5f9', marginBottom: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                  {isEnterprise ? (
+                    <span style={{ fontSize: '32px', fontWeight: '800', color: '#0f172a', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                      Custom
+                    </span>
+                  ) : (
+                    <>
+                      <span style={{ fontSize: '22px', fontWeight: '700', color: '#0f172a' }}>$</span>
+                      <span style={{ fontSize: '42px', fontWeight: '800', color: '#0f172a', fontFamily: "'Plus Jakarta Sans', sans-serif", lineHeight: 1 }}>
+                        {price}
+                      </span>
+                      <span style={{ fontSize: '13.5px', fontWeight: '600', color: '#64748b' }}>/month</span>
+                    </>
+                  )}
+                </div>
+
+                {!isEnterprise && (
+                  <div style={{ fontSize: '11.5px', color: isYearly ? '#16a34a' : '#64748b', fontWeight: '600', marginTop: '4px' }}>
+                    {isYearly ? `Billed annually ($${price * 12}/yr)` : 'Billed monthly · Cancel anytime'}
+                  </div>
+                )}
+              </div>
+
+              {/* Prominent Limit Callout Box */}
+              <div style={{
+                background: plan.popular ? '#eff6ff' : '#f8fafc',
+                border: plan.popular ? '1px solid #bfdbfe' : '1px solid #e2e8f0',
+                borderRadius: '10px',
+                padding: '12px 14px',
+                marginBottom: '20px'
+              }}>
+                <div style={{ fontSize: '11px', textTransform: 'uppercase', fontWeight: '800', color: plan.popular ? '#1d4ed8' : '#475569', letterSpacing: '0.04em', marginBottom: '2px' }}>
+                  Candidate Interview Limit
+                </div>
+                <div style={{ fontSize: '13.5px', fontWeight: '800', color: '#0f172a' }}>
+                  {plan.interviewLimit}
+                </div>
+                <div style={{ fontSize: '11.5px', color: '#64748b', marginTop: '2px' }}>
+                  {plan.limitSubtext}
+                </div>
+              </div>
+
+              {/* System Integration Pill if applicable */}
+              {plan.systemIntegration && (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  fontSize: '11.5px',
+                  fontWeight: '700',
+                  color: '#1d4ed8',
+                  background: '#eff6ff',
+                  padding: '6px 10px',
+                  borderRadius: '6px',
+                  marginBottom: '16px'
+                }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                  </svg>
+                  <span>{plan.systemIntegration}</span>
+                </div>
+              )}
+
+              {/* Feature Checklist */}
+              <div style={{ flex: 1, marginBottom: '24px' }}>
+                <div style={{ fontSize: '11.5px', fontWeight: '800', textTransform: 'uppercase', color: '#94a3b8', letterSpacing: '0.05em', marginBottom: '10px' }}>
+                  Features Included:
+                </div>
+                <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {plan.features.map((feat, fIdx) => (
+                    <li key={fIdx} style={{ display: 'flex', alignItems: 'flex-start', gap: '9px', fontSize: '13px', color: '#334155', lineHeight: 1.4 }}>
+                      <span style={{ color: '#16a34a', fontWeight: '800', flexShrink: 0, marginTop: '1px' }}>✓</span>
+                      <div>
+                        <strong style={{ color: '#0f172a' }}>{feat.title}</strong>
+                        {feat.note && (
+                          <span style={{ display: 'block', fontSize: '11px', color: '#64748b', marginTop: '1px' }}>
+                            {feat.note}
+                          </span>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+
+                {/* Exclusions */}
+                {plan.notIncluded && plan.notIncluded.length > 0 && (
+                  <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px dashed #e2e8f0' }}>
+                    <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {plan.notIncluded.map((feat, fIdx) => (
+                        <li key={fIdx} style={{ display: 'flex', alignItems: 'flex-start', gap: '9px', fontSize: '12px', color: '#94a3b8', lineHeight: 1.4 }}>
+                          <span style={{ color: '#cbd5e1', fontWeight: '700', flexShrink: 0 }}>✕</span>
+                          <span style={{ textDecoration: 'line-through' }}>{feat}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+
+              {/* Action Button */}
+              <div>
+                <button
+                  type="button"
+                  onClick={() => handleCta(plan)}
+                  style={{
+                    width: '100%',
+                    padding: '12px 18px',
+                    borderRadius: '10px',
+                    fontSize: '13.5px',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    border: plan.ctaType === 'outline' ? '1.5px solid #cbd5e1' : 'none',
+                    background: plan.ctaType === 'primary' ? '#2563eb' : plan.ctaType === 'dark' ? '#0f172a' : '#ffffff',
+                    color: plan.ctaType === 'primary' || plan.ctaType === 'dark' ? '#ffffff' : '#0f172a',
+                    boxShadow: plan.ctaType === 'primary' ? '0 4px 12px rgba(37,99,235,0.25)' : 'none'
+                  }}
+                >
+                  {plan.ctaText}
+                </button>
+                {!isEnterprise && (
+                  <div style={{ textAlign: 'center', fontSize: '11px', color: '#94a3b8', marginTop: '8px' }}>
+                    14-day free trial · No card required
+                  </div>
+                )}
+              </div>
+
+            </div>
+          )
+        })}
+      </div>
+
+      {/* ── Standalone ATS Integration Studio (Shown when SmartScreen tab active and enabled) ── */}
+      {showIntegrationGuide && productTab === 'smartscreen' && (
+        <div style={{
+          background: '#0f172a',
+          borderRadius: '16px',
+          padding: '36px 32px',
+          maxWidth: '1020px',
+          margin: '0 auto 60px',
+          color: '#f8fafc',
+          border: '1px solid #1e293b'
+        }}>
+          <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+            <span style={{ color: '#60a5fa', fontSize: '11px', fontWeight: '800', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+              DEVELOPER & RECRUITER INTEGRATION STUDIO
+            </span>
+            <h3 style={{ fontSize: '22px', fontWeight: '800', color: '#ffffff', margin: '8px 0 6px', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+              Plug SmartScreen into Any ATS in Under 3 Minutes
+            </h3>
+            <p style={{ fontSize: '13.5px', color: '#94a3b8', maxWidth: '620px', margin: '0 auto' }}>
+              Ultra-lightweight REST endpoints and non-blocking webhooks. Zero CPU load on your system, sub-15ms execution.
+            </p>
+
+            {/* Compatible ATS Badges */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '8px', marginTop: '14px' }}>
+              {['Bullhorn', 'Greenhouse', 'Lever', 'Workday', 'Ceipal', 'Jobvite', 'iCIMS', 'Zoho Recruit', 'Custom CRM / Zapier'].map(ats => (
+                <span key={ats} style={{
+                  background: 'rgba(255,255,255,0.06)',
+                  color: '#cbd5e1',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  fontSize: '11px',
+                  fontWeight: '600',
+                  padding: '4px 10px',
+                  borderRadius: '6px'
+                }}>
+                  ✓ {ats}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Code Tab Switcher */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #334155', paddingBottom: '12px', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              {[
+                { id: 'curl', label: 'cURL / REST API' },
+                { id: 'node', label: 'Node.js' },
+                { id: 'webhook', label: 'Webhook Response' },
+                { id: 'nocode', label: 'No-Code / Direct Link' },
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setActiveIntegrationTab(tab.id)}
+                  style={{
+                    background: activeIntegrationTab === tab.id ? '#2563eb' : 'rgba(255,255,255,0.06)',
+                    color: activeIntegrationTab === tab.id ? '#ffffff' : '#94a3b8',
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '6px 12px',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => handleCopyCode(codeSnippets[activeIntegrationTab])}
+              style={{
+                background: 'rgba(255,255,255,0.1)',
+                border: '1px solid rgba(255,255,255,0.2)',
+                color: '#ffffff',
+                borderRadius: '6px',
+                padding: '6px 12px',
+                fontSize: '11.5px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+              </svg>
+              {copiedSnippet ? 'Copied to Clipboard' : 'Copy Code'}
+            </button>
+          </div>
+
+          {/* Code Pre Box */}
+          <div style={{
+            background: '#020617',
+            borderRadius: '8px',
+            padding: '16px 18px',
+            border: '1px solid #1e293b',
+            fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            fontSize: '12px',
+            lineHeight: 1.6,
+            overflowX: 'auto',
+            color: '#38bdf8'
+          }}>
+            <pre style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
+              {codeSnippets[activeIntegrationTab]}
+            </pre>
+          </div>
+
+          <div style={{ marginTop: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11.5px', color: '#94a3b8', flexWrap: 'wrap', gap: '8px' }}>
+            <div>Endpoint latency: &lt;15ms · 99.9% Uptime SLA · No API key required for testing</div>
+            <div style={{ color: '#34d399', fontWeight: '600' }}>✓ Live in Production at smarthireus.com</div>
+          </div>
+        </div>
+      )}
+
+    </div>
+  )
+}

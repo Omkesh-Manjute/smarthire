@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import SiteLayout from '../components/SiteLayout'
+import PricingSection from '../components/PricingSection'
 import { loginWithGoogle, loginWithEmail, resetPasswordWithEmail } from '../lib/firebase'
 import { getUserProfileByEmailFirestore, saveInquiryFirestore } from '../lib/atsFirestore'
 
@@ -2374,192 +2375,13 @@ function Homepage() {
         {/* =========================================================================
             SECTION 6: OPTIMIZED RATE & PRICING SECTION WITH MARGIN CALCULATOR
             ========================================================================= */}
-        <section className="tf-pricing-section" id="pricing">
+        <section className="tf-pricing-section" id="pricing" style={{ padding: '60px 0 40px', background: '#f8fafc' }}>
+          <PricingSection
+            onAuthClick={() => isAuthenticated ? navigate('/ats') : setShowLoginModal(true)}
+            showIntegrationGuide={false}
+          />
+
           <div className="tf-container">
-            <div className="tf-section-header text-center">
-              <span className="tf-eyebrow-amber">UNIFIED ATS &amp; VIDEO SCREENING</span>
-              <h2 className="tf-section-title">Predictable investment built for high-margin staffing</h2>
-              <p className="tf-section-subtitle">
-                Why pay separately for standalone video screening tools and outdated ATS systems? SmartHire unifies full ATS workflow, AI video screening, resume parsing, and location tracking in one platform starting at $20/mo.
-              </p>
-
-              {/* Monthly / Yearly Toggle */}
-              <div className="tf-billing-toggle-box">
-                <span className={!isYearly ? 'active-label' : ''}>Monthly</span>
-                <button 
-                  type="button" 
-                  className="tf-switch-btn" 
-                  onClick={() => setIsYearly(!isYearly)}
-                  aria-label="Toggle Billing Frequency"
-                >
-                  <span className={`tf-switch-thumb ${isYearly ? 'yearly' : ''}`} />
-                </button>
-                <span className={isYearly ? 'active-label' : ''}>
-                  Yearly <span className="tf-discount-chip">Save 20%</span>
-                </span>
-              </div>
-            </div>
-
-            {/* Standalone ATS vs SmartHire All-in-One Market Comparison Callout */}
-            <div style={{
-              background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
-              borderRadius: '16px',
-              padding: '24px 28px',
-              margin: '0 auto 36px',
-              maxWidth: '960px',
-              border: '1px solid #334155',
-              boxShadow: '0 10px 30px rgba(15, 23, 42, 0.15)',
-              color: '#f8fafc'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '14px', marginBottom: '16px' }}>
-                <div>
-                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#2563eb', color: '#ffffff', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    Why Pay Separately?
-                  </div>
-                  <h3 style={{ fontSize: '19px', fontWeight: '800', margin: '8px 0 4px', color: '#ffffff' }}>
-                    Standalone Video Screening Alone Costs $49+/mo. SmartHire Unifies Everything.
-                  </h3>
-                  <p style={{ fontSize: '13px', color: '#94a3b8', margin: 0, lineHeight: 1.5 }}>
-                    In other platforms, you pay separately for ATS ($85+/mo) + Video Screening ($49+/mo) + Resume Parser ($35+/mo) + Location Proctoring ($25+/mo). SmartHire bundles everything starting at just $20/mo!
-                  </p>
-                </div>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', background: 'rgba(255,255,255,0.04)', borderRadius: '12px', padding: '16px', border: '1px solid rgba(255,255,255,0.08)' }}>
-                <div style={{ borderRight: '1px solid rgba(255,255,255,0.08)', paddingRight: '12px' }}>
-                  <div style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: '700' }}>Standalone Video Tools</div>
-                  <div style={{ fontSize: '18px', fontWeight: '800', color: '#f87171' }}>$49 - $99<span style={{ fontSize: '12px', fontWeight: '500' }}>/mo</span></div>
-                  <div style={{ fontSize: '11.5px', color: '#cbd5e1', marginTop: '2px' }}>Only video screening (No ATS, No parser)</div>
-                </div>
-                <div style={{ borderRight: '1px solid rgba(255,255,255,0.08)', paddingRight: '12px' }}>
-                  <div style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: '700' }}>Legacy Standalone ATS</div>
-                  <div style={{ fontSize: '18px', fontWeight: '800', color: '#f87171' }}>$85 - $150<span style={{ fontSize: '12px', fontWeight: '500' }}>/mo</span></div>
-                  <div style={{ fontSize: '11.5px', color: '#cbd5e1', marginTop: '2px' }}>Requires expensive 3rd-party add-ons</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: '11px', color: '#6ee7b7', textTransform: 'uppercase', fontWeight: '800' }}>SmartHire Unified ATS</div>
-                  <div style={{ fontSize: '18px', fontWeight: '800', color: '#10b981' }}>From $20<span style={{ fontSize: '12px', fontWeight: '600' }}>/mo</span></div>
-                  <div style={{ fontSize: '11.5px', color: '#e2e8f0', marginTop: '2px', fontWeight: '600' }}>Full ATS + Video + AI Parser + Anti-Cheat</div>
-                </div>
-              </div>
-            </div>
-
-            {/* 3 Pricing Cards Grid */}
-            <div className="tf-plans-grid">
-              
-              {/* Plan 1: Starter */}
-              <div className="tf-plan-card">
-                <div className="tf-plan-top">
-                  <h3 className="tf-plan-title">Starter</h3>
-                  <p className="tf-plan-desc">For solo recruiters &amp; boutique staffing desks.</p>
-                  <div className="tf-plan-price">
-                    <span className="curr">$</span>
-                    <span className="val">{isYearly ? 16 : 20}</span>
-                    <span className="freq">/month</span>
-                  </div>
-                  {isYearly ? (
-                    <span className="tf-billed-note">Billed annually ($192/yr) — Starts at $20/mo</span>
-                  ) : (
-                    <span className="tf-billed-note">Starts at $20/month flat</span>
-                  )}
-                </div>
-
-                <div className="tf-plan-divider" />
-
-                <ul className="tf-plan-perks">
-                  <li><span className="check">✓</span> <strong>Full ATS Pipeline &amp; Candidate Management</strong></li>
-                  <li><span className="check">✓</span> <strong>AI Video &amp; Voice Screening</strong> (Single continuous take)</li>
-                  <li><span className="check">✓</span> <strong>Automated Resume &amp; Email Parser</strong> (PDF, Word, TXT)</li>
-                  <li><span className="check">✓</span> <strong>Groq AI Auto-Match Score &amp; Fit Verdict</strong></li>
-                  <li><span className="check">✓</span> <strong>Candidate Status Auto-Notifications</strong></li>
-                  <li><span className="check">✓</span> <strong>Location Tracker &amp; Anti-Cheat Tab Lock</strong></li>
-                  <li><span className="check">✓</span> 2 Active Requisitions &amp; Unlimited Submissions</li>
-                  <li><span className="check">✓</span> Standard Email Support</li>
-                </ul>
-
-                <button 
-                  type="button" 
-                  onClick={() => isAuthenticated ? navigate('/ats') : setShowLoginModal(true)} 
-                  className="tf-plan-btn outline"
-                >
-                  Start free trial
-                </button>
-              </div>
-
-              {/* Plan 2: Pro (Most Popular) */}
-              <div className="tf-plan-card tf-popular-plan">
-                <div className="tf-popular-banner">RECOMMENDED</div>
-                <div className="tf-plan-top">
-                  <h3 className="tf-plan-title">Pro</h3>
-                  <p className="tf-plan-desc">For recruiting teams hiring across several client requisitions.</p>
-                  <div className="tf-plan-price">
-                    <span className="curr">$</span>
-                    <span className="val">{isYearly ? 39 : 49}</span>
-                    <span className="freq">/month</span>
-                  </div>
-                  {isYearly && <span className="tf-billed-note">Billed annually ($468/yr)</span>}
-                </div>
-
-                <div className="tf-plan-divider" />
-
-                <ul className="tf-plan-perks">
-                  <li><span className="check">✓</span> <strong>Everything in Starter included</strong></li>
-                  <li><span className="check">✓</span> <strong>10 Active Requisitions &amp; Up to 5 Team Members</strong></li>
-                  <li><span className="check">✓</span> <strong>Multi-Role Recruiter Hierarchy</strong> (Admin, Manager, Recruiter)</li>
-                  <li><span className="check">✓</span> <strong>Candidate Screening Studio with Screen Share</strong></li>
-                  <li><span className="check">✓</span> <strong>Anti-Cheat Tab &amp; Window Blur Monitoring</strong></li>
-                  <li><span className="check">✓</span> <strong>Automated Vendor Hotlists Ingestion</strong> (Excel Grid)</li>
-                  <li><span className="check">✓</span> <strong>Monster / Workday Resume Formatter</strong></li>
-                  <li><span className="check">✓</span> <strong>Automated 6-min Job Ingestion Engine</strong></li>
-                  <li><span className="check">✓</span> Priority Recruiter Email &amp; Chat Support</li>
-                </ul>
-
-                <button 
-                  type="button" 
-                  onClick={() => isAuthenticated ? navigate('/ats') : setShowLoginModal(true)} 
-                  className="tf-plan-btn primary"
-                >
-                  Start free trial
-                </button>
-              </div>
-
-              {/* Plan 3: Business */}
-              <div className="tf-plan-card">
-                <div className="tf-plan-top">
-                  <h3 className="tf-plan-title">Business</h3>
-                  <p className="tf-plan-desc">For scaling staffing agencies &amp; enterprise operations.</p>
-                  <div className="tf-plan-price">
-                    <span className="curr">$</span>
-                    <span className="val">{isYearly ? 79 : 99}</span>
-                    <span className="freq">/month</span>
-                  </div>
-                  {isYearly && <span className="tf-billed-note">Billed annually ($948/yr)</span>}
-                </div>
-
-                <div className="tf-plan-divider" />
-
-                <ul className="tf-plan-perks">
-                  <li><span className="check">✓</span> <strong>Everything in Pro included</strong></li>
-                  <li><span className="check">✓</span> <strong>Unlimited Active Roles &amp; Unlimited Recruiter Seats</strong></li>
-                  <li><span className="check">✓</span> <strong>Full Anti-Cheat Lockout Engine</strong> (Screen share lock)</li>
-                  <li><span className="check">✓</span> <strong>Verified GPS Geolocation &amp; Telemetry Audit Trail</strong></li>
-                  <li><span className="check">✓</span> <strong>White-label Branding</strong> (Custom domain links &amp; email)</li>
-                  <li><span className="check">✓</span> <strong>Custom AI Questions &amp; Audio Voice Scoring</strong></li>
-                  <li><span className="check">✓</span> <strong>Webhooks, REST API, &amp; ATS Export Integrations</strong></li>
-                  <li><span className="check">✓</span> <strong>Automated Daily Trending Direct Clients Engine</strong></li>
-                  <li><span className="check">✓</span> Dedicated Account Manager &amp; 24/7 SLA Priority Support</li>
-                </ul>
-
-                <button 
-                  type="button" 
-                  onClick={() => isAuthenticated ? navigate('/ats') : setShowLoginModal(true)} 
-                  className="tf-plan-btn outline"
-                >
-                  Start free trial
-                </button>
-              </div>
-
-            </div>
 
             {/* =========================================================================
                 INTERACTIVE STAFFING SPREAD & RATE MARGIN CALCULATOR
