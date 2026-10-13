@@ -103,6 +103,45 @@ The following high-impact features and optimizations have been agreed upon and p
   - **Branded & Blind Resume Wrapper**: Formats candidate resume with agency letterhead/header, core competencies table, clean bullet points, and optional contact masking (hiding direct phone/email to prevent poaching).
   - **1-Click Actions**: 📋 Copy formatted text to clipboard (for portal/email paste), 📥 Download PDF/DOCX submittal package, and ✉️ Direct email dispatch to Account Manager / Client.
 
+### 2026-10-13 — Modern Pricing Overhaul: Market-Standard Rates, Interview Limits, ATS Integrations, Bundle Discounts & UI Polish
+- **Context & Objectives**:
+  - The user requested:
+    1. Upgrade rates according to market standards (benchmarked against Willo, Spark Hire, HireFlix, Bullhorn).
+    2. Add explicit candidate interview limits for each tier (e.g. 50, 200, 600, Unlimited).
+    3. Clearly separate SmartScreen AI (Standalone Video Screening SaaS) from SmartHire ATS OS (All-In-One Recruiting OS).
+    4. Provide a combined bundle offer: 35% discount when ATS + SmartScreen are purchased together.
+    5. Clean B2B SaaS UI overhaul: Remove the heavy, ugly black comparison box from the top; introduce sleek Apple/Linear segmented controls, refined typography, crisp cards, and clear system integration callouts in Growth/Business tiers.
+- **Architectural Implementations & Fixes**:
+  1. **Unified Reusable Component (`src/components/PricingSection.jsx`)**:
+     - Built a single source of truth used across both `Homepage.jsx` and `Pricing.jsx`.
+     - Completely removed the heavy dark comparison banner from both pages.
+     - Product Switcher Segmented Control: `SmartScreen AI (Works with Any ATS)` vs `SmartHire ATS OS (All-In-One)`.
+     - Monthly / Annual toggle with `Save up to 25% on Annual` green badge.
+     - Combined Bundle Offer Callout: *"Want Both? Combine SmartHire ATS + SmartScreen AI and get 35% OFF"*.
+  2. **Market-Calibrated Tier Architecture & Explicit Limits**:
+     - **SmartScreen AI (Standalone SaaS)**:
+       - *Basic Screen*: $79/mo ($59/mo annual) · **50 Candidate AI Video & Voice Interviews / mo**.
+       - *Growth Screen* (RECOMMENDED): $199/mo ($159/mo annual) · **200 Candidate AI Interviews / mo** · **Universal ATS Webhooks + REST API Included** · Branded PDF scorecards.
+       - *Business Screen*: $399/mo ($319/mo annual) · **600 Candidate AI Interviews / mo** · **HMAC Webhooks + Embedded Iframe Studio + Custom Subdomain**.
+       - *Enterprise & API*: Custom / Contact Sales · **Unlimited Candidate Interviews & Custom VMS/ATS Integration**.
+     - **SmartHire ATS OS (All-In-One)**:
+       - *Starter ATS*: $59/mo ($49/mo annual) · 3 Active Jobs, 2 Seats · **Includes 25 AI Video Screens/mo**.
+       - *Growth Pro ATS* (RECOMMENDED): $149/mo ($119/mo annual) · 15 Jobs, 5 Seats · SmartSign RTR + Hotlists + Submittal Packs · **Includes 100 AI Video Screens/mo**.
+       - *Business ATS*: $349/mo ($279/mo annual) · Unlimited Jobs & Seats · DL/Visa Verification · **Includes 300 AI Video Screens/mo**.
+       - *Enterprise ATS*: Custom / Contact Sales · Dedicated Instance + VMS Sync (Fieldglass/Beeline).
+  3. **Enterprise B2B UI Polish**:
+     - Modern slate palette (`#0F172A`, `#2563EB`, `#F8FAFC`).
+     - Crisp 1px border cards (`#E2E8F0`) with 2px royal blue recommended border and top ribbons.
+     - Prominent interview limit callout boxes inside every card.
+- **Deployment & Verification**:
+  - Local production build in `smarthire-react`: **0 errors, 0 warnings** (active bundles `index-Cga7IKuV.js` and `Pricing-D8I7adRo.js`).
+  - Git committed (`b36face`) and pushed to `main`.
+  - Production update deployed to AWS Lightsail server (`34.194.119.199`), PM2 `smarthire-ats` reloaded.
+  - Disk space verified: 8.8GB free (53% used, Rule 5 compliant).
+  - Live tests verified HTTP 200 on `https://smarthireus.com`, `https://smarthireus.com/pricing`, and new asset bundles.
+
+---
+
 ### 2026-10-13 — SmartScreen Candidate Portal UX Polish: Natural Language, Mirroring, Back/Retake Locks & Compact Viewport
 - **Context & Objectives**:
   - The user requested:
