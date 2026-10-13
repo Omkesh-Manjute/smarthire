@@ -103,6 +103,36 @@ The following high-impact features and optimizations have been agreed upon and p
   - **Branded & Blind Resume Wrapper**: Formats candidate resume with agency letterhead/header, core competencies table, clean bullet points, and optional contact masking (hiding direct phone/email to prevent poaching).
   - **1-Click Actions**: 📋 Copy formatted text to clipboard (for portal/email paste), 📥 Download PDF/DOCX submittal package, and ✉️ Direct email dispatch to Account Manager / Client.
 
+### 2026-10-13 — Candidate Interview Demo Video Integration (Scroll Autoplay & Gemini Logo Cropped) + Demo Contact Details Cleanup
+- **Context & Objectives**:
+  - The user requested:
+    1. Integrate the uploaded interview demo video (`interview demo video.mp4`) into the homepage candidate screening studio.
+    2. Crop the video from the side/corner so the Google Gemini sparkle logo is completely invisible.
+    3. Remove audio (zero voice/noise), make it continuous looping, and provide intuitive manual play/pause controls.
+    4. Implement scroll-triggered autoplay: When scrolled into the viewport, it automatically plays; when scrolled away or up, it automatically pauses.
+    5. Clean up all demo emails and fake phone numbers across public pages (`About.jsx`, `Homepage.jsx`, `PrivacyPolicy.jsx`, `Terms.jsx`, `Pricing.jsx`) and replace vendor references ("Groq Whisper", "Llama-3") with clean AI phrasing.
+- **Architectural Implementations & Fixes**:
+  1. **Video Cropping & Encoding**:
+     - Applied exact FFmpeg crop filter `-vf "crop=980:551:100:60,scale=1280:720"` removing the Gemini watermark while keeping the candidate centered.
+     - Stripped audio track (`-an`), encoded via `libx264 -crf 22 -preset slow -movflags +faststart` to `smarthire-react/public/interview-demo-video.mp4` (883 KB).
+  2. **Scroll-Driven Autoplay & Interactive Controls (`Homepage.jsx`)**:
+     - Created `demoVideoRef` and `isDemoVideoPlaying` state.
+     - Built `IntersectionObserver` (`threshold: 0.3`): auto-plays on entering viewport, auto-pauses when scrolling out.
+     - Interactive Play/Pause button in action controls and click-to-toggle overlay on the video viewport.
+     - Synced recording status chip (`REC 01:14` vs `STREAM PAUSED`) and volume equalizer bars (`.static` freeze on pause).
+  3. **Demo Contact Details & Vendor Brand Cleanup**:
+     - `About.jsx`: Removed `contact@smarthire.ai`, `support@smarthire.ai`, `privacy@smarthire.ai`, and `+1 (800) 555-SMART (7627)`. Replaced with official online inquiry and enterprise portal routing.
+     - `PrivacyPolicy.jsx` & `Terms.jsx`: Removed direct demo email links, replaced with online inquiry desk links.
+     - `Homepage.jsx` & `Pricing.jsx`: Replaced all "Groq Whisper" and "Llama-3" references with "AI Verbatim Transcript" and "Speech AI".
+- **Deployment & Verification**:
+  - Local production build in `smarthire-react`: **0 errors, 0 warnings** (bundle `index-CE2WBkA4.js`).
+  - Git committed (`b1ce1ac`) and pushed to `main`.
+  - Production bundle deployed to AWS Lightsail server (`34.194.119.199`), PM2 `smarthire-ats` reloaded.
+  - Disk space verified: 8.8GB free (53% used, Rule 5 compliant).
+  - Live tests verified HTTP 200 on `https://smarthireus.com`, `https://smarthireus.com/interview-demo-video.mp4`, and `https://smarthireus.com/assets/index-CE2WBkA4.js`.
+
+---
+
 ### 2026-10-13 — Modern Pricing Overhaul: Market-Standard Rates, Interview Limits, ATS Integrations, Bundle Discounts & UI Polish
 - **Context & Objectives**:
   - The user requested:
