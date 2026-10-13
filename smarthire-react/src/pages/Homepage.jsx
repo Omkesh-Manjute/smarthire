@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import SiteLayout from '../components/SiteLayout'
 import PricingSection from '../components/PricingSection'
@@ -19,6 +19,57 @@ function Homepage() {
     localStorage.getItem('smarthire_authenticated') === 'true' || 
     localStorage.getItem('verifyhire_authenticated') === 'true' ||
     Boolean(user && (user.email || user.name))
+
+  // Candidate Interview Demo Video (Auto-play on scroll into view, pause when scrolled away)
+  const demoVideoRef = useRef(null)
+  const [isDemoVideoPlaying, setIsDemoVideoPlaying] = useState(false)
+
+  const toggleDemoVideo = () => {
+    const video = demoVideoRef.current
+    if (!video) return
+    if (video.paused) {
+      const p = video.play()
+      if (p && typeof p.catch === 'function') p.catch(() => {})
+    } else {
+      video.pause()
+    }
+  }
+
+  useEffect(() => {
+    const video = demoVideoRef.current
+    if (!video) return
+
+    const handlePlay = () => setIsDemoVideoPlaying(true)
+    const handlePause = () => setIsDemoVideoPlaying(false)
+    video.addEventListener('play', handlePlay)
+    video.addEventListener('pause', handlePause)
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            // Scrolled down into viewport -> auto play
+            const p = video.play()
+            if (p && typeof p.catch === 'function') {
+              p.catch(() => {})
+            }
+          } else {
+            // Scrolled up or out of viewport -> auto pause
+            video.pause()
+          }
+        })
+      },
+      { threshold: 0.3 }
+    )
+
+    observer.observe(video)
+
+    return () => {
+      observer.disconnect()
+      video.removeEventListener('play', handlePlay)
+      video.removeEventListener('pause', handlePause)
+    }
+  }, [])
 
   // Login Modal / Form States
   const [showLoginModal, setShowLoginModal] = useState(false)
@@ -774,7 +825,7 @@ function Homepage() {
                 </div>
                 <h3 className="tf-feature-title">SmartHire Video, Voice & Text AI Screening</h3>
                 <p className="tf-feature-desc">
-                  Zero-login candidate screening portal. Candidates record 1-way video answers, voice notes, or written synthesis on their schedule. Automatic Whisper AI transcripts, speech-to-text, and objective fit scoring.
+                  Zero-login candidate screening portal. Candidates record 1-way video answers, voice notes, or written synthesis on their schedule. Automatic AI transcripts, speech-to-text, and objective fit scoring.
                 </p>
                 <div className="tf-feature-tag">Video · Voice Note · AI Scoring</div>
               </div>
@@ -1399,7 +1450,7 @@ function Homepage() {
                   <div className="tf-big-stat-col">
                     <span className="tf-stat-large">100%</span>
                     <p className="tf-stat-subtext">
-                      SmartHire asynchronous video & voice notes with AI Whisper transcription before submission.
+                      SmartHire asynchronous video & voice notes with AI speech transcription before submission.
                     </p>
                   </div>
 
@@ -1429,7 +1480,7 @@ function Homepage() {
                 <span className="tf-highlight-box">Asynchronous Video, Audio & Text AI</span>
               </h2>
               <p className="tf-section-subtitle">
-                Eliminate scheduling phone ping-pong. Send one shareable link — candidates record their answers on their own schedule with webcam video, audio waveforms, or technical written synthesis. Groq Whisper AI transcribes and scores responses in seconds.
+                Eliminate scheduling phone ping-pong. Send one shareable link — candidates record their answers on their own schedule with webcam video, audio waveforms, or technical written synthesis. SmartScreen AI transcribes and scores responses in seconds.
               </p>
               <div className="tf-screening-cta-row">
                 <button 
@@ -1706,49 +1757,116 @@ function Homepage() {
                     </h4>
                   </div>
 
-                  {/* Video Viewport Mockup */}
+                  {/* Video Viewport Studio */}
                   <div className="tf-video-viewport">
-                    <div className="tf-video-stream-bg">
-                      <div className="tf-candidate-avatar-feed">
-                        <div className="tf-feed-circle">JL</div>
-                        <span className="tf-feed-name">Jordan L. · Candidate Stream</span>
-                      </div>
+                    <div 
+                      className="tf-video-stream-bg" 
+                      style={{ position: 'relative', overflow: 'hidden', cursor: 'pointer', height: '260px' }} 
+                      onClick={toggleDemoVideo}
+                      title={isDemoVideoPlaying ? 'Click to Pause' : 'Click to Play'}
+                    >
+                      <video
+                        ref={demoVideoRef}
+                        src="/interview-demo-video.mp4"
+                        playsInline
+                        muted
+                        loop
+                        preload="metadata"
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                          display: 'block'
+                        }}
+                      />
+
+                      {/* Center Play Indicator when paused */}
+                      {!isDemoVideoPlaying && (
+                        <div 
+                          style={{
+                            position: 'absolute',
+                            top: '50%',
+                            left: '50%',
+                            transform: 'translate(-50%, -50%)',
+                            background: 'rgba(15, 23, 42, 0.75)',
+                            backdropFilter: 'blur(6px)',
+                            border: '1px solid rgba(255, 255, 255, 0.25)',
+                            borderRadius: '50%',
+                            width: '54px',
+                            height: '54px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#ffffff',
+                            boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+                            pointerEvents: 'none',
+                            zIndex: 4
+                          }}
+                        >
+                          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                            <polygon points="6 4 20 12 6 20 6 4" />
+                          </svg>
+                        </div>
+                      )}
 
                       {/* Top Recording Bar */}
-                      <div className="tf-video-top-overlay">
+                      <div className="tf-video-top-overlay" style={{ pointerEvents: 'none', zIndex: 3 }}>
                         <span className="tf-rec-chip">
-                          <span className="tf-rec-dot" />
-                          REC 01:14 / 02:00
+                          <span 
+                            className={`tf-rec-dot ${isDemoVideoPlaying ? '' : 'paused'}`} 
+                            style={{ background: isDemoVideoPlaying ? '#ef4444' : '#94a3b8' }} 
+                          />
+                          {isDemoVideoPlaying ? 'REC 01:14 / 02:00' : 'STREAM PAUSED'}
                         </span>
-                        <span className="tf-hd-chip">1080p HD · 30 FPS</span>
+                        <span className="tf-hd-chip">1080p HD · 24 FPS</span>
                       </div>
 
                       {/* Bottom Live Equalizer Audio Meter */}
-                      <div className="tf-audio-visualizer-overlay">
-                        <span className="tf-eq-label">Microphone Level:</span>
+                      <div className="tf-audio-visualizer-overlay" style={{ pointerEvents: 'none', zIndex: 3 }}>
+                        <span className="tf-eq-label">Audio Level:</span>
                         <div className="tf-eq-bars">
-                          <span className="eq-bar h-6" />
-                          <span className="eq-bar h-10" />
-                          <span className="eq-bar h-16" />
-                          <span className="eq-bar h-22" />
-                          <span className="eq-bar h-28" />
-                          <span className="eq-bar h-20" />
-                          <span className="eq-bar h-26" />
-                          <span className="eq-bar h-18" />
-                          <span className="eq-bar h-12" />
-                          <span className="eq-bar h-8" />
+                          <span className={`eq-bar h-6 ${isDemoVideoPlaying ? '' : 'static'}`} />
+                          <span className={`eq-bar h-10 ${isDemoVideoPlaying ? '' : 'static'}`} />
+                          <span className={`eq-bar h-16 ${isDemoVideoPlaying ? '' : 'static'}`} />
+                          <span className={`eq-bar h-22 ${isDemoVideoPlaying ? '' : 'static'}`} />
+                          <span className={`eq-bar h-28 ${isDemoVideoPlaying ? '' : 'static'}`} />
+                          <span className={`eq-bar h-20 ${isDemoVideoPlaying ? '' : 'static'}`} />
+                          <span className={`eq-bar h-26 ${isDemoVideoPlaying ? '' : 'static'}`} />
+                          <span className={`eq-bar h-18 ${isDemoVideoPlaying ? '' : 'static'}`} />
+                          <span className={`eq-bar h-12 ${isDemoVideoPlaying ? '' : 'static'}`} />
+                          <span className={`eq-bar h-8 ${isDemoVideoPlaying ? '' : 'static'}`} />
                         </div>
+                        <span style={{ fontSize: '11px', color: '#94a3b8', marginLeft: 'auto', fontWeight: 600 }}>Audio Muted</span>
                       </div>
                     </div>
 
                     {/* Candidate Action Controls */}
                     <div className="tf-viewport-actions">
-                      <button type="button" className="tf-btn-retake">
-                        <span>Retake</span>
+                      <button 
+                        type="button" 
+                        onClick={toggleDemoVideo}
+                        className="tf-btn-retake"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                      >
+                        {isDemoVideoPlaying ? (
+                          <>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+                            <span>Pause Demo</span>
+                          </>
+                        ) : (
+                          <>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"></polygon></svg>
+                            <span>Play Demo</span>
+                          </>
+                        )}
                       </button>
-                      <button type="button" className="tf-btn-record-stop">
-                        <span className="tf-stop-square" />
-                        <span>Done · Save & Next</span>
+                      <button 
+                        type="button" 
+                        className="tf-btn-record-stop"
+                        onClick={toggleDemoVideo}
+                      >
+                        <span className="tf-stop-square" style={{ background: isDemoVideoPlaying ? '#ef4444' : '#64748b' }} />
+                        <span>{isDemoVideoPlaying ? 'Active Stream' : 'Stream Paused'}</span>
                       </button>
                     </div>
                   </div>
@@ -1786,7 +1904,7 @@ function Homepage() {
                   {/* AI Speech Transcript Box */}
                   <div className="tf-transcript-box">
                     <div className="tf-transcript-head">
-                      <span className="tf-engine-badge">Groq Whisper AI Verbatim Transcript</span>
+                      <span className="tf-engine-badge">AI Verbatim Transcript</span>
                       <span className="tf-copy-link">1-Click Copy</span>
                     </div>
                     <p className="tf-transcript-text">
@@ -1868,9 +1986,9 @@ function Homepage() {
                 </div>
                 <h4>AI Transcription & Scoring</h4>
                 <p>
-                  Powered by Whisper and Groq AI models. Spoken answers are instantly transcribed into searchable text with automated candidate fit scoring (0-100%) and key takeaway summaries.
+                  Powered by high-accuracy speech AI models. Spoken answers are instantly transcribed into searchable text with automated candidate fit scoring (0-100%) and key takeaway summaries.
                 </p>
-                <div className="tf-pillar-badge">Whisper Large v3 Turbo</div>
+                <div className="tf-pillar-badge">Real-Time Speech AI</div>
               </div>
 
             </div>
@@ -4392,6 +4510,16 @@ function Homepage() {
         .eq-bar.h-18 { height: 16px; animation-delay: 0.45s; }
         .eq-bar.h-12 { height: 12px; animation-delay: 0.05s; }
         .eq-bar.h-8  { height: 8px;  animation-delay: 0.22s; }
+        .eq-bar.static {
+          animation: none !important;
+          transform: scaleY(0.4) !important;
+          opacity: 0.45;
+        }
+
+        .tf-rec-dot.paused {
+          animation: none !important;
+          opacity: 0.6;
+        }
 
         @keyframes eqDance {
           0%   { transform: scaleY(0.4); }

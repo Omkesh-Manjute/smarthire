@@ -425,9 +425,9 @@ function PrivacyPolicy() {
                 <p style={{ margin: '0 0 6px', fontSize: '11.5px', color: '#64748b' }}>
                   Have questions about your candidate privacy or require a data export?
                 </p>
-                <a href="mailto:privacy@smarthire.ai" className="tf-sidebar-link">
-                  privacy@smarthire.ai
-                </a>
+                <Link to="/about#inquiry" className="tf-sidebar-link">
+                  Submit Privacy Inquiry →
+                </Link>
               </div>
             </aside>
 
@@ -591,7 +591,7 @@ function PrivacyPolicy() {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13.5px' }}>
                     <div><strong>SmartHire Enterprise Inc.</strong> — Privacy & Compliance Division</div>
                     <div><strong>Data Protection Officer:</strong> DPO & Legal Affairs</div>
-                    <div><strong>Direct Email:</strong> <a href="mailto:privacy@smarthire.ai" style={{ color: '#2563eb', fontWeight: 600 }}>privacy@smarthire.ai</a> / <a href="mailto:dpo@smarthire.ai" style={{ color: '#2563eb', fontWeight: 600 }}>dpo@smarthire.ai</a></div>
+                    <div style={{ color: '#64748b' }}>Submit all DSARs, data deletion, and privacy requests directly via our secure inquiry portal:</div>
                     <div>
                       <Link to="/about#inquiry" className="tf-btn-support">
                         Submit a Formal Privacy Inquiry →

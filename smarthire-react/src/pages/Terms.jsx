@@ -428,9 +428,9 @@ function Terms() {
                 <p style={{ margin: '0 0 6px', fontSize: '11.5px', color: '#64748b' }}>
                   Need customized MSA amendments, SLA contracts, or vendor security reviews?
                 </p>
-                <a href="mailto:legal@smarthire.ai" className="tf-sidebar-link">
-                  legal@smarthire.ai
-                </a>
+                <Link to="/about#inquiry" className="tf-sidebar-link">
+                  Online Legal Inquiry →
+                </Link>
               </div>
             </aside>
 
@@ -573,8 +573,8 @@ function Terms() {
                 <div className="tf-callout-card">
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13.5px' }}>
                     <div><strong>SmartHire Enterprise Inc.</strong> — Legal & Regulatory Division</div>
-                    <div><strong>Corporate Legal Inquiries:</strong> <a href="mailto:legal@smarthire.ai" style={{ color: '#2563eb', fontWeight: 600 }}>legal@smarthire.ai</a></div>
-                    <div><strong>Contracts & Compliance Desk:</strong> <a href="mailto:compliance@smarthire.ai" style={{ color: '#2563eb', fontWeight: 600 }}>compliance@smarthire.ai</a></div>
+                    <div><strong>Contracts & Compliance:</strong> Official Corporate Legal Desk</div>
+                    <div style={{ color: '#64748b' }}>For enterprise MSAs, customized SLA amendments, or formal service notices, submit via:</div>
                     <div>
                       <Link to="/about#inquiry" className="tf-btn-support">
                         Contact Enterprise Contracts Desk →

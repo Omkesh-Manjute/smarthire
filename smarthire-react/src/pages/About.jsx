@@ -159,7 +159,7 @@ function About() {
       setGeneratedTicketId(ticketId)
       setInquirySubmitted(true)
     } catch (err) {
-      setFormError('Failed to submit inquiry. Please try again or email support@smarthire.ai directly.')
+      setFormError('Failed to submit inquiry. Please try again or submit through our online contact form.')
     } finally {
       setSubmittingInquiry(false)
     }
@@ -831,7 +831,7 @@ function About() {
                       <span style={{ display: 'inline-flex', alignItems: 'center', marginTop: 3 }}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg></span>
                       <div>
                         <div style={{ fontWeight: '700', color: '#0f172a' }}>General & Sales Inquiries</div>
-                        <a href="mailto:contact@smarthire.ai" style={{ color: '#2563eb', textDecoration: 'none' }}>contact@smarthire.ai</a>
+                        <div style={{ color: '#64748b' }}>Submit through our official inquiry desk on this portal for priority routing</div>
                       </div>
                     </div>
 
@@ -839,15 +839,15 @@ function About() {
                       <span style={{ display: 'inline-flex', alignItems: 'center', marginTop: 3 }}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"></path><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path></svg></span>
                       <div>
                         <div style={{ fontWeight: '700', color: '#0f172a' }}>Recruitment Tech Support</div>
-                        <a href="mailto:support@smarthire.ai" style={{ color: '#2563eb', textDecoration: 'none' }}>support@smarthire.ai</a>
+                        <div style={{ color: '#64748b' }}>24/7 priority ticket support available inside the recruiter cockpit</div>
                       </div>
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
                       <span style={{ display: 'inline-flex', alignItems: 'center', marginTop: 3 }}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg></span>
                       <div>
-                        <div style={{ fontWeight: '700', color: '#0f172a' }}>Privacy & Security Officer</div>
-                        <a href="mailto:privacy@smarthire.ai" style={{ color: '#2563eb', textDecoration: 'none' }}>privacy@smarthire.ai</a>
+                        <div style={{ fontWeight: '700', color: '#0f172a' }}>Privacy & Compliance Office</div>
+                        <div style={{ color: '#64748b' }}>Data protection and compliance requests via formal ticket submission</div>
                       </div>
                     </div>
 
@@ -855,7 +855,7 @@ function About() {
                       <span style={{ display: 'inline-flex', alignItems: 'center', marginTop: 3 }}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg></span>
                       <div>
                         <div style={{ fontWeight: '700', color: '#0f172a' }}>Enterprise Dedicated Line</div>
-                        <span style={{ color: '#475569' }}>+1 (800) 555-SMART (7627)</span>
+                        <div style={{ color: '#64748b' }}>Dedicated technical account manager assigned upon enterprise onboarding</div>
                       </div>
                     </div>
                   </div>
