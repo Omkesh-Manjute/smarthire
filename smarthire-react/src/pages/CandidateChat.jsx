@@ -17,6 +17,8 @@ export default function CandidateChat() {
   const [isDuplicateTab, setIsDuplicateTab] = useState(false)
   const [isAlreadySubmitted, setIsAlreadySubmitted] = useState(false)
   const [submittedAtDate, setSubmittedAtDate] = useState(null)
+  const [isExpired, setIsExpired] = useState(false)
+  const [expiredAtDate, setExpiredAtDate] = useState(null)
 
   // Step flow: 
   // 1: Candidate Verification & Role Overview
@@ -323,10 +325,28 @@ export default function CandidateChat() {
         let sessionData = null
         try {
           const res = await fetch(`${API}/${activeId}`)
+          if (res.status === 410) {
+            const data = await res.json()
+            if (isMounted) {
+              setIsExpired(true)
+              setExpiredAtDate(data.expiresAt)
+              setLoading(false)
+            }
+            return
+          }
           if (res.ok) {
             const data = await res.json()
             if (data.success && data.session) {
               sessionData = data.session
+              // Client-side expiry check
+              if (sessionData.expiresAt && new Date() > new Date(sessionData.expiresAt) && sessionData.status !== 'submitted') {
+                if (isMounted) {
+                  setIsExpired(true)
+                  setExpiredAtDate(sessionData.expiresAt)
+                  setLoading(false)
+                }
+                return
+              }
             }
           }
         } catch (fetchErr) {
@@ -1030,6 +1050,37 @@ export default function CandidateChat() {
           >
             Reload Window
           </button>
+        </div>
+      </div>
+    )
+  }
+
+  // ─── LOCK SCREEN: LINK EXPIRED ──────────────────────────────────────────────
+  if (isExpired) {
+    return (
+      <div style={styles.loadingContainer}>
+        <div style={{ ...styles.lockIconBox, borderColor: '#f59e0b', background: '#fffbeb' }}>
+          <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2.2">
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="12 6 12 12 16 14" />
+          </svg>
+        </div>
+        <h2 style={{ fontSize: '22px', fontWeight: '800', color: '#0f172a', margin: '16px 0 8px' }}>
+          Screening Link Expired
+        </h2>
+        <p style={{ fontSize: '14.5px', color: '#475569', maxWidth: '480px', lineHeight: 1.6 }}>
+          This assessment link was set to expire on {expiredAtDate ? new Date(expiredAtDate).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'its scheduled deadline'} and is no longer accepting new candidate submissions.
+        </p>
+        <p style={{ fontSize: '13.5px', color: '#64748b', maxWidth: '440px', marginTop: '6px', lineHeight: 1.5 }}>
+          Please reach out to your recruiter or the talent acquisition team to request an updated screening link.
+        </p>
+        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '20px' }}>
+          <Link to="/jobs" style={styles.primaryButton}>
+            Browse Open Requisitions
+          </Link>
+          <Link to="/blog" target="_blank" rel="noopener noreferrer" style={{ ...styles.secondaryButton, textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>
+            Career Resource Blog
+          </Link>
         </div>
       </div>
     )

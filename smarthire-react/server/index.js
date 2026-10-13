@@ -6393,7 +6393,8 @@ app.post('/api/screening/create', authenticateToken, (req, res) => {
     submittedBy: userEmail || userId,
     recruiterId: userId,
     screeningComplete: false,
-    submittedAt: null
+    submittedAt: null,
+    expiresAt: req.body.expiresAt || null
   };
 
   screeningStore.unshift(newSession);
@@ -7344,12 +7345,25 @@ function getOrCreateScreeningSession(sessionId) {
 // Get a single screening session
 app.get('/api/screening/:sessionId', (req, res) => {
   const session = getOrCreateScreeningSession(req.params.sessionId);
+  if (session && session.expiresAt && session.status !== 'submitted') {
+    if (new Date() > new Date(session.expiresAt)) {
+      return res.status(410).json({
+        success: false,
+        isExpired: true,
+        expiresAt: session.expiresAt,
+        message: `This screening link expired on ${new Date(session.expiresAt).toLocaleDateString()}. Please contact your recruiter for a new link.`
+      });
+    }
+  }
   res.json({ success: true, session });
 });
 
 // Candidate begins screening session — mark in_progress for single-use lock
 app.post('/api/screening/:sessionId/lock-start', (req, res) => {
   const session = getOrCreateScreeningSession(req.params.sessionId);
+  if (session && session.expiresAt && session.status !== 'submitted' && new Date() > new Date(session.expiresAt)) {
+    return res.status(410).json({ success: false, isExpired: true, message: 'This screening session has expired.' });
+  }
   if (session.status === 'submitted' || session.screeningComplete) {
     return res.status(400).json({ success: false, message: 'This screening session has already been completed and submitted.' });
   }

@@ -176,6 +176,8 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [], cur
   const [campaignTitle, setCampaignTitle] = useState('')
   const [allowedFormats, setAllowedFormats] = useState(['video', 'audio', 'text'])
   const [maxDuration, setMaxDuration] = useState(120)
+  const [expiryOption, setExpiryOption] = useState('7days') // '3days', '7days', '14days', 'custom', 'never'
+  const [customExpiryDate, setCustomExpiryDate] = useState('')
 
   // 1-Click Reassign Recruiter on Screening Session
   const handleUpdateSessionRecruiter = async (sessionId, newRecruiterName) => {
@@ -479,6 +481,29 @@ SmartHire Recruitment Team`
     setIsCreating(true)
     try {
       const job = jobsList.find(j => j.id === selectedJobId)
+
+      let expiresAt = null
+      if (expiryOption === '3days') {
+        const d = new Date()
+        d.setDate(d.getDate() + 3)
+        d.setHours(23, 59, 59, 999)
+        expiresAt = d.toISOString()
+      } else if (expiryOption === '7days') {
+        const d = new Date()
+        d.setDate(d.getDate() + 7)
+        d.setHours(23, 59, 59, 999)
+        expiresAt = d.toISOString()
+      } else if (expiryOption === '14days') {
+        const d = new Date()
+        d.setDate(d.getDate() + 14)
+        d.setHours(23, 59, 59, 999)
+        expiresAt = d.toISOString()
+      } else if (expiryOption === 'custom' && customExpiryDate) {
+        const d = new Date(customExpiryDate)
+        d.setHours(23, 59, 59, 999)
+        expiresAt = d.toISOString()
+      }
+
       const res = await fetch(`${API}/create`, {
         method: 'POST',
         headers: getAuthHeaders(true),
@@ -490,6 +515,7 @@ SmartHire Recruitment Team`
           questions,
           allowedFormats,
           maxDuration,
+          expiresAt,
           createdByEmail: (allAvailableRecruiters.find(r => r.name.toLowerCase() === selectedRecruiter.toLowerCase())?.email) || currentUserEmail || '',
           createdByRef: currentUserRef || '',
           createdByName: selectedRecruiter || currentUserName || 'Omkesh',
@@ -506,7 +532,8 @@ SmartHire Recruitment Team`
           screeningUrl: fullLink,
           jobTitle: job?.title || 'Open Position',
           candidateName: candidateNameInput.trim(),
-          candidateEmail: candidateEmailInput.trim()
+          candidateEmail: candidateEmailInput.trim(),
+          expiresAt
         })
         fetchSessions()
       } else {
@@ -1481,19 +1508,30 @@ SmartHire Recruitment Team`
 
                       {/* Status */}
                       <td style={styles.td}>
-                        <span style={{
-                          ...styles.statusBadge,
-                          ...(session.status === 'shortlisted' ? styles.statusShortlisted :
-                              session.status === 'submitted' ? styles.statusSubmitted :
-                              session.status === 'rejected' ? styles.statusRejected :
-                              styles.statusPending)
-                        }}>
-                          {session.status === 'shortlisted' ? 'Shortlisted' :
-                           session.status === 'submitted' ? 'New Submitted' :
-                           session.status === 'reviewed' ? '✓ Reviewed' :
-                           session.status === 'rejected' ? '✕ Rejected' :
-                           'In Progress'}
-                        </span>
+                        {session.expiresAt && new Date() > new Date(session.expiresAt) && session.status !== 'submitted' && session.status !== 'shortlisted' && session.status !== 'reviewed' ? (
+                          <span style={{
+                            ...styles.statusBadge,
+                            background: '#fef2f2',
+                            color: '#b91c1c',
+                            border: '1px solid #fecaca'
+                          }}>
+                            Expired
+                          </span>
+                        ) : (
+                          <span style={{
+                            ...styles.statusBadge,
+                            ...(session.status === 'shortlisted' ? styles.statusShortlisted :
+                                session.status === 'submitted' ? styles.statusSubmitted :
+                                session.status === 'rejected' ? styles.statusRejected :
+                                styles.statusPending)
+                          }}>
+                            {session.status === 'shortlisted' ? 'Shortlisted' :
+                             session.status === 'submitted' ? 'New Submitted' :
+                             session.status === 'reviewed' ? '✓ Reviewed' :
+                             session.status === 'rejected' ? '✕ Rejected' :
+                             'In Progress'}
+                          </span>
+                        )}
                       </td>
 
                       {/* Submitted Date */}
@@ -1511,18 +1549,48 @@ SmartHire Recruitment Team`
                             {new Date(session.submittedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                           </div>
                         ) : (
-                          <span style={{
-                            fontSize: '11px',
-                            fontWeight: 700,
-                            color: '#059669',
-                            background: '#ecfdf5',
-                            border: '1px solid #a7f3d0',
-                            padding: '2px 7px',
-                            borderRadius: '4px',
-                            whiteSpace: 'nowrap'
-                          }}>
-                            Active
-                          </span>
+                          <div>
+                            {session.expiresAt && new Date() > new Date(session.expiresAt) ? (
+                              <span style={{
+                                fontSize: '11px',
+                                fontWeight: 700,
+                                color: '#b91c1c',
+                                background: '#fef2f2',
+                                border: '1px solid #fecaca',
+                                padding: '2px 7px',
+                                borderRadius: '4px',
+                                whiteSpace: 'nowrap'
+                              }}>
+                                Expired {new Date(session.expiresAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                              </span>
+                            ) : session.expiresAt ? (
+                              <span style={{
+                                fontSize: '11px',
+                                fontWeight: 600,
+                                color: '#0369a1',
+                                background: '#f0f9ff',
+                                border: '1px solid #bae6fd',
+                                padding: '2px 7px',
+                                borderRadius: '4px',
+                                whiteSpace: 'nowrap'
+                              }}>
+                                Exp: {new Date(session.expiresAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                              </span>
+                            ) : (
+                              <span style={{
+                                fontSize: '11px',
+                                fontWeight: 700,
+                                color: '#059669',
+                                background: '#ecfdf5',
+                                border: '1px solid #a7f3d0',
+                                padding: '2px 7px',
+                                borderRadius: '4px',
+                                whiteSpace: 'nowrap'
+                              }}>
+                                Active
+                              </span>
+                            )}
+                          </div>
                         )}
                       </td>
 
@@ -1807,6 +1875,59 @@ SmartHire Recruitment Team`
                     </div>
                   </div>
 
+                  {/* Link Expiration & Validity Period */}
+                  <div style={styles.modalFormGroup}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <label style={styles.modalLabel}>Link Expiration & Validity Period</label>
+                      <span style={{ fontSize: '11.5px', color: '#64748b' }}>
+                        Automatically deactivates after selected date
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(95px, 1fr))', gap: '8px' }}>
+                      {[
+                        { id: '3days', label: '3 Days' },
+                        { id: '7days', label: '7 Days (Std)' },
+                        { id: '14days', label: '14 Days' },
+                        { id: 'custom', label: 'Custom Date' },
+                        { id: 'never', label: 'No Expiry' }
+                      ].map(opt => (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() => setExpiryOption(opt.id)}
+                          style={{
+                            padding: '8px 6px',
+                            borderRadius: '8px',
+                            fontSize: '12px',
+                            fontWeight: '700',
+                            cursor: 'pointer',
+                            textAlign: 'center',
+                            border: expiryOption === opt.id ? '2px solid #2563eb' : '1px solid #cbd5e1',
+                            background: expiryOption === opt.id ? '#eff6ff' : '#ffffff',
+                            color: expiryOption === opt.id ? '#1d4ed8' : '#334155',
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    {expiryOption === 'custom' && (
+                      <div style={{ marginTop: '10px' }}>
+                        <input
+                          type="date"
+                          min={new Date().toISOString().split('T')[0]}
+                          value={customExpiryDate}
+                          onChange={e => setCustomExpiryDate(e.target.value)}
+                          style={styles.modalInput}
+                          required
+                        />
+                      </div>
+                    )}
+                  </div>
+
                   <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
                     <button
                       type="button"
@@ -1837,9 +1958,45 @@ SmartHire Recruitment Team`
                   <h4 style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a', margin: '12px 0 6px' }}>
                     Screening Link Ready!
                   </h4>
-                  <p style={{ fontSize: '13px', color: '#64748b', maxWidth: '440px', margin: '0 auto 20px' }}>
+                  <p style={{ fontSize: '13px', color: '#64748b', maxWidth: '440px', margin: '0 auto 12px' }}>
                     Share this link directly via email, LinkedIn, or SMS. Candidates can open it immediately with zero login.
                   </p>
+
+                  {/* Expiration Pill in Modal Result */}
+                  <div style={{ marginBottom: '16px' }}>
+                    {createdLinkResult.expiresAt ? (
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        background: '#fef3c7',
+                        color: '#92400e',
+                        border: '1px solid #fde68a',
+                        borderRadius: '20px',
+                        padding: '4px 14px',
+                        fontSize: '12px',
+                        fontWeight: '700'
+                      }}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        Expires on: {new Date(createdLinkResult.expiresAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </span>
+                    ) : (
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        background: '#f0fdf4',
+                        color: '#166534',
+                        border: '1px solid #bbf7d0',
+                        borderRadius: '20px',
+                        padding: '4px 14px',
+                        fontSize: '12px',
+                        fontWeight: '700'
+                      }}>
+                        ✓ No Expiry (Always Active)
+                      </span>
+                    )}
+                  </div>
 
                   <div style={styles.linkDisplayBox}>
                     <input
