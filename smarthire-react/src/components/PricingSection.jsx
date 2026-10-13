@@ -1,10 +1,18 @@
 import React, { useState } from 'react'
+import { initiateRazorpayCheckout } from '../utils/razorpayCheckout'
 
 export default function PricingSection({ onAuthClick, showIntegrationGuide = true, isStandalonePage = false, initialProductTab = 'smartscreen' }) {
   const [productTab, setProductTab] = useState(initialProductTab) // 'smartscreen' | 'ats' | 'combo'
   const [isYearly, setIsYearly] = useState(true)
   const [activeIntegrationTab, setActiveIntegrationTab] = useState('curl')
   const [copiedSnippet, setCopiedSnippet] = useState(false)
+  
+  // Razorpay Checkout states
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false)
+  const [paymentPlanName, setPaymentPlanName] = useState('')
+  const [paymentResult, setPaymentResult] = useState(null)
+  const [paymentError, setPaymentError] = useState(null)
+  const [testAmountInRupees, setTestAmountInRupees] = useState(1)
 
   const handleCopyCode = (text) => {
     if (navigator.clipboard) {
@@ -431,14 +439,46 @@ export async function createScreeningLink(candidate, requisition) {
 5. When candidate completes, full AI dossier & scorecard is emailed instantly to recruiter.`
   }
 
+  const handleLaunchPayment = ({ amountInPaise, planName }) => {
+    setIsProcessingPayment(true)
+    setPaymentPlanName(planName)
+    setPaymentError(null)
+    setPaymentResult(null)
+
+    initiateRazorpayCheckout({
+      amountInPaise: amountInPaise || 100,
+      currency: 'INR',
+      planName: planName || 'SmartHire Subscription',
+      userEmail: 'omkesh@coolsofttech.com',
+      userName: 'Recruiter Admin',
+      userPhone: '9876543210',
+      onSuccess: (data) => {
+        setIsProcessingPayment(false)
+        setPaymentResult(data)
+      },
+      onFailure: (err) => {
+        setIsProcessingPayment(false)
+        setPaymentError(err.message || 'Payment failed or cancelled.')
+      },
+      onDismiss: () => {
+        setIsProcessingPayment(false)
+      }
+    }).catch((err) => {
+      setIsProcessingPayment(false)
+      setPaymentError(err.message)
+    })
+  }
+
   const handleCta = (plan) => {
     if (plan.name.includes('Enterprise')) {
       window.location.href = '/about?section=inquiry#inquiry'
-    } else if (onAuthClick) {
-      onAuthClick()
-    } else {
-      window.location.href = '/ats'
+      return
     }
+    // Trigger Razorpay Standard Web Checkout
+    handleLaunchPayment({
+      amountInPaise: 100, // ₹1.00 Test Mode (100 paise)
+      planName: `${plan.name} (${isYearly ? 'Annual' : 'Monthly'})`
+    })
   }
 
   return (
@@ -851,6 +891,165 @@ export async function createScreeningLink(candidate, requisition) {
           </div>
         </div>
       )}
+
+      {/* ── Razorpay Payment Success Notification ── */}
+      {paymentResult && (
+        <div style={{
+          background: '#ecfdf5',
+          border: '1.5px solid #6ee7b7',
+          borderRadius: '14px',
+          padding: '24px 28px',
+          maxWidth: '1020px',
+          margin: '0 auto 32px',
+          boxShadow: '0 10px 25px -5px rgba(16, 185, 129, 0.15)'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ width: '100%' }}>
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                background: '#10b981',
+                color: '#ffffff',
+                fontSize: '11px',
+                fontWeight: 800,
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                padding: '3px 10px',
+                borderRadius: '20px',
+                marginBottom: '8px'
+              }}>
+                Payment Signature Verified (HMAC-SHA256 Match)
+              </div>
+              <h3 style={{ fontSize: '20px', fontWeight: 800, color: '#065f46', margin: '4px 0 8px' }}>
+                Payment Successfully Completed & Verified!
+              </h3>
+              <p style={{ fontSize: '14px', color: '#047857', margin: '0 0 16px', lineHeight: 1.5 }}>
+                Your Razorpay transaction was successfully captured and verified against the backend signature key.
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '12px', background: '#ffffff', border: '1px solid #a7f3d0', borderRadius: '10px', padding: '14px 18px' }}>
+                <div>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Payment ID</div>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a', fontFamily: 'monospace' }}>{paymentResult.payment_id || paymentResult.razorpay_payment_id}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Order ID</div>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a', fontFamily: 'monospace' }}>{paymentResult.order_id || paymentResult.razorpay_order_id}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Plan / Service</div>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a' }}>{paymentResult.planName || 'SmartHire Subscription'}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Verification Status</div>
+                  <div style={{ fontSize: '13px', fontWeight: 800, color: '#16a34a' }}>PAID & VERIFIED</div>
+                </div>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setPaymentResult(null)}
+              style={{ background: 'none', border: 'none', fontSize: '18px', color: '#059669', cursor: 'pointer', padding: '4px' }}
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Payment Error Notice ── */}
+      {paymentError && (
+        <div style={{
+          background: '#fef2f2',
+          border: '1.5px solid #fca5a5',
+          borderRadius: '12px',
+          padding: '16px 20px',
+          maxWidth: '1020px',
+          margin: '0 auto 28px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
+          <div>
+            <div style={{ fontSize: '14px', fontWeight: 700, color: '#991b1b' }}>Payment Notice</div>
+            <div style={{ fontSize: '13px', color: '#b91c1c', marginTop: '2px' }}>{paymentError}</div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setPaymentError(null)}
+            style={{ background: 'none', border: 'none', fontSize: '16px', color: '#991b1b', cursor: 'pointer' }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* ── Razorpay Live Test Gateway Console ── */}
+      <div style={{
+        background: '#ffffff',
+        border: '1.5px solid #cbd5e1',
+        borderRadius: '14px',
+        padding: '20px 24px',
+        maxWidth: '1020px',
+        margin: '0 auto 36px',
+        boxShadow: '0 4px 16px rgba(15, 23, 42, 0.04)'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+          <div>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: 800, color: '#2563eb', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#2563eb' }} />
+              Razorpay Standard Web Checkout (Test Gateway)
+            </div>
+            <h4 style={{ fontSize: '17px', fontWeight: 800, color: '#0f172a', margin: '4px 0 2px' }}>
+              Test Razorpay Payment Flow Live
+            </h4>
+            <p style={{ fontSize: '13px', color: '#64748b', margin: 0 }}>
+              Key ID: <code style={{ background: '#f1f5f9', padding: '2px 6px', borderRadius: '4px', color: '#0f172a' }}>rzp_test_TnR6ivn84ZGy9p</code> · Click below to launch the Razorpay modal, complete test payment, and verify backend HMAC signature.
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden' }}>
+              <span style={{ padding: '8px 10px', background: '#f8fafc', fontSize: '13px', fontWeight: 700, color: '#64748b', borderRight: '1px solid #cbd5e1' }}>
+                ₹
+              </span>
+              <input
+                type="number"
+                min="1"
+                max="100000"
+                value={testAmountInRupees}
+                onChange={(e) => setTestAmountInRupees(Math.max(1, Number(e.target.value) || 1))}
+                style={{ width: '70px', padding: '8px 10px', border: 'none', outline: 'none', fontSize: '13.5px', fontWeight: 700 }}
+              />
+            </div>
+
+            <button
+              type="button"
+              disabled={isProcessingPayment}
+              onClick={() => handleLaunchPayment({
+                amountInPaise: testAmountInRupees * 100,
+                planName: `Razorpay Live Test (₹${testAmountInRupees})`
+              })}
+              style={{
+                background: '#2563eb',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '9px 18px',
+                fontSize: '13.5px',
+                fontWeight: 700,
+                cursor: isProcessingPayment ? 'not-allowed' : 'pointer',
+                opacity: isProcessingPayment ? 0.7 : 1,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+            >
+              <span>{isProcessingPayment ? 'Opening Razorpay...' : `Pay ₹${testAmountInRupees} via Razorpay ➔`}</span>
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* ── Modern Pricing Cards Grid ── */}
       <div style={{

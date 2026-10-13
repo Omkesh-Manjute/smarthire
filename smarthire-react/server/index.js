@@ -17,6 +17,7 @@ import zlib from 'zlib'
 const execAsync = promisify(exec)
 import { pdfConverter } from 'pdf-image-converter'
 import jwt from 'jsonwebtoken'
+import Razorpay from 'razorpay'
 import {
   getLinkedInSessionStatus,
   saveLinkedInSession,
@@ -14249,6 +14250,174 @@ app.use((req, res, next) => {
     }
   }
   next();
+});
+
+// ─── Razorpay Standard Web Checkout Integration ─────────────────────────────
+const getRazorpayClient = () => {
+  const key_id = process.env.RAZORPAY_KEY_ID || 'rzp_test_TnR6ivn84ZGy9p';
+  const key_secret = process.env.RAZORPAY_KEY_SECRET || 'zlqOQ2VeTuj8J7Y9rha4aA97';
+  if (!key_id || !key_secret) {
+    const err = new Error('Razorpay credentials not configured');
+    err.statusCode = 401;
+    throw err;
+  }
+  return new Razorpay({ key_id, key_secret });
+};
+
+// 1. Create Order: POST /api/create-order
+const handleCreateOrder = async (req, res) => {
+  try {
+    const { amount, currency = 'INR', receipt, notes } = req.body || {};
+
+    if (amount === undefined || amount === null || isNaN(amount)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or missing amount. Amount must be specified in paise (e.g. 50000 paise = ₹500)'
+      });
+    }
+
+    const numericAmount = Math.round(Number(amount));
+    if (numericAmount < 100) {
+      return res.status(400).json({
+        success: false,
+        message: 'Amount must be at least 100 paise (minimum currency unit 1.00)'
+      });
+    }
+
+    let razorpay;
+    try {
+      razorpay = getRazorpayClient();
+    } catch (authErr) {
+      return res.status(401).json({
+        success: false,
+        message: authErr.message || 'Razorpay authentication failed'
+      });
+    }
+
+    const orderOptions = {
+      amount: numericAmount,
+      currency: String(currency || 'INR').toUpperCase(),
+      receipt: receipt || `rcpt_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      notes: notes || {}
+    };
+
+    const order = await razorpay.orders.create(orderOptions);
+
+    return res.json({
+      success: true,
+      order_id: order.id,
+      id: order.id,
+      amount: order.amount,
+      currency: order.currency,
+      receipt: order.receipt,
+      status: order.status,
+      key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_TnR6ivn84ZGy9p'
+    });
+  } catch (error) {
+    console.error('❌ Razorpay create-order error:', error);
+    const statusCode = error.statusCode || 500;
+    return res.status(statusCode).json({
+      success: false,
+      message: error.error?.description || error.message || 'Failed to create Razorpay order',
+      error: error.error || error
+    });
+  }
+};
+
+app.post('/api/create-order', handleCreateOrder);
+app.post('/api/payment/create-order', handleCreateOrder);
+
+// 2. Verify Payment: POST /api/verify-payment
+const handleVerifyPayment = async (req, res) => {
+  try {
+    const {
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature,
+      order_id,
+      payment_id,
+      signature
+    } = req.body || {};
+
+    const effOrderId = razorpay_order_id || order_id;
+    const effPaymentId = razorpay_payment_id || payment_id;
+    const effSignature = razorpay_signature || signature;
+
+    if (!effOrderId || !effPaymentId || !effSignature) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required payment verification fields: order_id, payment_id, and signature are mandatory.'
+      });
+    }
+
+    const key_secret = process.env.RAZORPAY_KEY_SECRET || 'zlqOQ2VeTuj8J7Y9rha4aA97';
+    const generated_signature = crypto
+      .createHmac('sha256', key_secret)
+      .update(`${effOrderId}|${effPaymentId}`)
+      .digest('hex');
+
+    const expectedBuf = Buffer.from(generated_signature, 'utf8');
+    const receivedBuf = Buffer.from(effSignature, 'utf8');
+
+    const isMatch = expectedBuf.length === receivedBuf.length && crypto.timingSafeEqual(expectedBuf, receivedBuf);
+
+    if (!isMatch) {
+      console.warn(`⚠️ Razorpay signature mismatch: order=${effOrderId}, payment=${effPaymentId}`);
+      return res.status(400).json({
+        success: false,
+        isPaid: false,
+        message: 'Invalid payment signature. Verification failed.'
+      });
+    }
+
+    console.log(`✅ Razorpay payment verified successfully: order=${effOrderId}, payment=${effPaymentId}`);
+
+    // Persist verified payment in local disk store
+    try {
+      const paymentsFilePath = path.resolve(__dirname, 'payments.json');
+      let payments = [];
+      if (fs.existsSync(paymentsFilePath)) {
+        try {
+          payments = JSON.parse(fs.readFileSync(paymentsFilePath, 'utf8'));
+        } catch (e) {
+          payments = [];
+        }
+      }
+      payments.unshift({
+        order_id: effOrderId,
+        payment_id: effPaymentId,
+        verifiedAt: new Date().toISOString(),
+        status: 'PAID'
+      });
+      fs.writeFileSync(paymentsFilePath, JSON.stringify(payments.slice(0, 500), null, 2), 'utf8');
+    } catch (e) {}
+
+    return res.json({
+      success: true,
+      isPaid: true,
+      message: 'Payment verified successfully',
+      order_id: effOrderId,
+      payment_id: effPaymentId
+    });
+  } catch (error) {
+    console.error('❌ Razorpay verify-payment error:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Payment verification server error'
+    });
+  }
+};
+
+app.post('/api/verify-payment', handleVerifyPayment);
+app.post('/api/payment/verify', handleVerifyPayment);
+
+// 3. Public Config: GET /api/payment/config
+app.get('/api/payment/config', (_req, res) => {
+  return res.json({
+    success: true,
+    key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_TnR6ivn84ZGy9p',
+    currency: 'INR'
+  });
 });
 
 // ─── Error handler ────────────────────────────────────────────────────────────
