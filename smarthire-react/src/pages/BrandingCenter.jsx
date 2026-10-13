@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import SiteLayout from '../components/SiteLayout'
+import InfinityLoader from '../components/InfinityLoader'
 
 const CATEGORIES = [
   'AI Automation',
@@ -984,10 +985,8 @@ function BrandingCenter() {
               {/* Step 2: AI Loading */}
               {activeStep === 2 && (
                 <div className="card loading-card shadow-premium fade-in">
-                  <div className="spinner-large" />
-                  <h3>AI Content Engine Processing</h3>
-                  <p className="loading-status-text">{loadingMessage}</p>
-                  <p className="loading-sub">
+                  <InfinityLoader size="md" text="AI Content Engine Processing" subtext={loadingMessage} minHeight="200px" showBrand={false} />
+                  <p className="loading-sub" style={{ marginTop: 12 }}>
                     Writing professional B2B content for <strong>SmartHire</strong> using B2B copy frameworks.
                   </p>
                 </div>

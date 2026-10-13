@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import AuditActivityLogModule from './AuditActivityLogModule'
 import { saveTeamUsersFirestore, getTeamUsersFirestore } from '../lib/atsFirestore'
+import InfinityLoader from '../components/InfinityLoader'
 
 const DEFAULT_RECRUITERS = [
   {
@@ -512,8 +513,8 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
 
             <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
               {loading ? (
-                <div style={{ textAlign: 'center', padding: '40px 0', color: '#64748b' }}>
-                  <span className="loader-spinner"></span> Loading team members...
+                <div style={{ textAlign: 'center', padding: '30px 0' }}>
+                  <InfinityLoader size="sm" text="Loading team members..." minHeight="120px" showBrand={false} />
                 </div>
               ) : (
                 <div style={{ overflowX: 'auto' }}>

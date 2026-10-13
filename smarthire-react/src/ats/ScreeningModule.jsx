@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import InfinityLoader from '../components/InfinityLoader'
 
 const API = '/api/screening'
 
@@ -1295,9 +1296,8 @@ SmartHire Recruitment Team`
       {/* ─── CANDIDATE SUBMISSIONS TABLE ──────────────────────────────────── */}
       <div style={styles.tableCard}>
         {loading ? (
-          <div style={{ padding: '60px 20px', textAlign: 'center', color: '#64748b' }}>
-            <div style={styles.spinner}></div>
-            <div style={{ marginTop: '12px', fontWeight: '600' }}>Loading screening submissions...</div>
+          <div style={{ padding: '40px 20px', textAlign: 'center' }}>
+            <InfinityLoader size="sm" text="Loading screening submissions..." minHeight="140px" showBrand={false} />
           </div>
         ) : filteredSessions.length === 0 ? (
           <div style={styles.emptyTable}>

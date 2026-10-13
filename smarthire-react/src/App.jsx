@@ -19,11 +19,10 @@ const Blog = lazy(() => import('./pages/Blog'))
 const SmartSignRtrPage = lazy(() => import('./pages/SmartSignRtrPage'))
 const SubmittalPackPage = lazy(() => import('./pages/SubmittalPackPage'))
 const SmartScreenProduct = lazy(() => import('./pages/SmartScreenProduct'))
+import InfinityLoader from './components/InfinityLoader'
 
 const PageFallback = () => (
-  <div style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748B', fontSize: '13px', fontWeight: 600 }}>
-    Loading...
-  </div>
+  <InfinityLoader text="Loading SmartHire..." minHeight="85vh" />
 )
 
 function ProtectedRoute({ children }) {
