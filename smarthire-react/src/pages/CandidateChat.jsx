@@ -94,7 +94,7 @@ export default function CandidateChat() {
 
   // Disallow indexing for private screening sessions
   useEffect(() => {
-    document.title = 'AI Candidate Screening | SmartHire'
+    document.title = 'Pre-Interview Screening | SmartHire'
     let meta = document.querySelector('meta[name="robots"]')
     const prev = meta ? meta.getAttribute('content') : null
     if (!meta) {
@@ -118,11 +118,27 @@ export default function CandidateChat() {
     return () => window.removeEventListener('popstate', handlePopState)
   }, [])
 
-  // ─── 1. MULTI-TAB DETECTION (SINGLE INSTANCE LOCK) ─────────────────────────
+  // ─── 1. MULTI-TAB DETECTION & SESSION TAKEOVER ──────────────────────────────
+  const tabIdRef = useRef('tab_' + Math.random().toString(36).substring(2, 9))
+  const broadcastChannelRef = useRef(null)
+
+  const handleTakeoverSession = () => {
+    if (!sessionId || typeof window === 'undefined') return
+    const currentTabId = tabIdRef.current
+    const storageKey = `smarthire_active_session_${sessionId}`
+    try {
+      localStorage.setItem(storageKey, JSON.stringify({ tabId: currentTabId, lastSeen: Date.now(), takeover: true }))
+      if (broadcastChannelRef.current) {
+        broadcastChannelRef.current.postMessage({ type: 'FORCE_TAKEOVER', tabId: currentTabId })
+      }
+    } catch (e) {}
+    setIsDuplicateTab(false)
+  }
+
   useEffect(() => {
     if (!sessionId || typeof window === 'undefined') return
 
-    const currentTabId = 'tab_' + Math.random().toString(36).substring(2, 9)
+    const currentTabId = tabIdRef.current
     const storageKey = `smarthire_active_session_${sessionId}`
 
     // Check if another window or tab is currently holding the session
@@ -130,7 +146,7 @@ export default function CandidateChat() {
       const existing = localStorage.getItem(storageKey)
       if (existing) {
         const parsed = JSON.parse(existing)
-        if (parsed.tabId !== currentTabId && Date.now() - parsed.lastSeen < 6000) {
+        if (parsed.tabId !== currentTabId && Date.now() - parsed.lastSeen < 5000) {
           setIsDuplicateTab(true)
         }
       }
@@ -151,8 +167,12 @@ export default function CandidateChat() {
       if (e.key === storageKey && e.newValue) {
         try {
           const parsed = JSON.parse(e.newValue)
-          if (parsed.tabId !== currentTabId && Date.now() - parsed.lastSeen < 6000) {
+          if (parsed.takeover && parsed.tabId !== currentTabId) {
             setIsDuplicateTab(true)
+          } else if (parsed.tabId !== currentTabId && Date.now() - parsed.lastSeen < 5000) {
+            setIsDuplicateTab(true)
+          } else if (parsed.tabId === currentTabId) {
+            setIsDuplicateTab(false)
           }
         } catch (err) {}
       }
@@ -163,10 +183,13 @@ export default function CandidateChat() {
     try {
       if (window.BroadcastChannel) {
         bc = new BroadcastChannel(`smarthire_screen_lock_${sessionId}`)
+        broadcastChannelRef.current = bc
         bc.postMessage({ type: 'CHECK_ACTIVE_WINDOW', tabId: currentTabId })
 
         bc.onmessage = (event) => {
-          if (event.data?.type === 'CHECK_ACTIVE_WINDOW' && event.data.tabId !== currentTabId) {
+          if (event.data?.type === 'FORCE_TAKEOVER' && event.data.tabId !== currentTabId) {
+            setIsDuplicateTab(true)
+          } else if (event.data?.type === 'CHECK_ACTIVE_WINDOW' && event.data.tabId !== currentTabId) {
             bc.postMessage({ type: 'ACTIVE_WINDOW_EXISTS', tabId: currentTabId })
           } else if (event.data?.type === 'ACTIVE_WINDOW_EXISTS' && event.data.tabId !== currentTabId) {
             setIsDuplicateTab(true)
@@ -182,6 +205,7 @@ export default function CandidateChat() {
       window.removeEventListener('storage', handleStorage)
       if (bc) {
         try { bc.close() } catch (e) {}
+        broadcastChannelRef.current = null
       }
       try {
         const cur = localStorage.getItem(storageKey)
@@ -991,13 +1015,22 @@ export default function CandidateChat() {
         <p style={{ fontSize: '14.5px', color: '#475569', maxWidth: '480px', lineHeight: 1.6 }}>
           To ensure assessment integrity and prevent tampering, this screening session cannot be opened in multiple tabs or devices simultaneously. Please return to your original active window to continue.
         </p>
-        <button
-          type="button"
-          onClick={() => window.location.reload()}
-          style={{ ...styles.primaryButton, marginTop: '20px' }}
-        >
-          Check Active Tab
-        </button>
+        <div style={{ display: 'flex', gap: '12px', marginTop: '20px', flexWrap: 'wrap', justifyContent: 'center' }}>
+          <button
+            type="button"
+            onClick={handleTakeoverSession}
+            style={styles.primaryButton}
+          >
+            Continue in This Window ➔
+          </button>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            style={styles.secondaryButton}
+          >
+            Reload Window
+          </button>
+        </div>
       </div>
     )
   }
@@ -1200,8 +1233,8 @@ export default function CandidateChat() {
         {step === 1 && (
           <div style={styles.card}>
             <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-              <div style={styles.pillLabel}>Quick Candidate Interview</div>
-              <h1 style={styles.heroTitle}>AI Video & Voice Screening</h1>
+              <div style={styles.pillLabel}>Pre-Interview Assessment</div>
+              <h1 style={styles.heroTitle}>Pre-Interview Video Screening</h1>
               <p style={styles.heroSubtitle}>
                 Welcome! Please answer {(questions && questions.length > 0) ? questions.length : (session?.questions?.length || 3)} brief interview questions to introduce your background and experience. Once you begin, your camera and microphone will record your answers in one smooth, 3-5 minute session.
               </p>
@@ -1521,20 +1554,10 @@ export default function CandidateChat() {
               </div>
             </div>
 
-            {/* Question Card Box */}
-            <div style={styles.questionBox}>
-              <div style={{ fontSize: '12px', fontWeight: 800, color: '#2563eb', textTransform: 'uppercase', marginBottom: 4 }}>
-                Question {currentQuestionIndex + 1}
-              </div>
-              <h2 style={styles.questionTitle}>{currentQ.text}</h2>
-              {currentQ.description && (
-                <p style={styles.questionDesc}>{currentQ.description}</p>
-              )}
-            </div>
-
-            {/* Live Video Stage & Speech Transcript */}
-            <div style={styles.studioCanvas}>
-              <div style={styles.recorderContainer}>
+            {/* TWO-COLUMN STUDIO: VIDEO ON LEFT, QUESTION & CONTROLS ON RIGHT */}
+            <div style={styles.studioSplitLayout}>
+              {/* LEFT COLUMN: CAMERA VIDEO FEED */}
+              <div style={styles.studioVideoColumn}>
                 <div style={styles.videoStage}>
                   <video
                     ref={previewVideoRef}
@@ -1548,36 +1571,71 @@ export default function CandidateChat() {
                   <div style={styles.recordingCornerBadge}>
                     <span style={styles.recDot} /> Continuous Take Active
                   </div>
-                </div>
 
-                {/* Real-time speech transcript */}
-                <div style={styles.transcriptCard}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: '700', color: '#4338ca' }}>
-                    <span>Live Spoken Transcript:</span>
+                  {/* Centering guideline overlay */}
+                  <div style={styles.videoFrameGuide}>
+                    Keep head & shoulders centered in frame
                   </div>
-                  <p style={{ fontSize: '13.5px', color: '#334155', marginTop: '4px', fontStyle: 'italic', lineHeight: 1.5 }}>
-                    "{liveTranscript || 'Start speaking your answer clearly into the microphone...'}"
-                  </p>
                 </div>
               </div>
-            </div>
 
-            {/* Studio Navigation: Continuous Next & Previous Buttons */}
-            <div style={styles.studioNavFooter}>
-              <div style={{ fontSize: '12px', color: '#64748b' }}>
-                Note: Recording continues seamlessly across all questions. Use buttons below when ready.
-              </div>
+              {/* RIGHT COLUMN: QUESTION CARD, TRANSCRIPT & ACTION BUTTONS */}
+              <div style={styles.studioQuestionColumn}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                    <span style={{
+                      fontSize: '11px',
+                      fontWeight: 800,
+                      color: '#2563eb',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                      background: '#EFF6FF',
+                      padding: '4px 10px',
+                      borderRadius: '6px',
+                      border: '1px solid #DBEAFE'
+                    }}>
+                      Question {currentQuestionIndex + 1} of {questions.length}
+                    </span>
+                    <span style={{ fontSize: '11.5px', color: '#64748b', fontWeight: '600' }}>
+                      Max ~{maxDuration}s recommended
+                    </span>
+                  </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <button
-                  type="button"
-                  onClick={handleNextQuestionContinuous}
-                  style={styles.primaryButtonLarge}
-                >
-                  {currentQuestionIndex < questions.length - 1
-                    ? `Save & Go to Question ${currentQuestionIndex + 2} ➔`
-                    : 'Finish & Review Entire Interview ➔'}
-                </button>
+                  <h2 style={styles.questionTitle}>{currentQ.text}</h2>
+                  {currentQ.description && (
+                    <p style={styles.questionDesc}>{currentQ.description}</p>
+                  )}
+
+                  {/* Real-time speech transcript */}
+                  <div style={styles.transcriptCard}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', fontWeight: '700', color: '#4338ca' }}>
+                      <span>Live Spoken Transcript:</span>
+                    </div>
+                    <p style={{ fontSize: '13px', color: '#334155', marginTop: '4px', fontStyle: 'italic', lineHeight: 1.45, maxHeight: '85px', overflowY: 'auto' }}>
+                      "{liveTranscript || 'Start speaking your answer clearly into the microphone...'}"
+                    </p>
+                  </div>
+                </div>
+
+                {/* Primary Action Button */}
+                <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #E2E8F0' }}>
+                  <button
+                    type="button"
+                    onClick={handleNextQuestionContinuous}
+                    style={{
+                      ...styles.primaryButtonLarge,
+                      width: '100%',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    {currentQuestionIndex < questions.length - 1
+                      ? `Save & Go to Question ${currentQuestionIndex + 2} ➔`
+                      : 'Finish & Review Entire Interview ➔'}
+                  </button>
+                  <div style={{ fontSize: '11.5px', color: '#64748b', textAlign: 'center', marginTop: '8px' }}>
+                    Recording continues seamlessly across all questions
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -1949,7 +2007,7 @@ const styles = {
     borderRadius: '6px'
   },
   mainContent: {
-    maxWidth: '960px',
+    maxWidth: '1080px',
     width: '100%',
     margin: '16px auto 24px',
     padding: '0 20px',
@@ -2189,26 +2247,63 @@ const styles = {
     margin: 0,
     lineHeight: '1.4'
   },
-  studioCanvas: {
-    marginTop: '12px'
+  studioSplitLayout: {
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    gap: '22px',
+    flexWrap: 'wrap'
   },
-  recorderContainer: {
+  studioVideoColumn: {
+    flex: '1 1 520px',
+    minWidth: '320px',
+    display: 'flex',
+    flexDirection: 'column'
+  },
+  studioQuestionColumn: {
+    flex: '1 1 380px',
+    minWidth: '300px',
     display: 'flex',
     flexDirection: 'column',
-    gap: '12px'
+    justifyContent: 'space-between',
+    background: '#F8FAFC',
+    border: '1.5px solid #E2E8F0',
+    borderRadius: '14px',
+    padding: '22px 20px',
+    minHeight: '430px'
   },
   videoStage: {
     position: 'relative',
-    height: '280px',
-    borderRadius: '12px',
+    height: '430px',
+    minHeight: '380px',
+    borderRadius: '14px',
     overflow: 'hidden',
-    backgroundColor: '#0f172a'
+    backgroundColor: '#0f172a',
+    border: '2px solid #1e293b',
+    boxShadow: '0 8px 24px rgba(15, 23, 42, 0.12)'
   },
   videoFeed: {
     width: '100%',
     height: '100%',
     objectFit: 'cover',
     transform: 'scaleX(-1)'
+  },
+  videoFrameGuide: {
+    position: 'absolute',
+    bottom: '14px',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    background: 'rgba(15, 23, 42, 0.72)',
+    backdropFilter: 'blur(6px)',
+    color: '#e2e8f0',
+    padding: '4px 14px',
+    borderRadius: '20px',
+    fontSize: '11px',
+    fontWeight: '600',
+    letterSpacing: '0.02em',
+    pointerEvents: 'none',
+    whiteSpace: 'nowrap',
+    border: '1px solid rgba(255, 255, 255, 0.15)'
   },
   recordingCornerBadge: {
     position: 'absolute',
