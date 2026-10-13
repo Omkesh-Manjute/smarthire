@@ -103,6 +103,39 @@ The following high-impact features and optimizations have been agreed upon and p
   - **Branded & Blind Resume Wrapper**: Formats candidate resume with agency letterhead/header, core competencies table, clean bullet points, and optional contact masking (hiding direct phone/email to prevent poaching).
   - **1-Click Actions**: 📋 Copy formatted text to clipboard (for portal/email paste), 📥 Download PDF/DOCX submittal package, and ✉️ Direct email dispatch to Account Manager / Client.
 
+### 2026-10-13 — Pre-Interview Screening Studio Overhaul: Two-Column 430px Video & Question Layout, Session Takeover, and Link Expiration Engine
+- **Context & Objectives**:
+  - The user requested:
+    1. Remove "AI" from candidate-facing headings (replace "AI Video & Voice Screening" with "Pre-Interview Video Screening").
+    2. Redesign the cramped single-column studio layout (previously wide letterbox 280px high): increase vertical height so head, neck, and upper body are naturally framed without cropping, and position the Question card on the right side.
+    3. Resolve the "Assessment Active in Another Window" duplicate tab lock on mobile phones by adding session takeover so candidates opening from WhatsApp don't get stuck.
+    4. Add Link Expiration date selection before generating links (e.g. 3 Days, 7 Days, 14 Days, Custom Date, No Expiry) with automatic expiration and a dedicated expired lock screen.
+- **Architectural Implementations & Fixes**:
+  1. **Two-Column Split Studio (`CandidateChat.jsx`)**:
+     - *Left Column*: Prominent 430px video feed (`videoStage`), mirrored preview (`transform: 'scaleX(-1)'`), rounded corners (14px), subtle framing guide ("Keep head & shoulders centered in frame"), and live recording badge (`● Continuous Take Active`).
+     - *Right Column*: Question Card (`Question 1 of X` pill badge), high-contrast question title & description, real-time live spoken speech transcript box, and full-width primary action button (`Save & Go to Question X ➔` / `Finish & Review Entire Interview ➔`).
+     - Mobile responsive: Stacks gracefully into clean vertical flow on mobile screens without overflow.
+  2. **Session Takeover for Mobile Multi-Tab Opens**:
+     - Added `tabIdRef`, `broadcastChannelRef`, and `handleTakeoverSession`.
+     - When a duplicate tab opens (common with WhatsApp or SMS link clicks), the screen now offers **"Continue in This Window ➔"** alongside "Reload Window", sending a `FORCE_TAKEOVER` broadcast to claim the session without blocking candidates.
+  3. **Candidate-Facing Phrasing Polish**:
+     - Replaced "AI Video & Voice Screening" with "Pre-Interview Video Screening".
+     - Replaced "Quick Candidate Interview" with "Pre-Interview Assessment".
+     - Set document title to "Pre-Interview Screening | SmartHire".
+  4. **Link Expiration & Automatic Deactivation Engine**:
+     - *Screening Creation Modal (`ScreeningModule.jsx`)*: Added Link Expiration selector with 5 preset/custom options (3 Days, 7 Days Std, 14 Days, Custom Date with `input[type="date"]`, and No Expiry).
+     - *Backend Enforcement (`server/index.js`)*: Saves `expiresAt` ISO timestamp on sessions. `GET /api/screening/:sessionId` and `lock-start` return HTTP 410 with `isExpired: true` if `new Date() > expiresAt`.
+     - *Expired Lock Screen (`CandidateChat.jsx`)*: Displays an amber clock icon and clear explanation that the deadline passed, prompting the candidate to contact their recruiter.
+     - *ATS Submissions Table*: Displays "Expired [Date]" red badge or "Exp: [Date]" blue badge when awaiting responses.
+- **Deployment & Verification**:
+  - Local production build in `smarthire-react`: **0 errors, 0 warnings** (active bundles `CandidateChat-CY-yW4PQ.js`, `AtsPlatform-BAY7wc5o.js`, `index-BM1ODvnq.js`).
+  - Git committed (`12d29e8`) and pushed to `main`.
+  - Production bundles and updated `server/index.js` deployed to AWS Lightsail server (`34.194.119.199`), PM2 `smarthire-ats` reloaded.
+  - Disk space verified: 8.8GB free (53% used, Rule 5 compliant).
+  - Live tests verified HTTP 200 on all endpoints and asset hashes.
+
+---
+
 ### 2026-10-13 — Multi-Tier Pricing Architecture: Separate ATS & Video Screening Plans, 35% Combined Super-Bundle & $500+ Commercial Scale
 - **Context & Objectives**:
   - The user requested:
