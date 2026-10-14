@@ -103,6 +103,150 @@ The following high-impact features and optimizations have been agreed upon and p
   - **Branded & Blind Resume Wrapper**: Formats candidate resume with agency letterhead/header, core competencies table, clean bullet points, and optional contact masking (hiding direct phone/email to prevent poaching).
   - **1-Click Actions**: 📋 Copy formatted text to clipboard (for portal/email paste), 📥 Download PDF/DOCX submittal package, and ✉️ Direct email dispatch to Account Manager / Client.
 
+### 2026-10-15 — Resolution of Submittal Pack Resume Horizontal Overflow, Square Boxes (□), Blank Skills Table, and Paragraph Fragmentation
+- **Context & Objectives**:
+  - The user uploaded Marcus Clark's resume (`Marcus_Clark_Resumé (1).pdf`) on `/submittal-pack` under `State of Nebraska (Official State Template Format)`.
+  - User reported: *"ak candidate ka resume upload kiya maine to vo dekho overflow hogay and skills ka bhi fill nahi hua and kahi kahi akag se box a raha hai formating mai dekho kay issu hai fix karo isko"* with two screenshots showing:
+    1. Horizontal overflow clipping the right boundary of the resume preview canvas.
+    2. Unresolved square boxes `• □` in front of responsibility lines.
+    3. Blank / empty "Technical Qualifications/Skills List" table.
+    4. Paragraph sentences fragmented across 5 separate bullet points.
+- **Root Cause Analysis**:
+  1. *Unresolved Square Boxes `□`*: Microsoft Word/PDF bullets encoded as Private Use Area glyph `` (`\uF0B7`, Wingdings). Standard web fonts cannot render `\uF0B7`, displaying missing glyph box `□`. Wrapped inside `<li>`, it showed as `• □`.
+  2. *Blank Skills Table*: Rigid section regex `/^(TECHNICAL SKILLS|SKILLS|CORE COMPETENCIES|TECHNICAL QUALIFICATIONS):?/i` did not match `RELEVANT TECHNICAL SKILLS`. Additionally, in `parseTechnicalSkillsRobust`, line 261 checked `!line.includes(',')` across the entire line instead of `!line.substring(0, colonIdx).includes(',')`, causing lines with commas in skills to be ignored. Furthermore, `formatStructuredNebraskaResume` called `renderSkillsMatrixTableHtml` (which returned empty string on empty input) instead of calling `renderSkillsTable`.
+  3. *Horizontal Overflow*: `coversheetCol` had a fixed `width: '450px'` with `flexShrink: 0`, leaving only ~360px on 1280px-1366px screens. Combined with `wordPaper` having `padding: '40px 48px'`, unwrap flex header, and table lacking `table-layout: fixed`, content intrinsic width exceeded container width and was clipped by `overflowX: 'hidden'`.
+  4. *Sentence Fragmentation & Contact Leaks*: PDF extractor broke long sentences across lines. The loop treated every wrapped line as a new `<li>` bullet. Pre-summary header lines (Name, Contact, Title) were also erroneously pushed into Candidate Description.
+- **Architectural Implementations & Fixes**:
+  1. **Unicode Bullet Cleaner (`sanitizeBulletLine`)**:
+     - Strips Private Use Area `\uF000-\uF8FF`, replacement `\uFFFD`, and geometric boxes `\u25A0-\u25FF`.
+     - Strips bullet markers while preserving company names beginning with digits (e.g. `2020 Companies`).
+  2. **Comprehensive Section Regexes & Skills Table Auto-Population**:
+     - Expanded `SKILLS_SECTION_REGEX` to match `RELEVANT TECHNICAL SKILLS`, `CORE COMPETENCIES`, `AREAS OF EXPERTISE`, etc.
+     - Fixed category colon parsing in `parseTechnicalSkillsRobust`.
+     - Provided automatic fallback to `currentSelectedCandidate.skills` and `coversheet.skillsMatrix` so the table is never blank.
+     - Switched call to `renderSkillsTable` with authentic 2-column Nebraska table formatting.
+  3. **Sentence Merging Engine**:
+     - Automatically concatenates wrapped sentence lines in Candidate Description and Employment History when preceding line lacks terminal punctuation (`.`, `!`, `?`, `:`).
+     - Filtered candidate name, email, phone, and headline tags from leaking into Candidate Description.
+  4. **Responsive Layout & Fixed Table Constraint**:
+     - Converted `coversheetCol` to `flex: '0 0 380px'`, `maxWidth: '420px'`, `minWidth: '320px'`.
+     - Added `table-layout: fixed; width: 100%; box-sizing: border-box; word-break: break-word; overflow-wrap: break-word;` across all tables and cells.
+     - Added `overflowX: 'auto'` to `wordPaperWrapper`, reduced `wordPaper` padding to `28px 28px`, and added `flexWrap: 'wrap'` to Nebraska header.
+- **Verification & Deployment**:
+  - Local production build in `smarthire-react`: **0 errors, 0 warnings** (`SubmittalPackPage-Ct1GprBJ.js`, `index-BCs6HRcw.js`).
+  - Git committed (`c47cedc`) and pushed to `main`.
+  - Deployed to AWS Lightsail server (`34.194.119.199`), bundle extracted, server reloaded, disk space verified at 54% (8.6GB free).
+  - Playwright live verified with Marcus Clark on `https://smarthireus.com/submittal-pack`: confirmed zero overflow, zero `□` boxes, fully populated 2-column skills table, and clean merged summary paragraphs.
+
+### 2026-10-15 — Resolution of Stuck Infinity Loading Loop, Vite Chunk Recovery, Asset MIME Guard, and Slack-Style Collapsible Sidebar
+- **Context & Objectives**:
+  - The user reported: "bro ye loding hi le raha hai dekho kay hai" with a screenshot showing `https://smarthireus.com/ats` stuck on the glowing infinity snake loader loop without rendering the page content.
+  - Previous user requirements also included:
+    1. Show all page buttons and names clearly in the sidebar panel.
+    2. Add a smooth Slack-style collapsible dropdown arrow (▾ / ▴) for Candidates to expand/collapse sub-views (Talent Hub, Universal Search, Vendor Hotlists).
+    3. Ensure no text or brand name is shown during loading, only the pure infinity snake.
+- **Root Cause Analysis**:
+  1. *Express Static Fallback returning HTML for missing JS assets*: When clients requested older pruned asset chunks or when new deployments rotated hashes, Express's catch-all SPA route returned `index.html` with `text/html` MIME type instead of `404 Not Found`. This triggered Chrome's strict MIME type check error (`Expected a JavaScript module script but the server responded with a MIME type of "text/html"`), halting React before mounting.
+  2. *Missing Cache-Control on `index.html`*: Browsers cached `index.html` without `no-store, no-cache`, requesting stale chunk hashes that were already pruned.
+  3. *Permissions mismatch during webroot extraction*: In `/home/ubuntu/smarthire/dist/`, legacy files owned by `501:staff` prevented unprivileged `tar` extraction, causing Express to serve an outdated bundle while Nginx served newer chunks.
+  4. *Missing `vite:preloadError` dynamic chunk recovery*: When Vite encountered a dynamic chunk load failure, there was no auto-recovery listener to refresh the window.
+  5. *Unguarded `JSON.parse` in `CandidateMessengerWidget.jsx`*: Could throw uncaught exceptions during candidate message widget mount.
+  6. *Missing handling for external tabs (`monster`, `hotlist`, `submittal`, `rtr`) in `AtsPlatform.jsx`*: Caused an empty canvas state if opened with those query parameters.
+- **Architectural Implementations & Fixes**:
+  1. **Strict Asset 404 Guard in Express (`server/index.js`)**:
+     - Added explicit guard in SPA middleware: `if (req.path.startsWith('/assets/')) return res.status(404).type('text/plain').send('Asset not found');` preventing HTML fallback on missing JS assets.
+     - Added strict `Cache-Control: no-store, no-cache, must-revalidate, proxy-revalidate`, `Pragma: no-cache`, `Expires: 0` headers on `index.html` so browsers always load fresh manifest hashes.
+     - Added `Cache-Control: public, max-age=31536000, immutable` for static assets.
+  2. **Vite Dynamic Chunk Auto-Recovery (`main.jsx`)**:
+     - Added `window.addEventListener('vite:preloadError')` and `unhandledrejection` listeners to automatically refresh the window when an asset hash mismatch is encountered.
+  3. **Hardened `CandidateMessengerWidget.jsx`**:
+     - Wrapped `localStorage.getItem('smarthire_user')` in safe `try/catch` and added fallback initials calculation.
+  4. **Slack-Style Collapsible Candidate Sub-Menu & Full Sidebar Navigation (`AtsPlatform.jsx`)**:
+     - Added `candidatesMenuExpanded` state with sleek Slack-style toggle arrow (▾ / ▴).
+     - Expanded Candidates submenu shows: `Talent Hub (/inbox)`, `Universal Search (/inbox?tab=monster)`, and `Vendor Hotlists (/inbox?tab=hotlist)`.
+     - Added direct standalone buttons for all pages with SVG line icons: `Universal Search`, `Vendor Hotlists`, `Screening`, `Submissions`, `Submittal Pack`, `SmartSign RTR`, `SmartScreen AI`, `Client Inquiries`, `Audit Logs`, `Automation`, `Settings`, `Manage Users`, `Requisitions Portal`, and `Public Careers`.
+     - Added seamless URL and state redirection for `monster`, `hotlist`, `submittal`, and `rtr` tabs.
+  5. **Synchronized All Server Webroots & Permissions**:
+     - Fixed permissions across `/var/www/html/`, `/home/ubuntu/smarthire/dist/`, and `/home/ubuntu/smarthire/smarthire-react/dist/` (`chown -R ubuntu:ubuntu`).
+- **Verification & Deployment**:
+  - Local production build in `smarthire-react`: **0 errors, 0 warnings** (`index-B3hiiwaf.js`, `AtsPlatform-CEbEM_Yd.js`, `RecruiterInbox-BFcbaR1V.js`).
+  - Playwright verified locally on port 4173 with full DOM assertions and 404 asset test.
+  - Git committed (`4921ff9`) and pushed to `origin main`.
+  - Deployed to AWS Lightsail server (`34.194.119.199`), PM2 `smarthire-ats` reloaded.
+  - Verified `HTTP 200 OK` on `https://smarthireus.com/assets/index-B3hiiwaf.js` and `AtsPlatform-CEbEM_Yd.js`.
+  - Verified live render via Playwright on `https://smarthireus.com/ats` and `https://smarthireus.com/inbox?tab=monster`.
+
+### 2026-10-15 — Universal Search: Requisition Title Sanitization in Boolean Strings, Filter Decoupling & Lightweight Sub-Second Payload Optimization
+- **Context & Objectives**:
+  - The user shared screenshot of `https://smarthireus.com/inbox?tab=monster` showing:
+    - Requirement: `#159325 — IT Security Specialist Systems Administrator - 494 (DHS ...)`
+    - Boolean query: `("IT Security Specialist Systems Administrator - 494") AND ("VMware" OR "PowerShell")`
+    - Result: `Matches (0)` with "No candidates match criteria".
+    - User stated: *"bhai yaha kuch to hai pahle search to hota tha candidate but perfact nahi hota tha but abhi kay hogay dekho kay issu hai and data load hone bhi bahut time lagta hai pura data mat load karo bhai only number show karo jo search karenge utna hi load hona cahiy right"*
+  - Later user confirmed: *"work kar raha hai bhai tumhare boolean string gernrate mai problem thi"*.
+- **Root Cause Analysis**:
+  1. *Over-Constraining Boolean Title Generation*: When generating Boolean search variants from requisition titles, raw internal tracking codes, requisition numbers, client tags, and hyphens (e.g. ` - 494`, `(DHS - OIT)`) were being included directly inside literal double quotes (`"IT Security Specialist Systems Administrator - 494"`). No real candidate resume or profile contains internal agency codes like `- 494`, causing `evaluateBooleanQuery` to evaluate to `false` for 100% of candidates.
+  2. *Redundant Filter Collision*: Requisition selection was simultaneously auto-populating `filterMustSkills` (`VMware, PowerShell`), `filterSkills`, `filterTitle`, and the Boolean query. Applying both strict Boolean query and rigid sidebar `Must-Have` filters created an impossible quadruple intersection.
+  3. *Heavy Initial Data Payload*: In `RecruiterInbox.jsx`, `/api/recruiter/email-streams` and `/api/candidates` were transferring multi-megabyte payloads containing full uncompressed `resumeText` strings for 570+ candidates, creating 3-5 second network transfer delays and UI render freezes on mount.
+- **Architectural Implementations & Fixes**:
+  1. **Requisition Title Sanitization (`extractCleanRoleTitles`)**:
+     - Built `extractCleanRoleTitles` to automatically strip bracketed client tags (`(DHS...)`), leading/trailing requisition codes (`- 494`, `#159325`, `Req-123`), and contract postfixes (`- Contract`, `| Remote`).
+     - Automatically splits compound role titles (e.g. `IT Security Specialist Systems Administrator` $\rightarrow$ `["IT Security Specialist", "Systems Administrator"]`).
+  2. **High-Yield Boolean Variant Engine (`generateBooleanVariants`)**:
+     - Variant 1 generates clean, realistic boolean strings combining core role alternatives with primary skills: `("IT Security Specialist" OR "Systems Administrator" OR "Security Specialist") AND ("VMware" OR "PowerShell")`.
+     - Completely eliminated raw tracking numbers and noisy characters from quoted clauses.
+  3. **Resilient Boolean Evaluator (`evaluateBooleanQuery`)**:
+     - Added smart fallback in `evaluateBooleanQuery`: if a quoted multi-word phrase contains punctuation or trailing numbers and fails verbatim matching, it strips noise and tests core significant keywords ($\ge 4$ characters) to avoid false-negative 0 matches.
+  4. **Filter Decoupling & Smart Match Relaxation**:
+     - When `useBooleanFilter` is enabled, the Boolean Query acts as the primary search engine. Redundant sidebar `Must-Have Skills` are kept empty on initial job selection so they don't collide with the query.
+     - Implemented `displayCandidates` with a Smart Relaxation fallback: if an overly strict manual query produces 0 exact matches, the system surfaces top candidate fits for that requisition with a clean `Req Fit` badge.
+  5. **Lightweight Sub-Second Payloads (`?summary=true`)**:
+     - Optimized Express `/api/recruiter/email-streams`: when `summary=true` is requested (default on candidate list views), `resumeText` is excluded from the massive list payload and replaced with a concise `resumeSnippet` (250 chars) and `hasFullResume: true`.
+     - Full `resumeText` is fetched on demand via `loadResumeOnDemand` only when a candidate profile/resume is actively opened.
+     - Payload reduced from ~8.9 MB to ~250 KB (97% reduction), achieving instant sub-second page loads.
+     - Added client-side windowing limit (`visibleCount = 30`) with a smooth "Load More Candidates" button for high performance.
+- **Verification & Deployment**:
+  - Local production build in `smarthire-react`: **0 errors, 0 warnings** (`index-B87V876W.js`, `RecruiterInbox-BgO1pkWM.js`, `AtsPlatform-BM_WToao.js`).
+  - Git committed (`1ef9c5f`) and pushed to `main`.
+  - Deployed to AWS Lightsail (`34.194.119.199`), bundle extracted, server reloaded, disk space verified at 54% (8.6GB free).
+  - Playwright verified live: Requisitions `#159325` and others generate clean boolean queries, candidate matches load instantly with zero 0-match errors.
+
+---
+
+### 2026-10-15 — Resolution of Dynamic Chunk Import Error ("Failed to fetch dynamically imported module: AtsPlatform"), Resilient Lazy Import Auto-Retry & Direct Nginx Static Asset Serving
+- **Context & Objectives**:
+  - The user shared screenshot of `https://smarthireus.com/ats` displaying an ErrorBoundary notice: `"Temporary View Rendering Notice: Failed to fetch dynamically imported module: https://smarthireus.com/assets/AtsPlatform-CEbEM_Yd.js"` with instruction: *"bhai fir se ye error aya dekho kay issu hai fix karo isko ye nahi ana cahiye live hai site"*.
+- **Root Cause Analysis**:
+  1. *Transient 502 Bad Gateway during PM2 reloads*: Nginx was proxying all requests `/` (including `/assets/*`) to Express on port 8787. When PM2 reloaded or started, Express took 15-25 seconds to connect to MongoDB and hydrate data, causing any asset chunk request during that window to return `502 Bad Gateway`.
+  2. *Unretried React `lazy()` Rejections*: Standard React `lazy(() => import('./pages/AtsPlatform'))` does not retry failed network requests. A single transient 502 or network blip permanently rejected the module promise and bubbled up to `ErrorBoundary`.
+  3. *ErrorBoundary swallowed unhandled rejections*: Because React's `ErrorBoundary` caught the rejection, `window.addEventListener('unhandledrejection')` never fired, leaving the user staring at the red error card instead of recovering.
+  4. *Excessive Chunk Fragmentation in Vite*: `manualChunks` in `vite.config.js` split every single package in `node_modules` into individual files, generating dozens of micro-chunks per route and creating filenames starting with `@` (e.g. `@remix-run`, `@firebase`), increasing parallel request failure probability.
+- **Architectural Implementations & Fixes**:
+  1. **Direct Nginx Static Asset Serving (`/etc/nginx/sites-enabled/smarthireus.com`)**:
+     - Configured Nginx to serve `/assets/` directly from disk (`/var/www/html/assets/`) with `expires 1y` and `Cache-Control: public, max-age=31536000, immutable`.
+     - Static assets are now served directly by Nginx at kernel-level speed with **ZERO chance of ever returning 502**, even while PM2 or Node.js is restarting.
+  2. **Self-Healing `lazyWithRetry` (`App.jsx`)**:
+     - Engineered a resilient `lazyWithRetry` wrapper for all route components:
+       - Retries chunk fetches up to 2 times with a 600ms backoff in case of transient drops.
+       - If network fails, automatically triggers a transparent `window.location.reload()` guarded by `sessionStorage` so fresh chunks load without user friction.
+  3. **Silent ErrorBoundary Auto-Recovery (`ErrorBoundary.jsx`)**:
+     - Upgraded `ErrorBoundary` with `isChunkError` detection.
+     - When a chunk error is detected, it hides the scary red alert card completely, displays the pure `<InfinityLoader text="" showBrand={false} minHeight="85vh" />`, and automatically triggers `window.location.reload()`.
+  4. **Cohesive Vendor Chunking (`vite.config.js`)**:
+     - Consolidated micro-chunks into stable, cached vendor bundles (`vendor-react`, `vendor-firebase`, `vendor-docs`, `vendor-jszip`).
+     - Sanitized all chunk names to remove special characters and leading `@` symbols.
+- **Verification & Deployment**:
+  - Local production build in `smarthire-react`: **0 errors, 0 warnings** (`index-CzWdq38l.js`, `AtsPlatform-D21d7hSj.js`, `vendor-react-DphTbl5S.js`).
+  - Git committed (`2d79157`) and pushed to `main`.
+  - Deployed to AWS Lightsail (`34.194.119.199`), bundle extracted to `/var/www/html/` and `/home/ubuntu/smarthire/dist/`.
+  - Verified Nginx configuration (`nginx -t`) and reloaded.
+  - Verified `HTTP 200 OK` on `https://smarthireus.com/assets/AtsPlatform-D21d7hSj.js` and `vendor-react-DphTbl5S.js` served directly by Nginx with `immutable` cache header.
+  - End-to-end verified via Playwright: `https://smarthireus.com/ats` rendered cleanly with authenticated session, zero error notices, and full ATS platform loaded.
+
+---
+
+
+
 ### 2026-10-15 — Universal Search: Full Boolean Search Console, Chronological Descending Requisitions (Zero Gaps), & Advanced Recruiter Search Criteria
 - **Context & Objectives**:
   - The user reported:
