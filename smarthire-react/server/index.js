@@ -11432,9 +11432,10 @@ app.get('/api/recruiter/email-streams', (req, res) => {
     const { legalDocs: _unusedLd, resumeData: _unusedRd, ...cleanCandidate } = c;
 
     const isFullResumeRequested = req.query.full === 'true';
+    const isSummaryRequested = req.query.summary === 'true' || !isFullResumeRequested;
     const optResumeText = isFullResumeRequested 
       ? (c.resumeText || '') 
-      : ((c.resumeText && c.resumeText.length > 2000) ? c.resumeText.slice(0, 2000) : (c.resumeText || ''));
+      : (isSummaryRequested ? '' : ((c.resumeText && c.resumeText.length > 2000) ? c.resumeText.slice(0, 2000) : (c.resumeText || '')));
 
     return {
       ...cleanCandidate,

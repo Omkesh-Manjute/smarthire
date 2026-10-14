@@ -160,7 +160,28 @@ export function evaluateBooleanQuery(query, cand) {
   expr = expr.replace(/"([^"]+)"/g, (match, term) => {
     const key = `__T${termCounter++}__`
     const termClean = term.toLowerCase().trim()
-    const found = termClean.length > 0 && fullText.includes(termClean)
+    let found = termClean.length > 0 && fullText.includes(termClean)
+
+    // Resilient fallback: If quoted phrase has noise (dashes, numbers like "- 494", brackets)
+    // and exact string match fails, check if the core significant words match
+    if (!found && termClean.length > 0) {
+      const sanitizedPhrase = termClean
+        .replace(/\s*[-–—#:]\s*(req|requisition|id|no)?\s*\d+.*$/i, '')
+        .replace(/[^a-z0-9\s]/g, ' ')
+        .trim()
+      if (sanitizedPhrase.length > 0 && fullText.includes(sanitizedPhrase)) {
+        found = true
+      } else {
+        const significantTokens = sanitizedPhrase.split(/\s+/).filter(w => w.length >= 4 && !/^\d+$/.test(w))
+        if (significantTokens.length >= 2) {
+          const matchCount = significantTokens.filter(t => fullText.includes(t)).length
+          if (matchCount >= Math.min(2, significantTokens.length)) {
+            found = true
+          }
+        }
+      }
+    }
+
     termMap.set(key, found)
     return key
   })
@@ -199,30 +220,65 @@ export function evaluateBooleanQuery(query, cand) {
   }
 }
 
+// Clean noisy requisition titles (e.g. "#159325 — IT Security Specialist Systems Administrator - 494 (DHS - OIT)")
+export function extractCleanRoleTitles(rawTitle) {
+  if (!rawTitle) return ['Specialist']
+  
+  // 1. Remove bracketed / parenthesized metadata like (DHS ...), (CAI), [Contract], (Req#123)
+  let clean = rawTitle.replace(/\s*\(.*?\)/g, '').replace(/\s*\[.*?\]/g, '').trim()
+  
+  // 2. Remove leading requisition IDs like "#159325 — ", "Req 123: "
+  clean = clean.replace(/^[#\d\s–—-]+\s*[—–-]\s*/g, '').replace(/^[#\d\s–—:]+/g, '').trim()
+  
+  // 3. Remove trailing requisition numbers or tracking codes like "- 494", "#159325", "Req-999"
+  clean = clean.replace(/\s*[-–—|#:]\s*(req|requisition|id|no)?\s*\d+.*$/i, '').trim()
+  
+  // 4. Remove common work-type postfixes like "- Contract", "- Full Time", "- Remote", "| Hybrid"
+  clean = clean.replace(/\s*[-–—|]\s*(contract|c2c|w2|remote|hybrid|onsite|full\s*time|part\s*time|urgent|open).*$/i, '').trim()
+  
+  clean = clean.trim() || rawTitle.trim()
+
+  // 5. Split compound/multiple roles if present (e.g. "Security Specialist Systems Administrator")
+  const slashParts = clean.split(/[/|,]+/).map(s => s.trim()).filter(Boolean)
+  if (slashParts.length > 1) {
+    return slashParts
+  }
+
+  const compoundMatch = clean.match(/^(.*?Specialist|.*?Architect|.*?Lead|.*?Engineer|.*?Developer)\s+(Systems\s+Administrator|Administrator|Manager|Analyst|Consultant.*)$/i)
+  if (compoundMatch) {
+    return [compoundMatch[1].trim(), compoundMatch[2].trim()]
+  }
+
+  return [clean]
+}
+
 // Generate 3 High-Precision Boolean Search Queries dynamically
-export function generateBooleanVariants(cleanRoleTitle, mustHaveSkills = [], altTitles = [], location = 'Columbia, SC') {
-  const primaryTitle = cleanRoleTitle || 'Specialist'
+export function generateBooleanVariants(rawRoleTitle, mustHaveSkills = [], altTitles = [], location = 'Columbia, SC') {
+  const roleTitles = extractCleanRoleTitles(rawRoleTitle)
+  const primaryTitle = roleTitles[0] || 'Specialist'
+  const allRoleTerms = Array.from(new Set([...roleTitles, ...(altTitles || [])])).filter(Boolean)
+
   const skills = (mustHaveSkills || []).map(safeSkillLabel).filter(Boolean)
   const top2Skills = skills.slice(0, 2)
-  const altTitleClause = altTitles && altTitles.length > 0 ? ` OR "${altTitles[0]}"` : ''
 
   const locParts = (location || '').split(',').map(s => s.trim())
   const city = locParts[0] || 'Columbia'
   const state = locParts[1] || 'SC'
 
-  // Variant 1: Core Focus (Exact Title & Must-Have Skills)
+  // Variant 1: Core Focus (Role OR Alternative Roles) AND (Skill 1 OR Skill 2)
+  const roleClause = allRoleTerms.map(t => `"${t}"`).join(' OR ')
   const skillClause1 = top2Skills.length > 0 ? ` AND (${top2Skills.map(s => `"${s}"`).join(' OR ')})` : ''
-  const query1 = `("${primaryTitle}"${altTitleClause})${skillClause1}`
+  const query1 = `(${roleClause})${skillClause1}`
 
   // Variant 2: Broad Synonyms & Methodologies
   const expandedSkills = skills.slice(0, 4)
-  const skillClause2 = expandedSkills.length > 0 
+  const broadSkillsClause = expandedSkills.length > 0 
     ? ` AND (${expandedSkills.map(s => `"${s}"`).join(' OR ')} OR "Agile" OR "Enterprise")`
     : ` AND ("Agile" OR "Enterprise")`
-  const query2 = `("${primaryTitle}"${altTitles.map(t => ` OR "${t}"`).join('')})${skillClause2}`
+  const query2 = `(${roleClause})${broadSkillsClause}`
 
   // Variant 3: Strict Local / State Proximity
-  const query3 = `("${primaryTitle}") AND ("${city}" OR "${state}" OR "State")` + (top2Skills.length > 0 ? ` AND ("${top2Skills[0]}")` : '')
+  const query3 = `(${roleClause}) AND ("${city}" OR "${state}" OR "State" OR "Remote")` + (top2Skills.length > 0 ? ` AND ("${top2Skills[0]}")` : '')
 
   return [
     {
@@ -569,15 +625,17 @@ export default function MonsterSourcingModule({
     const jobIdStr = String(job.id || job.jobId || job.reqId || '').replace(/^J-/, '').trim()
     setSelectedJobId(jobIdStr)
 
-    // 1. Auto-fill criteria in Left Search Sidebar
-    setFilterTitle(job.title || '')
+    // 1. Auto-fill criteria in Left Search Sidebar with cleaned title
+    const cleanTitles = extractCleanRoleTitles(job.title)
+    setFilterTitle(cleanTitles[0] || job.title || '')
     setFilterLocation(job.location || 'Columbia, SC')
     
     const cleanSkillsList = (Array.isArray(job.skills) ? job.skills : [])
       .map(safeSkillLabel)
       .filter(Boolean)
     setFilterSkills(cleanSkillsList.slice(0, 4).join(', '))
-    setFilterMustSkills(cleanSkillsList.slice(0, 2).join(', '))
+    // Leave Must-Have empty by default so Boolean query handles the logic without colliding
+    setFilterMustSkills('')
 
     // 2. Auto-generate 3 Boolean search queries
     const variants = generateBooleanVariants(
@@ -593,7 +651,7 @@ export default function MonsterSourcingModule({
     }
 
     // 3. Live Feedback
-    setToastMessage(`✓ Active Req #${jobIdStr} selected • Full JD & Boolean query loaded`)
+    setToastMessage(`✓ Active Req #${jobIdStr} selected • Boolean query loaded`)
     setTimeout(() => setToastMessage(null), 3000)
   }, [])
 
@@ -765,52 +823,53 @@ export default function MonsterSourcingModule({
       if (useBooleanFilter && activeBooleanQuery.trim()) {
         const matchesBoolean = evaluateBooleanQuery(activeBooleanQuery, c)
         if (!matchesBoolean) return false
-      }
+      } else {
+        // 1. Title Filter & Title Match Mode (Only active when Boolean filter is disabled)
+        if (filterTitle.trim()) {
+          const titleLower = filterTitle.toLowerCase().trim()
+          const candTitle = (c.title || '').toLowerCase()
+          const candCurrentRole = (c.currentRole || '').toLowerCase()
+          const candSkills = c.skills.map(safeSkillLabel).join(' ').toLowerCase()
 
-      // 1. Title Filter & Title Match Mode
-      if (filterTitle.trim()) {
-        const titleLower = filterTitle.toLowerCase().trim()
-        const candTitle = (c.title || '').toLowerCase()
-        const candCurrentRole = (c.currentRole || '').toLowerCase()
-        const candSkills = c.skills.map(safeSkillLabel).join(' ').toLowerCase()
+          if (filterTitleMatchMode === 'exact') {
+            if (!candTitle.includes(titleLower)) return false
+          } else if (filterTitleMatchMode === 'current') {
+            if (!candCurrentRole.includes(titleLower) && !candTitle.includes(titleLower)) return false
+          } else {
+            const tokens = titleLower.split(/[\s,/-]+/).filter(w => w.length >= 3)
+            const matchesWhole = candTitle.includes(titleLower) || candCurrentRole.includes(titleLower) || candSkills.includes(titleLower)
+            const matchesTokens = tokens.length > 0 && tokens.some(t => candTitle.includes(t) || candCurrentRole.includes(t) || candSkills.includes(t))
+            if (!matchesWhole && !matchesTokens) return false
+          }
+        }
 
-        if (filterTitleMatchMode === 'exact') {
-          if (!candTitle.includes(titleLower)) return false
-        } else if (filterTitleMatchMode === 'current') {
-          if (!candCurrentRole.includes(titleLower) && !candTitle.includes(titleLower)) return false
-        } else {
-          const tokens = titleLower.split(/[\s,/-]+/).filter(w => w.length >= 3)
-          const matchesWhole = candTitle.includes(titleLower) || candCurrentRole.includes(titleLower) || candSkills.includes(titleLower)
-          const matchesTokens = tokens.length > 0 && tokens.some(t => candTitle.includes(t) || candCurrentRole.includes(t) || candSkills.includes(t))
-          if (!matchesWhole && !matchesTokens) return false
+        // 3. Must-Have Mandatory Skills (AND)
+        if (filterMustSkills.trim()) {
+          const mustTokens = filterMustSkills.toLowerCase().split(/[,|;]+/).map(s => s.trim()).filter(Boolean)
+          const candSkillsStr = c.skills.map(safeSkillLabel).join(' ').toLowerCase() + ' ' + (c.resumeText || '').toLowerCase()
+          const hasAllMust = mustTokens.every(t => candSkillsStr.includes(t))
+          if (!hasAllMust) return false
+        }
+
+        // 4. Skills / Keywords Filter (OR / Fuzzy)
+        if (filterSkills.trim()) {
+          const skillQuery = filterSkills.toLowerCase().trim()
+          const candSkills = c.skills.map(safeSkillLabel).join(' ').toLowerCase()
+          const candTitle = (c.title || '').toLowerCase()
+          const tokens = skillQuery.split(/[\s,;]+/).filter(w => w.length >= 2)
+
+          const matchesTokens = tokens.some(t => candSkills.includes(t) || candTitle.includes(t))
+          if (!matchesTokens) return false
         }
       }
 
+      // Universal Refinement Filters (applied in both modes):
       // 2. Exclude Titles (NOT Title)
       if (filterExcludeTitles.trim()) {
         const exTokens = filterExcludeTitles.toLowerCase().split(/[,|;]+/).map(s => s.trim()).filter(Boolean)
         const candTitle = (c.title || '').toLowerCase()
         const candCurrent = (c.currentRole || '').toLowerCase()
         if (exTokens.some(ex => candTitle.includes(ex) || candCurrent.includes(ex))) return false
-      }
-
-      // 3. Must-Have Mandatory Skills (AND)
-      if (filterMustSkills.trim()) {
-        const mustTokens = filterMustSkills.toLowerCase().split(/[,|;]+/).map(s => s.trim()).filter(Boolean)
-        const candSkillsStr = c.skills.map(safeSkillLabel).join(' ').toLowerCase() + ' ' + (c.resumeText || '').toLowerCase()
-        const hasAllMust = mustTokens.every(t => candSkillsStr.includes(t))
-        if (!hasAllMust) return false
-      }
-
-      // 4. Skills / Keywords Filter (OR / Fuzzy)
-      if (filterSkills.trim()) {
-        const skillQuery = filterSkills.toLowerCase().trim()
-        const candSkills = c.skills.map(safeSkillLabel).join(' ').toLowerCase()
-        const candTitle = (c.title || '').toLowerCase()
-        const tokens = skillQuery.split(/[\s,;]+/).filter(w => w.length >= 2)
-
-        const matchesTokens = tokens.some(t => candSkills.includes(t) || candTitle.includes(t))
-        if (!matchesTokens) return false
       }
 
       // 5. Excluded Skills (NOT)
@@ -903,21 +962,67 @@ export default function MonsterSourcingModule({
     skippedIds
   ])
 
+  // Smart Match Fallback: If strict query yields 0 exact matches, surface top matching candidates for this requisition
+  const displayCandidates = useMemo(() => {
+    if (filteredCandidates.length > 0) return filteredCandidates
+    if (!currentJob) return []
+
+    const cleanSkillsList = (Array.isArray(currentJob.skills) ? currentJob.skills : [])
+      .map(safeSkillLabel)
+      .filter(Boolean)
+      .map(s => s.toLowerCase())
+
+    const roleTerms = extractCleanRoleTitles(currentJob.title)
+      .flatMap(t => t.toLowerCase().split(/\s+/))
+      .filter(w => w.length >= 3 && !/^\d+$/.test(w))
+
+    const fallbackList = unifiedPool.map(c => {
+      let score = 65
+      const candSkills = (c.skills || []).map(safeSkillLabel).join(' ').toLowerCase()
+      const candTitle = (c.title || '').toLowerCase()
+      const candRole = (c.currentRole || '').toLowerCase()
+
+      cleanSkillsList.forEach(s => {
+        if (candSkills.includes(s)) score += 8
+      })
+
+      roleTerms.forEach(w => {
+        if (candTitle.includes(w) || candRole.includes(w) || candSkills.includes(w)) score += 6
+      })
+
+      return {
+        ...c,
+        matchScore: Math.min(95, score),
+        isRelaxedFit: true
+      }
+    })
+    .filter(c => c.matchScore >= 65)
+    .sort((a, b) => b.matchScore - a.matchScore)
+
+    return fallbackList
+  }, [filteredCandidates, currentJob, unifiedPool])
+
   // Active Selected Candidate
   const selectedCandidate = useMemo(() => {
-    if (!filteredCandidates || filteredCandidates.length === 0) return null
-    return filteredCandidates.find(c => String(c.id) === String(selectedCandidateId)) || filteredCandidates[0]
-  }, [filteredCandidates, selectedCandidateId])
+    if (!displayCandidates || displayCandidates.length === 0) return null
+    return displayCandidates.find(c => String(c.id) === String(selectedCandidateId)) || displayCandidates[0]
+  }, [displayCandidates, selectedCandidateId])
 
   // Automatically select first candidate when candidate list updates
   useEffect(() => {
-    if (filteredCandidates.length > 0) {
-      const exists = filteredCandidates.some(c => String(c.id) === String(selectedCandidateId))
+    if (displayCandidates.length > 0) {
+      const exists = displayCandidates.some(c => String(c.id) === String(selectedCandidateId))
       if (!exists) {
-        setSelectedCandidateId(filteredCandidates[0].id)
+        setSelectedCandidateId(displayCandidates[0].id)
       }
     }
-  }, [filteredCandidates, selectedCandidateId])
+  }, [displayCandidates, selectedCandidateId])
+
+  // Pagination / Window limit for smooth rendering
+  const [visibleCount, setVisibleCount] = useState(30)
+  useEffect(() => {
+    setVisibleCount(30)
+  }, [selectedJobId, activeBooleanQuery, useBooleanFilter, filterTitle, filterSkills])
 
   // ─── 10. Lazy / On-Demand Resume Fetcher ───────────────────────────────────
   const loadResumeOnDemand = useCallback(async (candidate) => {
@@ -2051,7 +2156,7 @@ Website: https://www.coolsofttech.com | https://smarthireus.com`
                 cursor: 'pointer'
               }}
             >
-              Matches ({filteredCandidates.length})
+              Matches ({displayCandidates.length})
             </button>
             <button
               onClick={() => setActiveTab('favorites')}
@@ -2085,117 +2190,155 @@ Website: https://www.coolsofttech.com | https://smarthireus.com`
             </button>
           </div>
 
+          {/* Broadened match hint banner */}
+          {filteredCandidates.length === 0 && displayCandidates.length > 0 && (
+            <div style={{ padding: '6px 12px', backgroundColor: '#EFF6FF', borderBottom: '1px solid #DBEAFE', fontSize: 11, color: '#1E40AF', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span>Showing top relevant candidate fits for Req #{selectedJobId}</span>
+            </div>
+          )}
+
           {/* Candidates Scrollable List */}
           <div style={{ flex: 1, overflowY: 'auto', padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {filteredCandidates.length === 0 ? (
+            {displayCandidates.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '40px 16px', color: '#64748B' }}>
                 <div style={{ fontSize: 14, fontWeight: 600, color: '#0F172A', marginBottom: 4 }}>No candidates match criteria</div>
                 <div style={{ fontSize: 12 }}>Try expanding the location or clicking CLEAR ALL.</div>
               </div>
             ) : (
-              filteredCandidates.map((cand) => {
-                const isSelected = String(selectedCandidate?.id) === String(cand.id)
-                const isFav = favoriteIds.has(cand.id)
+              <>
+                {displayCandidates.slice(0, visibleCount).map((cand) => {
+                  const isSelected = String(selectedCandidate?.id) === String(cand.id)
+                  const isFav = favoriteIds.has(cand.id)
 
-                return (
-                  <div
-                    key={cand.id}
-                    onClick={() => handleSelectCandidate(cand)}
+                  return (
+                    <div
+                      key={cand.id}
+                      onClick={() => handleSelectCandidate(cand)}
+                      style={{
+                        backgroundColor: isSelected ? '#EFF6FF' : '#FFFFFF',
+                        borderRadius: 6,
+                        border: isSelected ? '2px solid #2563EB' : '1px solid #E2E8F0',
+                        padding: '12px 14px',
+                        cursor: 'pointer',
+                        boxShadow: isSelected ? '0 2px 8px rgba(37, 99, 235, 0.15)' : '0 1px 2px rgba(0,0,0,0.02)',
+                        transition: 'all 0.15s ease',
+                        position: 'relative'
+                      }}
+                    >
+                      {/* Top Row: Checkbox, Viewed Tag, Source Badge, Star */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                          <input
+                            type="checkbox"
+                            onClick={(e) => e.stopPropagation()}
+                            style={{ cursor: 'pointer', accentColor: '#2563EB' }}
+                          />
+                          {cand.isRelaxedFit ? (
+                            <span style={{ fontSize: 10, backgroundColor: '#E0E7FF', color: '#3730A3', fontWeight: 700, padding: '1px 5px', borderRadius: 3 }}>
+                              Req Fit
+                            </span>
+                          ) : (
+                            <span style={{ fontSize: 10, backgroundColor: '#F3E8FF', color: '#7E22CE', fontWeight: 600, padding: '1px 5px', borderRadius: 3 }}>
+                              Viewed
+                            </span>
+                          )}
+                          {renderSourceBadge(cand.sourceCategory, cand.source)}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span style={{
+                            fontSize: 10.5,
+                            fontWeight: 700,
+                            color: cand.matchScore >= 80 ? '#15803D' : '#D97706',
+                            backgroundColor: cand.matchScore >= 80 ? '#DCFCE7' : '#FEF3C7',
+                            padding: '1px 6px',
+                            borderRadius: 4
+                          }}>
+                            {cand.matchScore}% Fit
+                          </span>
+                          <button
+                            onClick={(e) => toggleFavorite(cand.id, e)}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}
+                            title="Add to Favorites"
+                          >
+                            <IconStar filled={isFav} size={14} color={isFav ? '#F59E0B' : '#94A3B8'} />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Candidate Name & Title */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                        <span style={{ fontSize: 14, fontWeight: 700, color: '#1E40AF', letterSpacing: '-0.01em' }}>
+                          {cand.name}
+                        </span>
+                        <IconExternalLink size={11} color="#64748B" />
+                      </div>
+
+                      <div style={{ fontSize: 12.5, fontWeight: 600, color: '#334155', marginBottom: 2 }}>
+                        {cand.title}
+                      </div>
+
+                      <div style={{ fontSize: 12, color: '#64748B', marginBottom: 6 }}>
+                        {cand.location}
+                      </div>
+
+                      <div style={{ fontSize: 11, color: '#94A3B8', marginBottom: 8 }}>
+                        Updated: {cand.updatedRecency}
+                      </div>
+
+                      {/* Current role text */}
+                      {cand.currentRole && (
+                        <div style={{ fontSize: 11.5, color: '#475569', marginBottom: 6, lineHeight: 1.4 }}>
+                          <strong style={{ color: '#0F172A' }}>Current:</strong> {cand.currentRole}
+                        </div>
+                      )}
+
+                      {/* Top skills pills */}
+                      {cand.skills && cand.skills.length > 0 && (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 4 }}>
+                          {cand.skills.slice(0, 3).map((s, idx) => (
+                            <span
+                              key={idx}
+                              style={{
+                                fontSize: 10.5,
+                                backgroundColor: '#F1F5F9',
+                                color: '#334155',
+                                padding: '2px 6px',
+                                borderRadius: 3,
+                                border: '1px solid #E2E8F0'
+                              }}
+                            >
+                              {safeSkillLabel(s)}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+
+                {displayCandidates.length > visibleCount && (
+                  <button
+                    type="button"
+                    onClick={() => setVisibleCount(prev => prev + 30)}
                     style={{
-                      backgroundColor: isSelected ? '#EFF6FF' : '#FFFFFF',
+                      width: '100%',
+                      padding: '8px 12px',
+                      backgroundColor: '#EFF6FF',
+                      border: '1px solid #BFDBFE',
                       borderRadius: 6,
-                      border: isSelected ? '2px solid #2563EB' : '1px solid #E2E8F0',
-                      padding: '12px 14px',
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: '#1D4ED8',
                       cursor: 'pointer',
-                      boxShadow: isSelected ? '0 2px 8px rgba(37, 99, 235, 0.15)' : '0 1px 2px rgba(0,0,0,0.02)',
-                      transition: 'all 0.15s ease',
-                      position: 'relative'
+                      marginTop: 4,
+                      marginBottom: 12,
+                      textAlign: 'center'
                     }}
                   >
-                    {/* Top Row: Checkbox, Viewed Tag, Source Badge, Star */}
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                        <input
-                          type="checkbox"
-                          onClick={(e) => e.stopPropagation()}
-                          style={{ cursor: 'pointer', accentColor: '#2563EB' }}
-                        />
-                        <span style={{ fontSize: 10, backgroundColor: '#F3E8FF', color: '#7E22CE', fontWeight: 600, padding: '1px 5px', borderRadius: 3 }}>
-                          Viewed
-                        </span>
-                        {renderSourceBadge(cand.sourceCategory, cand.source)}
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <span style={{
-                          fontSize: 10.5,
-                          fontWeight: 700,
-                          color: cand.matchScore >= 80 ? '#15803D' : '#D97706',
-                          backgroundColor: cand.matchScore >= 80 ? '#DCFCE7' : '#FEF3C7',
-                          padding: '1px 6px',
-                          borderRadius: 4
-                        }}>
-                          {cand.matchScore}% Fit
-                        </span>
-                        <button
-                          onClick={(e) => toggleFavorite(cand.id, e)}
-                          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}
-                          title="Add to Favorites"
-                        >
-                          <IconStar filled={isFav} size={14} color={isFav ? '#F59E0B' : '#94A3B8'} />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Candidate Name & Title */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-                      <span style={{ fontSize: 14, fontWeight: 700, color: '#1E40AF', letterSpacing: '-0.01em' }}>
-                        {cand.name}
-                      </span>
-                      <IconExternalLink size={11} color="#64748B" />
-                    </div>
-
-                    <div style={{ fontSize: 12.5, fontWeight: 600, color: '#334155', marginBottom: 2 }}>
-                      {cand.title}
-                    </div>
-
-                    <div style={{ fontSize: 12, color: '#64748B', marginBottom: 6 }}>
-                      {cand.location}
-                    </div>
-
-                    <div style={{ fontSize: 11, color: '#94A3B8', marginBottom: 8 }}>
-                      Updated: {cand.updatedRecency}
-                    </div>
-
-                    {/* Current role text */}
-                    {cand.currentRole && (
-                      <div style={{ fontSize: 11.5, color: '#475569', marginBottom: 6, lineHeight: 1.4 }}>
-                        <strong style={{ color: '#0F172A' }}>Current:</strong> {cand.currentRole}
-                      </div>
-                    )}
-
-                    {/* Top skills pills */}
-                    {cand.skills && cand.skills.length > 0 && (
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 4 }}>
-                        {cand.skills.slice(0, 3).map((s, idx) => (
-                          <span
-                            key={idx}
-                            style={{
-                              fontSize: 10.5,
-                              backgroundColor: '#F1F5F9',
-                              color: '#334155',
-                              padding: '2px 6px',
-                              borderRadius: 3,
-                              border: '1px solid #E2E8F0'
-                            }}
-                          >
-                            {safeSkillLabel(s)}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )
-              })
+                    Load More Candidates ({displayCandidates.length - visibleCount} remaining)
+                  </button>
+                )}
+              </>
             )}
           </div>
         </div>

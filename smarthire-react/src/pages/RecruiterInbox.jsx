@@ -3243,8 +3243,8 @@ export default function RecruiterInbox({ defaultViewMode }) {
       let streamRes, apiCandsRes, firestoreCandsRes
       try {
         const results = await Promise.allSettled([
-          fetch(`/api/recruiter/email-streams?${params.toString()}`, { headers: authHeaders, signal: controller.signal }),
-          fetch('/api/candidates', { headers: authHeaders, signal: controller.signal }),
+          fetch(`/api/recruiter/email-streams?summary=true&${params.toString()}`, { headers: authHeaders, signal: controller.signal }),
+          fetch('/api/candidates?summary=true&limit=150', { headers: authHeaders, signal: controller.signal }),
           getAllCandidates()
         ])
         streamRes = results[0]
