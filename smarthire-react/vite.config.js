@@ -21,12 +21,22 @@ export default defineConfig({
     },
   },
   build: {
-    chunkSizeWarningLimit: 2000,
+    chunkSizeWarningLimit: 3000,
     rollupOptions: {
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            return id.toString().split('node_modules/')[1].split('/')[0].toString();
+            if (id.includes('react') || id.includes('scheduler') || id.includes('@remix-run')) {
+              return 'vendor-react';
+            }
+            if (id.includes('firebase') || id.includes('idb')) {
+              return 'vendor-firebase';
+            }
+            if (id.includes('pdfjs-dist') || id.includes('pdf-parse') || id.includes('mammoth')) {
+              return 'vendor-docs';
+            }
+            const pkgName = id.toString().split('node_modules/')[1].split('/')[0].replace(/^@/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
+            return `vendor-${pkgName}`;
           }
         }
       }

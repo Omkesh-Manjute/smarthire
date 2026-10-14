@@ -1,27 +1,59 @@
 import React from 'react'
+import InfinityLoader from './InfinityLoader'
 
 export default class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props)
-    this.state = { hasError: false, error: null, errorInfo: null }
+    this.state = { hasError: false, error: null, errorInfo: null, isChunkRecovering: false }
+  }
+
+  static isChunkError(error) {
+    const msg = String(error?.message || error || '')
+    return (
+      error?.name === 'ChunkLoadError' ||
+      /Loading (CSS )?chunk/i.test(msg) ||
+      /Failed to fetch dynamically imported module/i.test(msg) ||
+      /error loading dynamically imported module/i.test(msg) ||
+      /Importing a module script failed/i.test(msg) ||
+      /Expected a JavaScript module script/i.test(msg)
+    )
   }
 
   static getDerivedStateFromError(error) {
-    return { hasError: true, error }
+    const isChunk = ErrorBoundary.isChunkError(error)
+    return { hasError: true, error, isChunkRecovering: isChunk }
   }
 
   componentDidCatch(error, errorInfo) {
     console.error('SmartHire UI ErrorBoundary caught error:', error, errorInfo)
     this.setState({ errorInfo })
+
+    if (ErrorBoundary.isChunkError(error)) {
+      const now = Date.now()
+      const lastReload = parseInt(window.sessionStorage.getItem('smarthire_last_chunk_reload') || '0', 10)
+      if (now - lastReload > 10000) {
+        window.sessionStorage.setItem('smarthire_last_chunk_reload', String(now))
+        console.warn('[SmartHire] Chunk loading error detected, auto-reloading page...')
+        window.location.reload()
+      }
+    }
   }
 
   handleReset = () => {
-    this.setState({ hasError: false, error: null, errorInfo: null })
+    this.setState({ hasError: false, error: null, errorInfo: null, isChunkRecovering: false })
     window.location.reload()
   }
 
   render() {
     if (this.state.hasError) {
+      if (this.state.isChunkRecovering || ErrorBoundary.isChunkError(this.state.error)) {
+        return (
+          <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#ffffff' }}>
+            <InfinityLoader text="" showBrand={false} minHeight="85vh" />
+          </div>
+        )
+      }
+
       return (
         <div style={{
           minHeight: '100vh',

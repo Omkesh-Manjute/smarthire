@@ -3,22 +3,53 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import Homepage from './pages/Homepage'
 import Login from './pages/Login'
 
-const RecruiterDashboard = lazy(() => import('./pages/RecruiterDashboard'))
-const About = lazy(() => import('./pages/About'))
-const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'))
-const Terms = lazy(() => import('./pages/Terms'))
-const AtsPlatform = lazy(() => import('./pages/AtsPlatform'))
-const Reports = lazy(() => import('./pages/Reports'))
-const BrandingCenter = lazy(() => import('./pages/BrandingCenter'))
-const LinkedInPosts = lazy(() => import('./pages/LinkedInPosts'))
-const CandidateChat = lazy(() => import('./pages/CandidateChat'))
-const Pricing = lazy(() => import('./pages/Pricing'))
-const PublicCareers = lazy(() => import('./pages/PublicCareers'))
-const RecruiterInbox = lazy(() => import('./pages/RecruiterInbox'))
-const Blog = lazy(() => import('./pages/Blog'))
-const SmartSignRtrPage = lazy(() => import('./pages/SmartSignRtrPage'))
-const SubmittalPackPage = lazy(() => import('./pages/SubmittalPackPage'))
-const SmartScreenProduct = lazy(() => import('./pages/SmartScreenProduct'))
+function lazyWithRetry(componentImport) {
+  return lazy(async () => {
+    const pageHasBeenForceRefreshed = window.sessionStorage.getItem('smarthire_page_reloaded') === 'true'
+    for (let i = 0; i < 2; i++) {
+      try {
+        const component = await componentImport()
+        window.sessionStorage.removeItem('smarthire_page_reloaded')
+        return component
+      } catch (err) {
+        if (i < 1) {
+          await new Promise(r => setTimeout(r, 600))
+        }
+      }
+    }
+
+    try {
+      const component = await componentImport()
+      window.sessionStorage.removeItem('smarthire_page_reloaded')
+      return component
+    } catch (error) {
+      console.warn('[SmartHire] Chunk fetch failed after retries, auto-refreshing...', error)
+      if (!pageHasBeenForceRefreshed) {
+        window.sessionStorage.setItem('smarthire_page_reloaded', 'true')
+        window.location.reload()
+        return new Promise(() => {})
+      }
+      throw error
+    }
+  })
+}
+
+const RecruiterDashboard = lazyWithRetry(() => import('./pages/RecruiterDashboard'))
+const About = lazyWithRetry(() => import('./pages/About'))
+const PrivacyPolicy = lazyWithRetry(() => import('./pages/PrivacyPolicy'))
+const Terms = lazyWithRetry(() => import('./pages/Terms'))
+const AtsPlatform = lazyWithRetry(() => import('./pages/AtsPlatform'))
+const Reports = lazyWithRetry(() => import('./pages/Reports'))
+const BrandingCenter = lazyWithRetry(() => import('./pages/BrandingCenter'))
+const LinkedInPosts = lazyWithRetry(() => import('./pages/LinkedInPosts'))
+const CandidateChat = lazyWithRetry(() => import('./pages/CandidateChat'))
+const Pricing = lazyWithRetry(() => import('./pages/Pricing'))
+const PublicCareers = lazyWithRetry(() => import('./pages/PublicCareers'))
+const RecruiterInbox = lazyWithRetry(() => import('./pages/RecruiterInbox'))
+const Blog = lazyWithRetry(() => import('./pages/Blog'))
+const SmartSignRtrPage = lazyWithRetry(() => import('./pages/SmartSignRtrPage'))
+const SubmittalPackPage = lazyWithRetry(() => import('./pages/SubmittalPackPage'))
+const SmartScreenProduct = lazyWithRetry(() => import('./pages/SmartScreenProduct'))
 import InfinityLoader from './components/InfinityLoader'
 
 const PageFallback = () => (
