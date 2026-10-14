@@ -116,15 +116,19 @@ export default function CandidateMessengerWidget({ candidate, role = 'candidate'
     }
   }
   const [showFullDetails, setShowFullDetails] = useState(false)
-  const recruiterInfo = JSON.parse(localStorage.getItem('smarthire_user') || '{}')
+  let recruiterInfo = {}
+  try {
+    const raw = localStorage.getItem('smarthire_user')
+    if (raw && raw !== 'undefined' && raw !== 'null') recruiterInfo = JSON.parse(raw)
+  } catch (e) {}
   
   // Find last recruiter message to get dynamic recruiter's name on candidate side
   const recruiterMsg = [...messages].reverse().find(m => m.sender === 'recruiter' && m.senderName)
   const dynamicRecruiterName = recruiterMsg ? recruiterMsg.senderName : 'Recruiter Team'
   
-  const recruiterName = role === 'recruiter' ? (recruiterInfo.name || 'Recruiter Team') : dynamicRecruiterName
-  const recruiterRole = role === 'recruiter' ? (recruiterInfo.role || 'Recruiter') : 'Recruiter'
-  const recruiterInitials = recruiterName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+  const recruiterName = role === 'recruiter' ? (recruiterInfo?.name || 'Recruiter Team') : dynamicRecruiterName
+  const recruiterRole = role === 'recruiter' ? (recruiterInfo?.role || 'Recruiter') : 'Recruiter'
+  const recruiterInitials = (recruiterName || 'RT').split(/\s+/).filter(Boolean).map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'RT'
 
   const matchScore = candidate?.jd_match?.match_score ?? candidate?.matchScore ?? candidate?.ai_match?.score ?? null
   const phoneDisplay = candidate?.phone || candidate?.extracted_profile?.phone || ''

@@ -108,7 +108,24 @@ const renderAtsIcon = (id, size = 16, color = 'currentColor') => {
     case 'monster':
       return (
         <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+          <circle cx="11" cy="11" r="8" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+      )
+    case 'hotlist':
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <line x1="8" y1="13" x2="16" y2="13" />
+          <line x1="8" y1="17" x2="16" y2="17" />
+          <line x1="10" y1="9" x2="10.01" y2="9" />
+        </svg>
+      )
+    case 'smartscreen':
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+          <polygon points="23 7 16 12 23 17 23 7" />
+          <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
         </svg>
       )
     case 'analytics':
@@ -187,12 +204,14 @@ const renderAtsIcon = (id, size = 16, color = 'currentColor') => {
 const ALL_MODULES = [
   { id: 'home',        label: 'Home',            category: 'main' },
   { id: 'candidates',  label: 'Candidates',      category: 'talent', countKey: 'candidates', isLink: '/inbox' },
+  { id: 'monster',     label: 'Universal Search',category: 'talent', isLink: '/inbox?tab=monster' },
+  { id: 'hotlist',     label: 'Vendor Hotlists', category: 'talent', isLink: '/inbox?tab=hotlist' },
   { id: 'pipeline',    label: 'Pipeline',        category: 'talent', adminOnly: true },
   { id: 'screening',   label: 'AI Screening',    category: 'talent' },
-  { id: 'monster',     label: 'Universal Search',category: 'talent', isLink: '/inbox?tab=monster' },
   { id: 'submissions', label: 'Submissions',     category: 'talent', adminOnly: true },
   { id: 'submittal',   label: 'Submittal Pack',  category: 'talent', isLink: '/submittal-pack' },
   { id: 'rtr',         label: 'SmartSign RTR',   category: 'talent', isLink: '/sign-rtr' },
+  { id: 'smartscreen', label: 'SmartScreen AI',  category: 'talent', isLink: '/smartscreen' },
   { id: 'reports',     label: 'Reports',         category: 'main', adminOnly: true },
   { id: 'analytics',   label: 'Analytics',       category: 'main' },
   { id: 'inquiries',   label: 'Client Inquiries',category: 'admin', adminOnly: true },
@@ -222,18 +241,18 @@ export default function AtsPlatform() {
 
   const DEFAULT_PERMISSIONS = {
     superadmin: {
-      ats: true, home: true, candidates: true, pipeline: true, screening: true, monster: true,
-      submissions: true, submittal: true, rtr: true, reports: true, analytics: true, audit: true, automation: true,
+      ats: true, home: true, candidates: true, pipeline: true, screening: true, monster: true, hotlist: true,
+      submissions: true, submittal: true, rtr: true, smartscreen: true, reports: true, analytics: true, audit: true, automation: true,
       inbox: true, settings: true, users: true,
     },
     manager: {
-      ats: true, home: true, candidates: true, pipeline: true, screening: true, monster: true,
-      submissions: true, submittal: true, rtr: true, reports: true, analytics: true, audit: true, automation: false,
+      ats: true, home: true, candidates: true, pipeline: true, screening: true, monster: true, hotlist: true,
+      submissions: true, submittal: true, rtr: true, smartscreen: true, reports: true, analytics: true, audit: true, automation: false,
       inbox: true, settings: false, users: false,
     },
     recruiter: {
-      ats: true, home: true, candidates: true, pipeline: false, screening: true, monster: true,
-      submissions: false, submittal: true, rtr: true, reports: false, analytics: true, audit: true, automation: false,
+      ats: true, home: true, candidates: true, pipeline: false, screening: true, monster: true, hotlist: true,
+      submissions: false, submittal: true, rtr: true, smartscreen: true, reports: false, analytics: true, audit: true, automation: false,
       inbox: true, settings: false, users: false,
     }
   }
@@ -277,10 +296,28 @@ export default function AtsPlatform() {
         setTimeout(() => navigate('/inbox', { replace: true }), 0)
         return 'home'
       }
+      if (tab === 'monster' || tab === 'universal-search') {
+        setTimeout(() => navigate('/inbox?tab=monster', { replace: true }), 0)
+        return 'home'
+      }
+      if (tab === 'hotlist' || tab === 'vendor-hotlist') {
+        setTimeout(() => navigate('/inbox?tab=hotlist', { replace: true }), 0)
+        return 'home'
+      }
+      if (tab === 'submittal' || tab === 'submittal-pack') {
+        setTimeout(() => navigate('/submittal-pack', { replace: true }), 0)
+        return 'home'
+      }
+      if (tab === 'rtr' || tab === 'smartsign') {
+        setTimeout(() => navigate('/sign-rtr', { replace: true }), 0)
+        return 'home'
+      }
       if (tab === 'jobs' || tab === 'dashboard') return 'home'
       if (tab) return tab
       const saved = localStorage.getItem('smarthire_ats_active_tab')
-      if (saved && saved !== 'jobs' && saved !== 'dashboard' && saved !== 'candidates') return saved
+      if (saved && !['jobs', 'dashboard', 'candidates', 'monster', 'hotlist', 'submittal', 'rtr', 'universal-search', 'vendor-hotlist'].includes(saved)) {
+        return saved
+      }
     } catch (e) {
       return null
     }
@@ -296,6 +333,22 @@ export default function AtsPlatform() {
   useEffect(() => {
     if (activeTab === 'candidates') {
       navigate('/inbox', { replace: true })
+      return
+    }
+    if (activeTab === 'monster' || activeTab === 'universal-search') {
+      navigate('/inbox?tab=monster', { replace: true })
+      return
+    }
+    if (activeTab === 'hotlist' || activeTab === 'vendor-hotlist') {
+      navigate('/inbox?tab=hotlist', { replace: true })
+      return
+    }
+    if (activeTab === 'submittal' || activeTab === 'submittal-pack') {
+      navigate('/submittal-pack', { replace: true })
+      return
+    }
+    if (activeTab === 'rtr' || activeTab === 'smartsign') {
+      navigate('/sign-rtr', { replace: true })
       return
     }
     if (activeTab === 'pipeline') {
@@ -360,6 +413,7 @@ export default function AtsPlatform() {
   const [showUserDropdown, setShowUserDropdown] = useState(false)
   const [showHomeViewDropdown, setShowHomeViewDropdown] = useState(false)
   const [homeViewName, setHomeViewName] = useState(`${userName.split(' ')[0]}'s Home`)
+  const [candidatesMenuExpanded, setCandidatesMenuExpanded] = useState(true)
 
   // Global Chat Modal
   const [activeChatCandidate, setActiveChatCandidate] = useState(null)
@@ -896,10 +950,122 @@ export default function AtsPlatform() {
             </div>
           )}
 
+          {/* 1. Candidates with Slack-Style Collapsible Sub-views */}
+          <div style={{ marginBottom: '2px' }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: sidebarCollapsed ? '10px 0' : '7px 12px',
+                borderRadius: '6px',
+                background: activeTab === 'candidates' ? '#1164A3' : 'transparent',
+                color: activeTab === 'candidates' ? '#ffffff' : 'rgba(255,255,255,0.78)',
+                fontSize: '12.5px',
+                fontWeight: activeTab === 'candidates' ? '700' : '500',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+              onMouseEnter={e => { if (activeTab !== 'candidates') { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#ffffff' } }}
+              onMouseLeave={e => { if (activeTab !== 'candidates') { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.78)' } }}
+              onClick={() => navigate('/inbox')}
+              title={sidebarCollapsed ? 'Candidates' : undefined}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', justifyContent: sidebarCollapsed ? 'center' : 'flex-start', width: sidebarCollapsed ? '100%' : 'auto' }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center' }}>{renderAtsIcon('candidates', 14, activeTab === 'candidates' ? '#ffffff' : 'rgba(255,255,255,0.78)')}</span>
+                {!sidebarCollapsed && <span>Candidates</span>}
+              </div>
+              {!sidebarCollapsed && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{
+                    fontSize: '10.5px',
+                    background: activeTab === 'candidates' ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.16)',
+                    color: '#ffffff',
+                    padding: '1px 7px',
+                    borderRadius: '10px',
+                    fontWeight: '700'
+                  }}>
+                    {safeCandidates.length}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setCandidatesMenuExpanded(prev => !prev)
+                    }}
+                    title={candidatesMenuExpanded ? 'Collapse Candidate sub-views' : 'Expand Candidate sub-views'}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: 'rgba(255,255,255,0.7)',
+                      cursor: 'pointer',
+                      padding: '2px 3px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      borderRadius: '4px'
+                    }}
+                  >
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: candidatesMenuExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }}>
+                      <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Slack-style smooth collapsible sub-menu */}
+            {!sidebarCollapsed && candidatesMenuExpanded && (
+              <div style={{ paddingLeft: '22px', display: 'flex', flexDirection: 'column', gap: '2px', marginTop: '2px', borderLeft: '1px solid rgba(255,255,255,0.12)', marginLeft: '14px' }}>
+                <div
+                  onClick={() => navigate('/inbox')}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '8px', padding: '5px 8px', borderRadius: '4px',
+                    color: 'rgba(255,255,255,0.75)', fontSize: '11.5px', fontWeight: '500', cursor: 'pointer', transition: 'all 0.15s'
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#ffffff' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.75)' }}
+                >
+                  <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)' }}>•</span>
+                  <span>Talent Hub (/inbox)</span>
+                </div>
+                <div
+                  onClick={() => navigate('/inbox?tab=monster')}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '8px', padding: '5px 8px', borderRadius: '4px',
+                    color: 'rgba(255,255,255,0.75)', fontSize: '11.5px', fontWeight: '500', cursor: 'pointer', transition: 'all 0.15s'
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#ffffff' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.75)' }}
+                >
+                  <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)' }}>•</span>
+                  <span>Universal Search</span>
+                </div>
+                <div
+                  onClick={() => navigate('/inbox?tab=hotlist')}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '8px', padding: '5px 8px', borderRadius: '4px',
+                    color: 'rgba(255,255,255,0.75)', fontSize: '11.5px', fontWeight: '500', cursor: 'pointer', transition: 'all 0.15s'
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#ffffff' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.75)' }}
+                >
+                  <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)' }}>•</span>
+                  <span>Vendor Hotlists</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 2. Direct Talent Acquisition Pages */}
           {[
-            { id: 'candidates', label: 'Candidates', isLink: '/inbox', count: safeCandidates.length },
+            { id: 'monster', label: 'Universal Search', isLink: '/inbox?tab=monster' },
+            { id: 'hotlist', label: 'Vendor Hotlists', isLink: '/inbox?tab=hotlist' },
             { id: 'screening', label: 'Screening' },
             { id: 'submissions', label: 'Submissions' },
+            { id: 'submittal', label: 'Submittal Pack', isLink: '/submittal-pack' },
+            { id: 'rtr', label: 'SmartSign RTR', isLink: '/sign-rtr' },
+            { id: 'smartscreen', label: 'SmartScreen AI', isLink: '/smartscreen' },
           ]
             .map(m => {
               const isActive = activeTab === m.id
@@ -908,7 +1074,6 @@ export default function AtsPlatform() {
                   key={m.id}
                   onClick={() => {
                     if (m.isLink) navigate(m.isLink)
-                    else if (m.id === 'candidates') navigate('/inbox')
                     else setActiveTab(m.id)
                   }}
                   title={sidebarCollapsed ? m.label : undefined}
@@ -919,7 +1084,7 @@ export default function AtsPlatform() {
                     padding: sidebarCollapsed ? '10px 0' : '7px 12px',
                     borderRadius: '6px',
                     background: isActive ? '#1164A3' : 'transparent',
-                    color: isActive ? '#ffffff' : 'rgba(255,255,255,0.72)',
+                    color: isActive ? '#ffffff' : 'rgba(255,255,255,0.78)',
                     fontSize: '12.5px',
                     fontWeight: isActive ? '700' : '500',
                     cursor: 'pointer',
@@ -927,24 +1092,12 @@ export default function AtsPlatform() {
                     transition: 'all 0.15s ease'
                   }}
                   onMouseEnter={e => { if (!isActive) { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#ffffff' } }}
-                  onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.72)' } }}
+                  onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.78)' } }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', justifyContent: sidebarCollapsed ? 'center' : 'flex-start', width: sidebarCollapsed ? '100%' : 'auto' }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center' }}>{renderAtsIcon(m.id, 14, isActive ? '#ffffff' : 'rgba(255,255,255,0.72)')}</span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center' }}>{renderAtsIcon(m.id, 14, isActive ? '#ffffff' : 'rgba(255,255,255,0.78)')}</span>
                     {!sidebarCollapsed && <span>{m.label}</span>}
                   </div>
-                  {!sidebarCollapsed && m.count != null && (
-                    <span style={{
-                      fontSize: '10.5px',
-                      background: isActive ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.16)',
-                      color: '#ffffff',
-                      padding: '1px 7px',
-                      borderRadius: '10px',
-                      fontWeight: '700'
-                    }}>
-                      {m.count}
-                    </span>
-                  )}
                 </div>
               )
             })}
@@ -1604,6 +1757,69 @@ export default function AtsPlatform() {
                 }}
               >
                 Go to Candidate Talent Hub →
+              </button>
+            </div>
+          )}
+
+          {/* ══════════════════════════════════════════════════════════════════
+              UNIVERSAL SEARCH & VENDOR HOTLIST REDIRECTS
+             ══════════════════════════════════════════════════════════════════ */}
+          {(activeTab === 'monster' || activeTab === 'universal-search') && (
+            <div style={{ padding: '80px 24px', textAlign: 'center', background: '#FFFFFF', margin: 24, borderRadius: 12, border: '1px solid #E2E8F0' }}>
+              <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#EFF6FF', color: '#2563EB', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: 20, fontWeight: 800 }}>
+                {renderAtsIcon('monster', 22, '#2563EB')}
+              </div>
+              <h3 style={{ fontSize: 18, fontWeight: 800, color: '#0F172A', margin: '0 0 8px' }}>
+                Universal Search Active
+              </h3>
+              <p style={{ fontSize: 14, color: '#64748B', maxWidth: 460, margin: '0 auto 20px', lineHeight: 1.5 }}>
+                Opening cross-channel Boolean search and candidate sourcing console...
+              </p>
+              <button
+                onClick={() => navigate('/inbox?tab=monster', { replace: true })}
+                style={{
+                  background: 'linear-gradient(135deg, #2563EB, #1D4ED8)',
+                  color: '#FFFFFF',
+                  padding: '11px 24px',
+                  borderRadius: 8,
+                  border: 'none',
+                  fontWeight: 700,
+                  fontSize: 14,
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 14px rgba(37,99,235,0.25)'
+                }}
+              >
+                Open Universal Search →
+              </button>
+            </div>
+          )}
+
+          {(activeTab === 'hotlist' || activeTab === 'vendor-hotlist') && (
+            <div style={{ padding: '80px 24px', textAlign: 'center', background: '#FFFFFF', margin: 24, borderRadius: 12, border: '1px solid #E2E8F0' }}>
+              <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#EFF6FF', color: '#2563EB', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: 20, fontWeight: 800 }}>
+                {renderAtsIcon('hotlist', 22, '#2563EB')}
+              </div>
+              <h3 style={{ fontSize: 18, fontWeight: 800, color: '#0F172A', margin: '0 0 8px' }}>
+                Vendor Hotlists Active
+              </h3>
+              <p style={{ fontSize: 14, color: '#64748B', maxWidth: 460, margin: '0 auto 20px', lineHeight: 1.5 }}>
+                Opening vendor bench spreadsheet grid...
+              </p>
+              <button
+                onClick={() => navigate('/inbox?tab=hotlist', { replace: true })}
+                style={{
+                  background: 'linear-gradient(135deg, #2563EB, #1D4ED8)',
+                  color: '#FFFFFF',
+                  padding: '11px 24px',
+                  borderRadius: 8,
+                  border: 'none',
+                  fontWeight: 700,
+                  fontSize: 14,
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 14px rgba(37,99,235,0.25)'
+                }}
+              >
+                Open Vendor Hotlists →
               </button>
             </div>
           )}

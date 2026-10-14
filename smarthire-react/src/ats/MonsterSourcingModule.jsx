@@ -175,6 +175,9 @@ export function evaluateBooleanQuery(query, cand) {
     return key
   })
 
+  // If no searchable terms were found (e.g. user only typed operators), do not filter out candidates
+  if (termMap.size === 0) return true
+
   // 3. Substitute evaluated boolean values
   let evalExpr = expr
   for (const [key, val] of termMap.entries()) {

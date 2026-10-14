@@ -1339,7 +1339,17 @@ app.use(express.json({
 app.use(express.urlencoded({ limit: '50mb', extended: true }))
 app.use('/uploads', express.static(uploadDir))
 if (fs.existsSync(distPath)) {
-  app.use(express.static(distPath))
+  app.use(express.static(distPath, {
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('index.html')) {
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+      } else if (filePath.includes('/assets/')) {
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      }
+    }
+  }))
 }
 
 // Specific Google Search Console verification file
@@ -14077,9 +14087,18 @@ app.get('/smarthire-extension.zip', (req, res) => {
   return res.status(404).send('SmartHire extension file not found');
 });
 
-// ─── Serve static frontend files in production ────────────────────────────────
 if (fs.existsSync(distPath)) {
-  app.use(express.static(distPath))
+  app.use(express.static(distPath, {
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('index.html')) {
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+      } else if (filePath.includes('/assets/')) {
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      }
+    }
+  }))
 }
 
 // For React Router support - fallback all non-API GET/HEAD requests to index.html with dynamic SEO canonicalization
@@ -14183,6 +14202,12 @@ app.use((req, res, next) => {
     return next();
   }
 
+  // Never return index.html for missing static assets (prevents strict MIME type error on pruned/cached chunks)
+  if (req.path.startsWith('/assets/')) {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+    return res.status(404).type('text/plain').send('Asset not found');
+  }
+
   const cleanPath = req.path.replace(/\/+$/, '') || '';
 
   // 1. 301 Redirect duplicate /careers to canonical /jobs
@@ -14279,8 +14304,14 @@ app.use((req, res, next) => {
       }
 
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
       return res.send(html);
     } catch (e) {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
       return res.sendFile(indexPath);
     }
   }
