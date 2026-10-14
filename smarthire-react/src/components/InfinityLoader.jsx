@@ -14,13 +14,13 @@ import React from 'react'
  * - text / subtext: customizable status messages
  */
 export default function InfinityLoader({
-  text = 'Loading SmartHire...',
+  text = '',
   subtext = '',
   size = 'md',
   fullScreen = false,
   minHeight = '75vh',
   theme = 'light',
-  showBrand = true,
+  showBrand = false,
   className = '',
   style = {}
 }) {

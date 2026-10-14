@@ -22,7 +22,7 @@ const SmartScreenProduct = lazy(() => import('./pages/SmartScreenProduct'))
 import InfinityLoader from './components/InfinityLoader'
 
 const PageFallback = () => (
-  <InfinityLoader text="Loading SmartHire..." minHeight="85vh" />
+  <InfinityLoader text="" showBrand={false} minHeight="85vh" />
 )
 
 function ProtectedRoute({ children }) {
