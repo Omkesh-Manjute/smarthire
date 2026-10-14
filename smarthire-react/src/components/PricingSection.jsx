@@ -932,122 +932,181 @@ export default function PricingSection({ onAuthClick, isStandalonePage = false, 
               key={plan.name}
               style={{
                 background: '#ffffff',
-                borderRadius: '16px',
-                border: plan.popular ? '2px solid #2563eb' : '1.5px solid #e2e8f0',
-                padding: '32px 26px',
+                borderRadius: '12px',
+                border: plan.popular ? '2px solid #8B3A82' : '1px solid #DDDDDD',
+                padding: plan.popular ? '0 24px 28px 24px' : '28px 24px',
                 display: 'flex',
                 flexDirection: 'column',
                 position: 'relative',
                 boxShadow: plan.popular
-                  ? '0 14px 34px rgba(37,99,235,0.14)'
-                  : '0 4px 16px rgba(15,23,42,0.04)',
+                  ? '0 10px 30px rgba(139, 58, 130, 0.12)'
+                  : '0 2px 8px rgba(0,0,0,0.04)',
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
                 transition: 'transform 0.2s ease, box-shadow 0.2s ease'
               }}
             >
-              {/* Badge */}
-              {plan.badge && (
+              {/* Slack-style Top Banner for RECOMMENDED Plan */}
+              {plan.popular && (
                 <div style={{
-                  position: 'absolute',
-                  top: '-12px',
-                  right: '24px',
-                  background: plan.popular ? '#2563eb' : '#0f172a',
+                  background: '#8B3A82',
                   color: '#ffffff',
                   fontSize: '11px',
                   fontWeight: '800',
-                  letterSpacing: '0.06em',
-                  padding: '4px 14px',
-                  borderRadius: '9999px',
+                  letterSpacing: '0.08em',
+                  padding: '7px 0',
                   textTransform: 'uppercase',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+                  textAlign: 'center',
+                  borderTopLeftRadius: '10px',
+                  borderTopRightRadius: '10px',
+                  margin: '0 -24px 22px -24px'
+                }}>
+                  RECOMMENDED
+                </div>
+              )}
+
+              {/* Enterprise Badge if non-popular */}
+              {!plan.popular && plan.badge && (
+                <div style={{
+                  position: 'absolute',
+                  top: '-11px',
+                  right: '20px',
+                  background: '#1D1C1D',
+                  color: '#ffffff',
+                  fontSize: '10.5px',
+                  fontWeight: '800',
+                  letterSpacing: '0.06em',
+                  padding: '3px 12px',
+                  borderRadius: '9999px',
+                  textTransform: 'uppercase'
                 }}>
                   {plan.badge}
                 </div>
               )}
 
               {/* Plan Title & Subtitle */}
-              <div style={{ marginBottom: '18px' }}>
-                <div style={{ fontSize: '11.5px', fontWeight: '800', textTransform: 'uppercase', color: plan.popular ? '#2563eb' : '#64748b', letterSpacing: '0.06em', marginBottom: '6px' }}>
+              <div style={{ marginBottom: '16px' }}>
+                <div style={{ fontSize: '11.5px', fontWeight: '800', textTransform: 'uppercase', color: plan.popular ? '#8B3A82' : '#616061', letterSpacing: '0.06em', marginBottom: '4px' }}>
                   {plan.tier}
                 </div>
                 <h3 style={{
-                  fontFamily: "'Plus Jakarta Sans', sans-serif",
                   fontSize: '22px',
                   fontWeight: '800',
-                  color: '#0f172a',
+                  color: '#1D1C1D',
                   margin: 0,
                   lineHeight: '1.25'
                 }}>
                   {plan.name}
                 </h3>
-                <p style={{ fontSize: '13.5px', color: '#64748b', marginTop: '8px', marginBottom: 0, minHeight: '44px', lineHeight: '1.5' }}>
+                <p style={{ fontSize: '13.5px', color: '#616061', marginTop: '6px', marginBottom: 0, minHeight: '40px', lineHeight: '1.45' }}>
                   {plan.description}
                 </p>
               </div>
 
-              {/* Price Display */}
-              <div style={{ paddingBottom: '18px', borderBottom: '1px solid #f1f5f9', marginBottom: '18px' }}>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', flexWrap: 'wrap' }}>
-                  {isEnterprise ? (
-                    <span style={{ fontSize: '34px', fontWeight: '800', color: '#0f172a', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                      Custom
-                    </span>
-                  ) : (
-                    <>
+              {/* Price Display (Matching Slack Screenshot) */}
+              <div style={{ paddingBottom: '16px', borderBottom: '1px solid #EEEEEE', marginBottom: '18px' }}>
+                {isEnterprise ? (
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minHeight: '48px' }}>
+                      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1D1C1D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                      </svg>
+                      <span style={{ fontSize: '15px', fontWeight: '700', color: '#1D1C1D' }}>
+                        Contact sales for pricing
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#616061', marginTop: '4px' }}>
+                      Custom enterprise SLA & multi-tenant deployment
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', flexWrap: 'wrap' }}>
                       {plan.originalPriceMonthly && (
                         <span style={{
-                          fontSize: '19px',
-                          color: '#94a3b8',
+                          fontSize: '18px',
+                          color: '#868686',
                           textDecoration: 'line-through',
-                          fontWeight: '600',
-                          marginRight: '2px'
+                          fontWeight: '500',
+                          marginRight: '4px'
                         }}>
                           ${isYearly ? plan.originalPriceYearly : plan.originalPriceMonthly}
                         </span>
                       )}
-                      <span style={{ fontSize: '24px', fontWeight: '700', color: '#0f172a' }}>$</span>
-                      <span style={{ fontSize: '44px', fontWeight: '800', color: '#0f172a', fontFamily: "'Plus Jakarta Sans', sans-serif", lineHeight: 1 }}>
+                      <span style={{ fontSize: '22px', fontWeight: '600', color: '#1D1C1D' }}>$</span>
+                      <span style={{ fontSize: '42px', fontWeight: '800', color: '#1D1C1D', lineHeight: 1, letterSpacing: '-0.02em' }}>
                         {price}
                       </span>
-                      <span style={{ fontSize: '14px', fontWeight: '600', color: '#64748b' }}>/month</span>
+                      <span style={{ fontSize: '12px', fontWeight: '700', color: '#616061', marginLeft: '4px' }}>
+                        USD
+                      </span>
                       {plan.savingsBadge && (
                         <span style={{
-                          background: '#dcfce7',
-                          color: '#15803d',
-                          fontSize: '10.5px',
+                          background: '#E6F4EA',
+                          color: '#137333',
+                          fontSize: '11px',
                           fontWeight: '800',
-                          padding: '3px 8px',
-                          borderRadius: '8px',
+                          padding: '2px 8px',
+                          borderRadius: '6px',
                           marginLeft: 'auto'
                         }}>
                           {plan.savingsBadge}
                         </span>
                       )}
-                    </>
-                  )}
-                </div>
-
-                {!isEnterprise && (
-                  <div style={{ fontSize: '12px', color: isYearly ? '#16a34a' : '#64748b', fontWeight: '600', marginTop: '6px' }}>
-                    {isYearly ? `Billed annually ($${price * 12}/yr)` : 'Billed monthly · Cancel anytime'}
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#616061', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span>{isYearly ? 'per month, billed annually' : 'per month, billed monthly'}</span>
+                      <span title="Billed annually for maximum savings" style={{ cursor: 'help', color: '#868686', fontSize: '12px' }}>ⓘ</span>
+                    </div>
                   </div>
                 )}
               </div>
 
+              {/* Action Button — Placed Directly Under Price matching Slack Screenshot */}
+              <div style={{ marginBottom: '18px' }}>
+                <button
+                  type="button"
+                  onClick={() => handleCta(plan)}
+                  style={{
+                    width: '100%',
+                    padding: '12px 20px',
+                    borderRadius: '6px',
+                    fontSize: '14px',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    border: plan.popular ? 'none' : isEnterprise ? '1.5px solid #1D1C1D' : '1.5px solid #007A5A',
+                    background: plan.popular ? '#007A5A' : '#ffffff',
+                    color: plan.popular ? '#ffffff' : isEnterprise ? '#1D1C1D' : '#007A5A',
+                    boxShadow: plan.popular ? '0 1px 3px rgba(0,0,0,0.12)' : 'none'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (plan.popular) e.currentTarget.style.backgroundColor = '#00674c'
+                    else e.currentTarget.style.backgroundColor = isEnterprise ? '#F8FAFC' : '#F4FBF7'
+                  }}
+                  onMouseLeave={(e) => {
+                    if (plan.popular) e.currentTarget.style.backgroundColor = '#007A5A'
+                    else e.currentTarget.style.backgroundColor = '#ffffff'
+                  }}
+                >
+                  {plan.ctaText || 'Upgrade'}
+                </button>
+              </div>
+
               {/* Prominent Limit Callout Box */}
               <div style={{
-                background: plan.popular ? '#eff6ff' : '#f8fafc',
-                border: plan.popular ? '1px solid #bfdbfe' : '1px solid #e2e8f0',
-                borderRadius: '12px',
-                padding: '14px 16px',
-                marginBottom: '20px'
+                background: '#F8FAFC',
+                border: '1px solid #E2E8F0',
+                borderRadius: '8px',
+                padding: '12px 14px',
+                marginBottom: '16px'
               }}>
-                <div style={{ fontSize: '11px', textTransform: 'uppercase', fontWeight: '800', color: plan.popular ? '#1d4ed8' : '#475569', letterSpacing: '0.05em', marginBottom: '3px' }}>
+                <div style={{ fontSize: '10.5px', textTransform: 'uppercase', fontWeight: '800', color: '#616061', letterSpacing: '0.05em', marginBottom: '3px' }}>
                   {productTab === 'ats' ? 'Requisition & Recruiter Scope' : productTab === 'bundle' ? 'Unified Package Scope' : 'Candidate Interview Limit'}
                 </div>
-                <div style={{ fontSize: '14px', fontWeight: '800', color: '#0f172a', lineHeight: '1.35' }}>
+                <div style={{ fontSize: '13.5px', fontWeight: '800', color: '#1D1C1D', lineHeight: '1.35' }}>
                   {plan.interviewLimit}
                 </div>
-                <div style={{ fontSize: '12px', color: '#64748b', marginTop: '3px' }}>
+                <div style={{ fontSize: '11.5px', color: '#616061', marginTop: '3px' }}>
                   {plan.limitSubtext}
                 </div>
               </div>
@@ -1058,78 +1117,58 @@ export default function PricingSection({ onAuthClick, isStandalonePage = false, 
                   display: 'flex',
                   alignItems: 'center',
                   gap: '6px',
-                  fontSize: '12px',
+                  fontSize: '11.5px',
                   fontWeight: '700',
-                  color: '#1d4ed8',
-                  background: '#eff6ff',
-                  padding: '6px 12px',
-                  borderRadius: '8px',
-                  marginBottom: '18px'
+                  color: '#007A5A',
+                  background: '#E8F5E9',
+                  padding: '5px 10px',
+                  borderRadius: '6px',
+                  marginBottom: '16px'
                 }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
                   </svg>
                   <span>{plan.systemIntegration}</span>
                 </div>
               )}
 
-              {/* Feature Checklist */}
-              <div style={{ flex: 1, marginBottom: '24px' }}>
-                <div style={{ fontSize: '11.5px', fontWeight: '800', textTransform: 'uppercase', color: '#94a3b8', letterSpacing: '0.06em', marginBottom: '12px' }}>
-                  Features Included:
+              {/* Feature Checklist (Slack-style Violet Checkmark & Info Icon) */}
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', color: '#868686', letterSpacing: '0.06em', marginBottom: '12px' }}>
+                  Included Capabilities:
                 </div>
                 <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '11px' }}>
                   {plan.features.map((feat, fIdx) => (
-                    <li key={fIdx} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', fontSize: '13.5px', color: '#334155', lineHeight: 1.45 }}>
-                      <span style={{ color: '#16a34a', fontWeight: '800', flexShrink: 0, marginTop: '1px' }}>✓</span>
-                      <div>
-                        <strong style={{ color: '#0f172a', fontWeight: '700' }}>{feat.title}</strong>
-                        {feat.note && (
-                          <span style={{ display: 'block', fontSize: '11.5px', color: '#64748b', marginTop: '2px', lineHeight: '1.4' }}>
-                            {feat.note}
-                          </span>
-                        )}
+                    <li key={fIdx} style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px', fontSize: '13px', color: '#1D1C1D', lineHeight: 1.45 }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                        <span style={{ color: '#8B3A82', fontWeight: '800', flexShrink: 0, fontSize: '14px', lineHeight: 1 }}>✓</span>
+                        <div>
+                          <span style={{ color: '#1D1C1D', fontWeight: feat.note ? '600' : '400' }}>{feat.title}</span>
+                          {feat.note && (
+                            <span style={{ display: 'block', fontSize: '11.5px', color: '#616061', marginTop: '2px', lineHeight: '1.4' }}>
+                              {feat.note}
+                            </span>
+                          )}
+                        </div>
                       </div>
+                      <span title={feat.title} style={{ color: '#868686', fontSize: '12px', cursor: 'help', flexShrink: 0, userSelect: 'none' }}>ⓘ</span>
                     </li>
                   ))}
                 </ul>
 
                 {/* Exclusions */}
                 {plan.notIncluded && plan.notIncluded.length > 0 && (
-                  <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px dashed #e2e8f0' }}>
-                    <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '9px' }}>
+                  <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px dashed #E2E8F0' }}>
+                    <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       {plan.notIncluded.map((feat, fIdx) => (
-                        <li key={fIdx} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', fontSize: '12.5px', color: '#94a3b8', lineHeight: 1.4 }}>
-                          <span style={{ color: '#cbd5e1', fontWeight: '700', flexShrink: 0 }}>✕</span>
+                        <li key={fIdx} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '12px', color: '#868686', lineHeight: 1.4 }}>
+                          <span style={{ color: '#CBD5E1', fontWeight: '700', flexShrink: 0 }}>✕</span>
                           <span style={{ textDecoration: 'line-through' }}>{feat}</span>
                         </li>
                       ))}
                     </ul>
                   </div>
                 )}
-              </div>
-
-              {/* Action Button */}
-              <div>
-                <button
-                  type="button"
-                  onClick={() => handleCta(plan)}
-                  style={{
-                    width: '100%',
-                    padding: '13px 20px',
-                    borderRadius: '10px',
-                    fontSize: '14px',
-                    fontWeight: '700',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease',
-                    border: plan.ctaType === 'outline' ? '1.5px solid #cbd5e1' : 'none',
-                    background: plan.ctaType === 'primary' ? '#2563eb' : plan.ctaType === 'dark' ? '#0f172a' : '#ffffff',
-                    color: plan.ctaType === 'primary' || plan.ctaType === 'dark' ? '#ffffff' : '#0f172a',
-                    boxShadow: plan.ctaType === 'primary' ? '0 4px 14px rgba(37,99,235,0.28)' : 'none'
-                  }}
-                >
-                  {plan.ctaText}
-                </button>
               </div>
 
             </div>

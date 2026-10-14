@@ -25,6 +25,21 @@ const IconZap = () => (
 const IconSettings = () => (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
 )
+const IconFolder = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+)
+const IconLayers = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+)
+const IconVideo = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
+)
+const IconBarChart = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+)
+const IconGlobe = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+)
 const IconMenu = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
 )
@@ -908,35 +923,35 @@ Exclusivity Window: 60 Days from signature date.
 Candidate Full Legal Name:
 ${name}`;
   } else if (selectedTemplate === 'florida_fdot') {
-    subject = `FDOT Staff Augmentation RTR: ${title} (Req #${reqNumber}) - Florida DOT`;
-    ackBody = `STATE OF FLORIDA DEPARTMENT OF TRANSPORTATION
-APPENDIX IV — VENDOR STAFF AUGMENTATION SPECIFIC TERMS AND CONDITIONS (725-000-06)
+    subject = `State of Florida Staff Augmentation RTR — Exhibit E Resume Self-Certification: ${title} (Req #${reqNumber})`;
+    ackBody = `STATE OF FLORIDA — INFORMATION TECHNOLOGY STAFF AUGMENTATION SERVICES
+CONTRACT NO. 80101507-23-STC-ITSA
+EXHIBIT E — RESUME SELF-CERTIFICATION FORM
 
-By replying to this email with your confirmation or signing the agreement, you acknowledge and agree that COOLSOFT LLC has the exclusive right to represent and submit your candidate credentials to the Florida Department of Transportation (Department) for Staff Augmentation Services for Requirement #${reqNumber} (${title}).
+Requisition / Requirement Number: #${reqNumber}
+Target Position Title: ${title}
+Client Agency: State of Florida
+Agreed Hourly Submittal Rate: $${rate}/hour (${emp})
+Exclusive Representation Partner: COOLSOFT LLC
 
-Key Florida DOT Terms & Requirements:
-1. Criminal Background Check: Candidate agrees to undergo and successfully pass an FBI Level II background check using Department ORI.
-2. Independent Contractor & Co-Employment: Candidate performs services as independent contractor through COOLSOFT LLC; no direct employment or benefits with the Department.
-3. Conflict of Interest & Confidentiality: Strict adherence to Florida data protection, non-disclosure, and ethical guidelines.
-4. Exclusivity: 60 calendar days exclusive representation via COOLSOFT LLC.
-
-Requirement Number and Title:
-${title} (${reqNumber}) - Florida Department of Transportation (FDOT)
+KEY EXHIBIT E CERTIFICATION & LEGAL DISCLOSURE:
+1. Under Penalty of Perjury: Candidate certifies that all information in their resume submitted for consideration of the State of Florida contract position is true, correct, complete, and made in good faith. If an omission, falsification, misstatement, or misrepresentation has been made regarding education, work ability, experience, employment history, or fitness for employment, candidate may be disqualified, and reported for civil and/or criminal penalties under sections 287.133 or 817.566, Florida Statutes, and US DHS for deportation if non-US citizen.
+2. Consent & Public Records: Candidate consents to release of information by employers, educational institutions, and law enforcement agencies to authorized agents of Florida for verification, and understands all submitted documents are public records.
 
 Candidate Full Legal Name:
 ${name}
 
 Agreed Hourly Pay Rate:
-$${rate} /hour (${emp})
+$${rate}/hour (${emp})
 
-Candidate Employment Type:
-${emp}`;
+Candidate Form of Identification:
+State Driver's License / Official ID`;
     const fullEmailBody = `Hi ${fname},
 
 ${ackBody}
 
 Please reply directly to this email confirming your authorization:
-"I, ${name}, confirm that COOLSOFT LLC has the exclusive right to submit me for consideration to the ${title} position at the Florida Department of Transportation (FDOT) under requisition #${reqNumber} at $${rate}/hr (${emp}), and I agree to the Florida DOT Appendix IV Terms & Conditions."
+"I, ${name}, certify under penalty of perjury that my resume is true and complete, and I confirm that COOLSOFT LLC has the exclusive right to submit me for consideration to the ${title} position under State of Florida Contract No. 80101507-23-STC-ITSA (Req #${reqNumber}) at $${rate}/hr (${emp}), and I agree to all terms of Exhibit E."
 
 ${recruiterSignature}`;
 
@@ -1215,13 +1230,13 @@ export const SUBMITTAL_TEMPLATES = [
   },
   {
     id: 'florida_fdot',
-    name: 'State of Florida (FDOT Appendix IV / RTR Format)',
-    badge: 'Florida FDOT',
+    name: 'State of Florida (Exhibit E — Resume Self-Certification)',
+    badge: 'Florida Exhibit E',
     agencyName: 'COOLSOFT LLC',
-    mspName: 'Florida Department of Transportation (FDOT)',
-    contractName: 'FDOT Vendor Staff Augmentation Specific Terms and Conditions (Form 725-000-06)',
+    mspName: 'State of Florida IT Staff Augmentation',
+    contractName: 'IT Staff Augmentation Services (Contract No. 80101507-23-STC-ITSA) — Exhibit E',
     hasCaiBox: false,
-    description: 'Official State of Florida Department of Transportation (FDOT Appendix IV) Vendor Staff Augmentation Specific Terms and Conditions & RTR Agreement.'
+    description: 'Official State of Florida IT Staff Augmentation Services (Contract No. 80101507-23-STC-ITSA) Exhibit E Resume Self-Certification Form with interactive underline execution blocks.'
   },
   {
     id: 'south_carolina_sosc',
@@ -1399,9 +1414,10 @@ export default function SubmittalPackPage() {
   const rtrEditorRef = useRef(null)
   const [isLiveEditDirty, setIsLiveEditDirty] = useState(false)
 
-  // Left Sidebar State (Aubergine Slack theme, default collapsed per user request)
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(true)
+  // Left Sidebar State (Aubergine Slack theme)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [hoveredNav, setHoveredNav] = useState(null)
+  const [candidatesMenuOpen, setCandidatesMenuOpen] = useState(true)
 
   // User Profile & Avatar State (Matches RecruiterInbox.jsx)
   const [userAvatar, setUserAvatar] = useState(() => {
@@ -1903,7 +1919,7 @@ EDUCATION & CERTIFICATIONS
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <div>
               <div style="font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-weight: bold; color: #002855; letter-spacing: 0.5px; text-transform: uppercase;">
-                State of Florida Department of Transportation (FDOT)
+                State of Florida IT Staff Augmentation Services (Contract No. 80101507-23-STC-ITSA)
               </div>
               <h1 style="font-family: Arial, Helvetica, sans-serif; font-size: 20px; font-weight: bold; color: #0F172A; margin: 4px 0 3px;">
                 ${candidateName}
@@ -1914,8 +1930,8 @@ EDUCATION & CERTIFICATIONS
             </div>
             <div style="text-align: right; font-family: Arial, Helvetica, sans-serif;">
               <div style="font-size: 13.5px; font-weight: bold; color: #0F172A;">COOLSOFT LLC</div>
-              <div style="font-size: 11px; color: #64748B;">FDOT Staff Augmentation Partner</div>
-              <div style="font-size: 11px; color: #64748B;">Req #${vmsNumber} • Form 725-000-06</div>
+              <div style="font-size: 11px; color: #64748B;">Florida State Prime Contractor</div>
+              <div style="font-size: 11px; color: #64748B;">Req #${vmsNumber} • Exhibit E</div>
             </div>
           </div>
           <div style="display: flex; gap: 8px; font-family: Arial, Helvetica, sans-serif; font-size: 11.5px; color: #475569; margin-top: 8px; flex-wrap: wrap;">
@@ -2258,284 +2274,154 @@ EDUCATION & CERTIFICATIONS
     }
 
     if (selectedTemplate === 'florida_fdot') {
-      const renderFdotHeader = (pageNum) => `
-        <table style="width: 100%; border-collapse: collapse; margin-bottom: 18px; font-family: Arial, Helvetica, sans-serif;">
-          <tr>
-            <td style="vertical-align: top; text-align: left; width: 68%;">
-              <div style="font-size: 10pt; font-weight: bold; color: #000000; letter-spacing: 0.2px;">STATE OF FLORIDA DEPARTMENT OF TRANSPORTATION</div>
-              <div style="font-size: 10pt; font-weight: bold; color: #000000; margin-top: 2px;">APPENDIX IV</div>
-              <div style="font-size: 10pt; font-weight: bold; color: #000000; margin-top: 2px;">VENDOR STAFF AUGMENTATION</div>
-              <div style="font-size: 10pt; font-weight: bold; color: #000000;">SPECIFIC TERMS AND CONDITIONS</div>
-            </td>
-            <td style="vertical-align: top; text-align: right; width: 32%; font-size: 8.5pt; color: #000000; line-height: 1.35;">
-              <div>725-000-06</div>
-              <div>STRATEGIC DEVELOPMENT</div>
-              <div>03/25</div>
-              <div style="font-weight: bold; margin-top: 2px;">Page ${pageNum} of 4</div>
-            </td>
-          </tr>
-        </table>
-      `
-
       return `
-        <!-- ==================== PAGE 1 OF 4 ==================== -->
-        ${renderFdotHeader(1)}
+        <!-- State of Florida Exhibit E — Resume Self-Certification Form (Contract No. 80101507-23-STC-ITSA) -->
+        <div style="font-family: Arial, Helvetica, sans-serif; color: #000000; line-height: 1.45; font-size: 10.5pt; max-width: 820px; margin: 0 auto; padding: 10px 0;">
+          
+          <!-- Centered Official Title Block -->
+          <div style="text-align: center; margin-bottom: 24px;">
+            <div style="font-size: 11pt; font-weight: bold; color: #000000; letter-spacing: 0.2px; line-height: 1.35;">
+              Information Technology Staff Augmentation Services
+            </div>
+            <div style="font-size: 11pt; font-weight: bold; color: #000000; line-height: 1.35; margin-top: 2px;">
+              Contract No. 80101507-23-STC-ITSA
+            </div>
+            <div style="font-size: 11.5pt; font-weight: bold; color: #000000; line-height: 1.35; margin-top: 16px;">
+              Exhibit E
+            </div>
+            <div style="font-size: 11.5pt; font-weight: bold; color: #000000; line-height: 1.35; margin-top: 2px;">
+              Resume Self-Certification Form
+            </div>
+          </div>
 
-        <p style="margin: 0 0 10px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
-          <b>WHEREAS</b>, the Florida Department of Transportation (Department) is regularly in an on-going process of procurement for various Vendor Staff Augmentation support;
-        </p>
-        <p style="margin: 0 0 10px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
-          <b>WHEREAS</b>, the Vendor provides staff augmentation support to the Department;
-        </p>
-        <p style="margin: 0 0 12px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
-          <b>WHEREAS</b>, the Department reserves the right to terminate its agreement with the Vendor for a failure by its member to comply with any of the requirements detailed in this Appendix.
-        </p>
-        <p style="margin: 0 0 16px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
-          <b>NOW THEREFORE</b>, the Vendor, by acceptance of the Department’s Purchase Order for Staff Augmentation Services, hereby agrees to the precedence and applicability of the terms which follow (notwithstanding any contract terms or provisions that purport to contradict that may be found in the PUR 1000 or any other portion of the purchase order, contract or agreement):
-        </p>
-
-        <!-- ASSIGNMENT -->
-        <p style="margin: 0 0 4px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10.5pt; font-weight: bold; text-decoration: underline; color: #000000;">
-          ASSIGNMENT
-        </p>
-        <p style="margin: 0 0 14px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
-          The Vendor’s employee shall not assign, transfer or delegate its duties or work product responsibilities to another outside entity.
-        </p>
-
-        <!-- BACKGROUND CHECK FOR VENDOR STAFF -->
-        <p style="margin: 0 0 4px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10.5pt; font-weight: bold; text-decoration: underline; color: #000000;">
-          BACKGROUND CHECK FOR VENDOR STAFF
-        </p>
-        <p style="margin: 0 0 10px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
-          The Vendor employee working on systems identified by, and at the sole discretion of the Department, will undergo an FBI Level II background check. The Vendor will pay the cost of their employee’s background checks. The Vendor will utilize the Department’s Originating Agency Identifier (ORI). Vendor employees must successfully pass the Level II background check before creation of the Purchase Request.
-        </p>
-        <p style="margin: 0 0 14px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
-          Vendor employees, who have criminal histories, are under criminal investigation or become the subject of a criminal investigation for any disqualifying offense, including, but not limited to, theft, fraud, forgery, embezzlement, crimes of violence or any similar offenses should not be assigned to do work on this Agreement. Vendor or Vendor employees whose screening results indicate convictions of disqualifying offenses will not be allowed to work on this Agreement. This includes individuals who plea or pled nolo contendere or no contest to disqualifying offenses.
-        </p>
-
-        <!-- CO-EMPLOYMENT -->
-        <p style="margin: 0 0 4px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10.5pt; font-weight: bold; text-decoration: underline; color: #000000;">
-          CO-EMPLOYMENT
-        </p>
-        <p style="margin: 0 0 10px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
-          The Vendor employees are performing services under this agreement as an independent contractor to the Department and that neither the Vendor, nor any of its employees is an employee or agent of the Department. Accordingly, the Vendor, its employees have no authority to make any contract or representation or to create any obligation or liability whatsoever on behalf of the Department. Nothing herein contained shall be construed as reserving to the Department, or in the manner in which services provided herein are performed; all of the Vendor’s employees are entirely under the control and direction of the Vendor, who shall be responsible for their actions, omissions, expenses, and commitments.
-        </p>
-        <p style="margin: 0 0 10px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
-          All liability to persons providing services under this Agreement or related to the provision of services, including, but not limited to, payment of wages or other compensation, withholding of federal, state and social security taxes, insurance, unemployment benefit assessments, workers compensation, and similar charges related to wages or other compensation, shall be the sole responsibility of the Vendor. The Department shall not provide benefits of any kind, including, but not limited to, health insurance, life insurance, educational reimbursements, credit, savings plans or vacation to Vendor employees.
-        </p>
-        <p style="margin: 0 0 14px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
-          The Vendor shall notify the Department immediately should the Vendor, for any reason, terminate their employee.
-        </p>
-
-        <!-- CONFLICT OF INTEREST -->
-        <p style="margin: 0 0 4px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10.5pt; font-weight: bold; text-decoration: underline; color: #000000;">
-          CONFLICT OF INTEREST
-        </p>
-        <p style="margin: 0 0 10px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
-          To prevent any bias, unfair competitive advantage, conflict of interest, or the appearance of impropriety, Vendor employees must not have been directly or indirectly involved in the development of the Scope of Services or related solicitation documentation for which the Vendor is preparing a bid. If the Vendor employee worked in conjunction with the Department on the development of the solicitation document, the Vendor is disqualified from submitting a bid for this solicitation. The Vendor personnel assigned to other Department projects outside this Agreement, shall hold and maintain any confidential information that could benefit the Vendor on future solicitations in strictest confidence.
-        </p>
-        <p style="margin: 0 0 6px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000;">
-          The Department will avoid Organizational Conflict of Interest through mitigation efforts in three categories:
-        </p>
-        <p style="margin: 0 0 12px 20px; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
-          a. <b>“Unequal Access”</b> wherein an unfair competitive advantage surfaces when a Vendor obtains information not generally available to other competitors, and where such information would assist them in winning the contract over their competitors.
-        </p>
-
-        <!-- ==================== PAGE 2 OF 4 ==================== -->
-        <div style="border-top: 2px dashed #94A3B8; margin: 32px 0 24px 0; text-align: center; color: #64748B; font-size: 10.5px; font-weight: bold; letter-spacing: 0.5px; padding-top: 6px;">─── PAGE BREAK • PAGE 2 OF 4 ───</div>
-        ${renderFdotHeader(2)}
-
-        <p style="margin: 0 0 6px 20px; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
-          b. <b>“Impaired Objectivity”</b> wherein a support Vendor is performing duties that involve assessing or evaluating itself or a related entity.
-        </p>
-        <p style="margin: 0 0 14px 20px; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
-          c. <b>“Biased Ground Rules”</b> wherein the Vendor is writing the SOW, performing systems engineering, or providing technical direction efforts.
-        </p>
-
-        <!-- CONTRACTED HOURS -->
-        <p style="margin: 0 0 4px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10.5pt; font-weight: bold; text-decoration: underline; color: #000000;">
-          CONTRACTED HOURS
-        </p>
-        <p style="margin: 0 0 10px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
-          The Vendor is responsible to ensure their employees do not exceed the billable hours approved on the Purchase Order (PO) for Staff Augmentation Services, without prior written approval from the Department. Failures rising from billable hours higher than permitted on the PO, will result in non-payment of the overage and termination of the Agreement and services of the Vendor’s employee.
-        </p>
-        <p style="margin: 0 0 10px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
-          Vendor will submit one (1) consolidated, accurate invoice monthly for actual hours worked. Approved timesheets and work activity must be submitted with invoices.
-        </p>
-        <p style="margin: 0 0 10px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
-          The Vendor shall email a completed invoice to <a href="mailto:Co-OITAdminSupport@dot.state.fl.us" style="color: #0000EE; text-decoration: underline;">Co-OITAdminSupport@dot.state.fl.us</a> no later than the 15th day of the month following the month worked.
-        </p>
-        <p style="margin: 0 0 14px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
-          The invoice will be calculated monthly based on the total number of hours worked multiplied by the approved rate per hour specified in the PO. If the Vendor incurs additional costs not approved by the Department under this contract, such services shall be deemed gratuitous and not subject to payment by the State. No additional charges for overtime, or incidental expenses are permitted.
-        </p>
-
-        <!-- DATA SECURITY AND CONFIDENTIALITY -->
-        <p style="margin: 0 0 4px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10.5pt; font-weight: bold; text-decoration: underline; color: #000000;">
-          DATA SECURITY AND CONFIDENTIALITY
-        </p>
-        <p style="margin: 0 0 10px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
-          The Vendor and its employee must comply with all Department security procedures while working on this Agreement. The Vendor shall provide immediate notice to the Department’s Information Security Manager (ISM) in the event it becomes aware of any security breach, any unauthorized transmission of State Data as described below or of any allegation or suspected violation of the Department security procedures. Except as required by law or legal process and after notice to the Department, the Vendor shall not divulge to third parties any confidential information obtained by the Vendor’s employees in the course of performing work, including, but not limited to, Chapter 74-2, F.A.C., security procedures, business operations information, or commercial proprietary information in the possession of the state and/or the Department.
-        </p>
-        <p style="margin: 0 0 4px 16px; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000;">
-          <b>a. Loss of Data</b>
-        </p>
-        <p style="margin: 0 0 10px 32px; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
-          In the event of loss of any Department or State data or record where such loss is due to the negligence of the Vendor employee, the Vendor shall be responsible for recreating such lost data in the manner and on the schedule set by the Department at the Vendor’s sole expense.
-        </p>
-        <p style="margin: 0 0 4px 16px; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000;">
-          <b>b. Data Protection</b>
-        </p>
-        <p style="margin: 0 0 14px 32px; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
-          No state data or information will be transmitted to, stored in, processed in, or shipped to offshore locations or out of the United States of America, regardless of method, except as required by law. This includes accessing data by Vendor employees while they travel outside of the Continental United States. Examples of these methods include (but are not limited to): FTP transfer, DVD, tape, or drive shipping; regardless of level of encryption employed. Access to State Data shall only be available to approved and authorized staff, that have a legitimate business need.
-        </p>
-
-        <!-- FACILITIES AND EQUIPMENT -->
-        <p style="margin: 0 0 4px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10.5pt; font-weight: bold; text-decoration: underline; color: #000000;">
-          FACILITIES AND EQUIPMENT
-        </p>
-        <p style="margin: 0 0 14px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
-          Upon completion of Security Awareness Training by the Vendor’s employee, the Department shall provide necessary access to the Department network. The work will be conducted on-site in the applicable Florida Project Office. The Department may provide workspace to use while on site. All property furnished by the Department for use by the Vendor during this Agreement will remain the property of the State of Florida and must be surrendered upon termination of contract.
-        </p>
-
-        <!-- GIFTS -->
-        <p style="margin: 0 0 4px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10.5pt; font-weight: bold; text-decoration: underline; color: #000000;">
-          GIFTS
-        </p>
-        <p style="margin: 0 0 14px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
-          The Vendor and its employees will not provide gifts (tangible or intangible) of any value to Department employees. Violation of the prohibition may, at the sole discretion of the Department, result in termination of the Agreement and disqualification of the Vendor from future Department procurements.
-        </p>
-
-        <!-- GUIDELINES AND STANDARDS -->
-        <p style="margin: 0 0 4px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10.5pt; font-weight: bold; text-decoration: underline; color: #000000;">
-          GUIDELINES AND STANDARDS
-        </p>
-        <p style="margin: 0 0 14px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
-          The Vendor’s employee agrees to comply with the Department’s best practices and standards, including, but not limited to, the most current version available on the Department Standards and Guidelines Set website.
-        </p>
-
-        <!-- ==================== PAGE 3 OF 4 ==================== -->
-        <div style="border-top: 2px dashed #94A3B8; margin: 32px 0 24px 0; text-align: center; color: #64748B; font-size: 10.5px; font-weight: bold; letter-spacing: 0.5px; padding-top: 6px;">─── PAGE BREAK • PAGE 3 OF 4 ───</div>
-        ${renderFdotHeader(3)}
-
-        <!-- HARASSMENT AND DISCRIMINATION -->
-        <p style="margin: 0 0 4px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10.5pt; font-weight: bold; text-decoration: underline; color: #000000;">
-          HARASSMENT AND DISCRIMINATION
-        </p>
-        <p style="margin: 0 0 14px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
-          The Vendor must ensure that their employees maintain a work ethic that is free from any unlawful harassment or discrimination based on a person's gender, age, race, sexual orientation, religion, nationality or physical disability or condition. Unlawful harassment includes verbal, physical and visual harassment; unwelcome sexual advances; solicitation of sexual favors; and/or creating or maintaining an intimidating or hostile work environment.
-        </p>
-
-        <!-- NON-DISCLOSURE OF INFORMATION -->
-        <p style="margin: 0 0 4px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10.5pt; font-weight: bold; text-decoration: underline; color: #000000;">
-          NON-DISCLOSURE OF INFORMATION
-        </p>
-        <p style="margin: 0 0 10px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
-          As a condition of the Agreement, the Department’s Confidential Information will be deemed the sole property of the Department, and the Vendor’s employees will use this Confidential Information only for the purposes of performing the Vendor’s obligations under this Agreement. The Vendor’s employees will not publish, transmit, release or disclose confidential Information to any other person without the Department’s prior written consent, which the Department may withhold at its sole discretion. The Vendor’s obligations of non-disclosure and confidentiality with respect to the Department’s information will survive the expiration or termination of this Agreement for a period of five (5) years.
-        </p>
-        <p style="margin: 0 0 14px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
-          A violation by contracted personnel may result in termination of the individual, and at the Department’s discretion, disqualification of the Vendor from future Department procurements.
-        </p>
-
-        <!-- RELATIVES WORKING AT THE DEPARTMENT -->
-        <p style="margin: 0 0 4px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10.5pt; font-weight: bold; text-decoration: underline; color: #000000;">
-          RELATIVES WORKING AT THE DEPARTMENT
-        </p>
-        <p style="margin: 0 0 10px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
-          Work activities of relatives in the same area of an organization may cause serious conflicts and problems with favoritism and morale. In addition to claims of partiality in treatment in the workplace, personal conflicts from outside the work environment can be carried into day-to-day working relationships. For the purposes of this policy, a relative is any person who is related by blood or marriage, or whose relationship with the Department employee or Vendor employee is similar to that of persons who are related by blood or marriage.
-        </p>
-        <p style="margin: 0 0 10px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
-          Vendor Employees that are a relative of a Department employee, or another Vendor’s employee under consideration for contracting by the Department, may be signed only if they will not be working directly for or supervising a relative. Vendor employees cannot be transferred into such a reporting relationship.
-        </p>
-        <p style="margin: 0 0 14px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
-          In other cases where a conflict, or the potential for conflict arises, even if there is no supervisory relationship involved, the Vendor employee’s contract may be terminated. Sole discretion on determining such conflicts will reside with the Department.
-        </p>
-
-        <!-- SECURITY OF CONFIDENTIAL PERSONAL INFORMATION -->
-        <p style="margin: 0 0 4px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10.5pt; font-weight: bold; text-decoration: underline; color: #000000;">
-          SECURITY OF CONFIDENTIAL PERSONAL INFORMATION
-        </p>
-        <p style="margin: 0 0 10px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
-          Except as necessary to fulfill the terms of this Agreement and with the permission of the Department, the Vendor employee shall not divulge to third parties any confidential information obtained by the Vendor or its employees in the course of performing work on this Agreement, including, but not limited to, security procedures, business operations information, or commercial proprietary information in the possession of the State or the Department. If the Vendor employee has access to confidential information in order to fulfill the Vendor’s obligations under this Agreement, the Vendor agrees to abide by all applicable Department Information Technology Security procedures and policies. For purposes of this Agreement, “Security Incident” means the attempted or successful unauthorized access, use, disclosure, modification, or destruction of Department information in the Vendor’s possession. The Vendor shall make a report to the Department not more than seven (7) business days after the Vendor learns of such use or disclosure.
-        </p>
-        <p style="margin: 0 0 10px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
-          The Vendor’s report shall identify, to the extent known: (i) the nature of the unauthorized use or disclosure, (ii) the confidential information used or disclosed, (iii) the identity of the person(s) that conducted the unauthorized use or received the unauthorized disclosure, (iv) what the Vendor has done or shall do to mitigate any deleterious effect of the unauthorized use or disclosure, and (v) what corrective action the Vendor has taken or shall take to prevent future similar unauthorized use or disclosure.
-        </p>
-        <p style="margin: 0 0 14px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
-          In the event a “Security Incident” also includes a “breach of security”, as defined by section 501.171, F.S., as amended, concerning confidential personal information involved with this Agreement, the Vendor shall comply with section 501.171, F.S. When notification to affected persons is required under this section of the statute, the Vendor shall provide that notification, but only after receipt of the Department’s approval of the contents of the notice. Defined statutorily, and for purposes of this Agreement, “breach of security” or “breach” means the unauthorized access of data in electronic form containing personal information.
-        </p>
-
-        <!-- SOLICITATION -->
-        <p style="margin: 0 0 4px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10.5pt; font-weight: bold; text-decoration: underline; color: #000000;">
-          SOLICITATION
-        </p>
-        <p style="margin: 0 0 14px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
-          The Vendor shall not solicit for employment any employee actively employed by the Department. Notwithstanding the foregoing, the Vendor, will not have violated the terms set forth in the preceding sentence if an employee of the Department responds to a general solicitation for employment issued by the Vendor, such as a newspaper advertisement in applicable
-        </p>
-
-        <!-- ==================== PAGE 4 OF 4 ==================== -->
-        <div style="border-top: 2px dashed #94A3B8; margin: 32px 0 24px 0; text-align: center; color: #64748B; font-size: 10.5px; font-weight: bold; letter-spacing: 0.5px; padding-top: 6px;">─── PAGE BREAK • PAGE 4 OF 4 ───</div>
-        ${renderFdotHeader(4)}
-
-        <p style="margin: 0 0 10px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
-          trade journal, a posted advertisement at one's own facility or in a regular publication (such as newsletter or classified) of the Vendor where such jobs are typically posted.
-        </p>
-        <p style="margin: 0 0 14px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
-          Violation of the solicitation clause, may at the Department’s discretion, disqualify the Vendor from future Department procurements for a period of one-year.
-        </p>
-
-        <!-- TRAINING -->
-        <p style="margin: 0 0 4px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10.5pt; font-weight: bold; text-decoration: underline; color: #000000;">
-          TRAINING
-        </p>
-        <p style="margin: 0 0 18px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
-          The Vendor shall provide, all such training to the employees of the Vendor as may be useful or necessary for them to perform all the duties under this Agreement. The Vendor shall provide training necessary for keeping Vendor’s employees abreast of industry advances and for maintaining proficiency in equipment and systems that are available on the commercial market. Such training shall be provided at the sole expense of the Vendor.
-        </p>
-
-        <!-- CANDIDATE & VENDOR RIGHT TO REPRESENT ACKNOWLEDGEMENT & EXECUTION BLOCK -->
-        <div style="border: 2px solid #0F172A; border-radius: 4px; padding: 16px; margin-top: 20px; background-color: #F8FAFC;">
-          <p style="margin: 0 0 6px 0; font-family: Arial, Helvetica, sans-serif; font-size: 11pt; font-weight: bold; color: #0F172A; text-transform: uppercase;">
-            VENDOR & CANDIDATE STAFF AUGMENTATION REPRESENTATION ACKNOWLEDGEMENT
-          </p>
-          <p style="margin: 0 0 12px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #334155;">
-            Requisition / PO #: <b>${vmsNumber}</b> &nbsp;|&nbsp; Target Position: <b>${positionTitle}</b> &nbsp;|&nbsp; Agency: <b>Florida Department of Transportation (FDOT)</b>
-          </p>
-          <p style="margin: 0 0 12px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
-            The undersigned Vendor Employee / Candidate hereby grants <b>COOLSOFT LLC</b> the exclusive right to represent and submit my candidate credentials and resume for the requirement identified above with the Florida Department of Transportation. I certify that all credentials and work history are true and accurate, and I agree to comply with all terms and conditions of this Appendix IV (Form 725-000-06), including background check requirements and confidentiality.
+          <!-- Instruction Paragraph -->
+          <p style="margin: 0 0 22px 0; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
+            The Contractor's candidates shall complete this Resume Self-Certification Form. Completed Resume Self-Certification Forms shall be submitted within the Contractor's response to Customer's Request for Quotes.
           </p>
 
-          <table style="width: 100%; border-collapse: collapse; margin-top: 14px; font-family: Arial, Helvetica, sans-serif; font-size: 10pt;">
-            <tr>
-              <td style="width: 50%; vertical-align: top; padding-right: 14px; border-right: 1px solid #CBD5E1;">
-                <div style="font-weight: bold; color: #0F172A; margin-bottom: 8px;">CANDIDATE ACKNOWLEDGEMENT:</div>
-                <div style="margin-bottom: 6px;"><b>Candidate Full Legal Name:</b></div>
-                <div style="margin-bottom: 10px;">
-                  <span style="background-color: #FFFF00; font-weight: bold; padding: 2px 8px; border-bottom: 1px solid #000000;">
-                    ${candidateName}
-                  </span>
-                </div>
-                <div style="margin-bottom: 6px;"><b>Proposed Hourly Rate:</b></div>
-                <div style="margin-bottom: 12px;">
-                  $<span style="background-color: #FFFF00; font-weight: bold; padding: 2px 6px;">${cleanRateNumber}</span>/hour (${employmentType})
-                </div>
-                <div style="margin-bottom: 6px;"><b>Candidate Signature:</b></div>
-                <div style="border-bottom: 1px solid #000000; height: 26px; width: 85%; margin-bottom: 6px; font-family: 'Brush Script MT', cursive, sans-serif; font-size: 18px; color: #1E3A8A; padding-top: 2px;">
-                  ${candidateName}
-                </div>
-                <div><b>Date:</b> ${new Date().toLocaleDateString('en-US')}</div>
-              </td>
-              <td style="width: 50%; vertical-align: top; padding-left: 14px;">
-                <div style="font-weight: bold; color: #0F172A; margin-bottom: 8px;">AUTHORIZED VENDOR (COOLSOFT LLC):</div>
-                <div style="margin-bottom: 6px;"><b>Authorized Vendor:</b> COOLSOFT LLC</div>
-                <div style="margin-bottom: 6px;"><b>Vendor Representative:</b> Omkesh Manjute</div>
-                <div style="margin-bottom: 10px;"><b>Title:</b> Director of Talent Acquisition / Account Manager</div>
-                <div style="margin-bottom: 6px;"><b>Vendor Signature:</b></div>
-                <div style="border-bottom: 1px solid #000000; height: 26px; width: 85%; margin-bottom: 6px; font-family: 'Brush Script MT', cursive, sans-serif; font-size: 18px; color: #1E3A8A; padding-top: 2px;">
-                  Omkesh Manjute
-                </div>
-                <div><b>Date:</b> ${new Date().toLocaleDateString('en-US')}</div>
-              </td>
-            </tr>
-          </table>
+          <!-- Clause 1 (Certification under penalty of perjury) -->
+          <p style="margin: 0 0 22px 0; font-size: 9.75pt; line-height: 1.55; color: #000000; text-align: justify;">
+            &ldquo;I the undersigned do hereby certify, under the penalty of perjury, that information in my resume submitted for consideration of the State of Florida contract position is true, correct, complete, and made in good faith to the best of my knowledge and belief. If an omission, falsification, misstatement, or misrepresentation has been made regarding my education, work ability, experience, employment history, and/or fitness for employment as a contractor, I may be disqualified as a contractor, and the matter will be reported to appropriate agency or law enforcement personnel. I understand that there may be civil and/or criminal penalties for misrepresenting pertinent information in connection with contract positions, including, but not limited to, penalties available under sections 287.133 or 817.566, Florida Statutes. I further understand that if I am not a United States citizen, violation cases may be reported to the US Department of Homeland Security for potential deportation.&rdquo;
+          </p>
+
+          <!-- Clause 2 (Consent to release of information / Public records disclosure) -->
+          <p style="margin: 0 0 32px 0; font-size: 9.75pt; line-height: 1.55; color: #000000; text-align: justify;">
+            &ldquo;In addition, I the undersigned do hereby consent to the release of my information by employers, educational institutions, law enforcement agencies, and other individuals and organizations to investigators and other authorized agents of Florida for verification and investigation purposes. I understand that any documents submitted to procure a contract(s) with the State of Florida, including resumes, are public records.&rdquo;
+          </p>
+
+          <!-- Form Execution & Underline Input Fields (Directly Editable on Canvas) -->
+          <div style="margin-top: 26px;">
+            <!-- Row 1: Candidate Full Legal Name -->
+            <div style="margin-bottom: 24px; max-width: 520px;">
+              <div contenteditable="true" style="border-bottom: 1.5px solid #000000; width: 100%; min-height: 24px; padding: 2px 4px; font-size: 10.5pt; font-family: Arial, sans-serif; color: #000000; outline: none;">
+                ${candidateName || ''}
+              </div>
+              <div style="font-size: 9.5pt; color: #000000; margin-top: 4px;">
+                Print Full Legal Name of Candidate
+              </div>
+            </div>
+
+            <!-- Row 2: Candidate Signature & Date -->
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px;">
+              <tr>
+                <td style="width: 58%; vertical-align: bottom; padding-right: 28px;">
+                  <div contenteditable="true" style="border-bottom: 1.5px solid #000000; width: 100%; min-height: 24px; padding: 2px 4px; font-family: 'Brush Script MT', cursive, sans-serif; font-size: 15pt; color: #1E3A8A; outline: none;">
+                    ${candidateName || ''}
+                  </div>
+                  <div style="font-size: 9.5pt; color: #000000; margin-top: 4px;">
+                    Candidate's Signature
+                  </div>
+                </td>
+                <td style="width: 42%; vertical-align: bottom;">
+                  <div contenteditable="true" style="border-bottom: 1.5px solid #000000; width: 75%; min-height: 24px; padding: 2px 4px; font-size: 10.5pt; font-family: Arial, sans-serif; color: #000000; outline: none;">
+                    ${new Date().toLocaleDateString('en-US')}
+                  </div>
+                  <div style="font-size: 9.5pt; color: #000000; margin-top: 4px;">
+                    Date
+                  </div>
+                </td>
+              </tr>
+            </table>
+
+            <!-- Row 3: Candidate Identification Presented & Identification number -->
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px;">
+              <tr>
+                <td style="width: 58%; vertical-align: bottom; padding-right: 28px;">
+                  <div contenteditable="true" style="border-bottom: 1.5px solid #000000; width: 100%; min-height: 24px; padding: 2px 4px; font-size: 10pt; font-family: Arial, sans-serif; color: #000000; outline: none;">
+                    State Driver's License
+                  </div>
+                  <div style="font-size: 9.5pt; color: #000000; margin-top: 4px;">
+                    Candidate's Form of Identification Presented
+                  </div>
+                </td>
+                <td style="width: 42%; vertical-align: bottom;">
+                  <div contenteditable="true" style="border-bottom: 1.5px solid #000000; width: 75%; min-height: 24px; padding: 2px 4px; font-size: 10pt; font-family: Arial, sans-serif; color: #000000; outline: none;">
+                    FL-ID-${vmsNumber || 'PENDING'}
+                  </div>
+                  <div style="font-size: 9.5pt; color: #000000; margin-top: 4px;">
+                    Identification number
+                  </div>
+                </td>
+              </tr>
+            </table>
+
+            <!-- Row 4: Contractor's Witness Signature One + Date & Witness Signature Two + Date -->
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px;">
+              <tr>
+                <td style="width: 34%; vertical-align: bottom; padding-right: 10px;">
+                  <div contenteditable="true" style="border-bottom: 1.5px solid #000000; width: 100%; min-height: 24px; padding: 2px 4px; font-family: 'Brush Script MT', cursive, sans-serif; font-size: 14pt; color: #1E3A8A; outline: none;">
+                    Omkesh Manjute
+                  </div>
+                  <div style="font-size: 9.5pt; color: #000000; margin-top: 4px;">
+                    Contractor's Witness Signature One
+                  </div>
+                </td>
+                <td style="width: 14%; vertical-align: bottom; padding-right: 20px;">
+                  <div contenteditable="true" style="border-bottom: 1.5px solid #000000; width: 100%; min-height: 24px; padding: 2px 4px; font-size: 10pt; font-family: Arial, sans-serif; color: #000000; outline: none;">
+                    ${new Date().toLocaleDateString('en-US')}
+                  </div>
+                  <div style="font-size: 9.5pt; color: #000000; margin-top: 4px;">
+                    Date
+                  </div>
+                </td>
+                <td style="width: 36%; vertical-align: bottom; padding-right: 10px;">
+                  <div contenteditable="true" style="border-bottom: 1.5px solid #000000; width: 100%; min-height: 24px; padding: 2px 4px; font-family: Arial, sans-serif; font-size: 10pt; color: #000000; outline: none;">
+                  </div>
+                  <div style="font-size: 9.5pt; color: #000000; margin-top: 4px;">
+                    Contractor's Witness Signature Two
+                  </div>
+                </td>
+                <td style="width: 16%; vertical-align: bottom;">
+                  <div contenteditable="true" style="border-bottom: 1.5px solid #000000; width: 100%; min-height: 24px; padding: 2px 4px; font-size: 10pt; font-family: Arial, sans-serif; color: #000000; outline: none;">
+                  </div>
+                  <div style="font-size: 9.5pt; color: #000000; margin-top: 4px;">
+                    Date
+                  </div>
+                </td>
+              </tr>
+            </table>
+
+            <!-- Row 5: Print Name Contractor's Witness One & Print Name Contractor's Witness Two -->
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 10px;">
+              <tr>
+                <td style="width: 48%; vertical-align: bottom; padding-right: 20px;">
+                  <div contenteditable="true" style="border-bottom: 1.5px solid #000000; width: 85%; min-height: 24px; padding: 2px 4px; font-size: 10pt; font-family: Arial, sans-serif; color: #000000; outline: none;">
+                    Omkesh Manjute
+                  </div>
+                  <div style="font-size: 9.5pt; color: #000000; margin-top: 4px;">
+                    Print Name Contractor's Witness One
+                  </div>
+                </td>
+                <td style="width: 52%; vertical-align: bottom;">
+                  <div contenteditable="true" style="border-bottom: 1.5px solid #000000; width: 85%; min-height: 24px; padding: 2px 4px; font-size: 10pt; font-family: Arial, sans-serif; color: #000000; outline: none;">
+                  </div>
+                  <div style="font-size: 9.5pt; color: #000000; margin-top: 4px;">
+                    Print Name Contractor's Witness Two
+                  </div>
+                </td>
+              </tr>
+            </table>
+          </div>
         </div>
       `
     }
@@ -3013,220 +2899,255 @@ ${coversheet.references}
           )}
         </div>
 
-        {/* Navigation Items */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 3, padding: '12px 8px' }}>
-          {/* 1. Dashboard */}
-          <button
-            type="button"
-            title="Dashboard"
-            onMouseEnter={() => setHoveredNav('dashboard')}
-            onMouseLeave={() => setHoveredNav(null)}
-            onClick={() => navigate('/inbox?tab=dashboard')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
-              gap: 12,
-              padding: sidebarCollapsed ? '10px 0' : '9px 12px',
-              borderRadius: 6,
-              border: 'none',
-              background: hoveredNav === 'dashboard' ? 'rgba(255,255,255,0.08)' : 'transparent',
-              color: hoveredNav === 'dashboard' ? '#FFFFFF' : 'rgba(255,255,255,0.72)',
-              fontWeight: 500,
-              fontSize: 13,
-              cursor: 'pointer',
-              width: '100%',
-              transition: 'all 0.15s ease'
-            }}
-          >
-            <IconHome /> {!sidebarCollapsed && <span>Dashboard</span>}
-          </button>
+        {/* Navigation Items — All ATS Pages with Slack-style Accordion on Candidates */}
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 2,
+          padding: sidebarCollapsed ? '8px 4px' : '8px 8px',
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          flex: 1
+        }}>
+          {[
+            {
+              groupLabel: 'Core ATS',
+              items: [
+                { id: 'dashboard', label: 'Dashboard', icon: <IconHome />, path: '/dashboard' },
+                { id: 'requisitions', label: 'Requisitions', icon: <IconFolder />, path: '/dashboard' },
+                {
+                  id: 'candidates',
+                  label: 'Candidates',
+                  icon: <IconUsers />,
+                  isAccordion: true,
+                  subItems: [
+                    { id: 'cand_all', label: 'All Candidates', path: '/inbox' },
+                    { id: 'cand_hotlists', label: 'Vendor Hotlists', path: '/inbox?tab=hotlists', badge: 'BENCH' },
+                    { id: 'cand_monster', label: 'Universal Search', path: '/inbox?tab=monster' },
+                    { id: 'cand_ingest', label: 'Scan Ingest', path: '/inbox' },
+                    { id: 'cand_jobsites', label: 'Job Sites Portal', path: '/inbox?tab=careers' },
+                  ]
+                },
+                { id: 'ats', label: 'ATS Workspace', icon: <IconLayers />, path: '/ats' },
+              ]
+            },
+            {
+              groupLabel: 'Submissions & Closing',
+              items: [
+                { id: 'submittal_pack', label: 'Submittal Pack', icon: <IconFileText />, path: '/submittal-pack', active: true },
+                { id: 'smartsign_rtr', label: 'SmartSign RTR', icon: <IconSignature />, path: '/sign-rtr' },
+                { id: 'smartscreen', label: 'SmartScreen AI', icon: <IconVideo />, path: '/smartscreen' },
+              ]
+            },
+            {
+              groupLabel: 'Intel & Portal',
+              items: [
+                { id: 'chat', label: 'Messages', icon: <IconChat />, path: '/inbox?tab=chat' },
+                { id: 'reports', label: 'Reports', icon: <IconBarChart />, path: '/reports' },
+                { id: 'jobs', label: 'Careers Portal', icon: <IconGlobe />, path: '/jobs' },
+                { id: 'settings', label: 'Settings', icon: <IconSettings />, path: '/ats' },
+              ]
+            }
+          ].map((group) => (
+            <div key={group.groupLabel} style={{ marginBottom: sidebarCollapsed ? 4 : 8 }}>
+              {!sidebarCollapsed && (
+                <div style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  color: 'rgba(255,255,255,0.4)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.06em',
+                  padding: '6px 10px 3px',
+                  userSelect: 'none'
+                }}>
+                  {group.groupLabel}
+                </div>
+              )}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {group.items.map((item) => {
+                  if (item.isAccordion) {
+                    const isHovered = hoveredNav === item.id
+                    return (
+                      <div key={item.id} style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+                        <button
+                          type="button"
+                          title="Candidates & Talent Sourcing"
+                          onMouseEnter={() => setHoveredNav(item.id)}
+                          onMouseLeave={() => setHoveredNav(null)}
+                          onClick={() => {
+                            if (sidebarCollapsed) {
+                              setSidebarCollapsed(false)
+                              setCandidatesMenuOpen(true)
+                            } else {
+                              setCandidatesMenuOpen(!candidatesMenuOpen)
+                            }
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: sidebarCollapsed ? 'center' : 'space-between',
+                            padding: sidebarCollapsed ? '8px 0' : '7.5px 10px',
+                            borderRadius: 6,
+                            border: 'none',
+                            background: isHovered ? 'rgba(255,255,255,0.08)' : 'transparent',
+                            color: isHovered ? '#FFFFFF' : 'rgba(255,255,255,0.78)',
+                            fontWeight: isHovered ? 600 : 500,
+                            fontSize: 12.5,
+                            cursor: 'pointer',
+                            width: '100%',
+                            textAlign: 'left',
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          <span style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', flexShrink: 0 }}>
+                              {item.icon}
+                            </span>
+                            {!sidebarCollapsed && (
+                              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {item.label}
+                              </span>
+                            )}
+                          </span>
+                          {!sidebarCollapsed && (
+                            <span
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                width: 18,
+                                height: 18,
+                                color: 'rgba(255,255,255,0.7)',
+                                transition: 'all 0.15s ease'
+                              }}
+                            >
+                              <svg
+                                width="9"
+                                height="9"
+                                viewBox="0 0 24 24"
+                                fill="currentColor"
+                                style={{
+                                  transition: 'transform 0.22s cubic-bezier(0.4, 0, 0.2, 1)',
+                                  transform: candidatesMenuOpen ? 'rotate(0deg)' : 'rotate(180deg)'
+                                }}
+                              >
+                                <path d="M12 8l6 6H6z" />
+                              </svg>
+                            </span>
+                          )}
+                        </button>
 
-          {/* 2. Candidates */}
-          <button
-            type="button"
-            title="Candidates"
-            onMouseEnter={() => setHoveredNav('candidates')}
-            onMouseLeave={() => setHoveredNav(null)}
-            onClick={() => navigate('/inbox')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
-              gap: 12,
-              padding: sidebarCollapsed ? '10px 0' : '9px 12px',
-              borderRadius: 6,
-              border: 'none',
-              background: hoveredNav === 'candidates' ? 'rgba(255,255,255,0.08)' : 'transparent',
-              color: hoveredNav === 'candidates' ? '#FFFFFF' : 'rgba(255,255,255,0.72)',
-              fontWeight: 500,
-              fontSize: 13,
-              cursor: 'pointer',
-              width: '100%',
-              transition: 'all 0.15s ease'
-            }}
-          >
-            <IconUsers /> {!sidebarCollapsed && <span>Candidates</span>}
-          </button>
+                        {/* Slack-style smoothly nested sub-items */}
+                        {candidatesMenuOpen && !sidebarCollapsed && (
+                          <div style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 1,
+                            paddingLeft: 10,
+                            marginLeft: 17,
+                            marginTop: 2,
+                            marginBottom: 4,
+                            borderLeft: '1.5px solid rgba(255,255,255,0.18)'
+                          }}>
+                            {item.subItems.map((sub) => {
+                              const isSubHovered = hoveredNav === sub.id
+                              return (
+                                <button
+                                  key={sub.id}
+                                  type="button"
+                                  title={sub.label}
+                                  onMouseEnter={() => setHoveredNav(sub.id)}
+                                  onMouseLeave={() => setHoveredNav(null)}
+                                  onClick={() => navigate(sub.path)}
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    padding: '5.5px 8px',
+                                    borderRadius: 5,
+                                    border: 'none',
+                                    background: isSubHovered ? 'rgba(255,255,255,0.08)' : 'transparent',
+                                    color: isSubHovered ? '#FFFFFF' : 'rgba(255,255,255,0.68)',
+                                    fontSize: 12,
+                                    fontWeight: isSubHovered ? 600 : 400,
+                                    cursor: 'pointer',
+                                    textAlign: 'left',
+                                    width: '100%',
+                                    transition: 'all 0.12s ease'
+                                  }}
+                                >
+                                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                    {sub.label}
+                                  </span>
+                                  {sub.badge && (
+                                    <span style={{
+                                      fontSize: 9,
+                                      fontWeight: 800,
+                                      padding: '1px 5px',
+                                      borderRadius: 4,
+                                      backgroundColor: 'rgba(16,185,129,0.22)',
+                                      color: '#34D399',
+                                      letterSpacing: '0.4px'
+                                    }}>
+                                      {sub.badge}
+                                    </span>
+                                  )}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  }
 
-          {/* 3. Messages */}
-          <button
-            type="button"
-            title="Messages"
-            onMouseEnter={() => setHoveredNav('chat')}
-            onMouseLeave={() => setHoveredNav(null)}
-            onClick={() => navigate('/inbox?tab=chat')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
-              gap: 12,
-              padding: sidebarCollapsed ? '10px 0' : '9px 12px',
-              borderRadius: 6,
-              border: 'none',
-              background: hoveredNav === 'chat' ? 'rgba(255,255,255,0.08)' : 'transparent',
-              color: hoveredNav === 'chat' ? '#FFFFFF' : 'rgba(255,255,255,0.72)',
-              fontWeight: 500,
-              fontSize: 13,
-              cursor: 'pointer',
-              width: '100%',
-              transition: 'all 0.15s ease'
-            }}
-          >
-            <IconChat /> {!sidebarCollapsed && <span>Messages</span>}
-          </button>
-
-          {/* 4. Vendor Hotlists */}
-          <button
-            type="button"
-            title="Vendor Hotlists"
-            onMouseEnter={() => setHoveredNav('hotlists')}
-            onMouseLeave={() => setHoveredNav(null)}
-            onClick={() => navigate('/inbox?tab=hotlists')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
-              gap: 12,
-              padding: sidebarCollapsed ? '10px 0' : '9px 12px',
-              borderRadius: 6,
-              border: 'none',
-              background: hoveredNav === 'hotlists' ? 'rgba(255,255,255,0.08)' : 'transparent',
-              color: hoveredNav === 'hotlists' ? '#FFFFFF' : 'rgba(255,255,255,0.72)',
-              fontWeight: 500,
-              fontSize: 13,
-              cursor: 'pointer',
-              width: '100%',
-              transition: 'all 0.15s ease'
-            }}
-          >
-            <IconBriefcase /> {!sidebarCollapsed && <span>Vendor Hotlists</span>}
-          </button>
-
-          {/* 5. Scan Ingest */}
-          <button
-            type="button"
-            title="Scan Ingest"
-            onMouseEnter={() => setHoveredNav('scaningest')}
-            onMouseLeave={() => setHoveredNav(null)}
-            onClick={() => navigate('/inbox')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
-              gap: 12,
-              padding: sidebarCollapsed ? '10px 0' : '9px 12px',
-              borderRadius: 6,
-              border: 'none',
-              background: hoveredNav === 'scaningest' ? 'rgba(255,255,255,0.08)' : 'transparent',
-              color: hoveredNav === 'scaningest' ? '#FFFFFF' : 'rgba(255,255,255,0.72)',
-              fontWeight: 500,
-              fontSize: 13,
-              cursor: 'pointer',
-              width: '100%',
-              transition: 'all 0.15s ease'
-            }}
-          >
-            <IconZap /> {!sidebarCollapsed && <span>Scan Ingest</span>}
-          </button>
-
-          {/* 6. Submittal Pack (Active Tab) */}
-          <button
-            type="button"
-            title="Submittal Pack & Coversheet Generator"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
-              gap: 12,
-              padding: sidebarCollapsed ? '10px 0' : '9px 12px',
-              borderRadius: 6,
-              border: 'none',
-              background: '#1164A3',
-              color: '#FFFFFF',
-              fontWeight: 700,
-              fontSize: 13,
-              cursor: 'pointer',
-              width: '100%',
-              boxShadow: '0 1px 2px rgba(0,0,0,0.2)'
-            }}
-          >
-            <IconFileText /> {!sidebarCollapsed && <span>Submittal Pack</span>}
-          </button>
-
-          {/* 7. SmartSign RTR */}
-          <button
-            type="button"
-            title="SmartSign RTR Digital Signatures"
-            onMouseEnter={() => setHoveredNav('smartsign_rtr')}
-            onMouseLeave={() => setHoveredNav(null)}
-            onClick={() => navigate('/sign-rtr')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
-              gap: 12,
-              padding: sidebarCollapsed ? '10px 0' : '9px 12px',
-              borderRadius: 6,
-              border: 'none',
-              background: hoveredNav === 'smartsign_rtr' ? 'rgba(255,255,255,0.08)' : 'transparent',
-              color: hoveredNav === 'smartsign_rtr' ? '#FFFFFF' : 'rgba(255,255,255,0.72)',
-              fontWeight: 500,
-              fontSize: 13,
-              cursor: 'pointer',
-              width: '100%',
-              transition: 'all 0.15s ease'
-            }}
-          >
-            <IconSignature /> {!sidebarCollapsed && <span>SmartSign RTR</span>}
-          </button>
-
-          {/* 8. Settings */}
-          <button
-            type="button"
-            title="Settings"
-            onMouseEnter={() => setHoveredNav('settings')}
-            onMouseLeave={() => setHoveredNav(null)}
-            onClick={() => navigate('/ats')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
-              gap: 12,
-              padding: sidebarCollapsed ? '10px 0' : '9px 12px',
-              borderRadius: 6,
-              border: 'none',
-              background: hoveredNav === 'settings' ? 'rgba(255,255,255,0.08)' : 'transparent',
-              color: hoveredNav === 'settings' ? '#FFFFFF' : 'rgba(255,255,255,0.72)',
-              fontWeight: 500,
-              fontSize: 13,
-              cursor: 'pointer',
-              width: '100%',
-              transition: 'all 0.15s ease'
-            }}
-          >
-            <IconSettings /> {!sidebarCollapsed && <span>Settings</span>}
-          </button>
+                  const isCurrent = Boolean(item.active)
+                  const isHovered = hoveredNav === item.id
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      title={item.label}
+                      onMouseEnter={() => setHoveredNav(item.id)}
+                      onMouseLeave={() => setHoveredNav(null)}
+                      onClick={() => navigate(item.path)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
+                        gap: 11,
+                        padding: sidebarCollapsed ? '8px 0' : '7.5px 10px',
+                        borderRadius: 6,
+                        border: 'none',
+                        background: isCurrent
+                          ? '#1164A3'
+                          : (isHovered ? 'rgba(255,255,255,0.08)' : 'transparent'),
+                        color: isCurrent
+                          ? '#FFFFFF'
+                          : (isHovered ? '#FFFFFF' : 'rgba(255,255,255,0.72)'),
+                        fontWeight: isCurrent ? 700 : (isHovered ? 600 : 500),
+                        fontSize: 12.5,
+                        cursor: 'pointer',
+                        width: '100%',
+                        textAlign: 'left',
+                        transition: 'all 0.15s ease',
+                        boxShadow: isCurrent ? '0 1px 2px rgba(0,0,0,0.2)' : 'none'
+                      }}
+                    >
+                      <span style={{ display: 'inline-flex', alignItems: 'center', flexShrink: 0 }}>
+                        {item.icon}
+                      </span>
+                      {!sidebarCollapsed && (
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {item.label}
+                        </span>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
         </div>
 
         {/* Gemini AI Personal Agent Button */}
@@ -4377,24 +4298,6 @@ ${coversheet.references}
                 <span style={{ fontSize: '11.5px', color: '#64748B' }}>
                   • Req #{vmsNumber} • Rate: ${cleanRateNumber}/hr ({employmentType})
                 </span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <button
-                  type="button"
-                  onClick={handleCopyRtr}
-                  style={styles.rtrActionSmallBtn}
-                  title="Copy RTR Email Subject & Body"
-                >
-                  <IconCopy /> <span>Copy RTR Email</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={handleOpenRtrEmailModal}
-                  style={{ ...styles.rtrActionSmallBtn, color: '#1D4ED8', borderColor: '#BFDBFE', backgroundColor: '#EFF6FF' }}
-                  title="Email RTR to Candidate"
-                >
-                  <IconMail /> <span>Email Candidate</span>
-                </button>
               </div>
             </div>
 

@@ -228,32 +228,40 @@ Representation Term: 60 Days`,
   },
   {
     id: 'florida_fdot',
-    name: 'State of Florida (FDOT Appendix IV) E-RTR',
-    description: 'Official State of Florida Department of Transportation Vendor Staff Augmentation Specific Terms and Conditions (Form 725-000-06) & RTR Agreement.',
+    name: 'State of Florida (Exhibit E — Resume Self-Certification)',
+    description: 'Official State of Florida IT Staff Augmentation Services (Contract No. 80101507-23-STC-ITSA) Exhibit E Resume Self-Certification Form.',
     rate: '$90.00/hr',
-    client: 'Florida Department of Transportation (FDOT)',
+    client: 'State of Florida (Contract No. 80101507-23-STC-ITSA)',
     doc: {
-      id: 'fdot-rtr-doc',
-      title: 'State of Florida DOT Vendor Staff Augmentation Specific Terms and Conditions (Appendix IV)',
-      contractNo: 'FDOT-725-000-06',
+      id: 'florida-exhibit-e-doc',
+      title: 'State of Florida IT Staff Augmentation Services — Exhibit E Resume Self-Certification Form',
+      contractNo: '80101507-23-STC-ITSA',
       maxBillRate: '$110.00',
-      clientName: 'Florida Department of Transportation (FDOT)',
-      content: `STATE OF FLORIDA DEPARTMENT OF TRANSPORTATION
-APPENDIX IV — VENDOR STAFF AUGMENTATION SPECIFIC TERMS AND CONDITIONS (725-000-06)
+      clientName: 'State of Florida',
+      content: `Information Technology Staff Augmentation Services
+Contract No. 80101507-23-STC-ITSA
 
-By signing below, the undersigned Vendor Employee / Candidate acknowledges and agrees that COOLSOFT LLC has the exclusive right to represent and submit my qualifications and professional resume to the Florida Department of Transportation (Department) for Staff Augmentation Services for Requirement #[Req #] ([Position Title]).
+Exhibit E
+Resume Self-Certification Form
 
-I verify that all information in my resume is true and accurate, and I agree to comply with all terms and conditions set forth in this Appendix IV, including FBI Level II Background Check, independent contractor/co-employment provisions, data confidentiality, non-disclosure, and Florida state security guidelines.
+The Contractor's candidates shall complete this Resume Self-Certification Form. Completed Resume Self-Certification Forms shall be submitted within the Contractor's response to Customer's Request for Quotes.
 
-Requisition / PO #: [Req #]
-Position: [Position Title]
-Agency: Florida Department of Transportation (FDOT)
-Authorized Vendor: COOLSOFT LLC
-Candidate Representation Exclusivity: 60 Days`,
+"I the undersigned do hereby certify, under the penalty of perjury, that information in my resume submitted for consideration of the State of Florida contract position is true, correct, complete, and made in good faith to the best of my knowledge and belief. If an omission, falsification, misstatement, or misrepresentation has been made regarding my education, work ability, experience, employment history, and/or fitness for employment as a contractor, I may be disqualified as a contractor, and the matter will be reported to appropriate agency or law enforcement personnel. I understand that there may be civil and/or criminal penalties for misrepresenting pertinent information in connection with contract positions, including, but not limited to, penalties available under sections 287.133 or 817.566, Florida Statutes. I further understand that if I am not a United States citizen, violation cases may be reported to the US Department of Homeland Security for potential deportation."
+
+"In addition, I the undersigned do hereby consent to the release of my information by employers, educational institutions, law enforcement agencies, and other individuals and organizations to investigators and other authorized agents of Florida for verification and investigation purposes. I understand that any documents submitted to procure a contract(s) with the State of Florida, including resumes, are public records."
+
+Requisition / Requirement #: [Req #]
+Position Title: [Position Title]
+Authorized Contractor: COOLSOFT LLC`,
       defaultFields: [
         { id: 'f1', type: 'signature', label: 'Candidate Signature', required: true, x: 60, y: 520, signerIndex: 0 },
-        { id: 'f2', type: 'date', label: 'Date signed', required: true, x: 420, y: 520, signerIndex: 0 },
-        { id: 'f3', type: 'name', label: 'Candidate Full Legal Name', required: true, x: 60, y: 460, signerIndex: 0 }
+        { id: 'f2', type: 'date', label: 'Date', required: true, x: 420, y: 520, signerIndex: 0 },
+        { id: 'f3', type: 'name', label: 'Print Full Legal Name of Candidate', required: true, x: 60, y: 460, signerIndex: 0 },
+        { id: 'f4', type: 'text', label: "Candidate's Form of Identification Presented", required: true, x: 60, y: 580, signerIndex: 0 },
+        { id: 'f5', type: 'text', label: 'Identification number', required: true, x: 420, y: 580, signerIndex: 0 },
+        { id: 'f6', type: 'signature', label: "Contractor's Witness Signature One", required: true, x: 60, y: 640, signerIndex: 1 },
+        { id: 'f7', type: 'date', label: 'Date', required: true, x: 280, y: 640, signerIndex: 1 },
+        { id: 'f8', type: 'text', label: "Print Name Contractor's Witness One", required: true, x: 60, y: 700, signerIndex: 1 }
       ]
     }
   }

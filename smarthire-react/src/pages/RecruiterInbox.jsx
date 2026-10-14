@@ -7793,7 +7793,105 @@ export default function RecruiterInbox({ defaultViewMode }) {
             {!sidebarCollapsed && <span>SmartSign RTR</span>}
           </button>
 
-          {/* 8. Settings */}
+          {/* 8. SmartScreen AI */}
+          <button
+            type="button"
+            title="SmartScreen AI Video Screening Studio"
+            onMouseEnter={() => setHoveredNav('smartscreen')}
+            onMouseLeave={() => setHoveredNav(null)}
+            onClick={() => navigate('/smartscreen')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
+              gap: 12,
+              padding: sidebarCollapsed ? '10px 0' : '9px 12px',
+              borderRadius: 6,
+              border: 'none',
+              background: hoveredNav === 'smartscreen' ? 'rgba(255,255,255,0.08)' : 'transparent',
+              color: hoveredNav === 'smartscreen' ? '#FFFFFF' : 'rgba(255,255,255,0.72)',
+              fontWeight: hoveredNav === 'smartscreen' ? 600 : 500,
+              fontSize: 13,
+              cursor: 'pointer',
+              textAlign: 'left',
+              width: '100%',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+              <polygon points="23 7 16 12 23 17 23 7"></polygon>
+              <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+            </svg>
+            {!sidebarCollapsed && <span>SmartScreen AI</span>}
+          </button>
+
+          {/* 9. Reports & Analytics */}
+          <button
+            type="button"
+            title="Reports & Analytics"
+            onMouseEnter={() => setHoveredNav('reports')}
+            onMouseLeave={() => setHoveredNav(null)}
+            onClick={() => navigate('/reports')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
+              gap: 12,
+              padding: sidebarCollapsed ? '10px 0' : '9px 12px',
+              borderRadius: 6,
+              border: 'none',
+              background: hoveredNav === 'reports' ? 'rgba(255,255,255,0.08)' : 'transparent',
+              color: hoveredNav === 'reports' ? '#FFFFFF' : 'rgba(255,255,255,0.72)',
+              fontWeight: hoveredNav === 'reports' ? 600 : 500,
+              fontSize: 13,
+              cursor: 'pointer',
+              textAlign: 'left',
+              width: '100%',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+              <line x1="18" y1="20" x2="18" y2="10"></line>
+              <line x1="12" y1="20" x2="12" y2="4"></line>
+              <line x1="6" y1="20" x2="6" y2="14"></line>
+            </svg>
+            {!sidebarCollapsed && <span>Reports & Analytics</span>}
+          </button>
+
+          {/* 10. Public Careers */}
+          <button
+            type="button"
+            title="Public Careers Portal (/jobs)"
+            onMouseEnter={() => setHoveredNav('careers_portal')}
+            onMouseLeave={() => setHoveredNav(null)}
+            onClick={() => navigate('/jobs')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
+              gap: 12,
+              padding: sidebarCollapsed ? '10px 0' : '9px 12px',
+              borderRadius: 6,
+              border: 'none',
+              background: hoveredNav === 'careers_portal' ? 'rgba(255,255,255,0.08)' : 'transparent',
+              color: hoveredNav === 'careers_portal' ? '#FFFFFF' : 'rgba(255,255,255,0.72)',
+              fontWeight: hoveredNav === 'careers_portal' ? 600 : 500,
+              fontSize: 13,
+              cursor: 'pointer',
+              textAlign: 'left',
+              width: '100%',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="2" y1="12" x2="22" y2="12"></line>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+            </svg>
+            {!sidebarCollapsed && <span>Careers Portal</span>}
+          </button>
+
+          {/* 11. Settings */}
           <button
             type="button"
             title="Settings"
