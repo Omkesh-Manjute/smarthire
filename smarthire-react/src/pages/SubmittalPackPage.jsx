@@ -904,6 +904,45 @@ Exclusivity Window: 60 Days from signature date.
 
 Candidate Full Legal Name:
 ${name}`;
+  } else if (selectedTemplate === 'florida_fdot') {
+    subject = `FDOT Staff Augmentation RTR: ${title} (Req #${reqNumber}) - Florida DOT`;
+    ackBody = `STATE OF FLORIDA DEPARTMENT OF TRANSPORTATION
+APPENDIX IV — VENDOR STAFF AUGMENTATION SPECIFIC TERMS AND CONDITIONS (725-000-06)
+
+By replying to this email with your confirmation or signing the agreement, you acknowledge and agree that COOLSOFT LLC has the exclusive right to represent and submit your candidate credentials to the Florida Department of Transportation (Department) for Staff Augmentation Services for Requirement #${reqNumber} (${title}).
+
+Key Florida DOT Terms & Requirements:
+1. Criminal Background Check: Candidate agrees to undergo and successfully pass an FBI Level II background check using Department ORI.
+2. Independent Contractor & Co-Employment: Candidate performs services as independent contractor through COOLSOFT LLC; no direct employment or benefits with the Department.
+3. Conflict of Interest & Confidentiality: Strict adherence to Florida data protection, non-disclosure, and ethical guidelines.
+4. Exclusivity: 60 calendar days exclusive representation via COOLSOFT LLC.
+
+Requirement Number and Title:
+${title} (${reqNumber}) - Florida Department of Transportation (FDOT)
+
+Candidate Full Legal Name:
+${name}
+
+Agreed Hourly Pay Rate:
+$${rate} /hour (${emp})
+
+Candidate Employment Type:
+${emp}`;
+    const fullEmailBody = `Hi ${fname},
+
+${ackBody}
+
+Please reply directly to this email confirming your authorization:
+"I, ${name}, confirm that COOLSOFT LLC has the exclusive right to submit me for consideration to the ${title} position at the Florida Department of Transportation (FDOT) under requisition #${reqNumber} at $${rate}/hr (${emp}), and I agree to the Florida DOT Appendix IV Terms & Conditions."
+
+${recruiterSignature}`;
+
+    return {
+      subject,
+      ackBody,
+      fullEmailBody,
+      recruiterSignature
+    };
   } else {
     // Standard Direct Client RTR
     subject = `Right to Represent (RTR): ${title} (Req #${reqNumber}) - ${client}`;
@@ -943,6 +982,222 @@ ${recruiterSignature}`;
   };
 }
 
+// ─── Rich HTML Email Generator with Preserved Colors & Highlights ─────────
+export function generateRichEmailHtml({
+  mode = 'rtr',
+  emailBody = '',
+  coversheet = {},
+  positionTitle = '',
+  vmsNumber = '',
+  clientAgency = '',
+  employmentType = 'C2C',
+  cleanRateNumber = '75',
+  currentUser = null
+}) {
+  const candName = coversheet?.candidateLegalName || 'Candidate';
+  const roleStr = positionTitle || 'Consultant';
+  const reqStr = vmsNumber || '';
+  const clientStr = clientAgency || 'Client';
+
+  const escapeHtml = (str) => {
+    return String(str || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  };
+
+  if (mode === 'rtr') {
+    const rawBlocks = (emailBody || '').split(/\n\s*\n/);
+    const formattedBlocks = rawBlocks.map(block => {
+      const trimmed = block.trim();
+      if (!trimmed) return '';
+
+      // Instructional line: "Please reply..." or "Please confirm..."
+      if (/^please\s+(reply|confirm)/i.test(trimmed)) {
+        let blockHtml = escapeHtml(trimmed).replace(/\n/g, '<br/>');
+        if (candName && candName.trim().length > 1) {
+          const regName = new RegExp(candName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+          blockHtml = blockHtml.replace(regName, `<mark style="background-color: #FFFF00; color: #000000; font-weight: bold; padding: 2px 5px; border-radius: 2px;">${escapeHtml(candName)}</mark>`);
+        }
+        return `
+          <div style="background-color: #FEF2F2; border-left: 4px solid #DC2626; color: #991B1B; padding: 12px 14px; margin: 16px 0; border-radius: 0 4px 4px 0; font-size: 13.5px; line-height: 1.5;">
+            <strong style="color: #B91C1C; text-transform: uppercase; font-size: 11.5px; letter-spacing: 0.03em; display: block; margin-bottom: 4px;">Candidate Authorization Required:</strong>
+            ${blockHtml}
+          </div>
+        `;
+      }
+
+      // Main Headers
+      if (/^(right to represent|state of florida|fdot|appendix iv|acknowledgement)/i.test(trimmed) && trimmed.length < 140) {
+        return `
+          <div style="font-size: 15px; font-weight: bold; color: #0F172A; border-bottom: 2px solid #2563EB; padding-bottom: 6px; margin: 20px 0 12px 0; text-transform: uppercase; letter-spacing: 0.02em;">
+            ${escapeHtml(trimmed).replace(/\n/g, '<br/>')}
+          </div>
+        `;
+      }
+
+      // Signature block
+      if (/^(thanks & regards|best regards|sincerely)/i.test(trimmed)) {
+        return `
+          <div style="margin-top: 24px; padding-top: 14px; border-top: 1px solid #E2E8F0; font-size: 13px; color: #334155; line-height: 1.5;">
+            ${escapeHtml(trimmed).replace(/\n/g, '<br/>')}
+          </div>
+        `;
+      }
+
+      // Paragraph formatting
+      let pContent = escapeHtml(trimmed);
+
+      // Highlight candidate name in yellow
+      if (candName && candName.trim().length > 2) {
+        const regName = new RegExp(`(${candName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+        pContent = pContent.replace(regName, `<mark style="background-color: #FFFF00; color: #000000; font-weight: bold; padding: 2px 5px; border-radius: 2px;">$1</mark>`);
+      }
+
+      // Highlight pay rate in yellow ($xx /hour or $xx/hr)
+      pContent = pContent.replace(/(\$[\d]+(?:\.[\d]{2})?\s*(?:\/hour|\/hr)?)/gi, `<mark style="background-color: #FFFF00; color: #000000; font-weight: bold; padding: 2px 5px; border-radius: 2px;">$1</mark>`);
+
+      // Bold key RTR labels
+      pContent = pContent.replace(/(VectorVMS Requirement Number and Title[^:]*:|Requirement Number and Title:|Candidate Full Legal Name:|Candidate Legal Name:|Candidate Pay Rate[^:]*:|Agreed Hourly Pay Rate:|Candidate Hourly Rate:|Candidate Employment Type[^:]*:|Agreed Rate & Term:|Scope of Representation:|Candidate Acknowledgment:)/gi, '<strong style="color: #0F172A; display: inline-block; margin-top: 5px;">$1</strong>');
+
+      pContent = pContent.replace(/\n/g, '<br/>');
+      return `<p style="margin: 0 0 12px 0; font-size: 13.5px; line-height: 1.6; color: #1E293B;">${pContent}</p>`;
+    }).filter(Boolean).join('');
+
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 20px; background-color: #F8FAFC; font-family: Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+  <div style="max-width: 680px; margin: 0 auto; background-color: #FFFFFF; border: 1px solid #CBD5E1; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+    <div style="background-color: #0F172A; padding: 16px 24px; border-bottom: 3px solid #2563EB;">
+      <div style="color: #FFFFFF; font-size: 16px; font-weight: bold; letter-spacing: -0.01em;">COOLSOFT LLC</div>
+      <div style="color: #94A3B8; font-size: 11px; margin-top: 2px;">Staff Augmentation & Talent Acquisition • Req #${escapeHtml(reqStr)}</div>
+    </div>
+    <div style="padding: 24px 28px; color: #1E293B;">
+      ${formattedBlocks}
+    </div>
+    <div style="background-color: #F1F5F9; padding: 12px 24px; border-top: 1px solid #E2E8F0; text-align: center; font-size: 11px; color: #64748B;">
+      COOLSOFT LLC • 1902 Campus Place, Suite 12, Louisville, KY 40299 • https://www.coolsofttech.com
+    </div>
+  </div>
+</body>
+</html>
+    `;
+  } else {
+    // Mode is submittal package
+    const coverMsgHtml = escapeHtml(emailBody).replace(/\n/g, '<br/>');
+
+    const skillsRows = (coversheet?.skillsMatrix || []).map(s => `
+      <tr>
+        <td style="padding: 6px 10px; border: 1px solid #CBD5E1; font-weight: 600; font-size: 12px; color: #0F172A;">${escapeHtml(s.skill)}</td>
+        <td style="padding: 6px 10px; border: 1px solid #CBD5E1; font-size: 12px; color: #475569;">${escapeHtml(s.requiredExp)}</td>
+        <td style="padding: 6px 10px; border: 1px solid #CBD5E1; font-size: 12px; color: #059669; font-weight: bold;">${escapeHtml(s.candidateExp)}</td>
+        <td style="padding: 6px 10px; border: 1px solid #CBD5E1; font-size: 12px; color: #1D4ED8; font-weight: bold;">${escapeHtml(s.rating)}</td>
+      </tr>
+    `).join('');
+
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 20px; background-color: #F8FAFC; font-family: Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+  <div style="max-width: 720px; margin: 0 auto; background-color: #FFFFFF; border: 1px solid #CBD5E1; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+    <div style="background-color: #0F172A; padding: 18px 24px; border-bottom: 3px solid #2563EB;">
+      <div style="color: #FFFFFF; font-size: 17px; font-weight: bold;">COOLSOFT LLC — CANDIDATE SUBMITTAL PACKAGE</div>
+      <div style="color: #94A3B8; font-size: 12px; margin-top: 3px;">
+        Candidate: <span style="background-color: #FFFF00; color: #000000; font-weight: bold; padding: 2px 5px; border-radius: 2px;">${escapeHtml(candName)}</span> • ${escapeHtml(roleStr)} (Req #${escapeHtml(reqStr)})
+      </div>
+    </div>
+    <div style="padding: 20px 24px;">
+      <div style="font-size: 13.5px; line-height: 1.6; color: #1E293B; margin-bottom: 20px;">
+        ${coverMsgHtml}
+      </div>
+      <div style="margin: 20px 0;">
+        <div style="font-size: 13px; font-weight: bold; color: #0F172A; text-transform: uppercase; margin-bottom: 8px; border-bottom: 1.5px solid #2563EB; padding-bottom: 4px;">
+          Candidate Parameters & Compliance Summary
+        </div>
+        <table style="width: 100%; border-collapse: collapse; font-size: 12.5px;">
+          <tbody>
+            <tr style="background-color: #F8FAFC;">
+              <td style="padding: 6px 10px; border: 1px solid #CBD5E1; font-weight: bold; width: 32%; color: #334155;">Candidate Legal Name:</td>
+              <td style="padding: 6px 10px; border: 1px solid #CBD5E1; font-weight: bold; color: #0F172A;">
+                <mark style="background-color: #FFFF00; color: #000000; padding: 2px 4px;">${escapeHtml(candName)}</mark>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 10px; border: 1px solid #CBD5E1; font-weight: bold; color: #334155;">Requisition / VMS #:</td>
+              <td style="padding: 6px 10px; border: 1px solid #CBD5E1; color: #2563EB; font-weight: bold;">${escapeHtml(reqStr)} (${escapeHtml(clientStr)})</td>
+            </tr>
+            <tr style="background-color: #F8FAFC;">
+              <td style="padding: 6px 10px; border: 1px solid #CBD5E1; font-weight: bold; color: #334155;">Proposed Rate:</td>
+              <td style="padding: 6px 10px; border: 1px solid #CBD5E1; font-weight: bold; color: #0F172A;">
+                <mark style="background-color: #FFFF00; color: #000000; padding: 2px 4px;">${escapeHtml(coversheet.proposedRate || `$${cleanRateNumber}/hr ${employmentType}`)}</mark>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 10px; border: 1px solid #CBD5E1; font-weight: bold; color: #334155;">Work Authorization / Visa:</td>
+              <td style="padding: 6px 10px; border: 1px solid #CBD5E1; color: #0F172A;">${escapeHtml(coversheet.visaStatus || 'US Citizen')} (Expiry: ${escapeHtml(coversheet.visaExpiry || 'Permanent')})</td>
+            </tr>
+            <tr style="background-color: #F8FAFC;">
+              <td style="padding: 6px 10px; border: 1px solid #CBD5E1; font-weight: bold; color: #334155;">Location & Relocation:</td>
+              <td style="padding: 6px 10px; border: 1px solid #CBD5E1; color: #0F172A;">${escapeHtml(coversheet.currentLocation || 'US')} • ${escapeHtml(coversheet.willingToRelocate || 'Open to Relocation')}</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 10px; border: 1px solid #CBD5E1; font-weight: bold; color: #334155;">Total / Relevant Experience:</td>
+              <td style="padding: 6px 10px; border: 1px solid #CBD5E1; color: #0F172A;">${escapeHtml(coversheet.totalExperience || '8+ Years')} Total / ${escapeHtml(coversheet.relevantExperience || '7+ Years')} Relevant</td>
+            </tr>
+            <tr style="background-color: #F8FAFC;">
+              <td style="padding: 6px 10px; border: 1px solid #CBD5E1; font-weight: bold; color: #334155;">Highest Education:</td>
+              <td style="padding: 6px 10px; border: 1px solid #CBD5E1; color: #0F172A;">${escapeHtml(coversheet.highestEducation || 'B.S. in Computer Science')}</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 10px; border: 1px solid #CBD5E1; font-weight: bold; color: #334155;">Availability / Notice Period:</td>
+              <td style="padding: 6px 10px; border: 1px solid #CBD5E1; color: #059669; font-weight: bold;">${escapeHtml(coversheet.noticePeriod || '2 Weeks')} (${escapeHtml(coversheet.interviewAvailability || 'Flexible')})</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      ${skillsRows ? `
+      <div style="margin: 20px 0;">
+        <div style="font-size: 13px; font-weight: bold; color: #0F172A; text-transform: uppercase; margin-bottom: 8px; border-bottom: 1.5px solid #2563EB; padding-bottom: 4px;">
+          Required Technical Skills Matrix
+        </div>
+        <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+          <thead>
+            <tr style="background-color: #F1F5F9;">
+              <th style="padding: 7px 10px; border: 1px solid #CBD5E1; text-align: left; color: #334155;">Skill / Requirement</th>
+              <th style="padding: 7px 10px; border: 1px solid #CBD5E1; text-align: left; color: #334155;">Required</th>
+              <th style="padding: 7px 10px; border: 1px solid #CBD5E1; text-align: left; color: #334155;">Candidate Exp</th>
+              <th style="padding: 7px 10px; border: 1px solid #CBD5E1; text-align: left; color: #334155;">Rating</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${skillsRows}
+          </tbody>
+        </table>
+      </div>
+      ` : ''}
+      <div style="margin-top: 24px; padding-top: 14px; border-top: 1px solid #E2E8F0; font-size: 12.5px; color: #475569; line-height: 1.5;">
+        <strong>COOLSOFT LLC Submissions Team</strong><br/>
+        Email: ${escapeHtml(currentUser?.email || 'submissions@coolsofttech.com')}<br/>
+        Phone: ${escapeHtml(currentUser?.phone || '502-327-9805')}<br/>
+        Web: <a href="https://www.coolsofttech.com" style="color: #2563EB;">https://www.coolsofttech.com</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+    `;
+  }
+}
+
 // ─── Supported Presentation & E-RTR Templates ──────────────────────────────
 export const SUBMITTAL_TEMPLATES = [
   {
@@ -954,6 +1209,16 @@ export const SUBMITTAL_TEMPLATES = [
     contractName: 'Master Professional Services Agreement',
     hasCaiBox: false,
     description: 'Corporate client coversheet with agency letterhead, competencies matrix, and standard RTR.'
+  },
+  {
+    id: 'florida_fdot',
+    name: 'State of Florida (FDOT Appendix IV / RTR Format)',
+    badge: 'Florida FDOT',
+    agencyName: 'COOLSOFT LLC',
+    mspName: 'Florida Department of Transportation (FDOT)',
+    contractName: 'FDOT Vendor Staff Augmentation Specific Terms and Conditions (Form 725-000-06)',
+    hasCaiBox: false,
+    description: 'Official State of Florida Department of Transportation (FDOT Appendix IV) Vendor Staff Augmentation Specific Terms and Conditions & RTR Agreement.'
   },
   {
     id: 'south_carolina_sosc',
@@ -1044,10 +1309,6 @@ export default function SubmittalPackPage() {
   const [candidates, setCandidates] = useState([])
   const [jobs, setJobs] = useState([])
   const [selectedCandidateId, setSelectedCandidateId] = useState('')
-  const [candidateSearchQuery, setCandidateSearchQuery] = useState('')
-  const [isSearchingCandidates, setIsSearchingCandidates] = useState(false)
-  const [remoteSearchResults, setRemoteSearchResults] = useState([])
-  const [isCandidateSearchOpen, setIsCandidateSearchOpen] = useState(false)
   const [selectedJobId, setSelectedJobId] = useState('')
   const [selectedTemplate, setSelectedTemplate] = useState('standard')
   const [activePreviewTab, setActivePreviewTab] = useState('resume') // 'resume', 'rtr', 'all'
@@ -1070,6 +1331,7 @@ export default function SubmittalPackPage() {
   // Email Dispatch Modal (Submittal Pack or RTR)
   const [showEmailModal, setShowEmailModal] = useState(false)
   const [emailModalMode, setEmailModalMode] = useState('submittal') // 'submittal' | 'rtr'
+  const [emailPreviewTab, setEmailPreviewTab] = useState('edit') // 'edit' | 'preview'
   const [emailTo, setEmailTo] = useState('')
   const [emailSubject, setEmailSubject] = useState('')
   const [emailBody, setEmailBody] = useState('')
@@ -1251,50 +1513,38 @@ export default function SubmittalPackPage() {
     return candidates.find(c => c.id === selectedCandidateId || c.candidate_id === selectedCandidateId)
   }, [candidates, selectedCandidateId])
 
-  // Matched candidate list for Candidate Search Bar
-  const matchedCandidatesList = useMemo(() => {
-    const q = candidateSearchQuery.trim().toLowerCase()
-    if (!q) {
-      return candidates.slice(0, 8)
-    }
-    const local = candidates.filter(c => {
-      const name = (c.name || '').toLowerCase()
-      const email = (c.email || '').toLowerCase()
-      const role = (c.role || '').toLowerCase()
-      const skills = (Array.isArray(c.skills) ? c.skills.join(' ') : String(c.skills || '')).toLowerCase()
-      return name.includes(q) || email.includes(q) || role.includes(q) || skills.includes(q)
-    })
-    const seen = new Set(local.map(c => String(c.id || c.candidate_id)))
-    const remote = remoteSearchResults.filter(r => !seen.has(String(r.id || r.candidate_id)))
-    return [...local, ...remote]
-  }, [candidateSearchQuery, candidates, remoteSearchResults])
+  // Selected Job Object
+  const selectedJobObj = useMemo(() => {
+    return jobs.find(j => String(j.id) === String(selectedJobId) || String(j.id).replace(/^J-/, '') === String(selectedJobId))
+  }, [jobs, selectedJobId])
 
-  // Debounced Remote Candidate Search on Backend
+  // State for Searchable Job Requisition
+  const [jobSearchQuery, setJobSearchQuery] = useState('')
+  const [isJobDropdownOpen, setIsJobDropdownOpen] = useState(false)
+  const jobDropdownRef = useRef(null)
+
+  // Close job dropdown on outside click
   useEffect(() => {
-    const q = candidateSearchQuery.trim()
-    if (!q || q.length < 2) {
-      setRemoteSearchResults([])
-      setIsSearchingCandidates(false)
-      return
-    }
-    const timer = setTimeout(async () => {
-      setIsSearchingCandidates(true)
-      try {
-        const res = await fetch(`/api/candidates?search=${encodeURIComponent(q)}&summary=true&limit=25`, {
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('smarthire_token') || ''}` }
-        })
-        const data = await res.json()
-        if (data.success && Array.isArray(data.candidates)) {
-          setRemoteSearchResults(data.candidates)
-        }
-      } catch (err) {
-        console.warn('Error searching candidates remotely:', err)
-      } finally {
-        setIsSearchingCandidates(false)
+    const handleOutsideClick = (e) => {
+      if (jobDropdownRef.current && !jobDropdownRef.current.contains(e.target)) {
+        setIsJobDropdownOpen(false)
       }
-    }, 280)
-    return () => clearTimeout(timer)
-  }, [candidateSearchQuery])
+    }
+    document.addEventListener('mousedown', handleOutsideClick)
+    return () => document.removeEventListener('mousedown', handleOutsideClick)
+  }, [])
+
+  // Filtered Job Requisitions for Search Combobox
+  const filteredJobs = useMemo(() => {
+    const q = jobSearchQuery.trim().toLowerCase()
+    if (!q) return jobs.slice(0, 25)
+    return jobs.filter(j => {
+      const titleStr = (j.title || '').toLowerCase()
+      const clientStr = (j.client || '').toLowerCase()
+      const idStr = String(j.id || '').toLowerCase()
+      return titleStr.includes(q) || clientStr.includes(q) || idStr.includes(q)
+    }).slice(0, 30)
+  }, [jobs, jobSearchQuery])
 
   // Lazy-load full candidate resume if missing in summary
   const loadedCandidateResumesRef = useRef(new Set())
@@ -1371,6 +1621,8 @@ export default function SubmittalPackPage() {
       setSelectedTemplate('nebraska_state')
     } else if (lowerCombined.includes('sosc') || lowerCombined.includes('south carolina') || lowerCombined.includes('sc.gov')) {
       setSelectedTemplate('south_carolina_sosc')
+    } else if (lowerCombined.includes('florida') || lowerCombined.includes('fdot') || lowerCombined.includes('state of florida')) {
+      setSelectedTemplate('florida_fdot')
     }
     setIsLiveEditDirty(false)
   }, [selectedJobId, jobs])
@@ -1386,6 +1638,10 @@ export default function SubmittalPackPage() {
       setCaiManagerName('Tim Brodrick')
       setCaiManagerPhone('678-427-3660')
       setCaiManagerEmail('Timothy.Brodrick@cai.io')
+    } else if (tplId === 'florida_fdot') {
+      if (!clientAgency || clientAgency === 'Enterprise Client' || clientAgency === 'Client Agency') {
+        setClientAgency('Florida Department of Transportation (FDOT)')
+      }
     }
     setIsLiveEditDirty(false)
   }
@@ -1632,6 +1888,45 @@ EDUCATION & CERTIFICATIONS
 
         <!-- Structured Resume Body (Summary, Skills, Experience with Project Titles & Bullets, Education) -->
         <div style="font-family: Verdana, Geneva, sans-serif; font-size: 12px; line-height: 1.6; color: #000000;">
+          ${formattedResumeBodyHtml}
+        </div>
+      `
+    }
+
+    if (selectedTemplate === 'florida_fdot') {
+      return `
+        <!-- Florida DOT Staff Augmentation Resume Letterhead -->
+        <div style="border-bottom: 2px solid #002855; padding-bottom: 12px; margin-bottom: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+              <div style="font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-weight: bold; color: #002855; letter-spacing: 0.5px; text-transform: uppercase;">
+                State of Florida Department of Transportation (FDOT)
+              </div>
+              <h1 style="font-family: Arial, Helvetica, sans-serif; font-size: 20px; font-weight: bold; color: #0F172A; margin: 4px 0 3px;">
+                ${candidateName}
+              </h1>
+              <div style="font-family: Arial, Helvetica, sans-serif; font-size: 13.5px; font-weight: bold; color: #1D4ED8;">
+                ${positionTitle}
+              </div>
+            </div>
+            <div style="text-align: right; font-family: Arial, Helvetica, sans-serif;">
+              <div style="font-size: 13.5px; font-weight: bold; color: #0F172A;">COOLSOFT LLC</div>
+              <div style="font-size: 11px; color: #64748B;">FDOT Staff Augmentation Partner</div>
+              <div style="font-size: 11px; color: #64748B;">Req #${vmsNumber} • Form 725-000-06</div>
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px; font-family: Arial, Helvetica, sans-serif; font-size: 11.5px; color: #475569; margin-top: 8px; flex-wrap: wrap;">
+            <span>Location: ${coversheet.currentLocation}</span>
+            <span>•</span>
+            <span>Visa: ${coversheet.visaStatus}</span>
+            <span>•</span>
+            <span>Experience: ${coversheet.totalExperience}</span>
+            <span>•</span>
+            <span style="color: #059669; font-weight: bold;">Represented exclusively via COOLSOFT LLC</span>
+          </div>
+        </div>
+
+        <div style="font-family: Arial, Helvetica, sans-serif; font-size: 12px; line-height: 1.6; color: #000000;">
           ${formattedResumeBodyHtml}
         </div>
       `
@@ -1959,6 +2254,289 @@ EDUCATION & CERTIFICATIONS
       `
     }
 
+    if (selectedTemplate === 'florida_fdot') {
+      const renderFdotHeader = (pageNum) => `
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 18px; font-family: Arial, Helvetica, sans-serif;">
+          <tr>
+            <td style="vertical-align: top; text-align: left; width: 68%;">
+              <div style="font-size: 10pt; font-weight: bold; color: #000000; letter-spacing: 0.2px;">STATE OF FLORIDA DEPARTMENT OF TRANSPORTATION</div>
+              <div style="font-size: 10pt; font-weight: bold; color: #000000; margin-top: 2px;">APPENDIX IV</div>
+              <div style="font-size: 10pt; font-weight: bold; color: #000000; margin-top: 2px;">VENDOR STAFF AUGMENTATION</div>
+              <div style="font-size: 10pt; font-weight: bold; color: #000000;">SPECIFIC TERMS AND CONDITIONS</div>
+            </td>
+            <td style="vertical-align: top; text-align: right; width: 32%; font-size: 8.5pt; color: #000000; line-height: 1.35;">
+              <div>725-000-06</div>
+              <div>STRATEGIC DEVELOPMENT</div>
+              <div>03/25</div>
+              <div style="font-weight: bold; margin-top: 2px;">Page ${pageNum} of 4</div>
+            </td>
+          </tr>
+        </table>
+      `
+
+      return `
+        <!-- ==================== PAGE 1 OF 4 ==================== -->
+        ${renderFdotHeader(1)}
+
+        <p style="margin: 0 0 10px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
+          <b>WHEREAS</b>, the Florida Department of Transportation (Department) is regularly in an on-going process of procurement for various Vendor Staff Augmentation support;
+        </p>
+        <p style="margin: 0 0 10px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
+          <b>WHEREAS</b>, the Vendor provides staff augmentation support to the Department;
+        </p>
+        <p style="margin: 0 0 12px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
+          <b>WHEREAS</b>, the Department reserves the right to terminate its agreement with the Vendor for a failure by its member to comply with any of the requirements detailed in this Appendix.
+        </p>
+        <p style="margin: 0 0 16px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
+          <b>NOW THEREFORE</b>, the Vendor, by acceptance of the Department’s Purchase Order for Staff Augmentation Services, hereby agrees to the precedence and applicability of the terms which follow (notwithstanding any contract terms or provisions that purport to contradict that may be found in the PUR 1000 or any other portion of the purchase order, contract or agreement):
+        </p>
+
+        <!-- ASSIGNMENT -->
+        <p style="margin: 0 0 4px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10.5pt; font-weight: bold; text-decoration: underline; color: #000000;">
+          ASSIGNMENT
+        </p>
+        <p style="margin: 0 0 14px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
+          The Vendor’s employee shall not assign, transfer or delegate its duties or work product responsibilities to another outside entity.
+        </p>
+
+        <!-- BACKGROUND CHECK FOR VENDOR STAFF -->
+        <p style="margin: 0 0 4px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10.5pt; font-weight: bold; text-decoration: underline; color: #000000;">
+          BACKGROUND CHECK FOR VENDOR STAFF
+        </p>
+        <p style="margin: 0 0 10px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
+          The Vendor employee working on systems identified by, and at the sole discretion of the Department, will undergo an FBI Level II background check. The Vendor will pay the cost of their employee’s background checks. The Vendor will utilize the Department’s Originating Agency Identifier (ORI). Vendor employees must successfully pass the Level II background check before creation of the Purchase Request.
+        </p>
+        <p style="margin: 0 0 14px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
+          Vendor employees, who have criminal histories, are under criminal investigation or become the subject of a criminal investigation for any disqualifying offense, including, but not limited to, theft, fraud, forgery, embezzlement, crimes of violence or any similar offenses should not be assigned to do work on this Agreement. Vendor or Vendor employees whose screening results indicate convictions of disqualifying offenses will not be allowed to work on this Agreement. This includes individuals who plea or pled nolo contendere or no contest to disqualifying offenses.
+        </p>
+
+        <!-- CO-EMPLOYMENT -->
+        <p style="margin: 0 0 4px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10.5pt; font-weight: bold; text-decoration: underline; color: #000000;">
+          CO-EMPLOYMENT
+        </p>
+        <p style="margin: 0 0 10px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
+          The Vendor employees are performing services under this agreement as an independent contractor to the Department and that neither the Vendor, nor any of its employees is an employee or agent of the Department. Accordingly, the Vendor, its employees have no authority to make any contract or representation or to create any obligation or liability whatsoever on behalf of the Department. Nothing herein contained shall be construed as reserving to the Department, or in the manner in which services provided herein are performed; all of the Vendor’s employees are entirely under the control and direction of the Vendor, who shall be responsible for their actions, omissions, expenses, and commitments.
+        </p>
+        <p style="margin: 0 0 10px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
+          All liability to persons providing services under this Agreement or related to the provision of services, including, but not limited to, payment of wages or other compensation, withholding of federal, state and social security taxes, insurance, unemployment benefit assessments, workers compensation, and similar charges related to wages or other compensation, shall be the sole responsibility of the Vendor. The Department shall not provide benefits of any kind, including, but not limited to, health insurance, life insurance, educational reimbursements, credit, savings plans or vacation to Vendor employees.
+        </p>
+        <p style="margin: 0 0 14px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
+          The Vendor shall notify the Department immediately should the Vendor, for any reason, terminate their employee.
+        </p>
+
+        <!-- CONFLICT OF INTEREST -->
+        <p style="margin: 0 0 4px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10.5pt; font-weight: bold; text-decoration: underline; color: #000000;">
+          CONFLICT OF INTEREST
+        </p>
+        <p style="margin: 0 0 10px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
+          To prevent any bias, unfair competitive advantage, conflict of interest, or the appearance of impropriety, Vendor employees must not have been directly or indirectly involved in the development of the Scope of Services or related solicitation documentation for which the Vendor is preparing a bid. If the Vendor employee worked in conjunction with the Department on the development of the solicitation document, the Vendor is disqualified from submitting a bid for this solicitation. The Vendor personnel assigned to other Department projects outside this Agreement, shall hold and maintain any confidential information that could benefit the Vendor on future solicitations in strictest confidence.
+        </p>
+        <p style="margin: 0 0 6px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000;">
+          The Department will avoid Organizational Conflict of Interest through mitigation efforts in three categories:
+        </p>
+        <p style="margin: 0 0 12px 20px; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
+          a. <b>“Unequal Access”</b> wherein an unfair competitive advantage surfaces when a Vendor obtains information not generally available to other competitors, and where such information would assist them in winning the contract over their competitors.
+        </p>
+
+        <!-- ==================== PAGE 2 OF 4 ==================== -->
+        <div style="border-top: 2px dashed #94A3B8; margin: 32px 0 24px 0; text-align: center; color: #64748B; font-size: 10.5px; font-weight: bold; letter-spacing: 0.5px; padding-top: 6px;">─── PAGE BREAK • PAGE 2 OF 4 ───</div>
+        ${renderFdotHeader(2)}
+
+        <p style="margin: 0 0 6px 20px; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
+          b. <b>“Impaired Objectivity”</b> wherein a support Vendor is performing duties that involve assessing or evaluating itself or a related entity.
+        </p>
+        <p style="margin: 0 0 14px 20px; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
+          c. <b>“Biased Ground Rules”</b> wherein the Vendor is writing the SOW, performing systems engineering, or providing technical direction efforts.
+        </p>
+
+        <!-- CONTRACTED HOURS -->
+        <p style="margin: 0 0 4px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10.5pt; font-weight: bold; text-decoration: underline; color: #000000;">
+          CONTRACTED HOURS
+        </p>
+        <p style="margin: 0 0 10px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
+          The Vendor is responsible to ensure their employees do not exceed the billable hours approved on the Purchase Order (PO) for Staff Augmentation Services, without prior written approval from the Department. Failures rising from billable hours higher than permitted on the PO, will result in non-payment of the overage and termination of the Agreement and services of the Vendor’s employee.
+        </p>
+        <p style="margin: 0 0 10px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
+          Vendor will submit one (1) consolidated, accurate invoice monthly for actual hours worked. Approved timesheets and work activity must be submitted with invoices.
+        </p>
+        <p style="margin: 0 0 10px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
+          The Vendor shall email a completed invoice to <a href="mailto:Co-OITAdminSupport@dot.state.fl.us" style="color: #0000EE; text-decoration: underline;">Co-OITAdminSupport@dot.state.fl.us</a> no later than the 15th day of the month following the month worked.
+        </p>
+        <p style="margin: 0 0 14px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
+          The invoice will be calculated monthly based on the total number of hours worked multiplied by the approved rate per hour specified in the PO. If the Vendor incurs additional costs not approved by the Department under this contract, such services shall be deemed gratuitous and not subject to payment by the State. No additional charges for overtime, or incidental expenses are permitted.
+        </p>
+
+        <!-- DATA SECURITY AND CONFIDENTIALITY -->
+        <p style="margin: 0 0 4px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10.5pt; font-weight: bold; text-decoration: underline; color: #000000;">
+          DATA SECURITY AND CONFIDENTIALITY
+        </p>
+        <p style="margin: 0 0 10px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
+          The Vendor and its employee must comply with all Department security procedures while working on this Agreement. The Vendor shall provide immediate notice to the Department’s Information Security Manager (ISM) in the event it becomes aware of any security breach, any unauthorized transmission of State Data as described below or of any allegation or suspected violation of the Department security procedures. Except as required by law or legal process and after notice to the Department, the Vendor shall not divulge to third parties any confidential information obtained by the Vendor’s employees in the course of performing work, including, but not limited to, Chapter 74-2, F.A.C., security procedures, business operations information, or commercial proprietary information in the possession of the state and/or the Department.
+        </p>
+        <p style="margin: 0 0 4px 16px; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000;">
+          <b>a. Loss of Data</b>
+        </p>
+        <p style="margin: 0 0 10px 32px; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
+          In the event of loss of any Department or State data or record where such loss is due to the negligence of the Vendor employee, the Vendor shall be responsible for recreating such lost data in the manner and on the schedule set by the Department at the Vendor’s sole expense.
+        </p>
+        <p style="margin: 0 0 4px 16px; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000;">
+          <b>b. Data Protection</b>
+        </p>
+        <p style="margin: 0 0 14px 32px; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
+          No state data or information will be transmitted to, stored in, processed in, or shipped to offshore locations or out of the United States of America, regardless of method, except as required by law. This includes accessing data by Vendor employees while they travel outside of the Continental United States. Examples of these methods include (but are not limited to): FTP transfer, DVD, tape, or drive shipping; regardless of level of encryption employed. Access to State Data shall only be available to approved and authorized staff, that have a legitimate business need.
+        </p>
+
+        <!-- FACILITIES AND EQUIPMENT -->
+        <p style="margin: 0 0 4px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10.5pt; font-weight: bold; text-decoration: underline; color: #000000;">
+          FACILITIES AND EQUIPMENT
+        </p>
+        <p style="margin: 0 0 14px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
+          Upon completion of Security Awareness Training by the Vendor’s employee, the Department shall provide necessary access to the Department network. The work will be conducted on-site in the applicable Florida Project Office. The Department may provide workspace to use while on site. All property furnished by the Department for use by the Vendor during this Agreement will remain the property of the State of Florida and must be surrendered upon termination of contract.
+        </p>
+
+        <!-- GIFTS -->
+        <p style="margin: 0 0 4px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10.5pt; font-weight: bold; text-decoration: underline; color: #000000;">
+          GIFTS
+        </p>
+        <p style="margin: 0 0 14px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
+          The Vendor and its employees will not provide gifts (tangible or intangible) of any value to Department employees. Violation of the prohibition may, at the sole discretion of the Department, result in termination of the Agreement and disqualification of the Vendor from future Department procurements.
+        </p>
+
+        <!-- GUIDELINES AND STANDARDS -->
+        <p style="margin: 0 0 4px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10.5pt; font-weight: bold; text-decoration: underline; color: #000000;">
+          GUIDELINES AND STANDARDS
+        </p>
+        <p style="margin: 0 0 14px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
+          The Vendor’s employee agrees to comply with the Department’s best practices and standards, including, but not limited to, the most current version available on the Department Standards and Guidelines Set website.
+        </p>
+
+        <!-- ==================== PAGE 3 OF 4 ==================== -->
+        <div style="border-top: 2px dashed #94A3B8; margin: 32px 0 24px 0; text-align: center; color: #64748B; font-size: 10.5px; font-weight: bold; letter-spacing: 0.5px; padding-top: 6px;">─── PAGE BREAK • PAGE 3 OF 4 ───</div>
+        ${renderFdotHeader(3)}
+
+        <!-- HARASSMENT AND DISCRIMINATION -->
+        <p style="margin: 0 0 4px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10.5pt; font-weight: bold; text-decoration: underline; color: #000000;">
+          HARASSMENT AND DISCRIMINATION
+        </p>
+        <p style="margin: 0 0 14px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
+          The Vendor must ensure that their employees maintain a work ethic that is free from any unlawful harassment or discrimination based on a person's gender, age, race, sexual orientation, religion, nationality or physical disability or condition. Unlawful harassment includes verbal, physical and visual harassment; unwelcome sexual advances; solicitation of sexual favors; and/or creating or maintaining an intimidating or hostile work environment.
+        </p>
+
+        <!-- NON-DISCLOSURE OF INFORMATION -->
+        <p style="margin: 0 0 4px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10.5pt; font-weight: bold; text-decoration: underline; color: #000000;">
+          NON-DISCLOSURE OF INFORMATION
+        </p>
+        <p style="margin: 0 0 10px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
+          As a condition of the Agreement, the Department’s Confidential Information will be deemed the sole property of the Department, and the Vendor’s employees will use this Confidential Information only for the purposes of performing the Vendor’s obligations under this Agreement. The Vendor’s employees will not publish, transmit, release or disclose confidential Information to any other person without the Department’s prior written consent, which the Department may withhold at its sole discretion. The Vendor’s obligations of non-disclosure and confidentiality with respect to the Department’s information will survive the expiration or termination of this Agreement for a period of five (5) years.
+        </p>
+        <p style="margin: 0 0 14px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
+          A violation by contracted personnel may result in termination of the individual, and at the Department’s discretion, disqualification of the Vendor from future Department procurements.
+        </p>
+
+        <!-- RELATIVES WORKING AT THE DEPARTMENT -->
+        <p style="margin: 0 0 4px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10.5pt; font-weight: bold; text-decoration: underline; color: #000000;">
+          RELATIVES WORKING AT THE DEPARTMENT
+        </p>
+        <p style="margin: 0 0 10px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
+          Work activities of relatives in the same area of an organization may cause serious conflicts and problems with favoritism and morale. In addition to claims of partiality in treatment in the workplace, personal conflicts from outside the work environment can be carried into day-to-day working relationships. For the purposes of this policy, a relative is any person who is related by blood or marriage, or whose relationship with the Department employee or Vendor employee is similar to that of persons who are related by blood or marriage.
+        </p>
+        <p style="margin: 0 0 10px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
+          Vendor Employees that are a relative of a Department employee, or another Vendor’s employee under consideration for contracting by the Department, may be signed only if they will not be working directly for or supervising a relative. Vendor employees cannot be transferred into such a reporting relationship.
+        </p>
+        <p style="margin: 0 0 14px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
+          In other cases where a conflict, or the potential for conflict arises, even if there is no supervisory relationship involved, the Vendor employee’s contract may be terminated. Sole discretion on determining such conflicts will reside with the Department.
+        </p>
+
+        <!-- SECURITY OF CONFIDENTIAL PERSONAL INFORMATION -->
+        <p style="margin: 0 0 4px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10.5pt; font-weight: bold; text-decoration: underline; color: #000000;">
+          SECURITY OF CONFIDENTIAL PERSONAL INFORMATION
+        </p>
+        <p style="margin: 0 0 10px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
+          Except as necessary to fulfill the terms of this Agreement and with the permission of the Department, the Vendor employee shall not divulge to third parties any confidential information obtained by the Vendor or its employees in the course of performing work on this Agreement, including, but not limited to, security procedures, business operations information, or commercial proprietary information in the possession of the State or the Department. If the Vendor employee has access to confidential information in order to fulfill the Vendor’s obligations under this Agreement, the Vendor agrees to abide by all applicable Department Information Technology Security procedures and policies. For purposes of this Agreement, “Security Incident” means the attempted or successful unauthorized access, use, disclosure, modification, or destruction of Department information in the Vendor’s possession. The Vendor shall make a report to the Department not more than seven (7) business days after the Vendor learns of such use or disclosure.
+        </p>
+        <p style="margin: 0 0 10px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
+          The Vendor’s report shall identify, to the extent known: (i) the nature of the unauthorized use or disclosure, (ii) the confidential information used or disclosed, (iii) the identity of the person(s) that conducted the unauthorized use or received the unauthorized disclosure, (iv) what the Vendor has done or shall do to mitigate any deleterious effect of the unauthorized use or disclosure, and (v) what corrective action the Vendor has taken or shall take to prevent future similar unauthorized use or disclosure.
+        </p>
+        <p style="margin: 0 0 14px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
+          In the event a “Security Incident” also includes a “breach of security”, as defined by section 501.171, F.S., as amended, concerning confidential personal information involved with this Agreement, the Vendor shall comply with section 501.171, F.S. When notification to affected persons is required under this section of the statute, the Vendor shall provide that notification, but only after receipt of the Department’s approval of the contents of the notice. Defined statutorily, and for purposes of this Agreement, “breach of security” or “breach” means the unauthorized access of data in electronic form containing personal information.
+        </p>
+
+        <!-- SOLICITATION -->
+        <p style="margin: 0 0 4px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10.5pt; font-weight: bold; text-decoration: underline; color: #000000;">
+          SOLICITATION
+        </p>
+        <p style="margin: 0 0 14px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
+          The Vendor shall not solicit for employment any employee actively employed by the Department. Notwithstanding the foregoing, the Vendor, will not have violated the terms set forth in the preceding sentence if an employee of the Department responds to a general solicitation for employment issued by the Vendor, such as a newspaper advertisement in applicable
+        </p>
+
+        <!-- ==================== PAGE 4 OF 4 ==================== -->
+        <div style="border-top: 2px dashed #94A3B8; margin: 32px 0 24px 0; text-align: center; color: #64748B; font-size: 10.5px; font-weight: bold; letter-spacing: 0.5px; padding-top: 6px;">─── PAGE BREAK • PAGE 4 OF 4 ───</div>
+        ${renderFdotHeader(4)}
+
+        <p style="margin: 0 0 10px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
+          trade journal, a posted advertisement at one's own facility or in a regular publication (such as newsletter or classified) of the Vendor where such jobs are typically posted.
+        </p>
+        <p style="margin: 0 0 14px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
+          Violation of the solicitation clause, may at the Department’s discretion, disqualify the Vendor from future Department procurements for a period of one-year.
+        </p>
+
+        <!-- TRAINING -->
+        <p style="margin: 0 0 4px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10.5pt; font-weight: bold; text-decoration: underline; color: #000000;">
+          TRAINING
+        </p>
+        <p style="margin: 0 0 18px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
+          The Vendor shall provide, all such training to the employees of the Vendor as may be useful or necessary for them to perform all the duties under this Agreement. The Vendor shall provide training necessary for keeping Vendor’s employees abreast of industry advances and for maintaining proficiency in equipment and systems that are available on the commercial market. Such training shall be provided at the sole expense of the Vendor.
+        </p>
+
+        <!-- CANDIDATE & VENDOR RIGHT TO REPRESENT ACKNOWLEDGEMENT & EXECUTION BLOCK -->
+        <div style="border: 2px solid #0F172A; border-radius: 4px; padding: 16px; margin-top: 20px; background-color: #F8FAFC;">
+          <p style="margin: 0 0 6px 0; font-family: Arial, Helvetica, sans-serif; font-size: 11pt; font-weight: bold; color: #0F172A; text-transform: uppercase;">
+            VENDOR & CANDIDATE STAFF AUGMENTATION REPRESENTATION ACKNOWLEDGEMENT
+          </p>
+          <p style="margin: 0 0 12px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #334155;">
+            Requisition / PO #: <b>${vmsNumber}</b> &nbsp;|&nbsp; Target Position: <b>${positionTitle}</b> &nbsp;|&nbsp; Agency: <b>Florida Department of Transportation (FDOT)</b>
+          </p>
+          <p style="margin: 0 0 12px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; text-align: justify;">
+            The undersigned Vendor Employee / Candidate hereby grants <b>COOLSOFT LLC</b> the exclusive right to represent and submit my candidate credentials and resume for the requirement identified above with the Florida Department of Transportation. I certify that all credentials and work history are true and accurate, and I agree to comply with all terms and conditions of this Appendix IV (Form 725-000-06), including background check requirements and confidentiality.
+          </p>
+
+          <table style="width: 100%; border-collapse: collapse; margin-top: 14px; font-family: Arial, Helvetica, sans-serif; font-size: 10pt;">
+            <tr>
+              <td style="width: 50%; vertical-align: top; padding-right: 14px; border-right: 1px solid #CBD5E1;">
+                <div style="font-weight: bold; color: #0F172A; margin-bottom: 8px;">CANDIDATE ACKNOWLEDGEMENT:</div>
+                <div style="margin-bottom: 6px;"><b>Candidate Full Legal Name:</b></div>
+                <div style="margin-bottom: 10px;">
+                  <span style="background-color: #FFFF00; font-weight: bold; padding: 2px 8px; border-bottom: 1px solid #000000;">
+                    ${candidateName}
+                  </span>
+                </div>
+                <div style="margin-bottom: 6px;"><b>Proposed Hourly Rate:</b></div>
+                <div style="margin-bottom: 12px;">
+                  $<span style="background-color: #FFFF00; font-weight: bold; padding: 2px 6px;">${cleanRateNumber}</span>/hour (${employmentType})
+                </div>
+                <div style="margin-bottom: 6px;"><b>Candidate Signature:</b></div>
+                <div style="border-bottom: 1px solid #000000; height: 26px; width: 85%; margin-bottom: 6px; font-family: 'Brush Script MT', cursive, sans-serif; font-size: 18px; color: #1E3A8A; padding-top: 2px;">
+                  ${candidateName}
+                </div>
+                <div><b>Date:</b> ${new Date().toLocaleDateString('en-US')}</div>
+              </td>
+              <td style="width: 50%; vertical-align: top; padding-left: 14px;">
+                <div style="font-weight: bold; color: #0F172A; margin-bottom: 8px;">AUTHORIZED VENDOR (COOLSOFT LLC):</div>
+                <div style="margin-bottom: 6px;"><b>Authorized Vendor:</b> COOLSOFT LLC</div>
+                <div style="margin-bottom: 6px;"><b>Vendor Representative:</b> Omkesh Manjute</div>
+                <div style="margin-bottom: 10px;"><b>Title:</b> Director of Talent Acquisition / Account Manager</div>
+                <div style="margin-bottom: 6px;"><b>Vendor Signature:</b></div>
+                <div style="border-bottom: 1px solid #000000; height: 26px; width: 85%; margin-bottom: 6px; font-family: 'Brush Script MT', cursive, sans-serif; font-size: 18px; color: #1E3A8A; padding-top: 2px;">
+                  Omkesh Manjute
+                </div>
+                <div><b>Date:</b> ${new Date().toLocaleDateString('en-US')}</div>
+              </td>
+            </tr>
+          </table>
+        </div>
+      `
+    }
+
     // Default Standard Direct Client RTR
     return `
       <div style="border-bottom: 2px solid #0F172A; padding-bottom: 10px; margin-bottom: 14px;">
@@ -2154,6 +2732,7 @@ ${coversheet.references}
   // ─── Email Modal Handlers (Submittal & RTR) ───────────────────────────────
   const handleOpenEmailModal = () => {
     setEmailModalMode('submittal')
+    setEmailPreviewTab('edit')
     const cand = candidates.find(c => c.id === selectedCandidateId)
     setEmailTo(cand?.recruiterEmail || 'account-manager@coolsofttech.com')
     setEmailSubject(`Candidate Submittal: ${coversheet.candidateLegalName} — ${positionTitle} (Req #${vmsNumber} - ${clientAgency})`)
@@ -2163,6 +2742,7 @@ ${coversheet.references}
 
   const handleOpenRtrEmailModal = () => {
     setEmailModalMode('rtr')
+    setEmailPreviewTab('edit')
     const cand = candidates.find(c => c.id === selectedCandidateId)
     const candEmail = cand?.email || ''
     const details = getCleanRtrEmailDetails({
@@ -2190,19 +2770,23 @@ ${coversheet.references}
   const handleDownloadResumeWord = async (format = 'docx') => {
     try {
       setIsExportingDocx(true)
-      const content = resumeEditorRef.current ? resumeEditorRef.current.innerHTML : generatedResumeTemplateHtml
+      const isRtrTab = activePreviewTab === 'rtr'
+      const content = isRtrTab
+        ? (rtrEditorRef.current ? rtrEditorRef.current.innerHTML : generatedRtrTemplateHtml)
+        : (resumeEditorRef.current ? resumeEditorRef.current.innerHTML : generatedResumeTemplateHtml)
       const candName = coversheet.candidateLegalName || 'Candidate'
       const cleanName = candName.replace(/[^a-zA-Z0-9_-]/g, '_')
-      const fileName = `${cleanName}_Formatted_Resume_${vmsNumber || 'Submittal'}.${format}`
+      const docType = isRtrTab ? 'RTR_Agreement' : 'Formatted_Resume'
+      const fileName = `${cleanName}_${docType}_${vmsNumber || 'Submittal'}.${format}`
 
       if (format === 'docx') {
         const blob = await generateWordDocxBlob(content, candName)
         triggerFileDownload(blob, fileName)
-        showToast('Microsoft Word (.docx) resume downloaded!')
+        showToast(`Microsoft Word (.docx) ${isRtrTab ? 'RTR' : 'resume'} downloaded!`)
       } else {
         const blob = generateWordRtfBlob(content, candName)
         triggerFileDownload(blob, fileName)
-        showToast('Word (.doc) resume downloaded!')
+        showToast(`Word (.doc) ${isRtrTab ? 'RTR' : 'resume'} downloaded!`)
       }
     } catch (err) {
       console.error('Word export error:', err)
@@ -2275,6 +2859,19 @@ ${coversheet.references}
         payloadMessage = `${emailBody}\n\n${formattedCoversheetText}\n\n=====================================================\nSUBMITTAL RESUME\n=====================================================\n${resumeTextCurrent}\n\n=====================================================\nE-RTR ACKNOWLEDGEMENT\n=====================================================\n${rtrText}`
       }
 
+      // Generate rich HTML preserving colors, yellow highlights, and corporate typography
+      const payloadHtml = generateRichEmailHtml({
+        mode: emailModalMode,
+        emailBody,
+        coversheet,
+        positionTitle,
+        vmsNumber,
+        clientAgency,
+        employmentType,
+        cleanRateNumber,
+        currentUser
+      })
+
       const res = await fetch('/api/recruiter/send-direct-email', {
         method: 'POST',
         headers: {
@@ -2284,7 +2881,8 @@ ${coversheet.references}
         body: JSON.stringify({
           to: emailTo,
           subject: emailSubject,
-          message: payloadMessage
+          message: payloadMessage,
+          html: payloadHtml
         })
       })
       const data = await res.json()
@@ -2741,32 +3339,38 @@ ${coversheet.references}
               </div>
             )}
 
-            {/* 1. Smart Copy Action */}
-            <button
-              type="button"
-              onClick={activePreviewTab === 'rtr' ? handleCopyRtr : handleCopyCurrentView}
-              style={styles.actionBtnSecondary}
-              title={activePreviewTab === 'rtr' ? "Copy Right to Represent email subject and body" : "Copy current active view to clipboard"}
-            >
-              <IconCopy /> <span>{activePreviewTab === 'rtr' ? 'Copy RTR Email' : 'Copy Coversheet'}</span>
-            </button>
-
-            {/* 2. Formatted Word (.docx / .doc) Download */}
+            {/* 1. Formatted Word (.docx) Download */}
             <button
               type="button"
               disabled={isExportingDocx}
               onClick={() => handleDownloadResumeWord('docx')}
-              style={{ ...styles.actionBtnSecondary, borderColor: '#BFDBFE', color: '#1D4ED8', backgroundColor: '#EFF6FF', fontWeight: '700' }}
-              title="Download client-ready formatted resume in genuine Microsoft Word (.docx) format"
+              style={{
+                ...styles.actionBtnSecondary,
+                borderColor: '#93C5FD',
+                color: '#1D4ED8',
+                backgroundColor: '#EFF6FF',
+                fontWeight: '700',
+                padding: '7px 13px',
+                borderRadius: 6,
+                boxShadow: '0 1px 2px rgba(37, 99, 235, 0.08)'
+              }}
+              title="Download client-ready formatted document in genuine Microsoft Word (.docx) format"
             >
               <IconDownload /> <span>{isExportingDocx ? 'Generating...' : 'Download .docx'}</span>
             </button>
+
+            {/* 2. Legacy Word (.doc) Download */}
             <button
               type="button"
               disabled={isExportingDocx}
               onClick={() => handleDownloadResumeWord('doc')}
-              style={styles.actionBtnSecondary}
-              title="Download formatted resume in legacy Word / RTF (.doc) format"
+              style={{
+                ...styles.actionBtnSecondary,
+                borderColor: '#CBD5E1',
+                padding: '7px 11px',
+                borderRadius: 6
+              }}
+              title="Download formatted document in legacy Word / RTF (.doc) format"
             >
               <IconDownload /> <span>.doc</span>
             </button>
@@ -2777,30 +3381,19 @@ ${coversheet.references}
               onClick={() => {
                 navigate(`/sign-rtr?template=${selectedTemplate}&name=${encodeURIComponent(coversheet.candidateLegalName || '')}&job=${encodeURIComponent(positionTitle || '')}&req=${encodeURIComponent(vmsNumber || '')}&rate=${encodeURIComponent(cleanRateNumber || '')}`)
               }}
-              style={{ ...styles.actionBtnSecondary, color: '#4F46E5', borderColor: '#C7D2FE', backgroundColor: '#EEF2FF' }}
+              style={{
+                ...styles.actionBtnSecondary,
+                color: '#4F46E5',
+                borderColor: '#C7D2FE',
+                backgroundColor: '#EEF2FF',
+                fontWeight: '700',
+                padding: '7px 13px',
+                borderRadius: 6,
+                boxShadow: '0 1px 2px rgba(79, 70, 229, 0.08)'
+              }}
               title="Open Digital Signature Portal (SmartSign RTR)"
             >
               <IconSignature /> <span>SmartSign RTR</span>
-            </button>
-
-            {/* 4. Direct RTR Email to Candidate */}
-            <button
-              type="button"
-              onClick={handleOpenRtrEmailModal}
-              style={{ ...styles.actionBtnSecondary, color: '#1D4ED8', borderColor: '#BFDBFE', backgroundColor: '#EFF6FF' }}
-              title="Email Right to Represent (RTR) directly to candidate"
-            >
-              <IconMail /> <span>Email Candidate (RTR)</span>
-            </button>
-
-            {/* 5. Client Submittal Pack Dispatch (Primary Dark CTA) */}
-            <button
-              type="button"
-              onClick={handleOpenEmailModal}
-              style={styles.actionBtnPrimary}
-              title="Send submittal directly to client or account manager"
-            >
-              <IconMail /> <span>Email Submittal Pack</span>
             </button>
 
             {/* Notification Bell */}
@@ -2954,28 +3547,148 @@ ${coversheet.references}
           </div>
         </header>
 
-        {/* ─── Streamlined Selector Bar (SELECT CANDIDATE REMOVED per user request) ─ */}
+        {/* ─── Zoho Recruit ATS Streamlined Selector Bar ─ */}
         <div style={styles.selectorBar} className="no-print">
           <div style={styles.selectorInner}>
-            {/* 1. Target Job Selector */}
-            <div style={{ ...styles.filterGroup, flex: '1.2' }}>
-              <label style={styles.filterLabel}>TARGET JOB REQUISITION:</label>
-              <select
-                value={selectedJobId}
-                onChange={e => setSelectedJobId(e.target.value)}
-                style={styles.selectInput}
-              >
-                {jobs.map(j => {
-                  const titleStr = j.title || 'Requisition'
-                  const vmsMatch = titleStr.match(/\(([\d]{4,7})\)/)
-                  const num = vmsMatch ? vmsMatch[1] : String(j.id).replace(/^J-/, '')
-                  return (
-                    <option key={j.id} value={j.id}>
-                      #{num}: {titleStr} ({j.client || 'Client'})
-                    </option>
-                  )
-                })}
-              </select>
+            {/* 1. Searchable Target Job Requisition Combobox */}
+            <div style={{ ...styles.filterGroup, flex: '1.4', position: 'relative' }} ref={jobDropdownRef}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                <label style={styles.filterLabel}>SEARCH TARGET JOB REQUISITION:</label>
+                {selectedJobObj && (
+                  <span style={{ fontSize: '10.5px', fontWeight: '700', color: '#2563EB', background: '#EFF6FF', padding: '1px 6px', borderRadius: 4, border: '1px solid #BFDBFE' }}>
+                    #{String(selectedJobObj.id).replace(/^J-/, '')} Active
+                  </span>
+                )}
+              </div>
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <span style={{ position: 'absolute', left: 10, color: '#64748B', display: 'flex', alignItems: 'center', pointerEvents: 'none' }}>
+                  <IconSearch />
+                </span>
+                <input
+                  type="text"
+                  value={isJobDropdownOpen ? jobSearchQuery : (selectedJobObj ? `#${String(selectedJobObj.id).replace(/^J-/, '')}: ${selectedJobObj.title || 'Requisition'} (${selectedJobObj.client || 'Client'})` : jobSearchQuery)}
+                  onFocus={() => {
+                    setIsJobDropdownOpen(true)
+                    setJobSearchQuery('')
+                  }}
+                  onChange={(e) => {
+                    setJobSearchQuery(e.target.value)
+                    if (!isJobDropdownOpen) setIsJobDropdownOpen(true)
+                  }}
+                  placeholder="Search by Req #, Title, or Client Agency..."
+                  style={{
+                    ...styles.selectInput,
+                    paddingLeft: '32px',
+                    paddingRight: '28px',
+                    fontWeight: selectedJobObj && !isJobDropdownOpen ? '700' : '500',
+                    color: '#0F172A',
+                    backgroundColor: '#FFFFFF',
+                    cursor: 'text',
+                    borderColor: isJobDropdownOpen ? '#2563EB' : '#CBD5E1',
+                    boxShadow: isJobDropdownOpen ? '0 0 0 2px rgba(37,99,235,0.1)' : 'none'
+                  }}
+                />
+                {(jobSearchQuery || isJobDropdownOpen) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setJobSearchQuery('')
+                      setIsJobDropdownOpen(false)
+                    }}
+                    style={{
+                      position: 'absolute',
+                      right: 8,
+                      background: 'none',
+                      border: 'none',
+                      color: '#94A3B8',
+                      cursor: 'pointer',
+                      fontSize: '13px',
+                      padding: 2
+                    }}
+                    title="Close search list"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+
+              {/* Autocomplete Flyout Dropdown */}
+              {isJobDropdownOpen && (
+                <div style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  right: 0,
+                  marginTop: 4,
+                  backgroundColor: '#FFFFFF',
+                  border: '1px solid #CBD5E1',
+                  borderRadius: 8,
+                  boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+                  maxHeight: 280,
+                  overflowY: 'auto',
+                  zIndex: 200
+                }}>
+                  <div style={{ padding: '6px 12px', background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', fontSize: '10.5px', fontWeight: '700', color: '#64748B', display: 'flex', justifyContent: 'space-between' }}>
+                    <span>{jobSearchQuery ? `Matching Requisitions (${filteredJobs.length}):` : `All Active Requisitions (${filteredJobs.length}):`}</span>
+                    <span>1-Click Select</span>
+                  </div>
+                  {filteredJobs.length === 0 ? (
+                    <div style={{ padding: '14px', fontSize: '12px', color: '#64748B', textAlign: 'center' }}>
+                      No requisitions match "{jobSearchQuery}"
+                    </div>
+                  ) : (
+                    filteredJobs.map(j => {
+                      const titleStr = j.title || 'Requisition'
+                      const vmsMatch = titleStr.match(/\(([\d]{4,7})\)/)
+                      const num = vmsMatch ? vmsMatch[1] : String(j.id).replace(/^J-/, '')
+                      const isSelected = String(j.id) === String(selectedJobId)
+                      return (
+                        <div
+                          key={j.id}
+                          onClick={() => {
+                            setSelectedJobId(j.id)
+                            setIsJobDropdownOpen(false)
+                            setJobSearchQuery('')
+                          }}
+                          style={{
+                            padding: '8px 12px',
+                            borderBottom: '1px solid #F1F5F9',
+                            cursor: 'pointer',
+                            backgroundColor: isSelected ? '#EFF6FF' : '#FFFFFF',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: 8,
+                            transition: 'background-color 0.15s ease'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = isSelected ? '#DBEAFE' : '#F8FAFC'
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = isSelected ? '#EFF6FF' : '#FFFFFF'
+                          }}
+                        >
+                          <div style={{ minWidth: 0, flex: 1 }}>
+                            <div style={{ fontSize: '12.5px', fontWeight: isSelected ? '800' : '700', color: isSelected ? '#1D4ED8' : '#0F172A', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              #{num}: {titleStr}
+                            </div>
+                            <div style={{ fontSize: '11px', color: '#64748B', marginTop: 2, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                              <span><b>Client:</b> {j.client || 'Client'}</span>
+                              {j.location && <span>• {j.location}</span>}
+                              {j.payRate && <span>• <b>Rate:</b> {j.payRate}</span>}
+                            </div>
+                          </div>
+                          {isSelected && (
+                            <span style={{ fontSize: '10.5px', fontWeight: '800', color: '#2563EB', background: '#DBEAFE', padding: '2px 6px', borderRadius: 4 }}>
+                              Selected
+                            </span>
+                          )}
+                        </div>
+                      )
+                    })
+                  )}
+                </div>
+              )}
             </div>
 
             {/* 2. Submittal Presentation & RTR Template Selector */}
@@ -3011,7 +3724,7 @@ ${coversheet.references}
 
         {/* ─── Main Workspace: Left Column Coversheet Form, Right Column Presentation ─── */}
         <div style={styles.workspace}>
-          {/* LEFT COLUMN: EDITABLE POSITION & COVERSHEET FORM */}
+          {/* LEFT COLUMN: EDITABLE POSITION & COVERSHEET FORM (Zoho Recruit Style) */}
           <div style={styles.coversheetCol} className="no-print">
             <div style={styles.colHeader}>
               <div>
@@ -3027,256 +3740,55 @@ ${coversheet.references}
               </span>
             </div>
 
-            {/* 0. Candidate Selection & Packaging Card */}
+            {/* 0. Candidate Information & Document Upload (Candidate Search Bar Removed per user request) */}
             <div style={styles.uploadCard}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                <div style={{ fontSize: '12.5px', fontWeight: '800', color: '#0F172A', display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span>Candidate Profile & Submittal Packaging</span>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                <div style={{ fontSize: '12px', fontWeight: '800', color: '#0F172A', display: 'flex', alignItems: 'center', gap: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  <IconUser /> <span>Candidate Profile & Packaging</span>
                 </div>
                 <span style={{ fontSize: '10px', fontWeight: '700', color: '#0369A1', background: '#F0F9FF', padding: '2px 8px', borderRadius: 4, border: '1px solid #BAE6FD' }}>
-                  Search • Upload
+                  Active Profile
                 </span>
               </div>
 
-              {/* A. If Candidate is Selected, display active candidate card */}
-              {currentSelectedCandidate && !isCandidateSearchOpen && (
+              {/* Candidate Info Card */}
+              {currentSelectedCandidate && (
                 <div style={{
                   padding: '10px 12px',
                   background: '#F8FAFC',
                   border: '1px solid #CBD5E1',
                   borderRadius: 8,
-                  marginBottom: 10,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: 10
+                  marginBottom: 10
                 }}>
-                  <div style={{ minWidth: 0, flex: 1 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: '13px', fontWeight: '800', color: '#0F172A' }}>
-                        {extractCandidateRealName(currentSelectedCandidate.name, currentSelectedCandidate.resumeText)}
-                      </span>
-                      <span style={{
-                        fontSize: '9.5px',
-                        fontWeight: '700',
-                        padding: '1px 6px',
-                        borderRadius: 4,
-                        textTransform: 'uppercase',
-                        background: currentSelectedCandidate.isVendorHotlist ? '#FEF3C7' : (currentSelectedCandidate.isUploaded ? '#ECFDF5' : '#EFF6FF'),
-                        color: currentSelectedCandidate.isVendorHotlist ? '#92400E' : (currentSelectedCandidate.isUploaded ? '#065F46' : '#1D4ED8'),
-                        border: `1px solid ${currentSelectedCandidate.isVendorHotlist ? '#FDE68A' : (currentSelectedCandidate.isUploaded ? '#A7F3D0' : '#BFDBFE')}`
-                      }}>
-                        {currentSelectedCandidate.isVendorHotlist ? `Bench: ${currentSelectedCandidate.vendorCompany || 'Vendor'}` : (currentSelectedCandidate.isUploaded ? 'Uploaded Resume' : 'ATS Pool')}
-                      </span>
-                      {currentSelectedCandidate.visaStatus && (
-                        <span style={{ fontSize: '9.5px', fontWeight: '600', color: '#475569', background: '#F1F5F9', padding: '1px 5px', borderRadius: 3, border: '1px solid #E2E8F0' }}>
-                          {currentSelectedCandidate.visaStatus}
-                        </span>
-                      )}
-                    </div>
-                    <div style={{ fontSize: '11px', color: '#64748B', marginTop: 3, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                      <span><b>Email:</b> {currentSelectedCandidate.email || 'N/A'}</span>
-                      <span><b>Role:</b> {currentSelectedCandidate.role || 'Consultant'}</span>
-                      <span><b>Exp:</b> {currentSelectedCandidate.experience || 'Experienced'}</span>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsCandidateSearchOpen(true)
-                      setCandidateSearchQuery('')
-                    }}
-                    style={{
-                      padding: '5px 10px',
-                      fontSize: '11px',
-                      fontWeight: '700',
-                      color: '#2563EB',
-                      backgroundColor: '#FFFFFF',
-                      border: '1px solid #93C5FD',
-                      borderRadius: 6,
-                      cursor: 'pointer',
-                      whiteSpace: 'nowrap',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 4
-                    }}
-                  >
-                    <IconSearch />
-                    <span>Change</span>
-                  </button>
-                </div>
-              )}
-
-              {/* B. Search Candidate by Name or Email */}
-              {(isCandidateSearchOpen || !currentSelectedCandidate) && (
-                <div style={{ marginBottom: 10 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                    <label style={{ fontSize: '11px', fontWeight: '700', color: '#334155' }}>
-                      Search Candidate (Name, Email, or Skill):
-                    </label>
-                    {currentSelectedCandidate && (
-                      <button
-                        type="button"
-                        onClick={() => setIsCandidateSearchOpen(false)}
-                        style={{ background: 'none', border: 'none', color: '#64748B', fontSize: '11px', cursor: 'pointer', padding: 0 }}
-                      >
-                        Cancel
-                      </button>
-                    )}
-                  </div>
-                  <div style={{ position: 'relative' }}>
-                    <input
-                      type="text"
-                      value={candidateSearchQuery}
-                      onChange={e => setCandidateSearchQuery(e.target.value)}
-                      placeholder="Type candidate name or email (e.g. Rahul, rohit@...)..."
-                      style={{
-                        ...styles.input,
-                        width: '100%',
-                        fontSize: '12px',
-                        padding: '8px 30px 8px 30px',
-                        backgroundColor: '#FFFFFF',
-                        border: '1px solid #94A3B8',
-                        borderRadius: 6,
-                        boxSizing: 'border-box'
-                      }}
-                      autoFocus={isCandidateSearchOpen}
-                    />
-                    <span style={{ position: 'absolute', left: 9, top: 9, color: '#64748B', pointerEvents: 'none' }}>
-                      <IconSearch />
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '13.5px', fontWeight: '800', color: '#0F172A' }}>
+                      {extractCandidateRealName(currentSelectedCandidate.name, currentSelectedCandidate.resumeText)}
                     </span>
-                    {candidateSearchQuery && (
-                      <button
-                        type="button"
-                        onClick={() => setCandidateSearchQuery('')}
-                        style={{ position: 'absolute', right: 8, top: 7, border: 'none', background: 'none', color: '#94A3B8', cursor: 'pointer', fontSize: '14px' }}
-                      >
-                        ✕
-                      </button>
-                    )}
+                    <span style={{
+                      fontSize: '9.5px',
+                      fontWeight: '700',
+                      padding: '1px 6px',
+                      borderRadius: 4,
+                      textTransform: 'uppercase',
+                      background: currentSelectedCandidate.isVendorHotlist ? '#FEF3C7' : (currentSelectedCandidate.isUploaded ? '#ECFDF5' : '#EFF6FF'),
+                      color: currentSelectedCandidate.isVendorHotlist ? '#92400E' : (currentSelectedCandidate.isUploaded ? '#065F46' : '#1D4ED8'),
+                      border: `1px solid ${currentSelectedCandidate.isVendorHotlist ? '#FDE68A' : (currentSelectedCandidate.isUploaded ? '#A7F3D0' : '#BFDBFE')}`
+                    }}>
+                      {currentSelectedCandidate.isVendorHotlist ? `Bench: ${currentSelectedCandidate.vendorCompany || 'Vendor'}` : (currentSelectedCandidate.isUploaded ? 'Uploaded Resume' : 'ATS Pool')}
+                    </span>
                   </div>
-
-                  {/* Matching Candidate Results List */}
-                  <div style={{
-                    marginTop: 6,
-                    maxHeight: 220,
-                    overflowY: 'auto',
-                    border: '1px solid #E2E8F0',
-                    borderRadius: 6,
-                    backgroundColor: '#FFFFFF'
-                  }}>
-                    {isSearchingCandidates && (
-                      <div style={{ padding: '8px 12px', fontSize: '11.5px', color: '#64748B', textAlign: 'center' }}>
-                        Searching database...
-                      </div>
-                    )}
-
-                    {!isSearchingCandidates && matchedCandidatesList.length > 0 && (
-                      <div>
-                        <div style={{ padding: '4px 10px', background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', fontSize: '10px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase' }}>
-                          Matching Candidates ({matchedCandidatesList.length}):
-                        </div>
-                        {matchedCandidatesList.map(c => {
-                          const displayName = extractCandidateRealName(c.name, c.resumeText)
-                          const isSelected = selectedCandidateId && (c.id === selectedCandidateId || c.candidate_id === selectedCandidateId)
-                          return (
-                            <div
-                              key={c.id || c.candidate_id}
-                              onClick={() => handleSelectCandidate(c)}
-                              style={{
-                                padding: '8px 10px',
-                                borderBottom: '1px solid #F1F5F9',
-                                cursor: 'pointer',
-                                backgroundColor: isSelected ? '#EFF6FF' : '#FFFFFF',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                gap: 8,
-                                transition: 'background-color 0.15s ease'
-                              }}
-                              onMouseEnter={e => e.currentTarget.style.backgroundColor = isSelected ? '#DBEAFE' : '#F8FAFC'}
-                              onMouseLeave={e => e.currentTarget.style.backgroundColor = isSelected ? '#EFF6FF' : '#FFFFFF'}
-                            >
-                              <div style={{ minWidth: 0, flex: 1 }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                  <span style={{ fontSize: '12px', fontWeight: '700', color: '#0F172A' }}>
-                                    {displayName}
-                                  </span>
-                                  {c.isVendorHotlist && (
-                                    <span style={{ fontSize: '9px', fontWeight: '600', color: '#B45309', background: '#FEF3C7', padding: '1px 5px', borderRadius: 3 }}>
-                                      Bench
-                                    </span>
-                                  )}
-                                  {c.isUploaded && (
-                                    <span style={{ fontSize: '9px', fontWeight: '600', color: '#065F46', background: '#ECFDF5', padding: '1px 5px', borderRadius: 3 }}>
-                                      Uploaded
-                                    </span>
-                                  )}
-                                </div>
-                                <div style={{ fontSize: '10.5px', color: '#64748B', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                  {c.email ? `${c.email} • ` : ''}{c.role || 'Specialist'} {c.experience ? `• ${c.experience}` : ''}
-                                </div>
-                              </div>
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  handleSelectCandidate(c)
-                                }}
-                                style={{
-                                  padding: '4px 8px',
-                                  fontSize: '10.5px',
-                                  fontWeight: '700',
-                                  backgroundColor: isSelected ? '#2563EB' : '#F1F5F9',
-                                  color: isSelected ? '#FFFFFF' : '#334155',
-                                  border: `1px solid ${isSelected ? '#2563EB' : '#CBD5E1'}`,
-                                  borderRadius: 4,
-                                  cursor: 'pointer',
-                                  whiteSpace: 'nowrap'
-                                }}
-                              >
-                                {isSelected ? 'Selected' : 'Select'}
-                              </button>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    )}
-
-                    {!isSearchingCandidates && matchedCandidatesList.length === 0 && candidateSearchQuery.trim().length > 0 && (
-                      <div style={{ padding: '12px', textAlign: 'center', background: '#FFFBEB', border: '1px dashed #FCD34D' }}>
-                        <div style={{ fontSize: '11.5px', fontWeight: '700', color: '#92400E', marginBottom: 4 }}>
-                          No candidate found for "{candidateSearchQuery}"
-                        </div>
-                        <div style={{ fontSize: '11px', color: '#78350F', marginBottom: 8 }}>
-                          Upload their resume file or paste resume text below:
-                        </div>
-                        <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
-                          <button
-                            type="button"
-                            onClick={() => resumeFileInputRef.current?.click()}
-                            style={{ padding: '5px 10px', fontSize: '11px', fontWeight: '700', color: '#FFFFFF', backgroundColor: '#0F172A', border: 'none', borderRadius: 4, cursor: 'pointer' }}
-                          >
-                            Upload Resume File
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setShowPasteModal(true)}
-                            style={{ padding: '5px 10px', fontSize: '11px', fontWeight: '700', color: '#1E293B', backgroundColor: '#FFFFFF', border: '1px solid #CBD5E1', borderRadius: 4, cursor: 'pointer' }}
-                          >
-                            Paste Resume
-                          </button>
-                        </div>
-                      </div>
-                    )}
+                  <div style={{ fontSize: '11px', color: '#64748B', marginTop: 4, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                    <span><b>Email:</b> {currentSelectedCandidate.email || 'N/A'}</span>
+                    <span><b>Role:</b> {currentSelectedCandidate.role || positionTitle || 'Consultant'}</span>
+                    {currentSelectedCandidate.visaStatus && <span><b>Visa:</b> {currentSelectedCandidate.visaStatus}</span>}
                   </div>
                 </div>
               )}
 
-              {/* C. Direct Resume Upload & Paste Actions (Always Accessible) */}
-              <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid #F1F5F9' }}>
-                <div style={{ fontSize: '10.5px', fontWeight: '700', color: '#64748B', marginBottom: 6, textTransform: 'uppercase' }}>
-                  Or Upload / Paste Candidate Resume:
+              {/* Direct Resume Upload & Paste Actions */}
+              <div>
+                <div style={{ fontSize: '10.5px', fontWeight: '700', color: '#64748B', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                  Upload / Parse Candidate Resume:
                 </div>
                 
                 <input
@@ -3322,99 +3834,133 @@ ${coversheet.references}
               </div>
             </div>
 
-          {/* Dynamic Position Binding Section */}
-          <div style={styles.sectionCard}>
-            <div style={styles.sectionCardTitle}>
-              Position & Requisition Binding
-            </div>
-            <div style={styles.formGrid}>
-              <div style={styles.formGroup}>
-                <label style={styles.inputLabel}>Target Position / Job Title *</label>
-                <input
-                  type="text"
-                  value={positionTitle}
-                  onChange={e => {
-                    setPositionTitle(e.target.value)
-                    setIsLiveEditDirty(false)
-                  }}
-                  style={{ ...styles.textInput, fontWeight: '700', color: '#1E293B' }}
-                  placeholder="e.g. Epic Orders Analyst"
-                />
+            {/* 1. Presentation & RTR Template Settings (Unified in Side Panel) */}
+            <div style={styles.sectionCard}>
+              <div style={styles.sectionCardTitle}>
+                Presentation & RTR Template
               </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                <div style={styles.formGroup}>
-                  <label style={styles.inputLabel}>Requisition / VMS # *</label>
-                  <input
-                    type="text"
-                    value={vmsNumber}
-                    onChange={e => {
-                      setVmsNumber(e.target.value)
-                      setIsLiveEditDirty(false)
-                    }}
-                    style={{ ...styles.textInput, fontWeight: '800', color: '#2563EB' }}
-                    placeholder="e.g. 812797"
-                  />
-                </div>
-
-                <div style={styles.formGroup}>
-                  <label style={styles.inputLabel}>Client / State Agency *</label>
-                  <input
-                    type="text"
-                    value={clientAgency}
-                    onChange={e => {
-                      setClientAgency(e.target.value)
-                      setIsLiveEditDirty(false)
-                    }}
-                    style={styles.textInput}
-                    placeholder="e.g. NCDHHS-AM or GDOT"
-                  />
+              <div style={{ marginBottom: 10 }}>
+                <label style={styles.inputLabel}>Template Format *</label>
+                <select
+                  value={selectedTemplate}
+                  onChange={e => handleTemplateChange(e.target.value)}
+                  style={{ ...styles.selectInput, fontWeight: '700', color: '#1D4ED8', width: '100%' }}
+                >
+                  {SUBMITTAL_TEMPLATES.map(tpl => (
+                    <option key={tpl.id} value={tpl.id}>
+                      {tpl.name}
+                    </option>
+                  ))}
+                </select>
+                <div style={{ fontSize: '10.5px', color: '#64748B', marginTop: 4, lineHeight: 1.4 }}>
+                  {activeTemplateMeta.description}
                 </div>
               </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                <div style={styles.formGroup}>
-                  <label style={styles.inputLabel}>Proposed Rate ($/hr) *</label>
+              <div style={{ paddingTop: 6, borderTop: '1px solid #F1F5F9' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: '12px', fontWeight: '700', color: '#334155' }}>
                   <input
-                    type="text"
-                    value={coversheet.proposedRate}
-                    onChange={e => {
-                      setCoversheet({ ...coversheet, proposedRate: e.target.value })
-                      setIsLiveEditDirty(false)
-                    }}
-                    style={{ ...styles.textInput, fontWeight: '700' }}
-                    placeholder="e.g. $75.00 / hr"
+                    type="checkbox"
+                    checked={blindResume}
+                    onChange={e => setBlindResume(e.target.checked)}
+                    style={{ cursor: 'pointer', width: 15, height: 15, accentColor: '#2563EB' }}
                   />
-                </div>
-
-                <div style={styles.formGroup}>
-                  <label style={styles.inputLabel}>Employment Type (W2/1099/C2C)</label>
-                  <select
-                    value={employmentType}
-                    onChange={e => {
-                      setEmploymentType(e.target.value)
-                      setIsLiveEditDirty(false)
-                    }}
-                    style={styles.selectInput}
-                  >
-                    <option value="C2C">Corp-to-Corp (C2C)</option>
-                    <option value="W2">W2 Hourly</option>
-                    <option value="1099">1099 Independent</option>
-                  </select>
-                </div>
+                  Blind Resume (Mask Direct Candidate Phone & Email)
+                </label>
               </div>
             </div>
-          </div>
 
-          {/* MSP / CAI Contract Manager Details (Shown for NC & Georgia Templates) */}
-          {activeTemplateMeta.hasCaiBox && (
+            {/* 2. Position & Requisition Binding Section */}
+            <div style={styles.sectionCard}>
+              <div style={styles.sectionCardTitle}>
+                Position & Requisition Binding
+              </div>
+              <div style={styles.formGrid}>
+                <div style={styles.formGroup}>
+                  <label style={styles.inputLabel}>Target Position / Job Title *</label>
+                  <input
+                    type="text"
+                    value={positionTitle}
+                    onChange={e => {
+                      setPositionTitle(e.target.value)
+                      setIsLiveEditDirty(false)
+                    }}
+                    style={{ ...styles.textInput, fontWeight: '700', color: '#1E293B' }}
+                    placeholder="e.g. Senior Software Engineer"
+                  />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                  <div style={styles.formGroup}>
+                    <label style={styles.inputLabel}>Requisition / VMS # *</label>
+                    <input
+                      type="text"
+                      value={vmsNumber}
+                      onChange={e => {
+                        setVmsNumber(e.target.value)
+                        setIsLiveEditDirty(false)
+                      }}
+                      style={{ ...styles.textInput, fontWeight: '800', color: '#2563EB' }}
+                      placeholder="e.g. 159256"
+                    />
+                  </div>
+
+                  <div style={styles.formGroup}>
+                    <label style={styles.inputLabel}>Client / State Agency *</label>
+                    <input
+                      type="text"
+                      value={clientAgency}
+                      onChange={e => {
+                        setClientAgency(e.target.value)
+                        setIsLiveEditDirty(false)
+                      }}
+                      style={styles.textInput}
+                      placeholder="e.g. FDOT or NCDHHS"
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                  <div style={styles.formGroup}>
+                    <label style={styles.inputLabel}>Proposed Rate ($/hr) *</label>
+                    <input
+                      type="text"
+                      value={coversheet.proposedRate}
+                      onChange={e => {
+                        setCoversheet({ ...coversheet, proposedRate: e.target.value })
+                        setIsLiveEditDirty(false)
+                      }}
+                      style={{ ...styles.textInput, fontWeight: '700' }}
+                      placeholder="e.g. $75.00 / hr"
+                    />
+                  </div>
+
+                  <div style={styles.formGroup}>
+                    <label style={styles.inputLabel}>Employment Type (W2/1099/C2C)</label>
+                    <select
+                      value={employmentType}
+                      onChange={e => {
+                        setEmploymentType(e.target.value)
+                        setIsLiveEditDirty(false)
+                      }}
+                      style={styles.selectInput}
+                    >
+                      <option value="C2C">Corp-to-Corp (C2C)</option>
+                      <option value="W2">W2 Hourly</option>
+                      <option value="1099">1099 Independent</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 3. MSP / CAI / Client Account Manager Details (Always Visible in Side Panel) */}
             <div style={{ ...styles.sectionCard, borderLeft: '3.5px solid #2563EB' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                 <div style={styles.sectionCardTitle}>
-                  CAI Contract Manager (VectorVMS Requirement)
+                  MSP / CAI / Client Account Manager Details
                 </div>
-                <span style={{ fontSize: '10px', fontWeight: '800', color: '#059669', background: '#ECFDF5', padding: '2px 6px', borderRadius: 4 }}>
-                  Auto-Populated
+                <span style={{ fontSize: '10px', fontWeight: '700', color: '#2563EB', background: '#EFF6FF', padding: '2px 6px', borderRadius: 4 }}>
+                  VectorVMS / MSP
                 </span>
               </div>
               <div style={styles.formGrid}>
@@ -3428,11 +3974,12 @@ ${coversheet.references}
                       setIsLiveEditDirty(false)
                     }}
                     style={styles.textInput}
+                    placeholder="e.g. Nicole Walker / Tim Brodrick"
                   />
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                   <div style={styles.formGroup}>
-                    <label style={styles.inputLabel}>Phone</label>
+                    <label style={styles.inputLabel}>Manager Phone</label>
                     <input
                       type="text"
                       value={caiManagerPhone}
@@ -3441,10 +3988,11 @@ ${coversheet.references}
                         setIsLiveEditDirty(false)
                       }}
                       style={styles.textInput}
+                      placeholder="e.g. 910-520-1506"
                     />
                   </div>
                   <div style={styles.formGroup}>
-                    <label style={styles.inputLabel}>Email</label>
+                    <label style={styles.inputLabel}>Manager Email</label>
                     <input
                       type="email"
                       value={caiManagerEmail}
@@ -3453,12 +4001,12 @@ ${coversheet.references}
                         setIsLiveEditDirty(false)
                       }}
                       style={styles.textInput}
+                      placeholder="e.g. nicole.walker@cai.io"
                     />
                   </div>
                 </div>
               </div>
             </div>
-          )}
 
           {/* Candidate Legal & Background Details */}
           <div style={styles.formGrid}>
@@ -3905,55 +4453,146 @@ ${coversheet.references}
       </div>
 
       {/* ─── Email Submittal / RTR Dispatch Modal ─────────────────────────── */}
+      {/* ─── Zoho Recruit Style Email Submittal / RTR Dispatch Modal ─────────────────────────── */}
       {showEmailModal && (
         <div style={styles.modalOverlay} onClick={() => setShowEmailModal(false)}>
-          <div style={styles.modalCard} onClick={e => e.stopPropagation()}>
+          <div style={{ ...styles.modalCard, maxWidth: '780px', width: '92%' }} onClick={e => e.stopPropagation()}>
             <div style={styles.modalHeader}>
-              <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#0F172A', margin: 0 }}>
-                {emailModalMode === 'rtr' ? 'Email Right to Represent (RTR) to Candidate' : 'Email Submittal Package to Client / Account Manager'}
-              </h3>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#0F172A', margin: 0 }}>
+                  {emailModalMode === 'rtr' ? 'Email Right to Represent (RTR) to Candidate' : 'Email Submittal Package to Client / Account Manager'}
+                </h3>
+                <span style={{ fontSize: '10px', fontWeight: '700', color: '#2563EB', background: '#EFF6FF', padding: '2px 7px', borderRadius: 4, border: '1px solid #BFDBFE' }}>
+                  {emailModalMode === 'rtr' ? 'RTR Dispatch' : 'Client Submittal'}
+                </span>
+              </div>
               <button onClick={() => setShowEmailModal(false)} style={styles.closeBtn}>✕</button>
             </div>
 
-            <form onSubmit={handleSendEmail} style={{ padding: '20px' }}>
-              <div style={styles.modalField}>
-                <label style={styles.inputLabel}>
-                  {emailModalMode === 'rtr' ? 'Candidate Email *' : 'Recipient Email *'}
-                </label>
-                <input
-                  type="email"
-                  value={emailTo}
-                  onChange={e => setEmailTo(e.target.value)}
-                  style={styles.textInput}
-                  required
-                />
-              </div>
+            {/* Zoho Recruit Sub-Header Tabs */}
+            <div style={{ display: 'flex', borderBottom: '1px solid #E2E8F0', padding: '0 20px', background: '#F8FAFC', gap: 8 }}>
+              <button
+                type="button"
+                onClick={() => setEmailPreviewTab('edit')}
+                style={{
+                  padding: '9px 14px',
+                  fontSize: '12px',
+                  fontWeight: '700',
+                  color: emailPreviewTab === 'edit' ? '#2563EB' : '#64748B',
+                  background: 'none',
+                  border: 'none',
+                  borderBottom: emailPreviewTab === 'edit' ? '2.5px solid #2563EB' : '2.5px solid transparent',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 5
+                }}
+              >
+                <span>✏️ Compose Message</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setEmailPreviewTab('preview')}
+                style={{
+                  padding: '9px 14px',
+                  fontSize: '12px',
+                  fontWeight: '700',
+                  color: emailPreviewTab === 'preview' ? '#2563EB' : '#64748B',
+                  background: 'none',
+                  border: 'none',
+                  borderBottom: emailPreviewTab === 'preview' ? '2.5px solid #2563EB' : '2.5px solid transparent',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 5
+                }}
+              >
+                <span>👁️ Live Formatted Preview (Colors & Highlights)</span>
+              </button>
+            </div>
 
-              <div style={styles.modalField}>
-                <label style={styles.inputLabel}>Subject Line *</label>
-                <input
-                  type="text"
-                  value={emailSubject}
-                  onChange={e => setEmailSubject(e.target.value)}
-                  style={styles.textInput}
-                  required
-                />
-              </div>
+            <form onSubmit={handleSendEmail} style={{ padding: '18px 20px' }}>
+              {emailPreviewTab === 'edit' ? (
+                <>
+                  <div style={styles.modalField}>
+                    <label style={styles.inputLabel}>
+                      {emailModalMode === 'rtr' ? 'Candidate Email *' : 'Recipient Email *'}
+                    </label>
+                    <input
+                      type="email"
+                      value={emailTo}
+                      onChange={e => setEmailTo(e.target.value)}
+                      style={styles.textInput}
+                      placeholder="e.g. candidate@example.com"
+                      required
+                    />
+                  </div>
 
-              <div style={styles.modalField}>
-                <label style={styles.inputLabel}>
-                  {emailModalMode === 'rtr' ? 'RTR Email Body & Legal Acknowledgment *' : 'Cover Message *'}
-                </label>
-                <textarea
-                  rows={emailModalMode === 'rtr' ? 8 : 4}
-                  value={emailBody}
-                  onChange={e => setEmailBody(e.target.value)}
-                  style={{ ...styles.textInput, resize: 'vertical' }}
-                  required
-                />
-              </div>
+                  <div style={styles.modalField}>
+                    <label style={styles.inputLabel}>Subject Line *</label>
+                    <input
+                      type="text"
+                      value={emailSubject}
+                      onChange={e => setEmailSubject(e.target.value)}
+                      style={styles.textInput}
+                      required
+                    />
+                  </div>
 
-              <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                  <div style={styles.modalField}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                      <label style={styles.inputLabel}>
+                        {emailModalMode === 'rtr' ? 'RTR Email Body & Authorization Acknowledgment *' : 'Cover Message *'}
+                      </label>
+                      <span style={{ fontSize: '10.5px', color: '#059669', fontWeight: '600' }}>
+                        ✓ Preserves yellow highlight on Name & Rate
+                      </span>
+                    </div>
+                    <textarea
+                      rows={emailModalMode === 'rtr' ? 8 : 5}
+                      value={emailBody}
+                      onChange={e => setEmailBody(e.target.value)}
+                      style={{ ...styles.textInput, resize: 'vertical', fontFamily: 'monospace', fontSize: '12px', lineHeight: 1.5 }}
+                      required
+                    />
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#64748B', lineHeight: 1.4, padding: '8px 12px', background: '#F8FAFC', borderRadius: 6, border: '1px solid #E2E8F0' }}>
+                    💡 <b>Zoho Recruit ATS Polish</b>: SmartHire will dispatch this email in dual-stream (Rich HTML + Plaintext). Recipient webmail will render high-contrast yellow highlights on candidate legal name and pay rate, red authorization alert boxes, and your official agency signature.
+                  </div>
+                </>
+              ) : (
+                <div>
+                  <div style={{ marginBottom: 10, fontSize: '12px', color: '#475569', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>Sending to: <b style={{ color: '#0F172A' }}>{emailTo || 'N/A'}</b> • Subject: <b style={{ color: '#0F172A' }}>{emailSubject}</b></span>
+                    <span style={{ fontSize: '11px', color: '#2563EB', fontWeight: '700' }}>Email Preview Mode</span>
+                  </div>
+                  <div
+                    style={{
+                      maxHeight: '380px',
+                      overflowY: 'auto',
+                      border: '1px solid #CBD5E1',
+                      borderRadius: 6,
+                      backgroundColor: '#FFFFFF',
+                      padding: 12
+                    }}
+                    dangerouslySetInnerHTML={{
+                      __html: generateRichEmailHtml({
+                        mode: emailModalMode,
+                        emailBody,
+                        coversheet,
+                        positionTitle,
+                        vmsNumber,
+                        clientAgency,
+                        employmentType,
+                        cleanRateNumber,
+                        currentUser
+                      })
+                    }}
+                  />
+                </div>
+              )}
+
+              <div style={{ marginTop: 18, display: 'flex', justifyContent: 'flex-end', gap: 10, alignItems: 'center' }}>
                 <button
                   type="button"
                   onClick={() => setShowEmailModal(false)}
@@ -3964,7 +4603,11 @@ ${coversheet.references}
                 <button
                   type="submit"
                   disabled={isSendingEmail}
-                  style={styles.actionBtnPrimary}
+                  style={{
+                    ...styles.actionBtnPrimary,
+                    padding: '8px 18px',
+                    boxShadow: '0 2px 4px rgba(37, 99, 235, 0.2)'
+                  }}
                 >
                   {isSendingEmail ? 'Dispatching...' : (emailModalMode === 'rtr' ? 'Send RTR Email ➔' : 'Send Submittal Email ➔')}
                 </button>

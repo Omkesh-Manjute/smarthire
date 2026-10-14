@@ -67,7 +67,12 @@ function convertHtmlToWordprocessingML(html, options = {}) {
 
         while ((cellMatch = cellRegex.exec(trMatch[1])) !== null) {
           const isTh = cellMatch[1].toLowerCase() === 'th' || isFirstRow
-          const rawCell = cellMatch[2].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+          const rawCell = cellMatch[2]
+            .replace(/<br\s*\/?>/gi, '\n')
+            .replace(/<\/(p|div)>/gi, '\n')
+            .replace(/<[^>]+>/g, ' ')
+            .replace(/[ \t]+/g, ' ')
+            .trim()
           const colWidth = colIndex === 0 ? '2800' : '6800'
           const bgFill = isTh ? 'F1F5F9' : (colIndex === 0 ? 'F8FAFC' : 'FFFFFF')
 
@@ -76,12 +81,17 @@ function convertHtmlToWordprocessingML(html, options = {}) {
           xml += '<w:shd w:val="clear" w:color="auto" w:fill="' + bgFill + '"/>'
           xml += '<w:tcMar><w:top w:w="120" w:type="dxa"/><w:left w:w="160" w:type="dxa"/><w:bottom w:w="120" w:type="dxa"/><w:right w:w="160" w:type="dxa"/></w:tcMar>'
           xml += '</w:tcPr>'
-          xml += '<w:p><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/></w:pPr>'
-          xml += '<w:r><w:rPr>'
-          if (isTh || colIndex === 0) xml += '<w:b/>'
-          xml += '<w:sz w:val="' + (isTh ? '20' : '19') + '"/>'
-          xml += '<w:color w:val="' + (isTh ? '0F172A' : (colIndex === 0 ? '1E293B' : '0F172A')) + '"/>'
-          xml += '</w:rPr><w:t xml:space="preserve">' + escapeXml(rawCell) + '</w:t></w:r></w:p></w:tc>'
+          const cellLines = rawCell.split('\n').map(l => l.trim()).filter(Boolean)
+          if (cellLines.length === 0) cellLines.push('')
+          for (const line of cellLines) {
+            xml += '<w:p><w:pPr><w:spacing w:after="20" w:line="240" w:lineRule="auto"/></w:pPr>'
+            xml += '<w:r><w:rPr>'
+            if (isTh || colIndex === 0) xml += '<w:b/>'
+            xml += '<w:sz w:val="' + (isTh ? '20' : '19') + '"/>'
+            xml += '<w:color w:val="' + (isTh ? '0F172A' : (colIndex === 0 ? '1E293B' : '0F172A')) + '"/>'
+            xml += '</w:rPr><w:t xml:space="preserve">' + escapeXml(line) + '</w:t></w:r></w:p>'
+          }
+          xml += '</w:tc>'
           colIndex++
         }
         xml += '</w:tr>'

@@ -225,6 +225,37 @@ Representation Term: 60 Days`,
         { id: 'f3', type: 'name', label: 'Candidate Full Legal Name', required: true, x: 60, y: 460, signerIndex: 0 }
       ]
     }
+  },
+  {
+    id: 'florida_fdot',
+    name: 'State of Florida (FDOT Appendix IV) E-RTR',
+    description: 'Official State of Florida Department of Transportation Vendor Staff Augmentation Specific Terms and Conditions (Form 725-000-06) & RTR Agreement.',
+    rate: '$90.00/hr',
+    client: 'Florida Department of Transportation (FDOT)',
+    doc: {
+      id: 'fdot-rtr-doc',
+      title: 'State of Florida DOT Vendor Staff Augmentation Specific Terms and Conditions (Appendix IV)',
+      contractNo: 'FDOT-725-000-06',
+      maxBillRate: '$110.00',
+      clientName: 'Florida Department of Transportation (FDOT)',
+      content: `STATE OF FLORIDA DEPARTMENT OF TRANSPORTATION
+APPENDIX IV — VENDOR STAFF AUGMENTATION SPECIFIC TERMS AND CONDITIONS (725-000-06)
+
+By signing below, the undersigned Vendor Employee / Candidate acknowledges and agrees that COOLSOFT LLC has the exclusive right to represent and submit my qualifications and professional resume to the Florida Department of Transportation (Department) for Staff Augmentation Services for Requirement #[Req #] ([Position Title]).
+
+I verify that all information in my resume is true and accurate, and I agree to comply with all terms and conditions set forth in this Appendix IV, including FBI Level II Background Check, independent contractor/co-employment provisions, data confidentiality, non-disclosure, and Florida state security guidelines.
+
+Requisition / PO #: [Req #]
+Position: [Position Title]
+Agency: Florida Department of Transportation (FDOT)
+Authorized Vendor: COOLSOFT LLC
+Candidate Representation Exclusivity: 60 Days`,
+      defaultFields: [
+        { id: 'f1', type: 'signature', label: 'Candidate Signature', required: true, x: 60, y: 520, signerIndex: 0 },
+        { id: 'f2', type: 'date', label: 'Date signed', required: true, x: 420, y: 520, signerIndex: 0 },
+        { id: 'f3', type: 'name', label: 'Candidate Full Legal Name', required: true, x: 60, y: 460, signerIndex: 0 }
+      ]
+    }
   }
 ]
 
@@ -347,6 +378,8 @@ export default function SmartSignRtrPage() {
             matchedTpl = PREBUILT_TEMPLATES.find(t => t.id === 'nebraska_state')
           } else if (tplParam?.includes('south_carolina') || tplParam?.includes('sosc')) {
             matchedTpl = PREBUILT_TEMPLATES.find(t => t.id === 'south_carolina_sosc')
+          } else if (tplParam?.includes('florida') || tplParam?.includes('fdot')) {
+            matchedTpl = PREBUILT_TEMPLATES.find(t => t.id === 'florida_fdot')
           } else if (tplParam?.includes('standard')) {
             matchedTpl = PREBUILT_TEMPLATES.find(t => t.id === 'standard_c2c')
           }

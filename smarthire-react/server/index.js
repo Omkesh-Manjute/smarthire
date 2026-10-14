@@ -11891,21 +11891,48 @@ setInterval(async () => {
 // POST /api/recruiter/send-direct-email
 // Strictly sends email from the recruiter's configured personal email address (never generic smarthire)
 app.post('/api/recruiter/send-direct-email', express.json(), async (req, res) => {
-  const { recruiterEmail, to, cc, bcc, subject, body, candidateName, candidateId } = req.body;
+  const { recruiterEmail, to, cc, bcc, subject, body, html, htmlBody, candidateName, candidateId } = req.body;
   const cfg = emailConfigsStore[recruiterEmail] || emailConfigsStore['omkesh@coolsofttech.com'] || {};
 
   const senderEmail = cfg.fromEmail || recruiterEmail || 'omkesh@coolsofttech.com';
   const senderName = cfg.displayName || 'Omkesh Manjute';
   const senderSignature = cfg.signature || 'With Regards,\nOmkesh Manjute\nCOOLSOFT LLC | http://www.coolsofttech.com';
 
-  if (!to || !subject || !body) {
+  if (!to || !subject || (!body && !html && !htmlBody)) {
     return res.status(400).json({ success: false, message: 'Recipient (to), subject, and body are required.' });
   }
 
-  // Append recruiter personal signature
-  const fullBody = body.includes(senderEmail) || body.includes('Regards')
-    ? body
-    : `${body}\n\n---\n${senderSignature}`;
+  // Plain text fallback
+  const plainTextBody = body || (html || htmlBody || '').replace(/<[^>]+>/g, ' ');
+  const fullBody = plainTextBody.includes(senderEmail) || plainTextBody.includes('Regards')
+    ? plainTextBody
+    : `${plainTextBody}\n\n---\n${senderSignature}`;
+
+  // Rich HTML email formatting with responsive container, inline colors, and signature
+  const rawHtml = html || htmlBody || '';
+  let fullHtml = '';
+  if (rawHtml) {
+    fullHtml = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 20px; background-color: #f1f5f9; font-family: Verdana, Geneva, sans-serif; color: #1e293b;">
+  <div style="max-width: 680px; margin: 0 auto; background-color: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 28px 32px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); font-family: Verdana, Geneva, sans-serif; font-size: 13px; line-height: 1.6; color: #000000;">
+    ${rawHtml}
+    ${rawHtml.includes(senderEmail) || rawHtml.includes('Regards') ? '' : `
+      <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #475569; font-family: Verdana, Geneva, sans-serif;">
+        <p style="margin: 0; font-weight: bold; color: #0f172a;">${senderName}</p>
+        <p style="margin: 2px 0 0 0; color: #64748B;">COOLSOFT LLC | Talent Acquisition</p>
+        <p style="margin: 2px 0 0 0; color: #2563EB;">Email: <a href="mailto:${senderEmail}" style="color: #2563EB; text-decoration: underline;">${senderEmail}</a></p>
+        <p style="margin: 2px 0 0 0; color: #64748B;">Web: <a href="https://www.coolsofttech.com" style="color: #2563EB; text-decoration: underline;">www.coolsofttech.com</a></p>
+      </div>
+    `}
+  </div>
+</body>
+</html>`;
+  }
 
   // Generate mailto link as guaranteed zero-firewall desktop dispatch fallback
   let mailtoQuery = `subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(fullBody)}`;
@@ -11954,6 +11981,9 @@ app.post('/api/recruiter/send-direct-email', express.json(), async (req, res) =>
           subject,
           text: fullBody
         };
+        if (fullHtml) {
+          mailOptions.html = fullHtml;
+        }
         if (cc && cc.trim()) mailOptions.cc = cc.trim();
         if (bcc && bcc.trim()) mailOptions.bcc = bcc.trim();
 
