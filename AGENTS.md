@@ -103,7 +103,68 @@ The following high-impact features and optimizations have been agreed upon and p
   - **Branded & Blind Resume Wrapper**: Formats candidate resume with agency letterhead/header, core competencies table, clean bullet points, and optional contact masking (hiding direct phone/email to prevent poaching).
   - **1-Click Actions**: 📋 Copy formatted text to clipboard (for portal/email paste), 📥 Download PDF/DOCX submittal package, and ✉️ Direct email dispatch to Account Manager / Client.
 
-### 2026-10-14 — Submittal Pack: Auto-Fix 2-Column Skills Matrix Table & Genuine Microsoft Word (.docx / RTF) Export
+### 2026-10-15 — Universal Search: Full Boolean Search Console, Chronological Descending Requisitions (Zero Gaps), & Advanced Recruiter Search Criteria
+- **Context & Objectives**:
+  - The user reported:
+    1. Universal search was not working as expected; Boolean search needs to be the primary search engine with full query execution across candidate resumes and profiles.
+    2. Additional recruiting options needed for Title and Search Criteria (Title match modes: Any Past Title, Current Only, Exact Match; Exclude Titles [NOT Title]; 3-tier skills: Must-Have [AND], Any of These [OR], Excluded [NOT]; Experience range; Location distance with Relocation toggle; Max pay rate).
+    3. Requisitions in the top dropdown were not sorted properly: older requisitions (`#159023`, `#159021`, etc.) appeared first, followed by a sudden jump to `#159326` with a jarring gap. The newest active requisitions must be at the very top, sorted strictly descending by Req Number with zero gaps.
+    4. Closed, banked, filled, cancelled, expired, or on-hold requisitions must be strictly filtered out.
+- **Architectural Implementations & Fixes**:
+  1. **Full Boolean Search Engine (`evaluateBooleanQuery`)**:
+     - Built a high-performance Boolean parser in `MonsterSourcingModule.jsx` supporting quoted exact phrases (`"..."`), logical operators (`AND`, `OR`, `NOT`, `AND NOT`), and nested parentheses `(...)`.
+     - Integrated Boolean evaluation directly into `filteredCandidates` so typing or selecting Boolean queries actively filters the candidate pool in real time with dynamic match scoring boost (+15 points).
+  2. **Interactive Boolean Command Center**:
+     - Engineered a prominent monospace Boolean query editor with live status badge (`Filtering Candidates Live`).
+     - Added quick operator insert buttons (`+ AND`, `+ OR`, `+ NOT`, `( ... )`, `" ... "`).
+     - Integrated 1-click Boolean variants (`Variant 1: Core Technical Focus`, `Variant 2: Broad Synonyms & Methodologies`, `Variant 3: Public Sector & State Proximity`).
+     - Added controls: `Filter Candidates with Boolean` toggle, `Reset from Job`, `Copy Boolean`, and `Clear`.
+  3. **Advanced Recruiter Search Criteria**:
+     - *Job Title*: Added 3 match mode buttons (`Any Title`, `Current Only`, `Exact`) and `Exclude Titles (NOT Title)` (e.g. Intern, Junior, Entry Level, Sales).
+     - *Skills & Keywords*: Implemented 3 tiers — `Must-Have (AND Mandatory)`, `Any of These (OR / Preferred)`, and `Exclude Keywords (NOT)`.
+     - *Experience Level*: Added dropdown (`All`, `1-3 Years`, `4-7 Years`, `8-10 Years`, `11+ Years`).
+     - *Location & Distance*: Added distance radius with `Include candidates open to Relocation` checkbox.
+     - *Pay Rate*: Added max target hourly rate filter (`$/hr`).
+  4. **Strictly Descending Requisitions & Gap Elimination**:
+     - Sorted all active requisitions strictly descending by numeric Req ID (`#159326`, `#159325`, `#159321`, `#159320`, `#159319` ... down to `#159023`, `#159021`, `#159010`) across `MonsterSourcingModule.jsx`, `RecruiterInbox.jsx`, and `SubmittalPackPage.jsx`.
+     - Completely eliminated the gap between `#159010` and `#159326`.
+     - Automatically selects `#159326` (the newest active requisition) on mount.
+  5. **Strict Closed Job Filtering**:
+     - Hardened `isJobActive` and `isJobActiveAndOpen` to strictly reject any requisitions with status `closed`, `bank`, `banked`, `filled`, `cancelled`, `canceled`, `expired`, `hold`, `on hold`, `inactive`, `draft`, `archived`, `completed`, `close`, `cancel`, or expired submission deadlines.
+- **Verification & Deployment**:
+  - Local production build in `smarthire-react`: **0 errors, 0 warnings** (`index-BavbJKcZ.js`, `RecruiterInbox-n-5hNd7s.js`, `SubmittalPackPage-eh35wI1J.js`).
+  - Git committed (`5bf862e`) and pushed to `main`.
+  - Deployed to AWS Lightsail server (`34.194.119.199`), bundles extracted, old assets pruned (5 index bundles retained), archives cleaned up immediately.
+  - Disk space: 8.7GB available (54% used, Rule 5 compliant).
+  - Verified `HTTP 200 OK` on `https://smarthireus.com/inbox?tab=monster` and all bundle hashes.
+
+---
+
+### 2026-10-15 — Submittal Pack: Florida FDOT RTR, Zoho Recruit ATS UI Polish & Pure Infinity Snake Loader
+- **Context & Objectives**:
+  - The user requested:
+    1. Add the official 4-page Florida Department of Transportation (FDOT Appendix IV) Vendor Staff Augmentation Specific Terms and Conditions (Form 725-000-06) RTR document with 15 clauses, live editable on canvas (`contentEditable`).
+    2. Remove the candidate search bar and dropdown from the left panel; keep candidate card with direct `Upload File` and `Paste Resume` buttons.
+    3. Remove top header buttons (`Copy Coversheet / Copy RTR Email`, `Email Candidate`, `Email Submittal Pack`), keeping only clean actions (`Download .docx`, `Download .doc`, `SmartSign RTR`).
+    4. Replace static `<select>` for TARGET JOB REQUISITION with a searchable autocomplete combobox.
+    5. Fix email dispatch to preserve rich colors, yellow background highlights (`#FFFF00`) on candidate legal name and pay rate, red alert instructions, and official agency signature.
+    6. Unify all presentation settings, requisition parameters, and MSP / CAI / Client Account Manager fields in the side panel (always visible).
+    7. Upgrade UI/UX to Zoho Recruit ATS aesthetic.
+    8. Fix runtime error `IconUser is not defined`.
+    9. During page refresh/load, show ONLY the glowing animated infinity snake loop with zero text, zero brand name, and zero loading labels.
+- **Architectural Implementations & Fixes**:
+  1. **Florida FDOT RTR (Form 725-000-06)**: Integrated full 15-clause agreement with criminal background check ORI, co-employment, and signature execution blocks in `SubmittalPackPage.jsx` and `SmartSignRtrPage.jsx`.
+  2. **Zoho Recruit UI/UX Polish**: Upgraded left panel into clean Zoho Recruit cards, searchable requisition combobox, and removed top clutter buttons.
+  3. **Rich HTML Email Dispatch**: Built `generateRichEmailHtml()` sending dual-stream HTML preserving `#FFFF00` highlights on name and rate, and added Zoho Recruit live HTML preview tab in email modal.
+  4. **Icon & Variable Integrity**: Defined `IconUser` SVG component in `SubmittalPackPage.jsx`.
+  5. **Pure Infinity Snake Loader**: Updated `index.html`, `InfinityLoader.jsx`, and `App.jsx` to render ONLY the animated glowing infinity snake loop centered in the viewport with no text, logo, or brand name.
+- **Verification & Deployment**:
+  - Local production build in `smarthire-react`: **0 errors, 0 warnings** (`SubmittalPackPage-C7Lm29s6.js`, `index-DvLen3GN.js`).
+  - Git committed (`15eb7d7`) and pushed to `main`.
+  - Deployed to AWS Lightsail (`34.194.119.199`), PM2 `smarthire-ats` reloaded, disk space verified at 8.7GB free (53% used).
+  - Verified `HTTP 200 OK` on `https://smarthireus.com/submittal-pack`.
+
+---
 - **Context & Objectives**:
   - The user shared two screenshots from `smarthireus.com/submittal-pack`:
     1. A downloaded resume file (`BALA_BHASKARA_CHENNU_Formatted_Resume_159321.doc`) opened in macOS TextEdit displaying raw HTML tags (`<!DOCTYPE html>`, `<xml>`, `@page Section1`, etc.) because it was previously exported as raw HTML masquerading as `.doc`.
