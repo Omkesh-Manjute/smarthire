@@ -95,11 +95,12 @@ export const safeSkillLabel = (skill) => {
   return String(skill).trim()
 }
 
-// Check if a requisition is genuinely Open and Active (Filters out closed, cancelled, filled, expired jobs)
+// Check if a requisition is genuinely Open and Active (Filters out closed, cancelled, filled, expired, banked, on-hold jobs)
 export function isJobActive(job) {
   if (!job) return false
-  const s = String(job.status || job.job_status || '').toLowerCase().trim()
-  if (['closed', 'bank', 'banked', 'filled', 'cancelled', 'expired', 'hold', 'on hold'].includes(s)) return false
+  const s = String(job.status || job.job_status || job.state || '').toLowerCase().trim()
+  if (['closed', 'bank', 'banked', 'filled', 'cancelled', 'canceled', 'expired', 'hold', 'on hold', 'inactive', 'draft', 'archived', 'completed', 'close', 'cancel'].includes(s)) return false
+  if (job.active === false || job.is_active === false || job.isOpen === false) return false
   if (job.deadline) {
     const d = new Date(job.deadline)
     if (!isNaN(d.getTime())) {
@@ -108,7 +109,91 @@ export function isJobActive(job) {
       if (d < today) return false
     }
   }
+  if (job.description && typeof job.description === 'string') {
+    const m = job.description.match(/submission\s+deadline\s*:\s*(\d{1,2}\/\d{1,2}\/\d{4})/i)
+    if (m) {
+      const d = new Date(m[1])
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      if (!isNaN(d.getTime()) && d < today) return false
+    }
+  }
   return true
+}
+
+// Enterprise-Grade Boolean Search Evaluator (Parses AND, OR, NOT, Quoted phrases, Parentheses across candidate resume & profile)
+export function evaluateBooleanQuery(query, cand) {
+  if (!query || !query.trim()) return true
+  if (!cand) return false
+
+  const candSkillsStr = Array.isArray(cand.skills)
+    ? cand.skills.map(safeSkillLabel).join(' ')
+    : String(cand.skills || '')
+
+  const fullText = [
+    cand.name,
+    cand.title,
+    cand.role,
+    cand.currentRole,
+    cand.previousRole,
+    candSkillsStr,
+    cand.location,
+    cand.experience,
+    cand.resumeText,
+    cand.company
+  ].filter(Boolean).join(' ').toLowerCase()
+
+  // Normalize boolean operators
+  let expr = query
+    .replace(/\bAND\s+NOT\b/gi, ' && ! ')
+    .replace(/\bNOT\b/gi, ' && ! ')
+    .replace(/\bAND\b/gi, ' && ')
+    .replace(/\bOR\b/gi, ' || ')
+    .trim()
+
+  expr = expr.replace(/^&&\s*/, '')
+
+  const termMap = new Map()
+  let termCounter = 0
+
+  // 1. Quoted exact phrases: "..."
+  expr = expr.replace(/"([^"]+)"/g, (match, term) => {
+    const key = `__T${termCounter++}__`
+    const termClean = term.toLowerCase().trim()
+    const found = termClean.length > 0 && fullText.includes(termClean)
+    termMap.set(key, found)
+    return key
+  })
+
+  // 2. Remaining bare keywords (avoiding operators)
+  expr = expr.replace(/([a-zA-Z0-9_.#+-]+)/g, (match) => {
+    if (match === '&&' || match === '||' || match.startsWith('__T')) return match
+    const key = `__T${termCounter++}__`
+    const termClean = match.toLowerCase().trim()
+    const found = termClean.length > 0 && fullText.includes(termClean)
+    termMap.set(key, found)
+    return key
+  })
+
+  // 3. Substitute evaluated boolean values
+  let evalExpr = expr
+  for (const [key, val] of termMap.entries()) {
+    evalExpr = evalExpr.split(key).join(val ? ' true ' : ' false ')
+  }
+
+  // 4. Sanitize to strictly allowed JS boolean symbols
+  const sanitized = evalExpr.replace(/[^truefalse&|!()\s]/g, '')
+
+  try {
+    const fn = new Function(`return Boolean(${sanitized});`)
+    return fn()
+  } catch (e) {
+    // Graceful syntax fallback (e.g. user currently typing unbalanced parenthesis)
+    for (const val of termMap.values()) {
+      if (val) return true
+    }
+    return false
+  }
 }
 
 // Generate 3 High-Precision Boolean Search Queries dynamically
@@ -341,11 +426,19 @@ export default function MonsterSourcingModule({
 
   // ─── 2. Search Filter Criteria State (Left Accordion) ──────────────────────
   const [filterTitle, setFilterTitle] = useState('')
+  const [filterTitleMatchMode, setFilterTitleMatchMode] = useState('any') // 'any' | 'current' | 'exact'
+  const [filterExcludeTitles, setFilterExcludeTitles] = useState('')
   const [filterSkills, setFilterSkills] = useState('')
+  const [filterMustSkills, setFilterMustSkills] = useState('')
+  const [filterExcludeSkills, setFilterExcludeSkills] = useState('')
+  const [filterExpRange, setFilterExpRange] = useState('all') // 'all' | '1-3' | '4-7' | '8-10' | '11+'
   const [filterLocation, setFilterLocation] = useState('')
   const [filterRadius, setFilterRadius] = useState('30 miles')
+  const [filterRelocation, setFilterRelocation] = useState(false)
   const [filterSource, setFilterSource] = useState('all') // all, careers_portal, mobile_app, email_inbox, monster_search, vendor_bench, manual_entry
   const [filterVisa, setFilterVisa] = useState('all')
+  const [filterMaxRate, setFilterMaxRate] = useState('')
+  const [useBooleanFilter, setUseBooleanFilter] = useState(true) // Apply Boolean Query directly to candidate matches
   const [isFilterCollapsed, setIsFilterCollapsed] = useState(false)
   const [isSearchingLive, setIsSearchingLive] = useState(false)
 
@@ -399,7 +492,7 @@ export default function MonsterSourcingModule({
       .catch(err => console.warn('[UniversalSearch] Jobs fetch error:', err))
   }, [])
 
-  // Merged All Requisitions — STRICTLY KEEP ONLY ACTIVE / OPEN REQUISITIONS
+  // Merged All Requisitions — STRICTLY KEEP ONLY ACTIVE / OPEN REQUISITIONS & SORT DESCENDING (NEWEST FIRST)
   const activeRequisitions = useMemo(() => {
     const map = new Map()
 
@@ -428,14 +521,24 @@ export default function MonsterSourcingModule({
         skills: (Array.isArray(j.skills) && j.skills.length > 0) ? j.skills.map(safeSkillLabel) : (existing.skills || []),
         description: fullDesc,
         fullDescription: fullDesc,
-        rawDescription: fullDesc
+        rawDescription: fullDesc,
+        createdAt: j.createdAt || j.created_at || existing.createdAt || ''
       })
     }
 
     ;(activeJobs || []).forEach(ingestJob)
     internalJobs.forEach(ingestJob)
 
-    return Array.from(map.values())
+    const list = Array.from(map.values())
+    // STRICT NUMERICAL DESCENDING SORT: Newest / Highest Req # at the VERY TOP (eliminates any gap!)
+    return list.sort((a, b) => {
+      const aNum = parseInt(String(a.id || a.reqId || '').replace(/\D+/g, ''), 10) || 0
+      const bNum = parseInt(String(b.id || b.reqId || '').replace(/\D+/g, ''), 10) || 0
+      if (bNum !== aNum) return bNum - aNum
+      const aDate = new Date(a.createdAt || 0).getTime()
+      const bDate = new Date(b.createdAt || 0).getTime()
+      return bDate - aDate
+    })
   }, [activeJobs, internalJobs])
 
   // Filtered Requisitions matching the Quick Search Box
@@ -471,6 +574,7 @@ export default function MonsterSourcingModule({
       .map(safeSkillLabel)
       .filter(Boolean)
     setFilterSkills(cleanSkillsList.slice(0, 4).join(', '))
+    setFilterMustSkills(cleanSkillsList.slice(0, 2).join(', '))
 
     // 2. Auto-generate 3 Boolean search queries
     const variants = generateBooleanVariants(
@@ -490,17 +594,10 @@ export default function MonsterSourcingModule({
     setTimeout(() => setToastMessage(null), 3000)
   }, [])
 
-  // Auto-select first active requisition on mount once requisitions load
+  // Auto-select newest active requisition on mount once requisitions load
   useEffect(() => {
     if (!selectedJobId && activeRequisitions.length > 0) {
-      const defaultJob = activeRequisitions.find(j => 
-        String(j.id) === '159287' || 
-        String(j.id) === '159023' || 
-        /business analyst|\.net|java|architect/i.test(j.title || '')
-      ) || activeRequisitions[0]
-      if (defaultJob) {
-        handleSelectRequisition(defaultJob)
-      }
+      handleSelectRequisition(activeRequisitions[0])
     }
   }, [activeRequisitions, selectedJobId, handleSelectRequisition])
 
@@ -519,6 +616,27 @@ export default function MonsterSourcingModule({
     navigator.clipboard.writeText(activeBooleanQuery)
     setCopiedQueryFeedback(true)
     setTimeout(() => setCopiedQueryFeedback(false), 2000)
+  }
+
+  // Insert Boolean Operator into query
+  const insertBooleanOperator = (op) => {
+    setActiveBooleanQuery(prev => {
+      const trimmed = (prev || '').trim()
+      if (!trimmed) return op.trim()
+      if (op === '("...")') return `${trimmed} AND ("")`
+      if (op === '( )') return `(${trimmed})`
+      return `${trimmed} ${op} `
+    })
+  }
+
+  // Reset Boolean Query from Current Job
+  const handleResetBooleanFromJob = () => {
+    if (activeBooleanVariants.length > 0) {
+      setSelectedVariantId(activeBooleanVariants[0].id)
+      setActiveBooleanQuery(activeBooleanVariants[0].query)
+      setToastMessage('✓ Reset to core Boolean query from Requisition')
+      setTimeout(() => setToastMessage(null), 2000)
+    }
   }
 
   // ─── 8. Unified Candidate Pool Aggregation (100% Object-Safe) ──────────────
@@ -608,7 +726,7 @@ export default function MonsterSourcingModule({
     return list
   }, [allCandidatesPool])
 
-  // ─── 9. Filtered Candidate List (Fuzzy Tokenized Search Engine) ────────────
+  // ─── 9. Filtered Candidate List (Boolean Search & Multi-Criteria Engine) ───
   const filteredCandidates = useMemo(() => {
     return unifiedPool.map(c => {
       let matchScore = 70
@@ -630,25 +748,58 @@ export default function MonsterSourcingModule({
         else if (candTitleLower.includes(token)) matchScore += 4
       })
 
+      // Boost for matching active Boolean query
+      if (activeBooleanQuery.trim() && evaluateBooleanQuery(activeBooleanQuery, c)) {
+        matchScore += 15
+      }
+
       return {
         ...c,
         matchScore: Math.min(99, Math.max(55, matchScore))
       }
     }).filter(c => {
-      // 1. Title Filter
+      // 0. Primary Boolean Search Query Filter (User's primary request)
+      if (useBooleanFilter && activeBooleanQuery.trim()) {
+        const matchesBoolean = evaluateBooleanQuery(activeBooleanQuery, c)
+        if (!matchesBoolean) return false
+      }
+
+      // 1. Title Filter & Title Match Mode
       if (filterTitle.trim()) {
         const titleLower = filterTitle.toLowerCase().trim()
         const candTitle = (c.title || '').toLowerCase()
+        const candCurrentRole = (c.currentRole || '').toLowerCase()
         const candSkills = c.skills.map(safeSkillLabel).join(' ').toLowerCase()
-        const tokens = titleLower.split(/[\s,/-]+/).filter(w => w.length >= 3)
 
-        const matchesWhole = candTitle.includes(titleLower) || candSkills.includes(titleLower)
-        const matchesTokens = tokens.length > 0 && tokens.some(t => candTitle.includes(t) || candSkills.includes(t))
-
-        if (!matchesWhole && !matchesTokens) return false
+        if (filterTitleMatchMode === 'exact') {
+          if (!candTitle.includes(titleLower)) return false
+        } else if (filterTitleMatchMode === 'current') {
+          if (!candCurrentRole.includes(titleLower) && !candTitle.includes(titleLower)) return false
+        } else {
+          const tokens = titleLower.split(/[\s,/-]+/).filter(w => w.length >= 3)
+          const matchesWhole = candTitle.includes(titleLower) || candCurrentRole.includes(titleLower) || candSkills.includes(titleLower)
+          const matchesTokens = tokens.length > 0 && tokens.some(t => candTitle.includes(t) || candCurrentRole.includes(t) || candSkills.includes(t))
+          if (!matchesWhole && !matchesTokens) return false
+        }
       }
 
-      // 2. Skills / Keywords Filter
+      // 2. Exclude Titles (NOT Title)
+      if (filterExcludeTitles.trim()) {
+        const exTokens = filterExcludeTitles.toLowerCase().split(/[,|;]+/).map(s => s.trim()).filter(Boolean)
+        const candTitle = (c.title || '').toLowerCase()
+        const candCurrent = (c.currentRole || '').toLowerCase()
+        if (exTokens.some(ex => candTitle.includes(ex) || candCurrent.includes(ex))) return false
+      }
+
+      // 3. Must-Have Mandatory Skills (AND)
+      if (filterMustSkills.trim()) {
+        const mustTokens = filterMustSkills.toLowerCase().split(/[,|;]+/).map(s => s.trim()).filter(Boolean)
+        const candSkillsStr = c.skills.map(safeSkillLabel).join(' ').toLowerCase() + ' ' + (c.resumeText || '').toLowerCase()
+        const hasAllMust = mustTokens.every(t => candSkillsStr.includes(t))
+        if (!hasAllMust) return false
+      }
+
+      // 4. Skills / Keywords Filter (OR / Fuzzy)
       if (filterSkills.trim()) {
         const skillQuery = filterSkills.toLowerCase().trim()
         const candSkills = c.skills.map(safeSkillLabel).join(' ').toLowerCase()
@@ -659,7 +810,23 @@ export default function MonsterSourcingModule({
         if (!matchesTokens) return false
       }
 
-      // 3. Location Filter
+      // 5. Excluded Skills (NOT)
+      if (filterExcludeSkills.trim()) {
+        const exTokens = filterExcludeSkills.toLowerCase().split(/[,|;]+/).map(s => s.trim()).filter(Boolean)
+        const candSkillsStr = c.skills.map(safeSkillLabel).join(' ').toLowerCase() + ' ' + (c.resumeText || '').toLowerCase()
+        if (exTokens.some(t => candSkillsStr.includes(t))) return false
+      }
+
+      // 6. Experience Range Filter
+      if (filterExpRange !== 'all') {
+        const expNum = parseInt(String(c.experience || '').replace(/\D+/g, ''), 10) || 5
+        if (filterExpRange === '1-3' && (expNum < 1 || expNum > 3)) return false
+        if (filterExpRange === '4-7' && (expNum < 4 || expNum > 7)) return false
+        if (filterExpRange === '8-10' && (expNum < 8 || expNum > 10)) return false
+        if (filterExpRange === '11+' && expNum < 11) return false
+      }
+
+      // 7. Location & Distance Filter
       if (filterLocation.trim() && !/any|remote/i.test(filterLocation)) {
         const locQuery = filterLocation.toLowerCase().trim()
         const candLoc = (c.location || '').toLowerCase()
@@ -674,7 +841,12 @@ export default function MonsterSourcingModule({
         if (!matches) return false
       }
 
-      // 4. Source / Channel Filter
+      // 8. Willing to Relocate
+      if (filterRelocation && /no|none|never/i.test(String(c.relocation || ''))) {
+        return false
+      }
+
+      // 9. Source / Channel Filter
       if (filterSource !== 'all') {
         if (filterSource === 'careers_portal' && c.sourceCategory !== 'careers_portal' && !c.source.includes('Job Site')) return false
         if (filterSource === 'mobile_app' && c.sourceCategory !== 'mobile_app' && !c.source.includes('Mobile')) return false
@@ -684,11 +856,20 @@ export default function MonsterSourcingModule({
         if (filterSource === 'vendor_bench' && c.sourceCategory !== 'vendor_bench' && !c.source.includes('Bench')) return false
       }
 
-      // 5. Visa Filter
+      // 10. Visa Filter
       if (filterVisa !== 'all') {
         const visaLower = filterVisa.toLowerCase()
         const candVisa = (c.visaStatus || '').toLowerCase()
         if (!candVisa.includes(visaLower)) return false
+      }
+
+      // 11. Max Desired Rate ($/hr)
+      if (filterMaxRate.trim()) {
+        const maxVal = parseInt(filterMaxRate.replace(/\D+/g, ''), 10)
+        if (maxVal && !isNaN(maxVal)) {
+          const candRate = parseInt(String(c.rate || '').replace(/\D+/g, ''), 10) || 0
+          if (candRate > 0 && candRate > maxVal) return false
+        }
       }
 
       // Tabs: Matches vs Favorites vs Skipped
@@ -698,7 +879,26 @@ export default function MonsterSourcingModule({
 
       return true
     }).sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0))
-  }, [unifiedPool, filterTitle, filterSkills, filterLocation, filterSource, filterVisa, activeTab, favoriteIds, skippedIds])
+  }, [
+    unifiedPool,
+    useBooleanFilter,
+    activeBooleanQuery,
+    filterTitle,
+    filterTitleMatchMode,
+    filterExcludeTitles,
+    filterMustSkills,
+    filterSkills,
+    filterExcludeSkills,
+    filterExpRange,
+    filterLocation,
+    filterRelocation,
+    filterSource,
+    filterVisa,
+    filterMaxRate,
+    activeTab,
+    favoriteIds,
+    skippedIds
+  ])
 
   // Active Selected Candidate
   const selectedCandidate = useMemo(() => {
@@ -1032,19 +1232,21 @@ Website: https://www.coolsofttech.com | https://smarthireus.com`
       )}
 
       {/* ─── TOP BAR: REQUIREMENT SELECTOR (ONLY ACTIVE), SEARCH BOX & BOOLEAN ── */}
+      {/* ─── TOP BAR: REQUIREMENT SELECTOR (ONLY ACTIVE), SEARCH BOX & BOOLEAN COMMAND CENTER ── */}
       <div style={{
         backgroundColor: '#F8FAFC',
         borderBottom: '1px solid #E2E8F0',
-        padding: '10px 20px',
+        padding: '12px 20px',
         display: 'flex',
         flexDirection: 'column',
-        gap: 8,
+        gap: 10,
         flexShrink: 0
       }}>
+        {/* Row 1: Active Requisition Selector & Action Buttons */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
           
           {/* Left: Requisition Search Input Box + Active Requisitions Dropdown */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 340, maxWidth: 860, flexWrap: 'nowrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 340, maxWidth: 880, flexWrap: 'nowrap' }}>
             <span style={{ fontSize: 12, fontWeight: 800, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>
               Requirement:
             </span>
@@ -1090,7 +1292,7 @@ Website: https://www.coolsofttech.com | https://smarthireus.com`
               )}
             </div>
 
-            {/* Dropdown containing ONLY ACTIVE / OPEN Requisitions */}
+            {/* Dropdown containing ONLY ACTIVE / OPEN Requisitions (Chronologically Descending - Newest on Top!) */}
             <div style={{ position: 'relative', flex: 1, minWidth: 260 }}>
               <select
                 value={selectedJobId}
@@ -1150,7 +1352,7 @@ Website: https://www.coolsofttech.com | https://smarthireus.com`
             </button>
           </div>
 
-          {/* Right: 1-Click Copy Boolean Query Button */}
+          {/* Right Action: Copy Boolean Query Button */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <button
               onClick={handleCopyBoolean}
@@ -1177,41 +1379,185 @@ Website: https://www.coolsofttech.com | https://smarthireus.com`
           </div>
         </div>
 
-        {/* 3 Clickable Boolean Search Variants */}
-        {activeBooleanVariants.length > 0 && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, overflowX: 'auto', paddingBottom: 2 }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: '#64748B', whiteSpace: 'nowrap' }}>
-              Boolean Variants:
-            </span>
-            {activeBooleanVariants.map(v => {
-              const isSelected = selectedVariantId === v.id
-              return (
+        {/* Row 2: Prominent Interactive Boolean Search Console (Recruiter Command Bar) */}
+        <div style={{
+          backgroundColor: '#FFFFFF',
+          border: '1px solid #CBD5E1',
+          borderRadius: 8,
+          padding: '10px 14px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 8,
+          boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
+        }}>
+          {/* Boolean Top Bar with Live Badge & Quick Operator Inserts */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 11.5, fontWeight: 800, color: '#1E293B', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: 5 }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: useBooleanFilter && activeBooleanQuery.trim() ? '#10B981' : '#94A3B8' }} />
+                Boolean Search Query
+              </span>
+              <span style={{
+                fontSize: 10.5,
+                fontWeight: 700,
+                color: useBooleanFilter && activeBooleanQuery.trim() ? '#047857' : '#64748B',
+                background: useBooleanFilter && activeBooleanQuery.trim() ? '#ECFDF5' : '#F1F5F9',
+                border: `1px solid ${useBooleanFilter && activeBooleanQuery.trim() ? '#A7F3D0' : '#E2E8F0'}`,
+                padding: '2px 8px',
+                borderRadius: 10
+              }}>
+                {useBooleanFilter && activeBooleanQuery.trim() ? 'Filtering Candidates Live' : 'Query Inactive'}
+              </span>
+            </div>
+
+            {/* Quick Syntax Operators */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 11, fontWeight: 600, color: '#64748B', marginRight: 2 }}>Insert:</span>
+              {[
+                { label: '+ AND', value: 'AND' },
+                { label: '+ OR', value: 'OR' },
+                { label: '+ NOT', value: 'NOT' },
+                { label: '( ... )', value: '( )' },
+                { label: '" ... "', value: '("...")' }
+              ].map(op => (
                 <button
-                  key={v.id}
-                  onClick={() => handleSwitchVariant(v)}
+                  key={op.label}
+                  type="button"
+                  onClick={() => insertBooleanOperator(op.value)}
                   style={{
-                    backgroundColor: isSelected ? '#EFF6FF' : '#FFFFFF',
-                    color: isSelected ? '#1E40AF' : '#475569',
-                    border: `1px solid ${isSelected ? '#93C5FD' : '#E2E8F0'}`,
+                    backgroundColor: '#F1F5F9',
+                    color: '#334155',
+                    border: '1px solid #CBD5E1',
                     borderRadius: 4,
-                    padding: '4px 10px',
-                    fontSize: 11.5,
-                    fontWeight: isSelected ? 700 : 500,
+                    padding: '2px 7px',
+                    fontSize: 11,
+                    fontWeight: 700,
                     cursor: 'pointer',
-                    whiteSpace: 'nowrap',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 6
+                    transition: 'all 0.1s'
                   }}
-                  title={v.query}
+                  onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#E2E8F0'; }}
+                  onMouseOut={(e) => { e.currentTarget.style.backgroundColor = '#F1F5F9'; }}
                 >
-                  <span>{v.name}</span>
-                  {isSelected && <span style={{ fontSize: 10, color: '#2563EB', fontWeight: 800 }}>• Active</span>}
+                  {op.label}
                 </button>
-              )
-            })}
+              ))}
+            </div>
           </div>
-        )}
+
+          {/* Interactive Monospace Boolean Query Textarea */}
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+            <textarea
+              rows={2}
+              value={activeBooleanQuery}
+              onChange={(e) => setActiveBooleanQuery(e.target.value)}
+              placeholder='e.g. ("Business Analyst" OR "BA") AND ("MS Excel" OR "SharePoint") AND NOT "Intern"'
+              style={{
+                width: '100%',
+                fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+                fontSize: 12.5,
+                fontWeight: 600,
+                color: '#0F172A',
+                backgroundColor: '#F8FAFC',
+                border: '1px solid #CBD5E1',
+                borderRadius: 6,
+                padding: '8px 12px',
+                outline: 'none',
+                boxSizing: 'border-box',
+                resize: 'none',
+                lineHeight: 1.45
+              }}
+              onFocus={(e) => { e.target.style.borderColor = '#2563EB'; e.target.style.backgroundColor = '#FFFFFF'; }}
+              onBlur={(e) => { e.target.style.borderColor = '#CBD5E1'; e.target.style.backgroundColor = '#F8FAFC'; }}
+            />
+          </div>
+
+          {/* Bottom Bar: 3 Boolean Variants + Filter Toggle + Action Buttons */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, paddingTop: 2 }}>
+            
+            {/* 3 Clickable Boolean Search Variants */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#64748B', whiteSpace: 'nowrap' }}>
+                Variants:
+              </span>
+              {activeBooleanVariants.map(v => {
+                const isSelected = selectedVariantId === v.id
+                return (
+                  <button
+                    key={v.id}
+                    onClick={() => handleSwitchVariant(v)}
+                    style={{
+                      backgroundColor: isSelected ? '#EFF6FF' : '#FFFFFF',
+                      color: isSelected ? '#1E40AF' : '#475569',
+                      border: `1px solid ${isSelected ? '#93C5FD' : '#E2E8F0'}`,
+                      borderRadius: 4,
+                      padding: '3px 8px',
+                      fontSize: 11,
+                      fontWeight: isSelected ? 700 : 500,
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4
+                    }}
+                    title={v.query}
+                  >
+                    <span>{v.name.split(':')[0]}</span>
+                    {isSelected && <span style={{ fontSize: 10, color: '#2563EB', fontWeight: 800 }}>• Active</span>}
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* Right: Apply Toggle & Controls */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 11.5, fontWeight: 600, color: '#334155' }}>
+                <input
+                  type="checkbox"
+                  checked={useBooleanFilter}
+                  onChange={(e) => setUseBooleanFilter(e.target.checked)}
+                  style={{ accentColor: '#2563EB', cursor: 'pointer' }}
+                />
+                <span>Filter Candidates with Boolean</span>
+              </label>
+
+              <button
+                type="button"
+                onClick={handleResetBooleanFromJob}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#2563EB',
+                  fontSize: 11.5,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  padding: '2px 4px'
+                }}
+                title="Reset Boolean query to current requisition"
+              >
+                Reset
+              </button>
+
+              {activeBooleanQuery && (
+                <button
+                  type="button"
+                  onClick={() => setActiveBooleanQuery('')}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#94A3B8',
+                    fontSize: 11.5,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    padding: '2px 4px'
+                  }}
+                  title="Clear Boolean query"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* ─── AUTHENTIC MONSTER 3-COLUMN WORKSPACE ─────────────────────────────── */}
@@ -1252,7 +1598,7 @@ Website: https://www.coolsofttech.com | https://smarthireus.com`
               </button>
             </div>
 
-            {/* Filter 1: Job Title */}
+            {/* Filter 1: Job Title & Title Match Options */}
             <div style={{ marginBottom: 18, borderBottom: '1px solid #F1F5F9', paddingBottom: 14 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                 <label style={{ fontSize: 13, fontWeight: 700, color: '#0F172A' }}>Job Title</label>
@@ -1265,12 +1611,12 @@ Website: https://www.coolsofttech.com | https://smarthireus.com`
                   </button>
                 )}
               </div>
-              <div style={{ position: 'relative' }}>
+              <div style={{ position: 'relative', marginBottom: 8 }}>
                 <input
                   type="text"
                   value={filterTitle}
                   onChange={(e) => setFilterTitle(e.target.value)}
-                  placeholder="e.g. .NET Modernization"
+                  placeholder="e.g. Business Analyst"
                   style={{
                     width: '100%',
                     padding: '8px 10px',
@@ -1291,42 +1637,174 @@ Website: https://www.coolsofttech.com | https://smarthireus.com`
                   </button>
                 )}
               </div>
+
+              {/* Title Match Mode Selector */}
+              <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
+                {[
+                  { id: 'any', label: 'Any Title' },
+                  { id: 'current', label: 'Current Only' },
+                  { id: 'exact', label: 'Exact' }
+                ].map(m => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => setFilterTitleMatchMode(m.id)}
+                    style={{
+                      flex: 1,
+                      padding: '4px 2px',
+                      fontSize: 10.5,
+                      fontWeight: filterTitleMatchMode === m.id ? 700 : 500,
+                      color: filterTitleMatchMode === m.id ? '#1D4ED8' : '#475569',
+                      backgroundColor: filterTitleMatchMode === m.id ? '#EFF6FF' : '#F8FAFC',
+                      border: `1px solid ${filterTitleMatchMode === m.id ? '#93C5FD' : '#E2E8F0'}`,
+                      borderRadius: 4,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {m.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Exclude Titles (NOT Title) */}
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 600, color: '#64748B', display: 'block', marginBottom: 4 }}>
+                  Exclude Titles (NOT Title)
+                </label>
+                <input
+                  type="text"
+                  value={filterExcludeTitles}
+                  onChange={(e) => setFilterExcludeTitles(e.target.value)}
+                  placeholder="e.g. Intern, Junior, Entry Level"
+                  style={{
+                    width: '100%',
+                    padding: '6px 8px',
+                    borderRadius: 4,
+                    border: '1px solid #CBD5E1',
+                    fontSize: 11.5,
+                    boxSizing: 'border-box',
+                    outline: 'none',
+                    color: '#334155'
+                  }}
+                />
+              </div>
             </div>
 
-            {/* Filter 2: Skills / Keywords */}
+            {/* Filter 2: Skills & Keywords (3-Tier: Must-Have, Any, Exclude) */}
             <div style={{ marginBottom: 18, borderBottom: '1px solid #F1F5F9', paddingBottom: 14 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                <label style={{ fontSize: 13, fontWeight: 700, color: '#0F172A' }}>Skills/Keywords</label>
-                <span style={{ fontSize: 16, color: '#64748B', fontWeight: 300 }}>+</span>
+                <label style={{ fontSize: 13, fontWeight: 700, color: '#0F172A' }}>Skills & Keywords</label>
               </div>
-              <input
-                type="text"
-                value={filterSkills}
-                onChange={(e) => setFilterSkills(e.target.value)}
-                placeholder="e.g. C#, ASP.NET, React"
+
+              {/* Must-Have (AND) */}
+              <div style={{ marginBottom: 8 }}>
+                <label style={{ fontSize: 11, fontWeight: 700, color: '#166534', display: 'block', marginBottom: 3 }}>
+                  Must-Have Skills (AND Mandatory)
+                </label>
+                <input
+                  type="text"
+                  value={filterMustSkills}
+                  onChange={(e) => setFilterMustSkills(e.target.value)}
+                  placeholder="e.g. Python, LIMS"
+                  style={{
+                    width: '100%',
+                    padding: '6px 8px',
+                    borderRadius: 4,
+                    border: '1px solid #86EFAC',
+                    backgroundColor: '#F0FDF4',
+                    fontSize: 12,
+                    boxSizing: 'border-box',
+                    outline: 'none',
+                    color: '#14532D'
+                  }}
+                />
+              </div>
+
+              {/* Any of These (OR / Preferred) */}
+              <div style={{ marginBottom: 8 }}>
+                <label style={{ fontSize: 11, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 3 }}>
+                  Any of These Skills (OR / Preferred)
+                </label>
+                <input
+                  type="text"
+                  value={filterSkills}
+                  onChange={(e) => setFilterSkills(e.target.value)}
+                  placeholder="e.g. Excel, EPA, Agile"
+                  style={{
+                    width: '100%',
+                    padding: '6px 8px',
+                    borderRadius: 4,
+                    border: '1px solid #CBD5E1',
+                    fontSize: 12,
+                    boxSizing: 'border-box',
+                    outline: 'none',
+                    color: '#334155'
+                  }}
+                />
+              </div>
+
+              {/* Exclude Keywords (NOT) */}
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 600, color: '#991B1B', display: 'block', marginBottom: 3 }}>
+                  Exclude Keywords (NOT)
+                </label>
+                <input
+                  type="text"
+                  value={filterExcludeSkills}
+                  onChange={(e) => setFilterExcludeSkills(e.target.value)}
+                  placeholder="e.g. Java, PHP, ColdFusion"
+                  style={{
+                    width: '100%',
+                    padding: '6px 8px',
+                    borderRadius: 4,
+                    border: '1px solid #FECACA',
+                    backgroundColor: '#FEF2F2',
+                    fontSize: 11.5,
+                    boxSizing: 'border-box',
+                    outline: 'none',
+                    color: '#7F1D1D'
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Filter 3: Experience Level */}
+            <div style={{ marginBottom: 18, borderBottom: '1px solid #F1F5F9', paddingBottom: 14 }}>
+              <label style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', display: 'block', marginBottom: 6 }}>
+                Experience Level
+              </label>
+              <select
+                value={filterExpRange}
+                onChange={(e) => setFilterExpRange(e.target.value)}
                 style={{
                   width: '100%',
-                  padding: '8px 10px',
+                  padding: '7px 10px',
                   borderRadius: 4,
                   border: '1px solid #CBD5E1',
-                  fontSize: 12.5,
+                  fontSize: 12,
                   boxSizing: 'border-box',
-                  outline: 'none'
+                  backgroundColor: '#FFFFFF',
+                  color: '#334155'
                 }}
-              />
+              >
+                <option value="all">All Experience Levels</option>
+                <option value="1-3">1 - 3 Years (Junior / Entry)</option>
+                <option value="4-7">4 - 7 Years (Mid-Level)</option>
+                <option value="8-10">8 - 10 Years (Senior)</option>
+                <option value="11+">11+ Years (Lead / Architect)</option>
+              </select>
             </div>
 
-            {/* Filter 3: Location & Radius */}
+            {/* Filter 4: Location & Distance */}
             <div style={{ marginBottom: 18, borderBottom: '1px solid #F1F5F9', paddingBottom: 14 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                <label style={{ fontSize: 13, fontWeight: 700, color: '#0F172A' }}>Location</label>
-                <span style={{ fontSize: 16, color: '#64748B', fontWeight: 300 }}>—</span>
+                <label style={{ fontSize: 13, fontWeight: 700, color: '#0F172A' }}>Location & Distance</label>
               </div>
               <input
                 type="text"
                 value={filterLocation}
                 onChange={(e) => setFilterLocation(e.target.value)}
-                placeholder="e.g. Atlanta, GA or Remote"
+                placeholder="e.g. Indianapolis, IN or Remote"
                 style={{
                   width: '100%',
                   padding: '8px 10px',
@@ -1349,7 +1827,8 @@ Website: https://www.coolsofttech.com | https://smarthireus.com`
                   fontSize: 12,
                   boxSizing: 'border-box',
                   backgroundColor: '#FFFFFF',
-                  color: '#334155'
+                  color: '#334155',
+                  marginBottom: 8
                 }}
               >
                 <option value="15 miles">15 miles</option>
@@ -1358,15 +1837,23 @@ Website: https://www.coolsofttech.com | https://smarthireus.com`
                 <option value="100 miles">100 miles</option>
                 <option value="Remote / Any">Remote / Any Distance</option>
               </select>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11.5, color: '#475569', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={filterRelocation}
+                  onChange={(e) => setFilterRelocation(e.target.checked)}
+                  style={{ accentColor: '#2563EB', cursor: 'pointer' }}
+                />
+                <span>Include candidates open to Relocation</span>
+              </label>
             </div>
 
-            {/* Filter 4: Intake Source / Channel */}
+            {/* Filter 5: Intake Source / Channel */}
             <div style={{ marginBottom: 18, borderBottom: '1px solid #F1F5F9', paddingBottom: 14 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                 <label style={{ fontSize: 13, fontWeight: 700, color: '#0F172A' }}>
                   Candidate Source / Channel
                 </label>
-                <span style={{ fontSize: 16, color: '#64748B', fontWeight: 300 }}>—</span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12.5 }}>
                 {[
@@ -1402,11 +1889,10 @@ Website: https://www.coolsofttech.com | https://smarthireus.com`
               </div>
             </div>
 
-            {/* Filter 5: Citizenship / Visa Status */}
+            {/* Filter 6: Citizenship / Visa Status */}
             <div style={{ marginBottom: 18, borderBottom: '1px solid #F1F5F9', paddingBottom: 14 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                 <label style={{ fontSize: 13, fontWeight: 700, color: '#0F172A' }}>Citizenship / Visa</label>
-                <span style={{ fontSize: 16, color: '#64748B', fontWeight: 300 }}>+</span>
               </div>
               <select
                 value={filterVisa}
@@ -1430,16 +1916,45 @@ Website: https://www.coolsofttech.com | https://smarthireus.com`
               </select>
             </div>
 
+            {/* Filter 7: Target Max Rate ($/hr) */}
+            <div style={{ marginBottom: 18, borderBottom: '1px solid #F1F5F9', paddingBottom: 14 }}>
+              <label style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', display: 'block', marginBottom: 6 }}>
+                Max Bill / Pay Rate ($/hr)
+              </label>
+              <input
+                type="text"
+                value={filterMaxRate}
+                onChange={(e) => setFilterMaxRate(e.target.value)}
+                placeholder="e.g. $80/hr"
+                style={{
+                  width: '100%',
+                  padding: '7px 10px',
+                  borderRadius: 4,
+                  border: '1px solid #CBD5E1',
+                  fontSize: 12,
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
+
             {/* Filter Action Buttons (CLEAR ALL & UPDATE) */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 }}>
               <button
                 type="button"
                 onClick={() => {
                   setFilterTitle('')
+                  setFilterTitleMatchMode('any')
+                  setFilterExcludeTitles('')
                   setFilterSkills('')
+                  setFilterMustSkills('')
+                  setFilterExcludeSkills('')
+                  setFilterExpRange('all')
                   setFilterLocation('')
+                  setFilterRelocation(false)
                   setFilterSource('all')
                   setFilterVisa('all')
+                  setFilterMaxRate('')
+                  setActiveBooleanQuery('')
                   handleTriggerSearch()
                 }}
                 style={{
@@ -1459,21 +1974,21 @@ Website: https://www.coolsofttech.com | https://smarthireus.com`
                 type="button"
                 onClick={handleTriggerSearch}
                 style={{
-                  backgroundColor: isSearchingLive ? '#6D28D9' : '#7C3AED',
+                  backgroundColor: isSearchingLive ? '#1D4ED8' : '#2563EB',
                   color: '#FFFFFF',
                   border: 'none',
-                  borderRadius: 20,
-                  padding: '8px 20px',
-                  fontSize: 12.5,
+                  borderRadius: 6,
+                  padding: '8px 18px',
+                  fontSize: 12,
                   fontWeight: 700,
                   cursor: 'pointer',
                   textTransform: 'uppercase',
                   letterSpacing: '0.04em',
-                  boxShadow: '0 2px 4px rgba(124, 58, 237, 0.25)',
+                  boxShadow: '0 2px 4px rgba(37, 99, 235, 0.25)',
                   transition: 'background-color 0.15s ease'
                 }}
               >
-                {isSearchingLive ? 'SEARCHING...' : 'UPDATE'}
+                {isSearchingLive ? 'SEARCHING...' : 'APPLY FILTERS'}
               </button>
             </div>
           </div>

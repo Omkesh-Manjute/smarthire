@@ -292,8 +292,9 @@ function getSkillFrequencies(resumeText = '', candidateSkills = []) {
 
 export function isJobActiveAndOpen(job) {
   if (!job) return false;
-  const s = String(job.status || '').toLowerCase().trim();
-  if (['closed', 'bank', 'banked', 'filled', 'cancelled', 'expired', 'hold', 'on hold'].includes(s)) return false;
+  const s = String(job.status || job.job_status || job.state || '').toLowerCase().trim();
+  if (['closed', 'bank', 'banked', 'filled', 'cancelled', 'canceled', 'expired', 'hold', 'on hold', 'inactive', 'draft', 'archived', 'completed', 'close', 'cancel'].includes(s)) return false;
+  if (job.active === false || job.is_active === false || job.isOpen === false) return false;
 
   if (job.deadline) {
     const d = new Date(job.deadline);
@@ -2518,8 +2519,14 @@ export default function RecruiterInbox({ defaultViewMode }) {
   })
   const [isSavingNewCand, setIsSavingNewCand] = useState(false)
 
-  // Open Requisitions for Multi-Position AI Matcher (Strictly Active & Unexpired)
+  // Open Requisitions for Multi-Position AI Matcher (Strictly Active & Unexpired, Sorted Descending)
   const DEFAULT_OPEN_JOBS = [
+    { id: '159326', title: 'QA Analyst', client: 'Indiana Department of Health (IN-IDOH)-Office of Data & Analytics', rate: '$75/hr', location: 'Indianapolis, IN', workMode: 'Onsite', skills: ['Python', 'LIMS', 'Quality Assurance', 'Excel', 'EPA regulations'] },
+    { id: '159325', title: 'IT Security Specialist Systems Administrator - 494', client: 'DHS - Division Of Family Development', rate: '$85/hr', location: 'Pontiac, MI', workMode: 'Hybrid', skills: ['Security', 'Linux', 'Systems Administration', 'Firewalls'] },
+    { id: '159321', title: 'GA DOL Computer Operator 2', client: 'GDOL-IT', rate: '$65/hr', location: 'Atlanta, GA', workMode: 'Onsite', skills: ['Computer Operations', 'Mainframe', 'Hardware', 'Control-M'] },
+    { id: '159320', title: 'Service Desk Personnel', client: 'TN DOT', rate: '$55/hr', location: 'Nashville, TN', workMode: 'Onsite', skills: ['Service Desk', 'Help Desk', 'Active Directory', 'Ticketing'] },
+    { id: '159319', title: 'Data/Information Architect - Consultant', client: 'SCDOR', rate: '$95/hr', location: 'Columbia, SC', workMode: 'Hybrid', skills: ['Data Architecture', 'ETL', 'SQL', 'Snowflake', 'Data Modeling'] },
+    { id: '159310', title: 'Systems Analyst - Advanced', client: 'University of South Carolina', rate: '$80/hr', location: 'Columbia, SC', workMode: 'Onsite', skills: ['Systems Analyst', 'SQL', 'Requirements', 'Business Process'] },
     { id: '159023', title: 'Business Analyst - Advanced (13467)', client: 'State Client', rate: '$75/hr', location: 'Columbia, SC', workMode: 'Onsite', skills: ['Business Analyst', 'MS Excel', 'SHARE POINT', 'Performance Metrics'] },
     { id: '159021', title: 'IT Deployment Team Member (66166)', client: 'Enterprise Client', rate: '$65/hr', location: 'Columbia, SC', workMode: 'Onsite', skills: ['IT Deployment', 'System Support', 'Troubleshooting', 'Hardware/Software Rollouts'] },
     { id: '159020', title: 'CBUS Program Manager 1 (809896)', client: 'State Agency', rate: '$85/hr', location: 'Remote / US', workMode: 'Remote', skills: ['Program Management', 'Agile', 'Stakeholder Management', 'Risk Analysis'] },
@@ -4369,6 +4376,15 @@ export default function RecruiterInbox({ defaultViewMode }) {
                   skills: safeSkillArray(j.skills).length > 0 ? safeSkillArray(j.skills) : ['Java', 'SQL']
                 })
               }
+            })
+            // Strict numerical descending sort: highest req ID / newest at the top (eliminates any gap!)
+            merged.sort((a, b) => {
+              const aNum = parseInt(String(a.id || a.reqId || '').replace(/\D+/g, ''), 10) || 0
+              const bNum = parseInt(String(b.id || b.reqId || '').replace(/\D+/g, ''), 10) || 0
+              if (bNum !== aNum) return bNum - aNum
+              const aDate = new Date(a.createdAt || 0).getTime()
+              const bDate = new Date(b.createdAt || 0).getTime()
+              return bDate - aDate
             })
             return merged
           })

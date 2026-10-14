@@ -1503,7 +1503,23 @@ export default function SubmittalPackPage() {
         })
 
         setCandidates(unique)
-        const jobList = jobsRes.jobs || jobsRes.requisitions || []
+        const rawJobList = jobsRes.jobs || jobsRes.requisitions || []
+        const jobList = rawJobList
+          .filter(j => {
+            if (!j) return false
+            const s = String(j.status || j.job_status || j.state || '').toLowerCase().trim()
+            if (['closed', 'bank', 'banked', 'filled', 'cancelled', 'canceled', 'expired', 'hold', 'on hold', 'inactive', 'draft', 'archived', 'completed', 'close', 'cancel'].includes(s)) return false
+            if (j.active === false || j.is_active === false || j.isOpen === false) return false
+            return true
+          })
+          .sort((a, b) => {
+            const aNum = parseInt(String(a.id || a.reqId || '').replace(/\D+/g, ''), 10) || 0
+            const bNum = parseInt(String(b.id || b.reqId || '').replace(/\D+/g, ''), 10) || 0
+            if (bNum !== aNum) return bNum - aNum
+            const aDate = new Date(a.createdAt || 0).getTime()
+            const bDate = new Date(b.createdAt || 0).getTime()
+            return bDate - aDate
+          })
         setJobs(jobList)
 
         // Pre-select via URL parameters or defaults
