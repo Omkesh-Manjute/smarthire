@@ -210,16 +210,48 @@ export function extractResumeMetadata(rawText) {
   }
 
   const skills = [];
-  const commonTech = ['C#', 'ASP.NET', '.NET Core', 'Java', 'Python', 'React', 'Angular', 'TypeScript', 'JavaScript', 'SQL Server', 'Oracle', 'Azure', 'AWS', 'Docker', 'Kubernetes', 'Microservices', 'REST APIs', 'Git', 'CI/CD'];
+  const commonTech = [
+    'Active Directory', 'ServiceNow', 'Windows 11', 'Windows 10', 'Windows Server', 'Office 365', 'Microsoft 365',
+    'Hardware Troubleshooting', 'Desktop Support', 'Help Desk', 'Technical Support', 'Customer Support',
+    'Remote Desktop', 'TCP/IP', 'DNS', 'DHCP', 'VPN', 'LAN/WAN', 'PowerShell', 'Linux', 'macOS', 'Jira',
+    'C#', 'ASP.NET', '.NET Core', 'Java', 'Python', 'React', 'Angular', 'TypeScript', 'JavaScript',
+    'SQL Server', 'Oracle', 'SQL', 'Azure', 'AWS', 'Docker', 'Kubernetes', 'Microservices', 'REST APIs',
+    'Git', 'CI/CD', 'ITIL', 'Ticketing Systems'
+  ];
   commonTech.forEach(tech => {
     const escaped = tech.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
     const regex = new RegExp(`\\b${escaped}\\b`, 'i');
-    if (regex.test(rawText)) {
+    if (regex.test(rawText) && !skills.includes(tech)) {
       skills.push(tech);
     }
   });
 
+  // Extract explicit skills from resume skills section if present
+  const skillsSecMatch = rawText.match(/(?:RELEVANT\s+)?(?:TECHNICAL\s+SKILLS|SKILLS\s*(?:&|AND)?\s*(?:TOOLS|ABILITIES|COMPETENCIES)?|CORE\s+COMPETENCIES|TECHNICAL\s+QUALIFICATIONS|AREAS\s+OF\s+EXPERTISE|KEY\s+SKILLS|TECHNICAL\s+EXPERTISE)[:\s]+([^]+?)(?=(?:EMPLOYMENT\s+HISTORY|PROFESSIONAL\s+EXPERIENCE|WORK\s+EXPERIENCE|WORK\s+HISTORY|EDUCATION|CERTIFICATIONS|$))/i);
+  if (skillsSecMatch && skillsSecMatch[1]) {
+    const rawSec = skillsSecMatch[1].replace(/[\uF000-\uF8FF\uFFFD\u25A0-\u25FF]/g, '');
+    const tokens = rawSec.split(/[\n,;|•\u2022\u25CF\u25A0\-]+/).map(s => s.trim().replace(/^[:\-\d.]+\s*/, '')).filter(s => s.length > 1 && s.length < 35 && !/^(Category|Skills|and|with|the)$/i.test(s));
+    for (const t of tokens) {
+      if (!skills.includes(t)) skills.push(t);
+    }
+  }
+
   return { name, role, phone, email, visa, location, experience, education, skills };
+}
+
+// ─── Unicode Bullet Cleaner & Glyph Normalizer (Strips Wingdings \uF000-\uF8FF, \uFFFD, Boxes \u25A0-\u25FF) ───
+export function sanitizeBulletLine(line) {
+  if (!line) return '';
+  return String(line)
+    .replace(/[\uF000-\uF8FF\uFFFD\u25A0-\u25FF]/g, '')
+    .replace(/^[\s\u2022\u2023\u25CF\u25CB\u25A0\u25A1\u25AA\u25FE\u25C6\u25C7\u2043\u2219•\-\*–—\u00B7\u2013\u2014]+\s*/, '')
+    .replace(/^(\d+[\.\)\:\-\]]|\(\d+\))\s*/, '')
+    .trim();
+}
+
+export function hasExplicitBulletPrefix(line) {
+  if (!line) return false;
+  return /^[\s\uF000-\uF8FF\u2022\u2023\u25CF\u25CB\u25A0\u25A1\u25AA\u25FE\u25C6\u25C7\u2043\u2219•\-\*–—\u00B7\u2013\u2014]/.test(line);
 }
 
 // ─── Robust Skills Category Parser & Table Generator ────────────────────────
@@ -228,17 +260,22 @@ export function parseTechnicalSkillsRobust(input) {
   if (!text.trim()) return [];
 
   const KNOWN_CATS = [
-    'Domain Knowledge', 'Domain / Industry Knowledge', 'Technologies', 'Core Technologies',
-    'GIS Software', 'GIS Tools & Platforms', 'Utilities & Frameworks', 'Frameworks & Libraries',
-    'Frameworks', 'Databases', 'Database Technologies', 'RDBMS', 'Programming Languages',
-    'Languages', 'GUI', 'IDEs & Editors', 'Development Tools', 'OS & Cloud', 'Operating Systems',
-    'Cloud Technologies', 'Cloud & DevOps', 'DevOps Tools', 'Other Tools', 'Tools & Utilities',
-    'Web Related', 'Web Technologies', 'Frontend Technologies', 'Methodologies', 'Big Data',
-    'Testing Tools', 'Version Control', 'Security', 'Architecture'
+    'Domain Knowledge', 'Domain / Industry Knowledge', 'Core Competencies', 'Technical Proficiencies',
+    'Technical Competencies', 'Key Skills', 'Relevant Skills', 'Core Technical Skills', 'Technical Skills',
+    'Relevant Technical Skills', 'Technologies', 'Core Technologies', 'Operating Systems & Platforms',
+    'Operating Systems', 'OS & Platforms', 'Hardware & Troubleshooting', 'Systems Administration',
+    'Networking & Protocols', 'Customer Support & Service Desk', 'Service Desk & Help Desk',
+    'Desktop & Field Support', 'Ticketing Tools & Systems', 'Tools & Utilities', 'Tools & Applications',
+    'Software & Applications', 'Databases', 'Database Technologies', 'RDBMS', 'Programming Languages',
+    'Languages', 'Cloud & DevOps', 'Cloud Technologies', 'Methodologies', 'Methodologies & Practices',
+    'Testing Tools', 'Version Control', 'Security', 'Architecture', 'Certifications & Training',
+    'Frameworks & Libraries', 'Web Technologies', 'Frontend Technologies', 'GIS Software',
+    'GIS Tools & Platforms', 'Utilities & Frameworks', 'Frameworks', 'Big Data'
   ];
   KNOWN_CATS.sort((a, b) => b.length - a.length);
 
-  const rawLines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  const cleanText = text.replace(/[\uF000-\uF8FF\uFFFD\u25A0-\u25FF]/g, '');
+  const rawLines = cleanText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
   const explodedLines = [];
 
   for (const line of rawLines) {
@@ -255,10 +292,14 @@ export function parseTechnicalSkillsRobust(input) {
   let currentSkills = [];
 
   for (let i = 0; i < explodedLines.length; i++) {
-    const line = explodedLines[i];
+    const rawLine = explodedLines[i];
+    const line = sanitizeBulletLine(rawLine);
+    if (!line) continue;
+    if (/^Category$/i.test(line)) continue;
 
     const colonIdx = line.indexOf(':');
-    if (colonIdx > 1 && colonIdx < 40 && !line.includes(',') && !line.substring(0, colonIdx).includes(';')) {
+    // Ensure category name before colon does not contain commas or semicolons
+    if (colonIdx > 1 && colonIdx < 45 && !line.substring(0, colonIdx).includes(',') && !line.substring(0, colonIdx).includes(';')) {
       if (currentCat && currentSkills.length > 0) {
         pairs.push({ category: currentCat, skills: currentSkills.join(' ').replace(/\s+/g, ' ').trim() });
         currentSkills = [];
@@ -309,6 +350,14 @@ export function parseTechnicalSkillsRobust(input) {
     pairs.push({ category: currentCat, skills: currentSkills.join(' ').replace(/\s+/g, ' ').trim() });
   }
 
+  // Fallback: If no structured categories were found, populate a clean default category
+  if (pairs.length === 0 && rawLines.length > 0) {
+    const combined = rawLines.map(sanitizeBulletLine).filter(Boolean).join(', ');
+    if (combined) {
+      pairs.push({ category: 'Core Technical Qualifications', skills: combined });
+    }
+  }
+
   return pairs;
 }
 
@@ -317,13 +366,13 @@ export function renderSkillsMatrixTableHtml(skillsInput) {
   if (!pairs || pairs.length === 0) return '';
 
   let tableHtml = `
-    <table class="skills-matrix-table" cellspacing="0" cellpadding="0" style="border-collapse: collapse; width: 100%; border: 1px solid #CBD5E1; margin: 8px 0 16px 0; font-family: Verdana, Geneva, sans-serif;">
+    <table class="skills-matrix-table" cellspacing="0" cellpadding="0" style="border-collapse: collapse; width: 100%; table-layout: fixed; box-sizing: border-box; border: 1px solid #CBD5E1; margin: 8px 0 16px 0; font-family: Verdana, Geneva, sans-serif; word-break: break-word;">
       <thead>
         <tr style="background-color: #F1F5F9;">
-          <th style="border: 1px solid #CBD5E1; width: 28%; text-align: left; padding: 7px 10px; font-size: 11px; font-weight: bold; color: #0F172A; text-transform: uppercase; letter-spacing: 0.04em;">
+          <th style="border: 1px solid #CBD5E1; width: 28%; text-align: left; padding: 7px 10px; font-size: 11px; font-weight: bold; color: #0F172A; text-transform: uppercase; letter-spacing: 0.04em; word-break: break-word;">
             Category
           </th>
-          <th style="border: 1px solid #CBD5E1; width: 72%; text-align: left; padding: 7px 10px; font-size: 11px; font-weight: bold; color: #0F172A; text-transform: uppercase; letter-spacing: 0.04em;">
+          <th style="border: 1px solid #CBD5E1; width: 72%; text-align: left; padding: 7px 10px; font-size: 11px; font-weight: bold; color: #0F172A; text-transform: uppercase; letter-spacing: 0.04em; word-break: break-word;">
             Skills / Technologies
           </th>
         </tr>
@@ -335,10 +384,10 @@ export function renderSkillsMatrixTableHtml(skillsInput) {
     const bg = idx % 2 === 0 ? '#FFFFFF' : '#F8FAFC';
     tableHtml += `
       <tr style="background-color: ${bg};">
-        <td style="border: 1px solid #CBD5E1; padding: 7px 10px; font-size: 11px; font-weight: bold; color: #1E293B; vertical-align: top; width: 28%;">
+        <td style="border: 1px solid #CBD5E1; padding: 7px 10px; font-size: 11px; font-weight: bold; color: #1E293B; vertical-align: top; width: 28%; word-break: break-word;">
           ${p.category}
         </td>
-        <td style="border: 1px solid #CBD5E1; padding: 7px 10px; font-size: 11px; color: #0F172A; vertical-align: top; line-height: 1.5; width: 72%;">
+        <td style="border: 1px solid #CBD5E1; padding: 7px 10px; font-size: 11px; color: #0F172A; vertical-align: top; line-height: 1.5; width: 72%; word-break: break-word;">
           ${p.skills}
         </td>
       </tr>
@@ -357,22 +406,22 @@ export function renderSkillsMatrixTableHtml(skillsInput) {
 export function formatStructuredWordResume(resumeText, blindResume = false) {
   if (!resumeText) return '<p><i>No resume experience provided.</i></p>';
 
-  let raw = resumeText;
+  let raw = blindResume
+    ? resumeText
+        .replace(/[\w.-]+@[\w.-]+\.\w+/g, '[Contact details available via CoolSoft LLC]')
+        .replace(/\+?1?[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/g, '[Contact details available via CoolSoft LLC]')
+        .replace(/linkedin\.com\/in\/[\w.-]+/gi, 'linkedin.com/in/[Agency-Verified-Profile]')
+    : resumeText;
 
-  // Mask sensitive direct contact info if blind resume is active
-  if (blindResume) {
-    raw = raw
-      .replace(/[\w.-]+@[\w.-]+\.\w+/g, '[Contact details available via CoolSoft LLC]')
-      .replace(/\+?1?[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/g, '[Contact details available via CoolSoft LLC]')
-      .replace(/linkedin\.com\/in\/[\w.-]+/gi, 'linkedin.com/in/[Agency-Verified-Profile]');
-  }
+  // Clean odd Private Use characters (Wingdings \uF000-\uF8FF), boxes, and replacement chars
+  raw = raw.replace(/[\uF000-\uF8FF\uFFFD\u25A0-\u25FF]/g, '');
 
   // Normalize sticky section headers
   raw = raw
     .replace(/([^\n])\s*(Professional Summary|Summary of Qualifications|Summary):/gi, '$1\n$2:')
-    .replace(/([^\n])\s*(Technical Skills|Skills & Abilities|Core Competencies):/gi, '$1\n$2:')
+    .replace(/([^\n])\s*(Technical Skills|Skills & Abilities|Core Competencies|Relevant Technical Skills):/gi, '$1\n$2:')
     .replace(/([^\n])\s*(Professional Experience|Employment History|Work Experience|Work History):/gi, '$1\n$2:')
-    .replace(/([^\n])\s*(Education|Education & Certifications):/gi, '$1\n$2:')
+    .replace(/([^\n])\s*(Education|Education & Certifications|Certifications & Training):/gi, '$1\n$2:')
     .replace(/([^\n])\s*(Client:|Project\s*#?\d*:|Role:|Responsibilities:|Environment:)/gi, '$1\n$2:');
 
   const rawLines = raw.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
@@ -381,12 +430,12 @@ export function formatStructuredWordResume(resumeText, blindResume = false) {
   const mergedLines = [];
   for (let i = 0; i < rawLines.length; i++) {
     const line = rawLines[i];
-    const isHeader = /^(PROFESSIONAL SUMMARY|TECHNICAL SKILLS|EMPLOYMENT HISTORY|PROFESSIONAL EXPERIENCE|WORK EXPERIENCE|WORK HISTORY|EDUCATION|CLIENT:|PROJECT|ROLE:|RESPONSIBILITIES:|ENVIRONMENT:)/i.test(line);
-    const startsWithBullet = line.startsWith('•') || line.startsWith('-') || line.startsWith('*');
+    const isHeader = /^(PROFESSIONAL SUMMARY|TECHNICAL SKILLS|RELEVANT TECHNICAL SKILLS|EMPLOYMENT HISTORY|PROFESSIONAL EXPERIENCE|WORK EXPERIENCE|WORK HISTORY|EDUCATION|CERTIFICATIONS|CLIENT:|PROJECT|ROLE:|RESPONSIBILITIES:|ENVIRONMENT:)/i.test(line);
+    const startsWithBullet = hasExplicitBulletPrefix(line);
     const prevLine = mergedLines[mergedLines.length - 1];
 
     if (prevLine && !isHeader && !startsWithBullet && (!prevLine.endsWith('.') && !prevLine.endsWith(':') && !prevLine.endsWith(';')) && !line.includes(':') && line.length < 90) {
-      mergedLines[mergedLines.length - 1] = prevLine + ' ' + line;
+      mergedLines[mergedLines.length - 1] = prevLine + ' ' + sanitizeBulletLine(line);
     } else {
       mergedLines.push(line);
     }
@@ -405,11 +454,16 @@ export function formatStructuredWordResume(resumeText, blindResume = false) {
     }
   };
 
+  const SUMMARY_REGEX = /^(PROFESSIONAL\s+SUMMARY|SUMMARY\s+OF\s+QUALIFICATIONS|EXECUTIVE\s+SUMMARY|SUMMARY|PROFILE|CANDIDATE\s+DESCRIPTION|CAREER\s+OBJECTIVE|ABOUT\s+ME):?/i;
+  const SKILLS_REGEX = /^(RELEVANT\s+)?(TECHNICAL\s+SKILLS|SKILLS\s*(&|AND)?\s*(TOOLS|ABILITIES|COMPETENCIES)?|CORE\s+COMPETENCIES|TECHNICAL\s+QUALIFICATIONS|AREAS\s+OF\s+EXPERTISE|TECHNICAL\s+PROFICIENCIES|KEY\s+SKILLS|TECHNICAL\s+EXPERTISE|SKILLS\s+SUMMARY|COMPETENCIES):?/i;
+  const EXP_REGEX = /^(PROFESSIONAL\s+EXPERIENCE|EMPLOYMENT\s+HISTORY|WORK\s+EXPERIENCE|WORK\s+HISTORY|EXPERIENCE):?/i;
+  const EDU_REGEX = /^(EDUCATION\s*(&|AND)?\s*CERTIFICATIONS?|EDUCATION|CERTIFICATIONS\s*(&|AND)?\s*TRAINING|CERTIFICATIONS|ACADEMIC\s+BACKGROUND|TRAINING\s*(&|AND)?\s*CERTIFICATIONS?):?/i;
+
   for (let i = 0; i < mergedLines.length; i++) {
     const l = mergedLines[i];
 
     // Check main section headers
-    if (/^(PROFESSIONAL SUMMARY|SUMMARY OF QUALIFICATIONS|SUMMARY):?/i.test(l)) {
+    if (SUMMARY_REGEX.test(l)) {
       flushSkills();
       if (inList) { html += '</ul>'; inList = false; }
       currentSection = 'summary';
@@ -417,7 +471,7 @@ export function formatStructuredWordResume(resumeText, blindResume = false) {
       html += '<p style="margin: 18px 0 6px 0; font-family: Verdana, Geneva, sans-serif; font-size: 12px; font-weight: bold; text-decoration: underline; color: #000000; text-transform: uppercase;">PROFESSIONAL SUMMARY</p>';
       continue;
     }
-    if (/^(TECHNICAL SKILLS|SKILLS & ABILITIES|CORE COMPETENCIES|AREAS OF EXPERTISE):?/i.test(l)) {
+    if (SKILLS_REGEX.test(l)) {
       flushSkills();
       if (inList) { html += '</ul>'; inList = false; }
       currentSection = 'skills';
@@ -425,7 +479,7 @@ export function formatStructuredWordResume(resumeText, blindResume = false) {
       html += '<p style="margin: 18px 0 6px 0; font-family: Verdana, Geneva, sans-serif; font-size: 12px; font-weight: bold; text-decoration: underline; color: #000000; text-transform: uppercase;">TECHNICAL SKILLS</p>';
       continue;
     }
-    if (/^(PROFESSIONAL EXPERIENCE|EMPLOYMENT HISTORY|WORK EXPERIENCE|WORK HISTORY):?/i.test(l)) {
+    if (EXP_REGEX.test(l)) {
       flushSkills();
       if (inList) { html += '</ul>'; inList = false; }
       currentSection = 'experience';
@@ -433,7 +487,7 @@ export function formatStructuredWordResume(resumeText, blindResume = false) {
       html += '<p style="margin: 20px 0 8px 0; font-family: Verdana, Geneva, sans-serif; font-size: 12px; font-weight: bold; text-decoration: underline; color: #000000; text-transform: uppercase;">EMPLOYMENT HISTORY</p>';
       continue;
     }
-    if (/^(EDUCATION|EDUCATION & CERTIFICATIONS|ACADEMIC BACKGROUND):?/i.test(l)) {
+    if (EDU_REGEX.test(l)) {
       flushSkills();
       if (inList) { html += '</ul>'; inList = false; }
       currentSection = 'education';
@@ -458,7 +512,7 @@ export function formatStructuredWordResume(resumeText, blindResume = false) {
       /((Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{4}|\d{4})\s*[-–—to]+\s*(Present|Current|Till Date|\d{4}|(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{4})/i.test(l);
 
     const isProjectNameLine = /^(Project\s*#?\d*):/i.test(l);
-    const isRoleLine = /^(Role|Title|Designation|Position):/i.test(l) || (/^(Senior|Sr\.?|Lead|Principal|Junior|Staff)?\s*(Developer|Engineer|Architect|Consultant|Analyst|Programmer)/i.test(l) && l.length < 50);
+    const isRoleLine = /^(Role|Title|Designation|Position):/i.test(l) || (/^(Senior|Sr\.?|Lead|Principal|Junior|Staff)?\s*(Developer|Engineer|Architect|Consultant|Analyst|Programmer|Administrator|Specialist)/i.test(l) && l.length < 50);
     const isDescriptionLine = /^(Description|Project Description):/i.test(l);
     const isRespHeader = /^(Responsibilities|Key Responsibilities|Duties|Accomplishments):/i.test(l);
     const isEnvLine = /^(Environment|Technologies|Tools|Tech Stack):/i.test(l);
@@ -467,32 +521,32 @@ export function formatStructuredWordResume(resumeText, blindResume = false) {
       if (inList) { html += '</ul>'; inList = false; }
       inResp = false;
       html += '<div style="margin-top: 16px; margin-bottom: 6px; padding-top: 8px; border-top: 1px dashed #CBD5E1;">';
-      html += '<p style="margin: 0 0 3px 0; font-family: Verdana, Geneva, sans-serif; font-size: 12px; font-weight: bold; color: #0F172A;">' + l + '</p></div>';
+      html += '<p style="margin: 0 0 3px 0; font-family: Verdana, Geneva, sans-serif; font-size: 12px; font-weight: bold; color: #0F172A; word-break: break-word;">' + sanitizeBulletLine(l) + '</p></div>';
       continue;
     }
 
     if (isRoleLine) {
       if (inList) { html += '</ul>'; inList = false; }
-      html += '<p style="margin: 2px 0 4px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11.5px; font-weight: bold; color: #1E293B;">' + (l.startsWith('Role:') ? l : '<b>Role:</b> ' + l) + '</p>';
+      html += '<p style="margin: 2px 0 4px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11.5px; font-weight: bold; color: #1E293B; word-break: break-word;">' + (l.startsWith('Role:') ? l : '<b>Role:</b> ' + l) + '</p>';
       continue;
     }
 
     if (isProjectNameLine) {
       if (inList) { html += '</ul>'; inList = false; }
-      html += '<p style="margin: 2px 0 3px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11.5px; font-weight: bold; color: #334155;">' + l + '</p>';
+      html += '<p style="margin: 2px 0 3px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11.5px; font-weight: bold; color: #334155; word-break: break-word;">' + sanitizeBulletLine(l) + '</p>';
       continue;
     }
 
     if (isDescriptionLine) {
       if (inList) { html += '</ul>'; inList = false; }
-      html += '<p style="margin: 2px 0 4px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11px; color: #334155; line-height: 1.5;">' + l + '</p>';
+      html += '<p style="margin: 2px 0 4px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11px; color: #334155; line-height: 1.5; word-break: break-word;">' + sanitizeBulletLine(l) + '</p>';
       continue;
     }
 
     if (isEnvLine) {
       if (inList) { html += '</ul>'; inList = false; }
       inResp = false;
-      html += '<p style="margin: 4px 0 8px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11px; font-style: italic; color: #334155;"><b>' + l + '</b></p>';
+      html += '<p style="margin: 4px 0 8px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11px; font-style: italic; color: #334155; word-break: break-word;"><b>' + sanitizeBulletLine(l) + '</b></p>';
       continue;
     }
 
@@ -504,7 +558,7 @@ export function formatStructuredWordResume(resumeText, blindResume = false) {
     }
 
     // Detect bullet points for summary, responsibilities, or lines with bullet symbols/verbs
-    const hasBulletSymbol = l.startsWith('•') || l.startsWith('-') || l.startsWith('*');
+    const hasBulletSymbol = hasExplicitBulletPrefix(l);
     const isBulletItem = currentSection === 'summary' || inResp || hasBulletSymbol || currentSection === 'education';
 
     if (isBulletItem) {
@@ -512,13 +566,18 @@ export function formatStructuredWordResume(resumeText, blindResume = false) {
         html += '<ul style="margin: 3px 0 10px 20px; padding: 0; font-family: Verdana, Geneva, sans-serif; font-size: 11.5px; line-height: 1.6; color: #000000; list-style-type: disc;">';
         inList = true;
       }
-      const cleanText = l.replace(/^[•\-*]\s*/, '');
-      html += '<li style="margin-bottom: 5px;">' + cleanText + '</li>';
+      const cleanText = sanitizeBulletLine(l);
+      if (cleanText) {
+        html += '<li style="margin-bottom: 5px; word-break: break-word;">' + cleanText + '</li>';
+      }
       continue;
     }
 
     if (inList) { html += '</ul>'; inList = false; }
-    html += '<p style="margin: 3px 0 5px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11.5px; line-height: 1.5; color: #000000;">' + l + '</p>';
+    const cleanPara = sanitizeBulletLine(l);
+    if (cleanPara) {
+      html += '<p style="margin: 3px 0 5px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11.5px; line-height: 1.5; color: #000000; word-break: break-word;">' + cleanPara + '</p>';
+    }
   }
 
   flushSkills();
@@ -527,40 +586,59 @@ export function formatStructuredWordResume(resumeText, blindResume = false) {
 }
 
 // ─── Format Candidate Resume for State of Nebraska Official Tabular Layout ───
-export function formatStructuredNebraskaResume(resumeText, blindResume = false) {
+export function formatStructuredNebraskaResume(resumeText, blindResume = false, fallbackSkills = []) {
   if (!resumeText) return '<p><i>No resume experience provided.</i></p>';
 
   const raw = blindResume
     ? resumeText
         .replace(/[\w.-]+@[\w.-]+\.\w+/g, '[Contact details available via CoolSoft LLC]')
         .replace(/\+?1?[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/g, '[Contact details available via CoolSoft LLC]')
+        .replace(/linkedin\.com\/in\/[\w.-]+/gi, 'linkedin.com/in/[Agency-Verified-Profile]')
     : resumeText;
 
-  const lines = raw.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  // Clean odd Private Use characters (Wingdings \uF000-\uF8FF), boxes, and replacement chars
+  const cleanedRaw = raw.replace(/[\uF000-\uF8FF\uFFFD\u25A0-\u25FF]/g, '');
+  const lines = cleanedRaw.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
 
   let descLines = [];
   let skillsLines = [];
   let expLines = [];
   let eduLines = [];
-  let currentSec = 'desc';
+  let currentSec = 'header'; // 'header', 'desc', 'skills', 'exp', 'edu'
+
+  const SUMMARY_REGEX = /^(PROFESSIONAL\s+SUMMARY|SUMMARY\s+OF\s+QUALIFICATIONS|EXECUTIVE\s+SUMMARY|SUMMARY|PROFILE|CANDIDATE\s+DESCRIPTION|CAREER\s+OBJECTIVE|ABOUT\s+ME):?/i;
+  const SKILLS_REGEX = /^(RELEVANT\s+)?(TECHNICAL\s+SKILLS|SKILLS\s*(&|AND)?\s*(TOOLS|ABILITIES|COMPETENCIES)?|CORE\s+COMPETENCIES|TECHNICAL\s+QUALIFICATIONS|AREAS\s+OF\s+EXPERTISE|TECHNICAL\s+PROFICIENCIES|KEY\s+SKILLS|TECHNICAL\s+EXPERTISE|SKILLS\s+SUMMARY|COMPETENCIES):?/i;
+  const EXP_REGEX = /^(PROFESSIONAL\s+EXPERIENCE|EMPLOYMENT\s+HISTORY|WORK\s+EXPERIENCE|WORK\s+HISTORY|EXPERIENCE):?/i;
+  const EDU_REGEX = /^(EDUCATION\s*(&|AND)?\s*CERTIFICATIONS?|EDUCATION|CERTIFICATIONS\s*(&|AND)?\s*TRAINING|CERTIFICATIONS|ACADEMIC\s+BACKGROUND|TRAINING\s*(&|AND)?\s*CERTIFICATIONS?):?/i;
 
   for (let i = 0; i < lines.length; i++) {
     const l = lines[i];
-    if (/^(PROFESSIONAL SUMMARY|SUMMARY OF QUALIFICATIONS|SUMMARY|CANDIDATE DESCRIPTION):?/i.test(l)) {
+
+    if (SUMMARY_REGEX.test(l)) {
       currentSec = 'desc';
       continue;
     }
-    if (/^(TECHNICAL SKILLS|SKILLS|CORE COMPETENCIES|TECHNICAL QUALIFICATIONS):?/i.test(l)) {
+    if (SKILLS_REGEX.test(l)) {
       currentSec = 'skills';
       continue;
     }
-    if (/^(EMPLOYMENT HISTORY|PROFESSIONAL EXPERIENCE|WORK EXPERIENCE|WORK HISTORY):?/i.test(l)) {
+    if (EXP_REGEX.test(l)) {
       currentSec = 'exp';
       continue;
     }
-    if (/^(EDUCATION|EDUCATION & CERTIFICATIONS|ACADEMIC BACKGROUND):?/i.test(l)) {
+    if (EDU_REGEX.test(l)) {
       currentSec = 'edu';
       continue;
+    }
+
+    if (currentSec === 'header') {
+      // Skip contact information lines (Name, email, phone, location, address, linkedin, title) at the very top
+      const isContactOrHeader = /@|phone|email|\(\d{3}\)|\d{3}[-.\s]\d{3}|linkedin|open to on-site|relocation|work authorization|visa|citizen|green card/i.test(l) ||
+        (i < 5 && (l.length < 85 || l.includes('|')));
+      if (isContactOrHeader) {
+        continue;
+      }
+      currentSec = 'desc';
     }
 
     if (currentSec === 'desc') descLines.push(l);
@@ -573,17 +651,42 @@ export function formatStructuredNebraskaResume(resumeText, blindResume = false) 
     expLines = lines;
   }
 
-  // 1. Render Candidate Description with Strict Bullet Points
+  // 1. Render Candidate Description with Unbroken Bullets (Joining wrapped sentences)
   const renderCandidateDescription = (arr) => {
     if (!arr || arr.length === 0) {
       return '<p style="margin: 0; font-family: Arial, sans-serif; font-size: 10pt; color: #64748B;"><i>Executive profile summary available upon request</i></p>';
     }
 
+    const items = [];
+    let cur = '';
+
+    for (const rawL of arr) {
+      const isBullet = hasExplicitBulletPrefix(rawL);
+      const cleanL = sanitizeBulletLine(rawL);
+      if (!cleanL) continue;
+
+      if (isBullet || !cur) {
+        if (cur) items.push(cur);
+        cur = cleanL;
+      } else {
+        // If previous line did not end with terminal punctuation, merge continuous sentence
+        if (!/[.!?:]$/.test(cur)) {
+          cur += ' ' + cleanL;
+        } else {
+          items.push(cur);
+          cur = cleanL;
+        }
+      }
+    }
+    if (cur) items.push(cur);
+
+    if (items.length === 0) {
+      return '<p style="margin: 0; font-family: Arial, sans-serif; font-size: 10pt; color: #64748B;"><i>Executive profile summary available upon request</i></p>';
+    }
+
     let out = '<ul style="margin: 3px 0 8px 18px; padding: 0; list-style-type: disc;">';
-    for (const line of arr) {
-      const clean = line.replace(/^[•\-*\d.]\s*/, '').trim();
-      if (!clean) continue;
-      out += `<li style="margin-bottom: 5px; font-family: Arial, sans-serif; font-size: 10pt; line-height: 1.45; color: #000000;">${clean}</li>`;
+    for (const item of items) {
+      out += `<li style="margin-bottom: 5px; font-family: Arial, sans-serif; font-size: 10pt; line-height: 1.5; color: #000000; word-break: break-word;">${item}</li>`;
     }
     out += '</ul>';
     return out;
@@ -591,76 +694,30 @@ export function formatStructuredNebraskaResume(resumeText, blindResume = false) 
 
   // 2. Render Technical Qualifications / Skills List as Authentic 2-Column Table
   const renderSkillsTable = (arr) => {
-    if (!arr || arr.length === 0) {
+    let sourceArr = (arr && arr.length > 0) ? arr : [];
+    if (sourceArr.length === 0 && fallbackSkills && fallbackSkills.length > 0) {
+      sourceArr = fallbackSkills;
+    }
+    if (sourceArr.length === 0) {
+      const meta = extractResumeMetadata(cleanedRaw);
+      if (meta.skills && meta.skills.length > 0) {
+        sourceArr = meta.skills;
+      }
+    }
+
+    const pairs = parseTechnicalSkillsRobust(sourceArr);
+    if (!pairs || pairs.length === 0) {
       return '<p style="margin: 0; font-family: Arial, sans-serif; font-size: 10pt; color: #64748B;"><i>Technical qualifications list available upon request</i></p>';
     }
 
-    const pairs = [];
-    let currentCategory = '';
-    let currentSkills = [];
-
-    const isCategoryCandidate = (str) => {
-      const clean = str.replace(/[:\-]$/, '').trim();
-      if (/^Category$/i.test(clean)) return false;
-      if (/^(Programming Languages|Languages|Java\/J2EE Technologies|J2EE Technologies|Frameworks|Frontend Technologies|Web Technologies|Backend Technologies|Microservices & Architecture|Microservices|Architecture|API Technologies|APIs|Cloud & DevOps|Cloud Technologies|DevOps & CI\/CD|DevOps Tools|Databases|Database Technologies|Operating Systems|Methodologies|Tools & Utilities|Version Control|Testing Tools|Security|Middleware|Libraries|Big Data|Others|Other Skills)$/i.test(clean)) {
-        return true;
-      }
-      if (clean.length > 2 && clean.length <= 32 && !clean.includes(',') && !clean.includes(';') && !clean.startsWith('•') && !clean.startsWith('-')) {
-        return true;
-      }
-      return false;
-    };
-
-    for (let i = 0; i < arr.length; i++) {
-      const line = arr[i].trim();
-      if (!line) continue;
-      if (/^Category$/i.test(line)) continue;
-
-      const colonIdx = line.indexOf(':');
-      if (colonIdx > 2 && colonIdx < 35 && !line.startsWith('http')) {
-        if (currentCategory && currentSkills.length > 0) {
-          pairs.push({ category: currentCategory, skills: currentSkills.join(' ') });
-          currentSkills = [];
-        }
-        currentCategory = line.slice(0, colonIdx).trim();
-        const afterColon = line.slice(colonIdx + 1).trim();
-        if (afterColon) {
-          currentSkills.push(afterColon);
-        }
-        continue;
-      }
-
-      if (isCategoryCandidate(line)) {
-        if (currentCategory && currentSkills.length > 0) {
-          pairs.push({ category: currentCategory, skills: currentSkills.join(' ') });
-          currentSkills = [];
-        }
-        currentCategory = line.replace(/[:\-]$/, '').trim();
-        continue;
-      }
-
-      if (!currentCategory) {
-        currentCategory = 'Technical Competencies';
-      }
-      currentSkills.push(line);
-    }
-
-    if (currentCategory && currentSkills.length > 0) {
-      pairs.push({ category: currentCategory, skills: currentSkills.join(' ') });
-    }
-
-    if (pairs.length === 0) {
-      pairs.push({ category: 'Core Technical Skills', skills: arr.join(', ') });
-    }
-
     let tableHtml = `
-      <table cellspacing="0" cellpadding="0" style="border-collapse: collapse; width: 100%; border: 1px solid #bfbfbf; margin-top: 4px; font-family: Arial, sans-serif;">
+      <table cellspacing="0" cellpadding="0" style="border-collapse: collapse; width: 100%; table-layout: fixed; box-sizing: border-box; border: 1px solid #bfbfbf; margin-top: 4px; font-family: Arial, sans-serif; word-break: break-word;">
         <thead>
           <tr style="background-color: #F1F5F9;">
-            <th style="border: 1px solid #bfbfbf; width: 30%; text-align: left; padding: 6px 10px; font-size: 10pt; font-weight: bold; color: #0F172A;">
+            <th style="border: 1px solid #bfbfbf; width: 30%; text-align: left; padding: 6px 10px; font-size: 10pt; font-weight: bold; color: #0F172A; word-break: break-word;">
               Category
             </th>
-            <th style="border: 1px solid #bfbfbf; width: 70%; text-align: left; padding: 6px 10px; font-size: 10pt; font-weight: bold; color: #0F172A;">
+            <th style="border: 1px solid #bfbfbf; width: 70%; text-align: left; padding: 6px 10px; font-size: 10pt; font-weight: bold; color: #0F172A; word-break: break-word;">
               Skills / Technologies
             </th>
           </tr>
@@ -672,10 +729,10 @@ export function formatStructuredNebraskaResume(resumeText, blindResume = false) 
       const bg = idx % 2 === 0 ? '#FFFFFF' : '#FAFAFA';
       tableHtml += `
         <tr style="background-color: ${bg};">
-          <td style="border: 1px solid #bfbfbf; padding: 6px 10px; font-size: 9.5pt; font-weight: bold; color: #1E293B; vertical-align: top; width: 30%;">
+          <td style="border: 1px solid #bfbfbf; padding: 6px 10px; font-size: 9.5pt; font-weight: bold; color: #1E293B; vertical-align: top; width: 30%; word-break: break-word;">
             ${p.category}
           </td>
-          <td style="border: 1px solid #bfbfbf; padding: 6px 10px; font-size: 9.5pt; color: #000000; vertical-align: top; line-height: 1.45; width: 70%;">
+          <td style="border: 1px solid #bfbfbf; padding: 6px 10px; font-size: 9.5pt; color: #000000; vertical-align: top; line-height: 1.45; width: 70%; word-break: break-word;">
             ${p.skills}
           </td>
         </tr>
@@ -698,78 +755,119 @@ export function formatStructuredNebraskaResume(resumeText, blindResume = false) 
 
     let out = '';
     let inUl = false;
+    let currentBullet = '';
 
-    for (const line of arr) {
-      const isClientLine = /^(Client|Company|Employer):/i.test(line) || 
-        /((Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{4}|\d{4})\s*[-–—to]+\s*(Present|Current|Till Date|\d{4}|(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{4})/i.test(line);
-      const isRoleLine = /^(Role|Title|Designation|Position):/i.test(line) || (/^(Senior|Sr\.?|Lead|Principal|Junior|Staff)?\s*(Developer|Engineer|Architect|Consultant|Analyst|Programmer)/i.test(line) && line.length < 50);
-      const isProjectNameLine = /^(Project\s*#?\d*):/i.test(line);
-      const isRespHeader = /^(Responsibilities|Key Responsibilities|Duties|Accomplishments):/i.test(line);
-      const isEnvLine = /^(Environment|Technologies|Tools|Tech Stack):/i.test(line);
+    const flushBullet = () => {
+      if (currentBullet) {
+        if (!inUl) {
+          out += '<ul style="margin: 3px 0 8px 18px; padding: 0; list-style-type: disc;">';
+          inUl = true;
+        }
+        out += `<li style="margin-bottom: 4px; font-family: Arial, sans-serif; font-size: 9.5pt; line-height: 1.45; color: #000000; word-break: break-word;">${currentBullet}</li>`;
+        currentBullet = '';
+      }
+    };
+
+    for (let i = 0; i < arr.length; i++) {
+      const line = arr[i];
+      const hasBullet = hasExplicitBulletPrefix(line);
+      const clean = sanitizeBulletLine(line);
+      if (!clean) continue;
+
+      const isDatePattern = /((Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?(\s+\d{4})?)\s*[-–—to]+\s*(Present|Current|Till Date|(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{4}|\d{4})/i.test(clean);
+      const isClientLine = /^(Client|Company|Employer):/i.test(clean) || (clean.includes('|') && isDatePattern) || isDatePattern;
+      const isRoleLine = /^(Role|Title|Designation|Position):/i.test(clean) || (/^(Senior|Sr\.?|Lead|Principal|Junior|Staff)?\s*(Developer|Engineer|Architect|Consultant|Analyst|Programmer|Administrator|Specialist|Representative)/i.test(clean) && clean.length < 60 && !hasBullet);
+      const isProjectNameLine = /^(Project\s*#?\d*):/i.test(clean);
+      const isRespHeader = /^(Responsibilities|Key Responsibilities|Duties|Accomplishments):/i.test(clean);
+      const isEnvLine = /^(Environment|Technologies|Tools|Tech Stack):/i.test(clean);
 
       if (isClientLine) {
+        flushBullet();
         if (inUl) { out += '</ul>'; inUl = false; }
         out += `<div style="margin-top: 14px; margin-bottom: 4px; padding-top: 6px; border-top: 1px dashed #bfbfbf;">
-          <p style="margin: 0 0 3px 0; font-family: Arial, sans-serif; font-size: 10.5pt; font-weight: bold; color: #000000;">${line}</p>
+          <p style="margin: 0 0 3px 0; font-family: Arial, sans-serif; font-size: 10.5pt; font-weight: bold; color: #000000; word-break: break-word;">${clean}</p>
         </div>`;
         continue;
       }
 
       if (isRoleLine) {
+        flushBullet();
         if (inUl) { out += '</ul>'; inUl = false; }
-        out += `<p style="margin: 2px 0 4px 0; font-family: Arial, sans-serif; font-size: 10pt; font-weight: bold; color: #1E293B;">${line.startsWith('Role:') ? line : 'Role: ' + line}</p>`;
+        out += `<p style="margin: 2px 0 4px 0; font-family: Arial, sans-serif; font-size: 10pt; font-weight: bold; color: #1E293B; word-break: break-word;">${clean.startsWith('Role:') ? clean : 'Role: ' + clean}</p>`;
         continue;
       }
 
       if (isProjectNameLine) {
+        flushBullet();
         if (inUl) { out += '</ul>'; inUl = false; }
-        out += `<p style="margin: 2px 0 3px 0; font-family: Arial, sans-serif; font-size: 9.5pt; font-weight: bold; color: #334155;">${line}</p>`;
+        out += `<p style="margin: 2px 0 3px 0; font-family: Arial, sans-serif; font-size: 9.5pt; font-weight: bold; color: #334155; word-break: break-word;">${clean}</p>`;
         continue;
       }
 
       if (isEnvLine) {
+        flushBullet();
         if (inUl) { out += '</ul>'; inUl = false; }
-        out += `<p style="margin: 4px 0 6px 0; font-family: Arial, sans-serif; font-size: 9.5pt; font-style: italic; color: #334155;"><b>${line}</b></p>`;
+        out += `<p style="margin: 4px 0 6px 0; font-family: Arial, sans-serif; font-size: 9.5pt; font-style: italic; color: #334155; word-break: break-word;"><b>${clean}</b></p>`;
         continue;
       }
 
       if (isRespHeader) {
+        flushBullet();
         if (inUl) { out += '</ul>'; inUl = false; }
         out += `<p style="margin: 6px 0 3px 0; font-family: Arial, sans-serif; font-size: 10pt; font-weight: bold; color: #000000;">Responsibilities:</p>`;
         continue;
       }
 
-      if (!inUl) {
-        out += '<ul style="margin: 3px 0 8px 18px; padding: 0; list-style-type: disc;">';
-        inUl = true;
+      // It's a responsibility bullet or text line
+      if (hasBullet || !currentBullet) {
+        flushBullet();
+        currentBullet = clean;
+      } else {
+        // Line continuation: merge into currentBullet if previous didn't end with terminal punctuation
+        if (!/[.!?:]$/.test(currentBullet)) {
+          currentBullet += ' ' + clean;
+        } else {
+          flushBullet();
+          currentBullet = clean;
+        }
       }
-      const clean = line.replace(/^[•\-*\d.]\s*/, '').trim();
-      out += `<li style="margin-bottom: 4px; font-family: Arial, sans-serif; font-size: 9.5pt; line-height: 1.45; color: #000000;">${clean}</li>`;
     }
 
+    flushBullet();
     if (inUl) out += '</ul>';
     return out;
   };
 
-  // 4. Render Education with Clean Bullets
+  // 4. Render Education & Certifications
   const renderEducation = (arr) => {
     if (!arr || arr.length === 0) {
       return '<p style="margin: 0; font-family: Arial, sans-serif; font-size: 10pt; color: #64748B;"><i>Bachelor\'s Degree in Computer Science or Equivalent</i></p>';
     }
+
+    const items = [];
+    for (const rawL of arr) {
+      const cleanL = sanitizeBulletLine(rawL);
+      if (!cleanL) continue;
+      items.push(cleanL);
+    }
+
+    if (items.length === 0) {
+      return '<p style="margin: 0; font-family: Arial, sans-serif; font-size: 10pt; color: #64748B;"><i>Bachelor\'s Degree in Computer Science or Equivalent</i></p>';
+    }
+
     let out = '<ul style="margin: 3px 0 8px 18px; padding: 0; list-style-type: disc;">';
-    for (const l of arr) {
-      const clean = l.replace(/^[•\-*\d.]\s*/, '').trim();
-      out += `<li style="margin-bottom: 4px; font-family: Arial, sans-serif; font-size: 9.5pt; line-height: 1.4; color: #000000;">${clean}</li>`;
+    for (const item of items) {
+      out += `<li style="margin-bottom: 5px; font-family: Arial, sans-serif; font-size: 9.5pt; line-height: 1.45; color: #000000; word-break: break-word;">${item}</li>`;
     }
     out += '</ul>';
     return out;
   };
 
   return `
-    <table cellspacing="0" cellpadding="0" style="border-collapse: collapse; width: 100%; border: 1px solid #bfbfbf; font-family: Arial, Helvetica, sans-serif;">
+    <table cellspacing="0" cellpadding="0" style="border-collapse: collapse; width: 100%; table-layout: fixed; box-sizing: border-box; border: 1px solid #bfbfbf; font-family: Arial, Helvetica, sans-serif; word-break: break-word;">
       <tbody>
         <tr>
-          <td style="border: 1px solid #bfbfbf; padding: 10px 14px; background-color: #FFFFFF;">
+          <td style="border: 1px solid #bfbfbf; padding: 10px 14px; background-color: #FFFFFF; word-break: break-word;">
             <p style="margin: 0 0 6px 0; font-family: Arial, sans-serif; font-size: 10.5pt; font-weight: bold; text-decoration: underline; color: #000000;">
               Candidate Description
             </p>
@@ -779,17 +877,17 @@ export function formatStructuredNebraskaResume(resumeText, blindResume = false) 
           </td>
         </tr>
         <tr>
-          <td style="border: 1px solid #bfbfbf; padding: 10px 14px; background-color: #FFFFFF;">
+          <td style="border: 1px solid #bfbfbf; padding: 10px 14px; background-color: #FFFFFF; word-break: break-word;">
             <p style="margin: 0 0 6px 0; font-family: Arial, sans-serif; font-size: 10.5pt; font-weight: bold; text-decoration: underline; color: #000000;">
               Technical Qualifications/Skills List
             </p>
             <div style="font-family: Arial, sans-serif; font-size: 10pt; line-height: 1.4; color: #000000;">
-              ${renderSkillsMatrixTableHtml(skillsLines)}
+              ${renderSkillsTable(skillsLines)}
             </div>
           </td>
         </tr>
         <tr>
-          <td style="border: 1px solid #bfbfbf; padding: 10px 14px; background-color: #FFFFFF;">
+          <td style="border: 1px solid #bfbfbf; padding: 10px 14px; background-color: #FFFFFF; word-break: break-word;">
             <p style="margin: 0 0 6px 0; font-family: Arial, sans-serif; font-size: 10.5pt; font-weight: bold; text-decoration: underline; color: #000000;">
               Employment History
             </p>
@@ -799,7 +897,7 @@ export function formatStructuredNebraskaResume(resumeText, blindResume = false) 
           </td>
         </tr>
         <tr>
-          <td style="border: 1px solid #bfbfbf; padding: 10px 14px; background-color: #FFFFFF;">
+          <td style="border: 1px solid #bfbfbf; padding: 10px 14px; background-color: #FFFFFF; word-break: break-word;">
             <p style="margin: 0 0 6px 0; font-family: Arial, sans-serif; font-size: 10.5pt; font-weight: bold; text-decoration: underline; color: #000000;">
               Education and Certifications
             </p>
@@ -1861,8 +1959,11 @@ EDUCATION & CERTIFICATIONS
   }, [resumeText, blindResume])
 
   const formattedNebraskaResumeBodyHtml = useMemo(() => {
-    return formatStructuredNebraskaResume(resumeText, blindResume)
-  }, [resumeText, blindResume])
+    const candidateSkills = (currentSelectedCandidate?.skills && Array.isArray(currentSelectedCandidate.skills))
+      ? currentSelectedCandidate.skills
+      : (coversheet.skillsMatrix?.map(s => s.skill).filter(Boolean) || [])
+    return formatStructuredNebraskaResume(resumeText, blindResume, candidateSkills)
+  }, [resumeText, blindResume, currentSelectedCandidate, coversheet.skillsMatrix])
 
   // ─── Generate Authentic Word-Formatted Resume HTML ────────────────────────
   const generatedResumeTemplateHtml = useMemo(() => {
@@ -1872,7 +1973,7 @@ EDUCATION & CERTIFICATIONS
       return `
         <!-- State of Nebraska Header -->
         <div style="border-bottom: 2px solid #000000; padding-bottom: 10px; margin-bottom: 16px;">
-          <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 8px;">
             <div>
               <h1 style="font-family: Arial, Helvetica, sans-serif; font-size: 18px; font-weight: bold; color: #000000; margin: 0 0 4px; text-transform: uppercase;">
                 ${candidateName}
@@ -4778,8 +4879,9 @@ const styles = {
     overflowX: 'hidden'
   },
   coversheetCol: {
-    width: '450px',
-    flexShrink: 0,
+    flex: '0 0 380px',
+    maxWidth: '420px',
+    minWidth: '320px',
     backgroundColor: '#FFFFFF',
     borderRadius: 14,
     border: '1px solid #CBD5E1',
@@ -4795,6 +4897,7 @@ const styles = {
   resumeCol: {
     flex: 1,
     minWidth: 0,
+    maxWidth: '100%',
     backgroundColor: '#FFFFFF',
     borderRadius: 14,
     border: '1px solid #CBD5E1',
@@ -4917,16 +5020,19 @@ const styles = {
   },
   wordPaperWrapper: {
     flex: 1,
+    minWidth: 0,
+    maxWidth: '100%',
     backgroundColor: '#E2E8F0',
     padding: '16px',
     borderRadius: 10,
-    boxSizing: 'border-box'
+    boxSizing: 'border-box',
+    overflowX: 'auto'
   },
   wordPaper: {
     backgroundColor: '#FFFFFF',
     border: '1px solid #CBD5E1',
     borderRadius: 2,
-    padding: '40px 48px',
+    padding: '28px 28px',
     boxSizing: 'border-box',
     boxShadow: '0 4px 14px rgba(0,0,0,0.06)',
     fontFamily: 'Verdana, Geneva, sans-serif',
@@ -4935,7 +5041,11 @@ const styles = {
     color: '#000000',
     outline: 'none',
     minHeight: '680px',
-    cursor: 'text'
+    cursor: 'text',
+    width: '100%',
+    maxWidth: '100%',
+    wordBreak: 'break-word',
+    overflowWrap: 'break-word'
   },
   sectionCard: {
     backgroundColor: '#F8FAFC',

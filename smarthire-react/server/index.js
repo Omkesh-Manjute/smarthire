@@ -1690,28 +1690,30 @@ ${answersSummary}`
 // ─── Resume Text Extraction ──────────────────────────────────────────────────
 async function parseResumeText(filePath, originalName, mimeType) {
   const name = (originalName || '').toLowerCase()
+  let extracted = ''
 
   if (name.endsWith('.pdf') || mimeType === 'application/pdf') {
     const dataBuffer = fs.readFileSync(filePath)
     const pdfData = await pdfParse(dataBuffer)
-    return pdfData.text
-  }
-
-  if (name.endsWith('.docx') || mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+    extracted = pdfData.text || ''
+  } else if (name.endsWith('.docx') || mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
     const result = await mammoth.extractRawText({ path: filePath })
-    return result.value
-  }
-
-  if (name.endsWith('.doc') || mimeType === 'application/msword') {
+    extracted = result.value || ''
+  } else if (name.endsWith('.doc') || mimeType === 'application/msword') {
     try {
       const result = await mammoth.extractRawText({ path: filePath })
-      return result.value
+      extracted = result.value || ''
     } catch (e) {
-      return fs.readFileSync(filePath, 'utf-8')
+      extracted = fs.readFileSync(filePath, 'utf-8')
     }
+  } else {
+    throw new Error('Unsupported file format. Please upload a PDF or DOCX file.')
   }
 
-  throw new Error('Unsupported file format. Please upload a PDF or DOCX file.')
+  // Normalize and clean Private Use Area characters (\uF000-\uF8FF, e.g. Wingdings bullets \uF0B7), replacement glyphs \uFFFD
+  return extracted
+    .replace(/[\uF000-\uF8FF]/g, '')
+    .replace(/\uFFFD/g, '');
 }
 async function callGroqAI(systemPrompt, userPrompt, jsonMode = false) {
   const groqApiKey = process.env.GROQ_API_KEY;
