@@ -1,7 +1,43 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom'
 
-// Default FDOT Statement of Work & RTR Document from Screenshot 4 & 5
+// Florida Exhibit E Resume Self-Certification Form (Primary Default Template from Doc/RTR_FL-pankajmaharwade829_gmail.com.pdf)
+const DEFAULT_FLORIDA_EXHIBIT_E_DOCUMENT = {
+  id: 'florida-exhibit-e-doc',
+  title: 'Information Technology Staff Augmentation Services Contract No. 80101507-23-STC-ITSA Exhibit E Resume Self-Certification Form',
+  contractNo: '80101507-23-STC-ITSA',
+  maxBillRate: '$110.00',
+  clientName: 'State of Florida',
+  content: `Information Technology Staff Augmentation Services
+Contract No. 80101507-23-STC-ITSA
+
+Exhibit E
+Resume Self-Certification Form
+
+The Contractor's candidates shall complete this Resume Self-Certification Form. Completed Resume Self-Certification Forms shall be submitted within the Contractor's response to Customer's Request for Quotes.
+
+"I the undersigned do hereby certify, under the penalty of perjury, that information in my resume submitted for consideration of the State of Florida contract position is true, correct, complete, and made in good faith to the best of my knowledge and belief. If an omission, falsification, misstatement, or misrepresentation has been made regarding my education, work ability, experience, employment history, and/or fitness for employment as a contractor, I may be disqualified as a contractor, and the matter will be reported to appropriate agency or law enforcement personnel. I understand that there may be civil and/or criminal penalties for misrepresenting pertinent information in connection with contract positions, including, but not limited to, penalties available under sections 287.133 or 817.566, Florida Statutes. I further understand that if I am not a United States citizen, violation cases may be reported to the US Department of Homeland Security for potential deportation."
+
+"In addition, I the undersigned do hereby consent to the release of my information by employers, educational institutions, law enforcement agencies, and other individuals and organizations to investigators and other authorized agents of Florida for verification and investigation purposes. I understand that any documents submitted to procure a contract(s) with the State of Florida, including resumes, are public records."
+
+Print Full Legal Name of Candidate
+Candidate's Signature | Date
+Candidate's Form of Identification Presented | Identification number
+Contractor's Witness Signature One | Date | Contractor's Witness Signature Two | Date
+Print Name Contractor's Witness One | Print Name Contractor's Witness Two`,
+  defaultFields: [
+    { id: 'f1', type: 'name', label: 'Candidate Full Legal Name', fieldName: 'CandidateLegalName', required: true, x: 60, y: 530, width: 340, height: 42, signerIndex: 0 },
+    { id: 'f2', type: 'signature', label: "Candidate's Signature", fieldName: 'CandidateSignature', required: true, x: 60, y: 610, width: 240, height: 48, signerIndex: 0 },
+    { id: 'f3', type: 'date', label: 'Date', fieldName: 'DateSigned', required: true, x: 400, y: 610, width: 200, height: 48, signerIndex: 0 },
+    { id: 'f4', type: 'textbox', label: "Candidate's Form of ID (DL/Passport)", fieldName: 'CandidateIDType', required: true, x: 60, y: 690, width: 240, height: 42, signerIndex: 0 },
+    { id: 'f5', type: 'textbox', label: 'Identification Number', fieldName: 'CandidateIDNumber', required: true, x: 400, y: 690, width: 200, height: 42, signerIndex: 0 },
+    { id: 'f6', type: 'signature', label: "Contractor's Witness Signature One", fieldName: 'WitnessSignature1', required: true, x: 60, y: 770, width: 240, height: 48, signerIndex: 1 },
+    { id: 'f7', type: 'date', label: 'Date', fieldName: 'WitnessDate1', required: true, x: 400, y: 770, width: 200, height: 48, signerIndex: 1 },
+    { id: 'f8', type: 'name', label: "Print Name Contractor's Witness One", fieldName: 'WitnessName1', required: true, x: 60, y: 840, width: 340, height: 42, signerIndex: 1 }
+  ]
+}
+
+// FDOT Statement of Work & RTR Document
 const DEFAULT_FDOT_DOCUMENT = {
   id: 'fdot-sow',
   title: 'FDOT Job 2430 Network Engineer C. Advanced Statement of Work (SOW)',
@@ -35,14 +71,22 @@ Please do not impose a rate increase for any subsequent year of the contract as 
 Right to Represent (RTR) & Exclusivity Confirmation:
 I hereby confirm that COOLSOFT LLC has the exclusive right to represent me for this requisition with the Florida Department of Transportation. I have not submitted my resume for this position through any other vendor or agency.`,
   defaultFields: [
-    { id: 'f1', type: 'signature', label: 'Signature', required: true, x: 60, y: 780, signerIndex: 0 },
-    { id: 'f2', type: 'date', label: 'Date signed', required: true, x: 420, y: 780, signerIndex: 0 },
-    { id: 'f3', type: 'name', label: 'Full name', required: true, x: 60, y: 720, signerIndex: 0 },
-    { id: 'f4', type: 'title', label: 'Title', required: false, x: 420, y: 720, signerIndex: 0 }
+    { id: 'f1', type: 'signature', label: 'Signature', fieldName: 'CandidateSignature', required: true, x: 60, y: 780, signerIndex: 0 },
+    { id: 'f2', type: 'date', label: 'Date signed', fieldName: 'DateSigned', required: true, x: 420, y: 780, signerIndex: 0 },
+    { id: 'f3', type: 'name', label: 'Full name', fieldName: 'CandidateLegalName', required: true, x: 60, y: 720, signerIndex: 0 },
+    { id: 'f4', type: 'title', label: 'Title', fieldName: 'PositionTitle', required: false, x: 420, y: 720, signerIndex: 0 }
   ]
 }
 
 const PREBUILT_TEMPLATES = [
+  {
+    id: 'florida_fdot',
+    name: 'State of Florida (Exhibit E — Resume Self-Certification)',
+    description: 'Official State of Florida IT Staff Augmentation Services (Contract No. 80101507-23-STC-ITSA) Exhibit E Resume Self-Certification Form.',
+    rate: '$90.00/hr',
+    client: 'State of Florida (Contract No. 80101507-23-STC-ITSA)',
+    doc: DEFAULT_FLORIDA_EXHIBIT_E_DOCUMENT
+  },
   {
     id: 'fdot',
     name: 'Florida DOT SOW & Right to Represent',
@@ -76,9 +120,9 @@ Candidate acknowledges that only one submittal per candidate is permitted by the
 Agreed Hourly Submittal Rate: As designated in submittal packaging.
 Exclusivity Window: 60 Days from signature date.`,
       defaultFields: [
-        { id: 'f1', type: 'signature', label: 'Signature', required: true, x: 60, y: 480, signerIndex: 0 },
-        { id: 'f2', type: 'date', label: 'Date signed', required: true, x: 420, y: 480, signerIndex: 0 },
-        { id: 'f3', type: 'name', label: 'Full name', required: true, x: 60, y: 420, signerIndex: 0 }
+        { id: 'f1', type: 'signature', label: 'Signature', fieldName: 'CandidateSignature', required: true, x: 60, y: 480, signerIndex: 0 },
+        { id: 'f2', type: 'date', label: 'Date signed', fieldName: 'DateSigned', required: true, x: 420, y: 480, signerIndex: 0 },
+        { id: 'f3', type: 'name', label: 'Full name', fieldName: 'CandidateLegalName', required: true, x: 60, y: 420, signerIndex: 0 }
       ]
     }
   },
@@ -107,9 +151,9 @@ Terms:
 2. Agreed rate is binding and cannot be altered following client submission.
 3. Candidate agrees to be available for technical and behavioral interviews arranged by COOLSOFT.`,
       defaultFields: [
-        { id: 'f1', type: 'signature', label: 'Signature', required: true, x: 60, y: 520, signerIndex: 0 },
-        { id: 'f2', type: 'date', label: 'Date signed', required: true, x: 420, y: 520, signerIndex: 0 },
-        { id: 'f3', type: 'name', label: 'Full name', required: true, x: 60, y: 460, signerIndex: 0 }
+        { id: 'f1', type: 'signature', label: 'Signature', fieldName: 'CandidateSignature', required: true, x: 60, y: 520, signerIndex: 0 },
+        { id: 'f2', type: 'date', label: 'Date signed', fieldName: 'DateSigned', required: true, x: 420, y: 520, signerIndex: 0 },
+        { id: 'f3', type: 'name', label: 'Full name', fieldName: 'CandidateLegalName', required: true, x: 60, y: 460, signerIndex: 0 }
       ]
     }
   },
@@ -135,9 +179,9 @@ I also acknowledge and verify that all the information contained in my resume re
 Managed Service Provider: Computer Aid, Inc. (CAI)
 Contract Manager: Nicole Walker (nicole.walker@cai.io | 910-520-1506)`,
       defaultFields: [
-        { id: 'f1', type: 'signature', label: 'Candidate Signature', required: true, x: 60, y: 520, signerIndex: 0 },
-        { id: 'f2', type: 'date', label: 'Date signed', required: true, x: 420, y: 520, signerIndex: 0 },
-        { id: 'f3', type: 'name', label: 'Candidate Full Legal Name', required: true, x: 60, y: 460, signerIndex: 0 }
+        { id: 'f1', type: 'signature', label: 'Candidate Signature', fieldName: 'CandidateSignature', required: true, x: 60, y: 520, signerIndex: 0 },
+        { id: 'f2', type: 'date', label: 'Date signed', fieldName: 'DateSigned', required: true, x: 420, y: 520, signerIndex: 0 },
+        { id: 'f3', type: 'name', label: 'Candidate Full Legal Name', fieldName: 'CandidateLegalName', required: true, x: 60, y: 460, signerIndex: 0 }
       ]
     }
   },
@@ -163,9 +207,9 @@ I also acknowledge and verify that all the information contained in my resume re
 Managed Service Provider: Computer Aid, Inc. (CAI)
 Contract Manager: Tim Brodrick (Timothy.Brodrick@cai.io | 678-427-3660)`,
       defaultFields: [
-        { id: 'f1', type: 'signature', label: 'Candidate Signature', required: true, x: 60, y: 520, signerIndex: 0 },
-        { id: 'f2', type: 'date', label: 'Date signed', required: true, x: 420, y: 520, signerIndex: 0 },
-        { id: 'f3', type: 'name', label: 'Candidate Full Legal Name', required: true, x: 60, y: 460, signerIndex: 0 }
+        { id: 'f1', type: 'signature', label: 'Candidate Signature', fieldName: 'CandidateSignature', required: true, x: 60, y: 520, signerIndex: 0 },
+        { id: 'f2', type: 'date', label: 'Date signed', fieldName: 'DateSigned', required: true, x: 420, y: 520, signerIndex: 0 },
+        { id: 'f3', type: 'name', label: 'Candidate Full Legal Name', fieldName: 'CandidateLegalName', required: true, x: 60, y: 460, signerIndex: 0 }
       ]
     }
   },
@@ -191,9 +235,9 @@ I also acknowledge and verify that all the information contained in my resume re
 Client Agency: State of Nebraska IT Services
 Candidate Representation Term: 60 Days`,
       defaultFields: [
-        { id: 'f1', type: 'signature', label: 'Candidate Signature', required: true, x: 60, y: 520, signerIndex: 0 },
-        { id: 'f2', type: 'date', label: 'Date signed', required: true, x: 420, y: 520, signerIndex: 0 },
-        { id: 'f3', type: 'name', label: 'Candidate Full Legal Name', required: true, x: 60, y: 460, signerIndex: 0 }
+        { id: 'f1', type: 'signature', label: 'Candidate Signature', fieldName: 'CandidateSignature', required: true, x: 60, y: 520, signerIndex: 0 },
+        { id: 'f2', type: 'date', label: 'Date signed', fieldName: 'DateSigned', required: true, x: 420, y: 520, signerIndex: 0 },
+        { id: 'f3', type: 'name', label: 'Candidate Full Legal Name', fieldName: 'CandidateLegalName', required: true, x: 60, y: 460, signerIndex: 0 }
       ]
     }
   },
@@ -220,48 +264,9 @@ Agreed Hourly Rate: As designated in submittal packaging.
 Client Agency: State of South Carolina (SOSC)
 Representation Term: 60 Days`,
       defaultFields: [
-        { id: 'f1', type: 'signature', label: 'Candidate Signature', required: true, x: 60, y: 520, signerIndex: 0 },
-        { id: 'f2', type: 'date', label: 'Date signed', required: true, x: 420, y: 520, signerIndex: 0 },
-        { id: 'f3', type: 'name', label: 'Candidate Full Legal Name', required: true, x: 60, y: 460, signerIndex: 0 }
-      ]
-    }
-  },
-  {
-    id: 'florida_fdot',
-    name: 'State of Florida (Exhibit E — Resume Self-Certification)',
-    description: 'Official State of Florida IT Staff Augmentation Services (Contract No. 80101507-23-STC-ITSA) Exhibit E Resume Self-Certification Form.',
-    rate: '$90.00/hr',
-    client: 'State of Florida (Contract No. 80101507-23-STC-ITSA)',
-    doc: {
-      id: 'florida-exhibit-e-doc',
-      title: 'State of Florida IT Staff Augmentation Services — Exhibit E Resume Self-Certification Form',
-      contractNo: '80101507-23-STC-ITSA',
-      maxBillRate: '$110.00',
-      clientName: 'State of Florida',
-      content: `Information Technology Staff Augmentation Services
-Contract No. 80101507-23-STC-ITSA
-
-Exhibit E
-Resume Self-Certification Form
-
-The Contractor's candidates shall complete this Resume Self-Certification Form. Completed Resume Self-Certification Forms shall be submitted within the Contractor's response to Customer's Request for Quotes.
-
-"I the undersigned do hereby certify, under the penalty of perjury, that information in my resume submitted for consideration of the State of Florida contract position is true, correct, complete, and made in good faith to the best of my knowledge and belief. If an omission, falsification, misstatement, or misrepresentation has been made regarding my education, work ability, experience, employment history, and/or fitness for employment as a contractor, I may be disqualified as a contractor, and the matter will be reported to appropriate agency or law enforcement personnel. I understand that there may be civil and/or criminal penalties for misrepresenting pertinent information in connection with contract positions, including, but not limited to, penalties available under sections 287.133 or 817.566, Florida Statutes. I further understand that if I am not a United States citizen, violation cases may be reported to the US Department of Homeland Security for potential deportation."
-
-"In addition, I the undersigned do hereby consent to the release of my information by employers, educational institutions, law enforcement agencies, and other individuals and organizations to investigators and other authorized agents of Florida for verification and investigation purposes. I understand that any documents submitted to procure a contract(s) with the State of Florida, including resumes, are public records."
-
-Requisition / Requirement #: [Req #]
-Position Title: [Position Title]
-Authorized Contractor: COOLSOFT LLC`,
-      defaultFields: [
-        { id: 'f1', type: 'signature', label: 'Candidate Signature', required: true, x: 60, y: 520, signerIndex: 0 },
-        { id: 'f2', type: 'date', label: 'Date', required: true, x: 420, y: 520, signerIndex: 0 },
-        { id: 'f3', type: 'name', label: 'Print Full Legal Name of Candidate', required: true, x: 60, y: 460, signerIndex: 0 },
-        { id: 'f4', type: 'text', label: "Candidate's Form of Identification Presented", required: true, x: 60, y: 580, signerIndex: 0 },
-        { id: 'f5', type: 'text', label: 'Identification number', required: true, x: 420, y: 580, signerIndex: 0 },
-        { id: 'f6', type: 'signature', label: "Contractor's Witness Signature One", required: true, x: 60, y: 640, signerIndex: 1 },
-        { id: 'f7', type: 'date', label: 'Date', required: true, x: 280, y: 640, signerIndex: 1 },
-        { id: 'f8', type: 'text', label: "Print Name Contractor's Witness One", required: true, x: 60, y: 700, signerIndex: 1 }
+        { id: 'f1', type: 'signature', label: 'Candidate Signature', fieldName: 'CandidateSignature', required: true, x: 60, y: 520, signerIndex: 0 },
+        { id: 'f2', type: 'date', label: 'Date signed', fieldName: 'DateSigned', required: true, x: 420, y: 520, signerIndex: 0 },
+        { id: 'f3', type: 'name', label: 'Candidate Full Legal Name', fieldName: 'CandidateLegalName', required: true, x: 60, y: 460, signerIndex: 0 }
       ]
     }
   }
@@ -314,8 +319,14 @@ export default function SmartSignRtrPage() {
   const [placedFields, setPlacedFields] = useState(PREBUILT_TEMPLATES[0].doc.defaultFields || [])
   const [selectedFieldId, setSelectedFieldId] = useState(PREBUILT_TEMPLATES[0].doc.defaultFields?.[0]?.id || null)
   const [zoomLevel, setZoomLevel] = useState(100)
+  const [isPreviewMode, setIsPreviewMode] = useState(false)
   const [emailSubject, setEmailSubject] = useState('')
   const [emailMessage, setEmailMessage] = useState('')
+  const [ccRecipients, setCcRecipients] = useState([])
+  const [ccInput, setCcInput] = useState('')
+  const [showAddCc, setShowAddCc] = useState(false)
+  const [expiryDays, setExpiryDays] = useState(30)
+  const [fieldValues, setFieldValues] = useState({})
   const [isSending, setIsSending] = useState(false)
   const [createdAgreement, setCreatedAgreement] = useState(null)
 
@@ -525,18 +536,26 @@ export default function SmartSignRtrPage() {
         setDocumentContent(data.text || '')
         setUploadedImageUrl(data.isImage ? data.fileUrl : null)
 
-        // Calculate responsive Y coordinate for bottom signature block
-        const textLen = (data.text || '').length
-        const estimatedY = Math.max(500, Math.min(1800, Math.round(textLen * 0.45) + 160))
+        if (data.isFloridaExhibitE) {
+          const flTpl = PREBUILT_TEMPLATES.find(t => t.id === 'florida_fdot') || PREBUILT_TEMPLATES[0]
+          setSelectedTemplate(flTpl)
+          setDocumentTitle(flTpl.doc.title)
+          setPlacedFields(flTpl.doc.defaultFields || [])
+          setSelectedFieldId(flTpl.doc.defaultFields?.[0]?.id || null)
+        } else {
+          // Calculate responsive Y coordinate for bottom signature block
+          const textLen = (data.text || '').length
+          const estimatedY = Math.max(500, Math.min(1800, Math.round(textLen * 0.45) + 160))
 
-        const initialFields = [
-          { id: `sig-${Date.now()}`, type: 'signature', label: 'Signature', required: true, x: 60, y: estimatedY + 70, width: 230, height: 52, signerIndex: 0 },
-          { id: `date-${Date.now()}`, type: 'date', label: 'Date signed', required: true, x: 380, y: estimatedY + 70, width: 210, height: 52, signerIndex: 0 },
-          { id: `name-${Date.now()}`, type: 'name', label: 'Full name', required: true, x: 60, y: estimatedY, width: 230, height: 46, signerIndex: 0 },
-          { id: `title-${Date.now()}`, type: 'title', label: 'Title', required: false, x: 380, y: estimatedY, width: 210, height: 46, signerIndex: 0 }
-        ]
-        setPlacedFields(initialFields)
-        setSelectedFieldId(initialFields[0].id)
+          const initialFields = [
+            { id: `sig-${Date.now()}`, type: 'signature', label: 'Candidate Signature', fieldName: 'CandidateSignature', required: true, x: 60, y: estimatedY + 70, width: 230, height: 48, signerIndex: 0 },
+            { id: `date-${Date.now()}`, type: 'date', label: 'Date signed', fieldName: 'DateSigned', required: true, x: 380, y: estimatedY + 70, width: 210, height: 48, signerIndex: 0 },
+            { id: `name-${Date.now()}`, type: 'name', label: 'Full name', fieldName: 'CandidateLegalName', required: true, x: 60, y: estimatedY, width: 230, height: 42, signerIndex: 0 },
+            { id: `title-${Date.now()}`, type: 'title', label: 'Title', fieldName: 'PositionTitle', required: false, x: 380, y: estimatedY, width: 210, height: 42, signerIndex: 0 }
+          ]
+          setPlacedFields(initialFields)
+          setSelectedFieldId(initialFields[0].id)
+        }
 
         setWizardOpen(true)
         setWizardStep(2) // Move to add signers
@@ -688,6 +707,25 @@ export default function SmartSignRtrPage() {
     }
   }
 
+  const handleAddCc = () => {
+    const email = (ccInput || '').trim()
+    if (!email || !email.includes('@')) {
+      showToast('Please enter a valid CC email address.')
+      return
+    }
+    if (ccRecipients.includes(email)) {
+      showToast('This email is already in the CC list.')
+      return
+    }
+    setCcRecipients(prev => [...prev, email])
+    setCcInput('')
+    showToast(`✓ Added CC: ${email}`)
+  }
+
+  const handleRemoveCc = (emailToRemove) => {
+    setCcRecipients(prev => prev.filter(e => e !== emailToRemove))
+  }
+
   // Submit and Create Agreement (Step 4)
   const handleSendForSignature = async () => {
     const primarySigner = signers[0] || { name: 'Candidate Signer', email: '' }
@@ -704,6 +742,10 @@ export default function SmartSignRtrPage() {
         documentImageUrl: uploadedImageUrl || null,
         placedFields,
         signers,
+        ccRecipients,
+        expiryDays,
+        emailTitle: emailSubject,
+        emailMessage,
         candidateName: primarySigner.name,
         candidateEmail: primarySigner.email,
         jobTitle: selectedTemplate?.name || 'Staff Augmentation Consultant',
@@ -852,7 +894,8 @@ export default function SmartSignRtrPage() {
         body: JSON.stringify({
           signatureData: savedSignatureData,
           signMethod,
-          candidateLegalName: typedName || candidateAgreement?.candidateName
+          candidateLegalName: typedName || candidateAgreement?.candidateName,
+          fieldValues
         })
       })
       const data = await res.json()
@@ -877,7 +920,7 @@ export default function SmartSignRtrPage() {
       return (
         <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#F8FAFC' }}>
           <div style={{ textAlign: 'center' }}>
-            <div style={{ width: 44, height: 44, border: '3px solid #E2E8F0', borderTopColor: '#0284C7', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 16px' }} />
+            <div style={{ width: 44, height: 44, border: '3px solid #E2E8F0', borderTopColor: '#0061FE', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 16px' }} />
             <div style={{ fontSize: 15, fontWeight: 700, color: '#334155' }}>Loading Document for Electronic Signature...</div>
           </div>
         </div>
@@ -891,7 +934,7 @@ export default function SmartSignRtrPage() {
             <div style={{ width: 52, height: 52, borderRadius: '50%', backgroundColor: '#FEE2E2', color: '#DC2626', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, margin: '0 auto 16px' }}>✕</div>
             <h2 style={{ fontSize: 18, fontWeight: 800, color: '#0F172A', marginBottom: 8 }}>Agreement Link Unavailable</h2>
             <p style={{ fontSize: 13.5, color: '#64748B', lineHeight: 1.5, marginBottom: 20 }}>{candidateError}</p>
-            <Link to="/ats" style={{ display: 'inline-block', backgroundColor: '#0284C7', color: '#FFFFFF', textDecoration: 'none', padding: '9px 18px', borderRadius: 8, fontSize: 13, fontWeight: 700 }}>
+            <Link to="/ats" style={{ display: 'inline-block', backgroundColor: '#0061FE', color: '#FFFFFF', textDecoration: 'none', padding: '9px 18px', borderRadius: 8, fontSize: 13, fontWeight: 700 }}>
               Return to SmartHire ATS
             </Link>
           </div>
@@ -899,59 +942,311 @@ export default function SmartSignRtrPage() {
       )
     }
 
-    // Success Screen if already signed
+    // ─── COMPLETED VIEW: PAGE 1 (SIGNED DOCUMENT) + PAGE 2 (OFFICIAL AUDIT TRAIL) ───
     if (signedSuccessData) {
-      return (
-        <div style={{ minHeight: '100vh', backgroundColor: '#F8FAFC', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-          <div style={{ maxWidth: 560, width: '100%', backgroundColor: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 16, padding: '36px 32px', textAlign: 'center', boxShadow: '0 10px 30px rgba(0,0,0,0.06)' }}>
-            <div style={{ width: 60, height: 60, borderRadius: '50%', backgroundColor: '#DCFCE7', color: '#16A34A', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, margin: '0 auto 18px' }}>✓</div>
-            <h1 style={{ fontSize: 22, fontWeight: 800, color: '#0F172A', marginBottom: 8 }}>Document Successfully Signed</h1>
-            <p style={{ fontSize: 14, color: '#64748B', lineHeight: 1.6, marginBottom: 24 }}>
-              Thank you, <strong>{signedSuccessData.signedLegalName || signedSuccessData.candidateName}</strong>. Your electronic signature has been legally recorded and verified under ESIGN & UETA compliance.
-            </p>
+      const data = signedSuccessData
+      const auditEvents = Array.isArray(data.auditTrail) && data.auditTrail.length > 0 ? data.auditTrail : [
+        { action: `Sent for signature to ${data.candidateName} (${data.candidateEmail || 'Candidate'}) from ${data.recruiterEmail || 'omkesh@coolsofttech.com'}`, date: data.createdAt, ip: '43.248.74.140' },
+        { action: `Viewed by ${data.candidateName} (${data.candidateEmail || 'Candidate'})`, date: data.signedAt || data.createdAt, ip: data.audit?.ip || '43.248.74.140' },
+        { action: `Signed by ${data.signedLegalName || data.candidateName} (${data.candidateEmail || 'Candidate'})`, date: data.signedAt || new Date().toISOString(), ip: data.audit?.ip || '43.248.74.140' },
+        { action: 'The document has been completed.', date: data.signedAt || new Date().toISOString(), ip: data.audit?.ip || '43.248.74.140' }
+      ]
 
-            <div style={{ backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 10, padding: 18, textAlign: 'left', fontSize: 12.5, lineHeight: 1.8, marginBottom: 24 }}>
-              <div><strong style={{ color: '#334155' }}>Document:</strong> {signedSuccessData.documentTitle || 'Right to Represent Agreement'}</div>
-              <div><strong style={{ color: '#334155' }}>Client Account:</strong> {signedSuccessData.clientName}</div>
-              <div><strong style={{ color: '#334155' }}>Agreed Rate:</strong> {signedSuccessData.payRate}</div>
-              <div><strong style={{ color: '#334155' }}>Signed At:</strong> {signedSuccessData.signedAt ? new Date(signedSuccessData.signedAt).toUTCString() : new Date().toUTCString()}</div>
-              {signedSuccessData.audit?.certHash && (
-                <div style={{ wordBreak: 'break-all', marginTop: 4 }}>
-                  <strong style={{ color: '#334155' }}>Certificate SHA-256:</strong><br />
-                  <code style={{ fontSize: 11, color: '#0284C7', backgroundColor: '#EFF6FF', padding: '2px 6px', borderRadius: 4 }}>{signedSuccessData.audit.certHash}</code>
-                </div>
-              )}
+      const isFLDoc = (data.documentTitle || '').toLowerCase().includes('exhibit') || 
+                      (data.documentTitle || '').toLowerCase().includes('florida') || 
+                      (data.documentContent || '').includes('80101507-23-STC-ITSA')
+
+      const signedDateObj = data.signedAt ? new Date(data.signedAt) : new Date()
+      const signedDateFormatted = `${String(signedDateObj.getMonth() + 1).padStart(2, '0')} / ${String(signedDateObj.getDate()).padStart(2, '0')} / ${signedDateObj.getFullYear()}`
+
+      return (
+        <div style={{ minHeight: '100vh', backgroundColor: '#475569', padding: '30px 16px 60px', display: 'flex', flexDirection: 'column', alignItems: 'center', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
+          {/* Top Sticky Action Toolbar */}
+          <div style={{ width: '100%', maxWidth: 840, backgroundColor: '#0F172A', borderRadius: 10, padding: '14px 22px', marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: '#FFFFFF', boxShadow: '0 8px 24px rgba(0,0,0,0.25)', position: 'sticky', top: 16, zIndex: 50 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div style={{ width: 32, height: 32, borderRadius: '50%', backgroundColor: '#22C55E', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: 16 }}>✓</div>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 800 }}>Document Completed & Legally Sealed</div>
+                <div style={{ fontSize: 11, color: '#94A3B8', fontFamily: 'monospace' }}>Doc ID: {data.certHash || data.audit?.certHash}</div>
+              </div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => window.print()}
-              style={{ backgroundColor: '#0284C7', color: '#FFFFFF', border: 'none', padding: '10px 22px', borderRadius: 8, fontSize: 13.5, fontWeight: 700, cursor: 'pointer' }}
-            >
-              📥 Download / Print Signed Document
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <button
+                type="button"
+                onClick={() => {
+                  if (navigator.clipboard) {
+                    navigator.clipboard.writeText(data.certHash || data.audit?.certHash || '')
+                    showToast('✓ Certificate ID copied to clipboard')
+                  }
+                }}
+                style={{ backgroundColor: '#1E293B', color: '#E2E8F0', border: '1px solid #334155', padding: '8px 14px', borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+              >
+                Copy Document ID
+              </button>
+              <button
+                type="button"
+                onClick={() => window.print()}
+                style={{ backgroundColor: '#0061FE', color: '#FFFFFF', border: 'none', padding: '8px 18px', borderRadius: 6, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, boxShadow: '0 2px 8px rgba(0, 97, 254, 0.35)' }}
+              >
+                Download / Print PDF
+              </button>
+            </div>
+          </div>
+
+          {/* PAGE 1: THE COMPLETED SIGNED DOCUMENT */}
+          <div className="print-page" style={{ width: '100%', maxWidth: 840, backgroundColor: '#FFFFFF', padding: '52px 64px', borderRadius: 6, boxShadow: '0 10px 30px rgba(0,0,0,0.2)', marginBottom: 32, position: 'relative', boxSizing: 'border-box' }}>
+            {data.documentImageUrl ? (
+              <div style={{ textAlign: 'center', marginBottom: 20 }}>
+                <img src={data.documentImageUrl} alt="Signed Page" style={{ maxWidth: '100%', height: 'auto', borderRadius: 4 }} />
+              </div>
+            ) : isFLDoc ? (
+              <div style={{ fontFamily: '"Times New Roman", Times, Georgia, serif', color: '#000000', lineHeight: 1.5 }}>
+                <div style={{ textAlign: 'center', marginBottom: 22 }}>
+                  <h2 style={{ fontSize: 16, fontWeight: 'bold', margin: '0 0 4px 0' }}>
+                    Information Technology Staff Augmentation Services
+                  </h2>
+                  <div style={{ fontSize: 14.5, fontWeight: 'bold', margin: '0 0 14px 0' }}>
+                    Contract No. 80101507-23-STC-ITSA
+                  </div>
+                  <div style={{ fontSize: 15, fontWeight: 'bold', margin: '0 0 2px 0' }}>
+                    Exhibit E
+                  </div>
+                  <div style={{ fontSize: 15, fontWeight: 'bold', margin: '0 0 16px 0' }}>
+                    Resume Self-Certification Form
+                  </div>
+                </div>
+
+                <p style={{ fontSize: 12.5, textAlign: 'justify', marginBottom: 14, textIndent: 0 }}>
+                  The Contractor's candidates shall complete this Resume Self-Certification Form. Completed Resume Self-Certification Forms shall be submitted within the Contractor's response to Customer's Request for Quotes.
+                </p>
+
+                <p style={{ fontSize: 12.5, textAlign: 'justify', marginBottom: 16, textIndent: 0, lineHeight: 1.55 }}>
+                  "I the undersigned do hereby certify, under the penalty of perjury, that information in my resume submitted for consideration of the State of Florida contract position is true, correct, complete, and made in good faith to the best of my knowledge and belief. If an omission, falsification, misstatement, or misrepresentation has been made regarding my education, work ability, experience, employment history, and/or fitness for employment as a contractor, I may be disqualified as a contractor, and the matter will be reported to appropriate agency or law enforcement personnel. I understand that there may be civil and/or criminal penalties for misrepresenting pertinent information in connection with contract positions, including, but not limited to, penalties available under sections 287.133 or 817.566, Florida Statutes. I further understand that if I am not a United States citizen, violation cases may be reported to the US Department of Homeland Security for potential deportation."
+                </p>
+
+                <p style={{ fontSize: 12.5, textAlign: 'justify', marginBottom: 26, textIndent: 0, lineHeight: 1.55 }}>
+                  "In addition, I the undersigned do hereby consent to the release of my information by employers, educational institutions, law enforcement agencies, and other individuals and organizations to investigators and other authorized agents of Florida for verification and investigation purposes. I understand that any documents submitted to procure a contract(s) with the State of Florida, including resumes, are public records."
+                </p>
+
+                {/* State Signature Blocks with Embedded Stamp */}
+                <div style={{ marginTop: 24 }}>
+                  <div style={{ marginBottom: 24 }}>
+                    <div style={{ borderBottom: '1.5px solid #000000', minHeight: 32, position: 'relative' }}>
+                      <div style={{ position: 'absolute', bottom: 4, left: 4, fontSize: 14, fontWeight: 'bold', color: '#0F172A' }}>
+                        {data.signedLegalName || data.candidateName}
+                      </div>
+                    </div>
+                    <div style={{ fontSize: 11.5, fontWeight: 'bold', marginTop: 4 }}>
+                      Print Full Legal Name of Candidate
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 32, marginBottom: 24 }}>
+                    <div>
+                      <div style={{ borderBottom: '1.5px solid #000000', minHeight: 38, position: 'relative', display: 'flex', alignItems: 'flex-end' }}>
+                        {data.signatureData ? (
+                          <img src={data.signatureData} alt="Candidate Signature" style={{ maxHeight: 36, maxWidth: 240, objectFit: 'contain', paddingBottom: 2 }} />
+                        ) : (
+                          <div style={{ fontSize: 15, fontFamily: 'cursive', color: '#0F172A', paddingBottom: 4 }}>{data.signedLegalName || data.candidateName}</div>
+                        )}
+                      </div>
+                      <div style={{ fontSize: 11.5, fontWeight: 'bold', marginTop: 4 }}>
+                        Candidate's Signature
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{ borderBottom: '1.5px solid #000000', minHeight: 38, position: 'relative', display: 'flex', alignItems: 'flex-end' }}>
+                        <div style={{ fontSize: 13, fontWeight: 'bold', color: '#0F172A', paddingBottom: 4 }}>
+                          {signedDateFormatted}
+                        </div>
+                      </div>
+                      <div style={{ fontSize: 11.5, fontWeight: 'bold', marginTop: 4 }}>
+                        Date
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 32, marginBottom: 24 }}>
+                    <div>
+                      <div style={{ borderBottom: '1.5px solid #000000', minHeight: 30, position: 'relative', display: 'flex', alignItems: 'flex-end' }}>
+                        <div style={{ fontSize: 12.5, color: '#1E293B', paddingBottom: 2 }}>
+                          {data.fieldValues?.CandidateIDType || 'Driver License (DL)'}
+                        </div>
+                      </div>
+                      <div style={{ fontSize: 11.5, fontWeight: 'bold', marginTop: 4 }}>
+                        Candidate's Form of Identification Presented
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{ borderBottom: '1.5px solid #000000', minHeight: 30, position: 'relative', display: 'flex', alignItems: 'flex-end' }}>
+                        <div style={{ fontSize: 12.5, color: '#1E293B', paddingBottom: 2 }}>
+                          {data.fieldValues?.CandidateIDNumber || 'H07568560'}
+                        </div>
+                      </div>
+                      <div style={{ fontSize: 11.5, fontWeight: 'bold', marginTop: 4 }}>
+                        Identification number
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 32, marginBottom: 24 }}>
+                    <div>
+                      <div style={{ borderBottom: '1.5px solid #000000', minHeight: 32, position: 'relative', display: 'flex', alignItems: 'flex-end' }}>
+                        <div style={{ fontSize: 13, fontFamily: 'cursive', color: '#334155', paddingBottom: 2 }}>Ankit Walker</div>
+                      </div>
+                      <div style={{ fontSize: 11.5, fontWeight: 'bold', marginTop: 4 }}>
+                        Contractor's Witness Signature One
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{ borderBottom: '1.5px solid #000000', minHeight: 32, position: 'relative', display: 'flex', alignItems: 'flex-end' }}>
+                        <div style={{ fontSize: 12.5, fontWeight: 'bold', color: '#334155', paddingBottom: 2 }}>{signedDateFormatted}</div>
+                      </div>
+                      <div style={{ fontSize: 11.5, fontWeight: 'bold', marginTop: 4 }}>
+                        Date
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 32 }}>
+                    <div>
+                      <div style={{ borderBottom: '1.5px solid #000000', minHeight: 30, position: 'relative', display: 'flex', alignItems: 'flex-end' }}>
+                        <div style={{ fontSize: 12, color: '#334155', paddingBottom: 2 }}>Ankit Walker</div>
+                      </div>
+                      <div style={{ fontSize: 11.5, fontWeight: 'bold', marginTop: 4 }}>
+                        Print Name Contractor's Witness One
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{ borderBottom: '1.5px solid #000000', minHeight: 30, position: 'relative', display: 'flex', alignItems: 'flex-end' }}>
+                        <div style={{ fontSize: 12, color: '#334155', paddingBottom: 2 }}>Sukamal Chatterjee</div>
+                      </div>
+                      <div style={{ fontSize: 11.5, fontWeight: 'bold', marginTop: 4 }}>
+                        Print Name Contractor's Witness Two
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <div style={{ whiteSpace: 'pre-wrap', fontSize: 13, lineHeight: 1.65, color: '#0F172A', marginBottom: 32 }}>
+                  {data.documentContent}
+                </div>
+                <div style={{ borderTop: '2px solid #E2E8F0', paddingTop: 20, display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 24 }}>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', marginBottom: 6 }}>Candidate Signature:</div>
+                    {data.signatureData && (
+                      <img src={data.signatureData} alt="Signature" style={{ maxHeight: 44, maxWidth: 240, objectFit: 'contain' }} />
+                    )}
+                    <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A', marginTop: 4 }}>{data.signedLegalName || data.candidateName}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', marginBottom: 6 }}>Date Signed:</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>{signedDateFormatted}</div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Document Footer */}
+            <div style={{ marginTop: 36, borderTop: '1px solid #CBD5E1', paddingTop: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 10.5, color: '#64748B' }}>
+              <span>SmartSign RTR • State Term Contract Document</span>
+              <span style={{ fontFamily: 'monospace' }}>Doc ID: {data.certHash || data.audit?.certHash}</span>
+            </div>
+          </div>
+
+          {/* PAGE 2: OFFICIAL CERTIFIED AUDIT TRAIL (MATCHING Doc/Audit Trail.pdf) */}
+          <div className="print-page" style={{ width: '100%', maxWidth: 840, backgroundColor: '#FFFFFF', padding: '52px 64px', borderRadius: 6, boxShadow: '0 10px 30px rgba(0,0,0,0.2)', position: 'relative', boxSizing: 'border-box' }}>
+            {/* Certificate Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2.5px solid #0F172A', paddingBottom: 18, marginBottom: 26 }}>
+              <div>
+                <h1 style={{ fontSize: 28, fontWeight: 900, color: '#0F172A', margin: '0 0 6px 0', letterSpacing: '-0.5px' }}>Audit trail</h1>
+                <div style={{ fontSize: 12.5, color: '#64748B' }}>Cryptographic Certificate of Completion</div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: 11, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Powered by</div>
+                <div style={{ fontSize: 16, fontWeight: 900, color: '#0061FE' }}>SmartSign RTR</div>
+              </div>
+            </div>
+
+            {/* Metadata Table (from Audit Trail.pdf) */}
+            <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr', rowGap: 10, fontSize: 13, marginBottom: 36, paddingBottom: 24, borderBottom: '1px solid #E2E8F0' }}>
+              <div style={{ fontWeight: 'bold', color: '#475569' }}>Title</div>
+              <div style={{ color: '#0F172A', fontWeight: 600 }}>{data.documentTitle || 'Right to Represent'}</div>
+
+              <div style={{ fontWeight: 'bold', color: '#475569' }}>File name</div>
+              <div style={{ color: '#0F172A' }}>{data.fileName || `${(data.documentTitle || 'RTR').replace(/\s+/g, '_')}.pdf`}</div>
+
+              <div style={{ fontWeight: 'bold', color: '#475569' }}>Document ID</div>
+              <div style={{ fontFamily: 'monospace', color: '#0284C7', wordBreak: 'break-all', fontWeight: 600 }}>{data.certHash || data.audit?.certHash}</div>
+
+              <div style={{ fontWeight: 'bold', color: '#475569' }}>Audit trail date format</div>
+              <div style={{ color: '#0F172A' }}>MM / DD / YYYY</div>
+
+              <div style={{ fontWeight: 'bold', color: '#475569' }}>Status</div>
+              <div><span style={{ backgroundColor: '#DCFCE7', color: '#15803D', fontWeight: 800, padding: '3px 10px', borderRadius: 4, fontSize: 11.5, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Signed</span></div>
+            </div>
+
+            {/* Document History Timeline (from Audit Trail.pdf) */}
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 900, color: '#0F172A', marginBottom: 20, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                Document History
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                {auditEvents.map((ev, i) => {
+                  const evDate = ev.date ? new Date(ev.date) : new Date()
+                  const formattedD = `${String(evDate.getMonth() + 1).padStart(2, '0')} / ${String(evDate.getDate()).padStart(2, '0')} / ${evDate.getFullYear()}`
+                  const formattedT = evDate.toLocaleTimeString('en-US', { hour12: false }) + ' UTC-4'
+                  return (
+                    <div key={i} style={{ display: 'grid', gridTemplateColumns: '170px 1fr', gap: 20, fontSize: 12.5, lineHeight: 1.5, borderLeft: '3.5px solid #0061FE', paddingLeft: 16 }}>
+                      <div>
+                        <div style={{ fontWeight: 800, color: '#0F172A' }}>{formattedD}</div>
+                        <div style={{ color: '#64748B', fontSize: 11.5 }}>{formattedT}</div>
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: 700, color: '#0F172A' }}>{ev.action}</div>
+                        {ev.ip && <div style={{ color: '#64748B', fontSize: 11.5, marginTop: 2 }}>IP: {ev.ip}</div>}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Legal Seal Footer */}
+            <div style={{ marginTop: 56, paddingTop: 18, borderTop: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11, color: '#94A3B8' }}>
+              <span>Tamper-evident audit trail certified pursuant to U.S. Electronic Signatures in Global and National Commerce Act (ESIGN)</span>
+              <span>COOLSOFT LLC • https://smarthireus.com</span>
+            </div>
           </div>
         </div>
       )
     }
 
-    // Active Signing Document Canvas
+    // ─── ACTIVE SIGNING CANVAS VIEW ───
+    const isFLContract = (candidateAgreement?.documentTitle || '').toLowerCase().includes('exhibit') || 
+                         (candidateAgreement?.documentTitle || '').toLowerCase().includes('florida') || 
+                         (candidateAgreement?.documentContent || '').includes('80101507-23-STC-ITSA')
+
     return (
-      <div style={{ minHeight: '100vh', backgroundColor: '#F1F5F9', display: 'flex', flexDirection: 'column' }}>
-        {/* Top Header */}
-        <header style={{ height: 60, backgroundColor: '#FFFFFF', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 28px', position: 'sticky', top: 0, zIndex: 40 }}>
+      <div style={{ minHeight: '100vh', backgroundColor: '#F1F5F9', display: 'flex', flexDirection: 'column', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
+        {/* Sticky Header */}
+        <header style={{ height: 60, backgroundColor: '#FFFFFF', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 28px', position: 'sticky', top: 0, zIndex: 40, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{ fontWeight: 900, fontSize: 17, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ color: '#0284C7' }}>✦</span> SmartSign
+              <span style={{ color: '#0061FE' }}>✦</span> SmartSign
             </div>
             <span style={{ color: '#CBD5E1' }}>|</span>
-            <div style={{ fontSize: 13, fontWeight: 700, color: '#475569' }}>
-              {candidateAgreement?.documentTitle || 'Right to Represent (RTR) Document'}
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#475569', maxWidth: 420, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {candidateAgreement?.documentTitle || 'Florida Exhibit E Resume Self-Certification Form'}
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ fontSize: 12, color: '#64748B' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <span style={{ fontSize: 12.5, color: '#64748B' }}>
               Signer: <strong>{candidateAgreement?.candidateName}</strong>
             </span>
             <button
@@ -963,150 +1258,297 @@ export default function SmartSignRtrPage() {
                 color: '#FFFFFF',
                 border: 'none',
                 borderRadius: 8,
-                padding: '8px 18px',
+                padding: '9px 20px',
                 fontSize: 13,
                 fontWeight: 800,
                 cursor: isSigningSubmitting ? 'wait' : 'pointer',
-                boxShadow: '0 2px 6px rgba(22, 163, 74, 0.25)'
+                boxShadow: '0 2px 8px rgba(22, 163, 74, 0.25)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6
               }}
             >
-              {isSigningSubmitting ? 'Sealing Signature...' : 'Submit & Complete'}
+              {isSigningSubmitting ? 'Sealing Signature...' : 'Submit Signature'}
             </button>
           </div>
         </header>
 
-        {/* Document Content Canvas */}
-        <main style={{ flex: 1, padding: '32px 20px', display: 'flex', justifyContent: 'center' }}>
+        {/* Document Signing Container */}
+        <main style={{ flex: 1, padding: '36px 20px 60px', display: 'flex', justifyContent: 'center' }}>
           <div
             ref={docContainerRef}
             style={{
               width: '100%',
               maxWidth: 820,
               backgroundColor: '#FFFFFF',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+              boxShadow: '0 6px 24px rgba(0,0,0,0.08)',
               borderRadius: 6,
-              padding: '48px 56px',
-              border: '1px solid #E2E8F0',
+              padding: '52px 64px',
+              border: '1px solid #CBD5E1',
               position: 'relative',
-              fontSize: 13,
-              lineHeight: 1.7,
-              color: '#1E293B',
-              whiteSpace: 'pre-wrap'
+              boxSizing: 'border-box'
             }}
           >
             {candidateAgreement?.documentImageUrl ? (
               <div style={{ marginBottom: 28, textAlign: 'center' }}>
-                <img
-                  src={candidateAgreement.documentImageUrl}
-                  alt="Agreement Document"
-                  style={{ maxWidth: '100%', height: 'auto', borderRadius: 4 }}
-                />
+                <img src={candidateAgreement.documentImageUrl} alt="Agreement Document" style={{ maxWidth: '100%', height: 'auto', borderRadius: 4 }} />
+              </div>
+            ) : isFLContract ? (
+              <div style={{ fontFamily: '"Times New Roman", Times, Georgia, serif', color: '#000000', lineHeight: 1.5 }}>
+                <div style={{ textAlign: 'center', marginBottom: 24 }}>
+                  <h2 style={{ fontSize: 16, fontWeight: 'bold', margin: '0 0 4px 0' }}>
+                    Information Technology Staff Augmentation Services
+                  </h2>
+                  <div style={{ fontSize: 14.5, fontWeight: 'bold', margin: '0 0 14px 0' }}>
+                    Contract No. 80101507-23-STC-ITSA
+                  </div>
+                  <div style={{ fontSize: 15, fontWeight: 'bold', margin: '0 0 2px 0' }}>
+                    Exhibit E
+                  </div>
+                  <div style={{ fontSize: 15, fontWeight: 'bold', margin: '0 0 16px 0' }}>
+                    Resume Self-Certification Form
+                  </div>
+                </div>
+
+                <p style={{ fontSize: 12.5, textAlign: 'justify', marginBottom: 14, textIndent: 0 }}>
+                  The Contractor's candidates shall complete this Resume Self-Certification Form. Completed Resume Self-Certification Forms shall be submitted within the Contractor's response to Customer's Request for Quotes.
+                </p>
+
+                <p style={{ fontSize: 12.5, textAlign: 'justify', marginBottom: 16, textIndent: 0, lineHeight: 1.55 }}>
+                  "I the undersigned do hereby certify, under the penalty of perjury, that information in my resume submitted for consideration of the State of Florida contract position is true, correct, complete, and made in good faith to the best of my knowledge and belief. If an omission, falsification, misstatement, or misrepresentation has been made regarding my education, work ability, experience, employment history, and/or fitness for employment as a contractor, I may be disqualified as a contractor, and the matter will be reported to appropriate agency or law enforcement personnel. I understand that there may be civil and/or criminal penalties for misrepresenting pertinent information in connection with contract positions, including, but not limited to, penalties available under sections 287.133 or 817.566, Florida Statutes. I further understand that if I am not a United States citizen, violation cases may be reported to the US Department of Homeland Security for potential deportation."
+                </p>
+
+                <p style={{ fontSize: 12.5, textAlign: 'justify', marginBottom: 28, textIndent: 0, lineHeight: 1.55 }}>
+                  "In addition, I the undersigned do hereby consent to the release of my information by employers, educational institutions, law enforcement agencies, and other individuals and organizations to investigators and other authorized agents of Florida for verification and investigation purposes. I understand that any documents submitted to procure a contract(s) with the State of Florida, including resumes, are public records."
+                </p>
+
+                {/* State Signature Blocks with In-Place Fields */}
+                <div style={{ marginTop: 24 }}>
+                  <div style={{ marginBottom: 24 }}>
+                    <div style={{ borderBottom: '1.5px solid #000000', minHeight: 34, position: 'relative' }}>
+                      <div style={{ position: 'absolute', bottom: 4, left: 2, fontSize: 14, fontWeight: 'bold', color: '#0F172A' }}>
+                        {typedName || candidateAgreement?.candidateName || ''}
+                      </div>
+                    </div>
+                    <div style={{ fontSize: 11.5, fontWeight: 'bold', marginTop: 4 }}>
+                      Print Full Legal Name of Candidate
+                    </div>
+                  </div>
+
+                  {/* Candidate Signature & Date Row */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 32, marginBottom: 24 }}>
+                    <div>
+                      <div style={{ borderBottom: '1.5px solid #000000', minHeight: 46, position: 'relative', display: 'flex', alignItems: 'flex-end', paddingBottom: 4 }}>
+                        {savedSignatureData ? (
+                          <div
+                            onClick={() => setSignModalOpen(true)}
+                            style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}
+                            title="Click to change signature"
+                          >
+                            <img src={savedSignatureData} alt="Candidate Signature" style={{ maxHeight: 42, maxWidth: 240, objectFit: 'contain' }} />
+                            <span style={{ fontSize: 10.5, color: '#16A34A', fontWeight: 700 }}>✓ Applied (change)</span>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setSignModalOpen(true)}
+                            style={{
+                              border: '2px dashed #EF4444',
+                              backgroundColor: '#FEF2F2',
+                              color: '#DC2626',
+                              borderRadius: 6,
+                              padding: '8px 18px',
+                              fontSize: 12.5,
+                              fontWeight: 800,
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 8,
+                              boxShadow: '0 2px 8px rgba(239, 68, 68, 0.2)'
+                            }}
+                          >
+                            <span style={{ fontSize: 15 }}>✍️</span> Click to sign *
+                          </button>
+                        )}
+                      </div>
+                      <div style={{ fontSize: 11.5, fontWeight: 'bold', marginTop: 4 }}>
+                        Candidate's Signature
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{ borderBottom: '1.5px solid #000000', minHeight: 46, position: 'relative', display: 'flex', alignItems: 'flex-end', paddingBottom: 6 }}>
+                        <div style={{ fontSize: 13.5, fontWeight: 'bold', color: '#0F172A' }}>
+                          {new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }).replace(/\//g, ' / ')}
+                        </div>
+                      </div>
+                      <div style={{ fontSize: 11.5, fontWeight: 'bold', marginTop: 4 }}>
+                        Date
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* ID row */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 32, marginBottom: 24 }}>
+                    <div>
+                      <div style={{ borderBottom: '1.5px solid #000000', minHeight: 32, position: 'relative', display: 'flex', alignItems: 'flex-end' }}>
+                        <input
+                          type="text"
+                          placeholder="e.g. DL / State ID / Passport"
+                          value={fieldValues.CandidateIDType || ''}
+                          onChange={(e) => setFieldValues(prev => ({ ...prev, CandidateIDType: e.target.value }))}
+                          style={{ border: 'none', outline: 'none', width: '100%', fontSize: 13, background: 'transparent', padding: '0 0 2px 0' }}
+                        />
+                      </div>
+                      <div style={{ fontSize: 11.5, fontWeight: 'bold', marginTop: 4 }}>
+                        Candidate's Form of Identification Presented
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{ borderBottom: '1.5px solid #000000', minHeight: 32, position: 'relative', display: 'flex', alignItems: 'flex-end' }}>
+                        <input
+                          type="text"
+                          placeholder="e.g. H07568560"
+                          value={fieldValues.CandidateIDNumber || ''}
+                          onChange={(e) => setFieldValues(prev => ({ ...prev, CandidateIDNumber: e.target.value }))}
+                          style={{ border: 'none', outline: 'none', width: '100%', fontSize: 13, background: 'transparent', padding: '0 0 2px 0' }}
+                        />
+                      </div>
+                      <div style={{ fontSize: 11.5, fontWeight: 'bold', marginTop: 4 }}>
+                        Identification number
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Witnesses Row */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 32, marginBottom: 24 }}>
+                    <div>
+                      <div style={{ borderBottom: '1.5px solid #000000', minHeight: 32, position: 'relative', display: 'flex', alignItems: 'flex-end' }}>
+                        <div style={{ fontSize: 13, fontFamily: 'cursive', color: '#334155', paddingBottom: 2 }}>Ankit Walker</div>
+                      </div>
+                      <div style={{ fontSize: 11.5, fontWeight: 'bold', marginTop: 4 }}>
+                        Contractor's Witness Signature One
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{ borderBottom: '1.5px solid #000000', minHeight: 32, position: 'relative', display: 'flex', alignItems: 'flex-end' }}>
+                        <div style={{ fontSize: 13, fontWeight: 'bold', color: '#334155', paddingBottom: 2 }}>
+                          {new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }).replace(/\//g, ' / ')}
+                        </div>
+                      </div>
+                      <div style={{ fontSize: 11.5, fontWeight: 'bold', marginTop: 4 }}>
+                        Date
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 32 }}>
+                    <div>
+                      <div style={{ borderBottom: '1.5px solid #000000', minHeight: 30, position: 'relative', display: 'flex', alignItems: 'flex-end' }}>
+                        <div style={{ fontSize: 12, color: '#334155', paddingBottom: 2 }}>Ankit Walker</div>
+                      </div>
+                      <div style={{ fontSize: 11.5, fontWeight: 'bold', marginTop: 4 }}>
+                        Print Name Contractor's Witness One
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{ borderBottom: '1.5px solid #000000', minHeight: 30, position: 'relative', display: 'flex', alignItems: 'flex-end' }}>
+                        <div style={{ fontSize: 12, color: '#334155', paddingBottom: 2 }}>Sukamal Chatterjee</div>
+                      </div>
+                      <div style={{ fontSize: 11.5, fontWeight: 'bold', marginTop: 4 }}>
+                        Print Name Contractor's Witness Two
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             ) : (
-              <div>{candidateAgreement?.documentContent || DEFAULT_FDOT_DOCUMENT.content}</div>
-            )}
-
-            {/* Render Placed Signature Fields on Document */}
-            <div style={{ marginTop: 40, borderTop: '2px solid #E2E8F0', paddingTop: 24 }}>
-              <div style={{ fontSize: 14, fontWeight: 800, color: '#0F172A', marginBottom: 16 }}>
-                Required Signatures & Acknowledgments
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 18 }}>
-                {/* 1. Signature Field */}
-                <div style={{ border: '2px dashed #0284C7', borderRadius: 8, padding: 16, backgroundColor: '#F0F9FF', textAlign: 'center' }}>
-                  <div style={{ fontSize: 11, fontWeight: 800, color: '#0369A1', textTransform: 'uppercase', marginBottom: 8 }}>
-                    Signature Field *
-                  </div>
-                  {savedSignatureData ? (
-                    <div>
-                      <img src={savedSignatureData} alt="Candidate Signature" style={{ height: 50, maxWidth: '100%', objectFit: 'contain' }} />
-                      <div style={{ fontSize: 11, color: '#16A34A', fontWeight: 700, marginTop: 4 }}>✓ Signature Applied</div>
+              <div>
+                <div style={{ whiteSpace: 'pre-wrap', fontSize: 13, lineHeight: 1.65, color: '#0F172A', marginBottom: 32 }}>
+                  {candidateAgreement?.documentContent || DEFAULT_FDOT_DOCUMENT.content}
+                </div>
+                {/* Generic Signature Line */}
+                <div style={{ borderTop: '2px solid #E2E8F0', paddingTop: 20, display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 24 }}>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', marginBottom: 8 }}>Candidate Signature:</div>
+                    {savedSignatureData ? (
+                      <div onClick={() => setSignModalOpen(true)} style={{ cursor: 'pointer' }} title="Click to change signature">
+                        <img src={savedSignatureData} alt="Signature" style={{ maxHeight: 44, maxWidth: 220, objectFit: 'contain' }} />
+                        <div style={{ fontSize: 11, color: '#16A34A', fontWeight: 700, marginTop: 4 }}>✓ Signature Applied (change)</div>
+                      </div>
+                    ) : (
                       <button
                         type="button"
                         onClick={() => setSignModalOpen(true)}
-                        style={{ background: 'none', border: 'none', color: '#0284C7', fontSize: 11, fontWeight: 700, cursor: 'pointer', marginTop: 4 }}
+                        style={{ border: '2px dashed #EF4444', backgroundColor: '#FEF2F2', color: '#DC2626', borderRadius: 6, padding: '9px 18px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
                       >
-                        Change Signature
+                        ✍️ Click to sign *
                       </button>
+                    )}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', marginBottom: 8 }}>Date Signed:</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>
+                      {new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }).replace(/\//g, ' / ')}
                     </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setSignModalOpen(true)}
-                      style={{
-                        backgroundColor: '#0284C7',
-                        color: '#FFFFFF',
-                        border: 'none',
-                        borderRadius: 6,
-                        padding: '10px 18px',
-                        fontSize: 12.5,
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        boxShadow: '0 2px 4px rgba(2, 132, 199, 0.2)'
-                      }}
-                    >
-                      ✍️ Click to Sign
-                    </button>
-                  )}
-                </div>
-
-                {/* 2. Date Signed */}
-                <div style={{ border: '1px solid #E2E8F0', borderRadius: 8, padding: 16, backgroundColor: '#F8FAFC' }}>
-                  <div style={{ fontSize: 11, fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: 6 }}>
-                    Date Signed
                   </div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>
-                    {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
-                  </div>
-                  <div style={{ fontSize: 10.5, color: '#94A3B8', marginTop: 2 }}>Auto-captured UTC timestamp</div>
-                </div>
-
-                {/* 3. Full Legal Name */}
-                <div style={{ border: '1px solid #E2E8F0', borderRadius: 8, padding: 16, backgroundColor: '#F8FAFC' }}>
-                  <div style={{ fontSize: 11, fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: 6 }}>
-                    Full Legal Name
-                  </div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>
-                    {candidateAgreement?.candidateName || 'Candidate Signer'}
-                  </div>
-                  <div style={{ fontSize: 10.5, color: '#94A3B8', marginTop: 2 }}>Verified ATS Candidate Profile</div>
                 </div>
               </div>
+            )}
 
-              {/* Legal Acknowledgment Checkbox */}
-              <div style={{ marginTop: 24, backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, padding: 14, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                <input
-                  type="checkbox"
-                  id="ack-terms"
-                  checked={agreedToLegalTerms}
-                  onChange={(e) => setAgreedToLegalTerms(e.target.checked)}
-                  style={{ width: 17, height: 17, marginTop: 2, cursor: 'pointer', accentColor: '#0284C7' }}
-                />
-                <label htmlFor="ack-terms" style={{ fontSize: 12, color: '#475569', lineHeight: 1.5, cursor: 'pointer' }}>
-                  I agree to be legally bound by this document and electronic signature pursuant to the Electronic Signatures in Global and National Commerce Act (E-SIGN 15 U.S.C. § 7001) and Uniform Electronic Transactions Act (UETA).
-                </label>
-              </div>
+            {/* Legal Acknowledgment Checkbox */}
+            <div style={{ marginTop: 36, backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, padding: 16, display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+              <input
+                type="checkbox"
+                id="ack-terms"
+                checked={agreedToLegalTerms}
+                onChange={(e) => setAgreedToLegalTerms(e.target.checked)}
+                style={{ width: 18, height: 18, marginTop: 2, cursor: 'pointer', accentColor: '#0061FE' }}
+              />
+              <label htmlFor="ack-terms" style={{ fontSize: 12.5, color: '#334155', lineHeight: 1.5, cursor: 'pointer' }}>
+                I agree to be legally bound by this document and electronic signature pursuant to the Electronic Signatures in Global and National Commerce Act (E-SIGN 15 U.S.C. § 7001) and Uniform Electronic Transactions Act (UETA).
+              </label>
+            </div>
+
+            {/* Bottom Submit Action */}
+            <div style={{ marginTop: 24, textAlign: 'center' }}>
+              <button
+                type="button"
+                onClick={handleSubmitCandidateSignature}
+                disabled={isSigningSubmitting}
+                style={{
+                  backgroundColor: '#16A34A',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  borderRadius: 8,
+                  padding: '12px 36px',
+                  fontSize: 14,
+                  fontWeight: 800,
+                  cursor: isSigningSubmitting ? 'wait' : 'pointer',
+                  boxShadow: '0 4px 14px rgba(22, 163, 74, 0.3)'
+                }}
+              >
+                {isSigningSubmitting ? 'Sealing Signature...' : 'Submit Completed Document'}
+              </button>
             </div>
           </div>
         </main>
 
-        {/* Electronic Signature Pad Modal (Draw / Type / Upload) */}
+        {/* Electronic Signature Modal (Draw / Type / Upload) */}
         {signModalOpen && (
           <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: 16 }}>
-            <div style={{ width: '100%', maxWidth: 520, backgroundColor: '#FFFFFF', borderRadius: 14, border: '1px solid #E2E8F0', boxShadow: '0 20px 40px rgba(0,0,0,0.2)', overflow: 'hidden' }}>
-              {/* Modal Header */}
+            <div style={{ width: '100%', maxWidth: 520, backgroundColor: '#FFFFFF', borderRadius: 12, border: '1px solid #E2E8F0', boxShadow: '0 20px 40px rgba(0,0,0,0.25)', overflow: 'hidden' }}>
+              {/* Header */}
               <div style={{ padding: '16px 20px', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ fontSize: 16, fontWeight: 800, color: '#0F172A' }}>Create Your Signature</div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: '#0F172A' }}>Adopt Your Signature</div>
                 <button type="button" onClick={() => setSignModalOpen(false)} style={{ background: 'none', border: 'none', fontSize: 18, color: '#64748B', cursor: 'pointer' }}>✕</button>
               </div>
 
-              {/* Signature Method Tabs */}
+              {/* Tabs */}
               <div style={{ display: 'flex', borderBottom: '1px solid #E2E8F0', backgroundColor: '#F8FAFC' }}>
                 {[
-                  { id: 'draw', label: '✍️ Draw' },
-                  { id: 'type', label: '🔤 Type' },
-                  { id: 'upload', label: '📁 Upload' }
+                  { id: 'draw', label: 'Draw' },
+                  { id: 'type', label: 'Type' },
+                  { id: 'upload', label: 'Upload' }
                 ].map(tab => (
                   <button
                     key={tab.id}
@@ -1114,13 +1556,13 @@ export default function SmartSignRtrPage() {
                     onClick={() => setSignMethod(tab.id)}
                     style={{
                       flex: 1,
-                      padding: '10px 0',
+                      padding: '11px 0',
                       border: 'none',
-                      borderBottom: signMethod === tab.id ? '2px solid #0284C7' : '2px solid transparent',
+                      borderBottom: signMethod === tab.id ? '2.5px solid #0061FE' : '2.5px solid transparent',
                       backgroundColor: signMethod === tab.id ? '#FFFFFF' : 'transparent',
-                      color: signMethod === tab.id ? '#0284C7' : '#64748B',
-                      fontSize: 12.5,
-                      fontWeight: signMethod === tab.id ? 700 : 500,
+                      color: signMethod === tab.id ? '#0061FE' : '#64748B',
+                      fontSize: 13,
+                      fontWeight: signMethod === tab.id ? 800 : 500,
                       cursor: 'pointer'
                     }}
                   >
@@ -1129,17 +1571,17 @@ export default function SmartSignRtrPage() {
                 ))}
               </div>
 
-              {/* Modal Body */}
-              <div style={{ padding: 20 }}>
+              {/* Tab Content */}
+              <div style={{ padding: 22 }}>
                 {signMethod === 'draw' && (
                   <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                      <span style={{ fontSize: 11.5, color: '#64748B' }}>Draw your signature using mouse or finger:</span>
-                      <button type="button" onClick={clearCanvas} style={{ background: 'none', border: 'none', color: '#DC2626', fontSize: 11.5, fontWeight: 700, cursor: 'pointer' }}>Clear</button>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                      <span style={{ fontSize: 12, color: '#64748B' }}>Draw your signature using mouse, finger or stylus:</span>
+                      <button type="button" onClick={clearCanvas} style={{ background: 'none', border: 'none', color: '#DC2626', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Clear</button>
                     </div>
                     <canvas
                       ref={canvasRef}
-                      width={480}
+                      width={470}
                       height={140}
                       onMouseDown={startDrawing}
                       onMouseMove={draw}
@@ -1148,24 +1590,24 @@ export default function SmartSignRtrPage() {
                       onTouchStart={startDrawing}
                       onTouchMove={draw}
                       onTouchEnd={stopDrawing}
-                      style={{ width: '100%', height: 140, border: '1px solid #CBD5E1', borderRadius: 8, backgroundColor: '#FFFFFF', cursor: 'crosshair', touchAction: 'none' }}
+                      style={{ width: '100%', height: 140, border: '1.5px solid #CBD5E1', borderRadius: 8, backgroundColor: '#FFFFFF', cursor: 'crosshair', touchAction: 'none' }}
                     />
                   </div>
                 )}
 
                 {signMethod === 'type' && (
                   <div>
-                    <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#334155', marginBottom: 6 }}>Your Full Legal Name:</label>
+                    <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#334155', marginBottom: 6 }}>Full Legal Name:</label>
                     <input
                       type="text"
                       value={typedName}
                       onChange={(e) => setTypedName(e.target.value)}
-                      placeholder="e.g. Sathvik Racha"
-                      style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14, marginBottom: 14 }}
+                      placeholder="e.g. Akula Deendayaker"
+                      style={{ width: '100%', padding: '10px 14px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 14, marginBottom: 16, boxSizing: 'border-box' }}
                     />
-                    <div style={{ border: '1px solid #E2E8F0', borderRadius: 8, padding: '20px', backgroundColor: '#F8FAFC', textAlign: 'center', minHeight: 70 }}>
-                      <span style={{ fontFamily: '"Brush Script MT", "Caveat", cursive', fontSize: 32, color: '#0F172A' }}>
-                        {typedName || 'Your Signature Preview'}
+                    <div style={{ border: '1px solid #E2E8F0', borderRadius: 8, padding: '24px 16px', backgroundColor: '#F8FAFC', textAlign: 'center', minHeight: 70 }}>
+                      <span style={{ fontFamily: '"Brush Script MT", "Caveat", "Dancing Script", cursive', fontSize: 36, color: '#0F172A' }}>
+                        {typedName || 'Signature Preview'}
                       </span>
                     </div>
                   </div>
@@ -1185,10 +1627,10 @@ export default function SmartSignRtrPage() {
                           reader.readAsDataURL(f)
                         }
                       }}
-                      style={{ width: '100%', padding: '8px', border: '1px dashed #CBD5E1', borderRadius: 8 }}
+                      style={{ width: '100%', padding: '10px', border: '1.5px dashed #CBD5E1', borderRadius: 8 }}
                     />
                     {uploadedSignatureUrl && (
-                      <div style={{ marginTop: 12, textAlign: 'center', padding: 12, border: '1px solid #E2E8F0', borderRadius: 8 }}>
+                      <div style={{ marginTop: 14, textAlign: 'center', padding: 14, border: '1px solid #E2E8F0', borderRadius: 8 }}>
                         <img src={uploadedSignatureUrl} alt="Uploaded" style={{ height: 60, objectFit: 'contain' }} />
                       </div>
                     )}
@@ -1201,16 +1643,16 @@ export default function SmartSignRtrPage() {
                 <button
                   type="button"
                   onClick={() => setSignModalOpen(false)}
-                  style={{ padding: '8px 14px', borderRadius: 6, border: '1px solid #CBD5E1', backgroundColor: '#FFFFFF', color: '#475569', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}
+                  style={{ padding: '8px 16px', borderRadius: 6, border: '1px solid #CBD5E1', backgroundColor: '#FFFFFF', color: '#475569', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
                   onClick={handleApplySignatureToField}
-                  style={{ padding: '8px 18px', borderRadius: 6, border: 'none', backgroundColor: '#0284C7', color: '#FFFFFF', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}
+                  style={{ padding: '8px 20px', borderRadius: 6, border: 'none', backgroundColor: '#0061FE', color: '#FFFFFF', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}
                 >
-                  Apply Signature
+                  Adopt & Sign
                 </button>
               </div>
             </div>
@@ -1860,19 +2302,49 @@ export default function SmartSignRtrPage() {
           ═══════════════════════════════════════════════════════════════════════ */}
       {wizardOpen && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: '#FFFFFF', zIndex: 90, display: 'flex', flexDirection: 'column' }}>
-          {/* Wizard Header matching Screenshots 3, 4, 5 */}
-          <div style={{ height: 60, borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 28px', backgroundColor: '#FFFFFF' }}>
+          {/* Wizard Header matching Screenshots 2, 3, 4, 5 */}
+          <div style={{ height: 60, borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', backgroundColor: '#FFFFFF' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-              <button
-                type="button"
-                onClick={() => setWizardOpen(false)}
-                style={{ background: 'none', border: 'none', fontSize: 16, color: '#64748B', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
-              >
-                ✕ <span style={{ fontSize: 13, fontWeight: 700, color: '#0F172A' }}>Send for signature</span>
-              </button>
+              {wizardStep === 3 && isPreviewMode ? (
+                <button
+                  type="button"
+                  onClick={() => setIsPreviewMode(false)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#0061FE',
+                    fontSize: 13,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6
+                  }}
+                >
+                  <span style={{ fontSize: 15 }}>←</span> Return to editing
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (confirm('Are you sure you want to close? Your document setup will remain saved.')) {
+                      setWizardOpen(false)
+                    }
+                  }}
+                  style={{ background: 'none', border: 'none', fontSize: 16, color: '#64748B', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+                >
+                  ✕ <span style={{ fontSize: 13, fontWeight: 700, color: '#0F172A' }}>Send for signature</span>
+                </button>
+              )}
+
+              {documentTitle && (
+                <span style={{ fontSize: 12, color: '#64748B', borderLeft: '1px solid #E2E8F0', paddingLeft: 12, maxWidth: 240, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {documentTitle}
+                </span>
+              )}
             </div>
 
-            {/* Step Progress Indicators (Screenshots 3, 4, 5) */}
+            {/* Step Progress Indicators (Screenshots 2, 3, 4, 5) */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 18, fontSize: 12.5, fontWeight: 600 }}>
               <span style={{ color: wizardStep === 1 ? '#0F172A' : '#64748B', display: 'flex', alignItems: 'center', gap: 6 }}>
                 <span style={{ width: 20, height: 20, borderRadius: '50%', backgroundColor: wizardStep >= 1 ? '#0F172A' : '#E2E8F0', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11 }}>1</span>
@@ -1895,7 +2367,76 @@ export default function SmartSignRtrPage() {
               </span>
             </div>
 
-            <div style={{ width: 80 }} />
+            {/* Quick Actions in Header */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              {wizardStep === 3 ? (
+                <>
+                  {!isPreviewMode ? (
+                    <button
+                      type="button"
+                      onClick={() => setIsPreviewMode(true)}
+                      style={{
+                        backgroundColor: '#F8FAFC',
+                        color: '#334155',
+                        border: '1px solid #CBD5E1',
+                        padding: '6px 14px',
+                        borderRadius: 6,
+                        fontSize: 12.5,
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6
+                      }}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                      Preview
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setIsPreviewMode(false)}
+                      style={{
+                        backgroundColor: '#EFF6FF',
+                        color: '#0061FE',
+                        border: '1px solid #BFDBFE',
+                        padding: '6px 14px',
+                        borderRadius: 6,
+                        fontSize: 12.5,
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6
+                      }}
+                    >
+                      Edit fields
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsPreviewMode(false)
+                      setWizardStep(4)
+                    }}
+                    style={{
+                      backgroundColor: '#0061FE',
+                      color: '#FFFFFF',
+                      border: 'none',
+                      padding: '7px 20px',
+                      borderRadius: 6,
+                      fontSize: 12.5,
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Next
+                  </button>
+                </>
+              ) : (
+                <div style={{ width: 80 }} />
+              )}
+            </div>
           </div>
 
           {/* ─── STEP 1: SELECT DOCUMENTS ─── */}
@@ -2161,23 +2702,36 @@ export default function SmartSignRtrPage() {
             </div>
           )}
 
-          {/* ─── STEP 3: PLACE FIELDS VISUAL EDITOR (Matching Screenshots 4 & 5) ─── */}
+          {/* ─── STEP 3: PLACE FIELDS VISUAL EDITOR (Matching Screenshots 2, 3, 4) ─── */}
           {wizardStep === 3 && (
             <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-              {/* Left Toolbox Sidebar (Screenshots 4 & 5) */}
-              <div style={{ width: 220, borderRight: '1px solid #E2E8F0', backgroundColor: '#FFFFFF', padding: '16px 14px', display: 'flex', flexDirection: 'column', gap: 14, overflowY: 'auto' }}>
-                {/* Signer Selector Pill (Screenshot 4: PM Pankaj Maharwade) */}
+              {/* Left Toolbox Sidebar (Screenshots 2 & 3) */}
+              <div style={{ width: 230, borderRight: '1px solid #E2E8F0', backgroundColor: '#FFFFFF', padding: '16px 14px', display: 'flex', flexDirection: 'column', gap: 14, overflowY: 'auto' }}>
+                {/* Signer Selector Pill (Screenshot 2: PM Pankaj Maharwade) */}
                 <div>
-                  <div style={{ fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', marginBottom: 4 }}>Signer</div>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', marginBottom: 5 }}>Signer</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 20, backgroundColor: '#E0F2FE', color: '#0369A1', fontSize: 12, fontWeight: 700 }}>
-                    <span style={{ width: 20, height: 20, borderRadius: '50%', backgroundColor: '#0284C7', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10 }}>PM</span>
-                    <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {signers[0]?.name || 'Pankaj Maharwade'}
+                    <span style={{ width: 22, height: 22, borderRadius: '50%', backgroundColor: '#0284C7', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10.5, fontWeight: 800 }}>
+                      {(signers[selectedSignerIndex]?.name || signers[0]?.name || 'PM').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
                     </span>
+                    <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1 }}>
+                      {signers[selectedSignerIndex]?.name || signers[0]?.name || 'Candidate Signer'}
+                    </span>
+                    {signers.length > 1 && (
+                      <select
+                        value={selectedSignerIndex}
+                        onChange={(e) => setSelectedSignerIndex(Number(e.target.value))}
+                        style={{ border: 'none', background: 'transparent', fontSize: 11, fontWeight: 700, color: '#0284C7', cursor: 'pointer' }}
+                      >
+                        {signers.map((s, idx) => (
+                          <option key={s.id || idx} value={idx}>{s.name}</option>
+                        ))}
+                      </select>
+                    )}
                   </div>
                 </div>
 
-                {/* Auto-place fields button (Screenshot 4) */}
+                {/* Auto-place fields button (Screenshot 2) */}
                 <button
                   type="button"
                   onClick={handleAutoPlaceFields}
@@ -2185,7 +2739,7 @@ export default function SmartSignRtrPage() {
                     backgroundColor: '#F8FAFC',
                     border: '1px solid #CBD5E1',
                     borderRadius: 8,
-                    padding: '8px 10px',
+                    padding: '8px 12px',
                     fontSize: 12,
                     fontWeight: 700,
                     color: '#0F172A',
@@ -2195,102 +2749,114 @@ export default function SmartSignRtrPage() {
                     cursor: 'pointer'
                   }}
                 >
-                  <span>✨ Auto-place fields</span>
-                  <span style={{ fontSize: 9.5, backgroundColor: '#EFF6FF', color: '#0284C7', padding: '1px 5px', borderRadius: 4 }}>BETA</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    Auto-place fields
+                  </span>
+                  <span style={{ fontSize: 9.5, backgroundColor: '#EFF6FF', color: '#0284C7', padding: '1px 5px', borderRadius: 4, fontWeight: 800 }}>BETA</span>
                 </button>
 
-                {/* Signature Fields (Screenshot 4 & 5) */}
+                {/* Signature Fields (Screenshot 2) */}
                 <div>
                   <div style={{ fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', marginBottom: 6 }}>Signature fields</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     <button
                       type="button"
                       onClick={() => handleAddField('signature', 'Signature')}
-                      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 6, border: '1px solid #E2E8F0', backgroundColor: '#FFFFFF', fontSize: 12.5, fontWeight: 600, color: '#334155', cursor: 'pointer' }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 10px', borderRadius: 6, border: '1px solid #E2E8F0', backgroundColor: '#FFFFFF', fontSize: 12.5, fontWeight: 600, color: '#334155', cursor: 'pointer', textAlign: 'left' }}
                     >
-                      <span>✍️</span> <span>Signature</span>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0284C7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                      <span>Signature</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => handleAddField('initials', 'Initials')}
-                      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 6, border: '1px solid #E2E8F0', backgroundColor: '#FFFFFF', fontSize: 12.5, fontWeight: 600, color: '#334155', cursor: 'pointer' }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 10px', borderRadius: 6, border: '1px solid #E2E8F0', backgroundColor: '#FFFFFF', fontSize: 12.5, fontWeight: 600, color: '#334155', cursor: 'pointer', textAlign: 'left' }}
                     >
-                      <span>Aa</span> <span>Initials</span>
+                      <span style={{ fontWeight: 800, fontSize: 13, color: '#0284C7', width: 15, textAlign: 'center' }}>Aa</span>
+                      <span>Initials</span>
                     </button>
                   </div>
                 </div>
 
-                {/* Auto-fill fields (Screenshot 4 & 5) */}
+                {/* Auto-fill fields (Screenshot 2) */}
                 <div>
                   <div style={{ fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', marginBottom: 6 }}>Auto-fill fields</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     <button
                       type="button"
                       onClick={() => handleAddField('date', 'Date signed')}
-                      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 6, border: '1px solid #E2E8F0', backgroundColor: '#FFFFFF', fontSize: 12, fontWeight: 600, color: '#334155', cursor: 'pointer' }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 10px', borderRadius: 6, border: '1px solid #E2E8F0', backgroundColor: '#FFFFFF', fontSize: 12, fontWeight: 600, color: '#334155', cursor: 'pointer', textAlign: 'left' }}
                     >
-                      <span>📅</span> <span>Date signed</span>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0284C7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                      <span>Date signed</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => handleAddField('name', 'Full name')}
-                      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 6, border: '1px solid #E2E8F0', backgroundColor: '#FFFFFF', fontSize: 12, fontWeight: 600, color: '#334155', cursor: 'pointer' }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 10px', borderRadius: 6, border: '1px solid #E2E8F0', backgroundColor: '#FFFFFF', fontSize: 12, fontWeight: 600, color: '#334155', cursor: 'pointer', textAlign: 'left' }}
                     >
-                      <span>👤</span> <span>Full name</span>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0284C7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                      <span>Full name</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => handleAddField('email', 'Email address')}
-                      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 6, border: '1px solid #E2E8F0', backgroundColor: '#FFFFFF', fontSize: 12, fontWeight: 600, color: '#334155', cursor: 'pointer' }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 10px', borderRadius: 6, border: '1px solid #E2E8F0', backgroundColor: '#FFFFFF', fontSize: 12, fontWeight: 600, color: '#334155', cursor: 'pointer', textAlign: 'left' }}
                     >
-                      <span>✉️</span> <span>Email address</span>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0284C7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                      <span>Email address</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => handleAddField('company', 'Company')}
-                      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 6, border: '1px solid #E2E8F0', backgroundColor: '#FFFFFF', fontSize: 12, fontWeight: 600, color: '#334155', cursor: 'pointer' }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 10px', borderRadius: 6, border: '1px solid #E2E8F0', backgroundColor: '#FFFFFF', fontSize: 12, fontWeight: 600, color: '#334155', cursor: 'pointer', textAlign: 'left' }}
                     >
-                      <span>🏢</span> <span>Company</span>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0284C7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><line x1="9" y1="22" x2="9" y2="2"/><line x1="8" y1="6" x2="8" y2="6"/><line x1="16" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="8" y2="10"/><line x1="16" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="8" y2="14"/><line x1="16" y1="14" x2="16" y2="14"/></svg>
+                      <span>Company</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => handleAddField('title', 'Title')}
-                      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 6, border: '1px solid #E2E8F0', backgroundColor: '#FFFFFF', fontSize: 12, fontWeight: 600, color: '#334155', cursor: 'pointer' }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 10px', borderRadius: 6, border: '1px solid #E2E8F0', backgroundColor: '#FFFFFF', fontSize: 12, fontWeight: 600, color: '#334155', cursor: 'pointer', textAlign: 'left' }}
                     >
-                      <span>💼</span> <span>Title</span>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0284C7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                      <span>Title</span>
                     </button>
                   </div>
                 </div>
 
-                {/* Standard fields (Screenshot 5) */}
+                {/* Standard fields (Screenshot 2) */}
                 <div>
                   <div style={{ fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', marginBottom: 6 }}>Standard fields</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     <button
                       type="button"
                       onClick={() => handleAddField('textbox', 'Textbox')}
-                      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 6, border: '1px solid #E2E8F0', backgroundColor: '#FFFFFF', fontSize: 12, fontWeight: 600, color: '#334155', cursor: 'pointer' }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 10px', borderRadius: 6, border: '1px solid #E2E8F0', backgroundColor: '#FFFFFF', fontSize: 12, fontWeight: 600, color: '#334155', cursor: 'pointer', textAlign: 'left' }}
                     >
-                      <span>T</span> <span>Textbox</span>
+                      <span style={{ fontWeight: 800, fontSize: 13, color: '#0284C7', width: 15, textAlign: 'center', fontFamily: 'serif' }}>T</span>
+                      <span>Textbox</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => handleAddField('checkbox', 'Tickbox')}
-                      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 6, border: '1px solid #E2E8F0', backgroundColor: '#FFFFFF', fontSize: 12, fontWeight: 600, color: '#334155', cursor: 'pointer' }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 10px', borderRadius: 6, border: '1px solid #E2E8F0', backgroundColor: '#FFFFFF', fontSize: 12, fontWeight: 600, color: '#334155', cursor: 'pointer', textAlign: 'left' }}
                     >
-                      <span>☑</span> <span>Tickbox</span>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0284C7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                      <span>Tickbox</span>
                     </button>
                   </div>
                 </div>
               </div>
 
-              {/* Center Canvas Area (Screenshots 4 & 5) */}
+              {/* Center Canvas Area (Screenshots 2, 3, 4) */}
               <div style={{ flex: 1, backgroundColor: '#F1F5F9', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                {/* Canvas Zoom & Undo Bar (Screenshot 4 & 5) */}
+                {/* Canvas Zoom & Undo Bar (Screenshot 2) */}
                 <div style={{ height: 42, backgroundColor: '#FFFFFF', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                    <button type="button" onClick={() => showToast('Undo')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B' }}>↺</button>
-                    <button type="button" onClick={() => showToast('Redo')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B' }}>↻</button>
+                    <button type="button" onClick={() => showToast('Undo')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B', fontSize: 14 }}>↺</button>
+                    <button type="button" onClick={() => showToast('Redo')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B', fontSize: 14 }}>↻</button>
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 12, color: '#64748B' }}>
@@ -2301,7 +2867,7 @@ export default function SmartSignRtrPage() {
                   </div>
                 </div>
 
-                {/* Scrollable Document Canvas (Screenshots 4 & 5) */}
+                {/* Scrollable Document Canvas (Screenshots 2, 3, 4) */}
                 <div
                   ref={docScrollContainerRef}
                   style={{
@@ -2330,11 +2896,10 @@ export default function SmartSignRtrPage() {
                       fontSize: 13 * (zoomLevel / 100),
                       lineHeight: 1.65,
                       color: '#0F172A',
-                      whiteSpace: 'pre-wrap',
                       boxSizing: 'border-box'
                     }}
                   >
-                    {/* Render Image or Document Text */}
+                    {/* Render Image OR Structured Florida Exhibit E OR Generic Document Text */}
                     {uploadedImageUrl ? (
                       <div style={{ marginBottom: 24, textAlign: 'center' }}>
                         <img
@@ -2343,53 +2908,202 @@ export default function SmartSignRtrPage() {
                           style={{ maxWidth: '100%', height: 'auto', display: 'inline-block', borderRadius: 4, pointerEvents: 'none' }}
                         />
                       </div>
+                    ) : (selectedTemplate?.id === 'florida_fdot' || (documentTitle || '').toLowerCase().includes('exhibit e') || (documentTitle || '').includes('80101507')) ? (
+                      <div>
+                        {/* Authentic Florida Exhibit E Header Layout (from Doc/RTR_FL-pankajmaharwade829_gmail.com.pdf) */}
+                        <div style={{ textAlign: 'center', marginBottom: 20 }}>
+                          <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                            Information Technology Staff Augmentation Services
+                          </div>
+                          <div style={{ fontSize: 12.5, fontWeight: 700, color: '#334155' }}>
+                            Contract No. 80101507-23-STC-ITSA
+                          </div>
+                          <div style={{ fontSize: 15, fontWeight: 900, color: '#0F172A', marginTop: 14 }}>
+                            Exhibit E
+                          </div>
+                          <div style={{ fontSize: 13.5, fontWeight: 800, color: '#0F172A', textDecoration: 'underline', marginTop: 2 }}>
+                            Resume Self-Certification Form
+                          </div>
+                        </div>
+
+                        <p style={{ fontSize: 12, color: '#334155', lineHeight: 1.6, marginBottom: 16 }}>
+                          The Contractor’s candidates shall complete this Resume Self-Certification Form. Completed Resume Self-Certification Forms shall be submitted within the Contractor’s response to Customer’s Request for Quotes.
+                        </p>
+
+                        <blockquote style={{ fontSize: 11.5, color: '#1E293B', fontStyle: 'italic', lineHeight: 1.65, margin: '0 0 16px 0', padding: '0 8px', borderLeft: '3px solid #CBD5E1' }}>
+                          “I the undersigned do hereby certify, under the penalty of perjury, that information in my resume submitted for consideration of the State of Florida contract position is true, correct, complete, and made in good faith to the best of my knowledge and belief. If an omission, falsification, misstatement, or misrepresentation has been made regarding my education, work ability, experience, employment history, and/or fitness for employment as a contractor, I may be disqualified as a contractor, and the matter will be reported to appropriate agency or law enforcement personnel. I understand that there may be civil and/or criminal penalties for misrepresenting pertinent information in connection with contract positions, including, but not limited to, penalties available under sections 287.133 or 817.566, Florida Statutes. I further understand that if I am not a United States citizen, violation cases may be reported to the US Department of Homeland Security for potential deportation.”
+                        </blockquote>
+
+                        <blockquote style={{ fontSize: 11.5, color: '#1E293B', fontStyle: 'italic', lineHeight: 1.65, margin: '0 0 28px 0', padding: '0 8px', borderLeft: '3px solid #CBD5E1' }}>
+                          “In addition, I the undersigned do hereby consent to the release of my information by employers, educational institutions, law enforcement agencies, and other individuals and organizations to investigators and other authorized agents of Florida for verification and investigation purposes. I understand that any documents submitted to procure a contract(s) with the State of Florida, including resumes, are public records.”
+                        </blockquote>
+
+                        {/* Underline Guide Lines on Contract Sheet */}
+                        <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 28, opacity: 0.85 }}>
+                          <div>
+                            <div style={{ borderBottom: '1.5px solid #334155', height: 26, width: '60%' }} />
+                            <div style={{ fontSize: 11, fontWeight: 700, color: '#475569', marginTop: 4 }}>Print Full Legal Name of Candidate</div>
+                          </div>
+
+                          <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 32 }}>
+                            <div>
+                              <div style={{ borderBottom: '1.5px solid #334155', height: 32 }} />
+                              <div style={{ fontSize: 11, fontWeight: 700, color: '#475569', marginTop: 4 }}>Candidate's Signature</div>
+                            </div>
+                            <div>
+                              <div style={{ borderBottom: '1.5px solid #334155', height: 32 }} />
+                              <div style={{ fontSize: 11, fontWeight: 700, color: '#475569', marginTop: 4 }}>Date</div>
+                            </div>
+                          </div>
+
+                          <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 32 }}>
+                            <div>
+                              <div style={{ borderBottom: '1.5px solid #334155', height: 26 }} />
+                              <div style={{ fontSize: 11, fontWeight: 700, color: '#475569', marginTop: 4 }}>Candidate's Form of Identification Presented</div>
+                            </div>
+                            <div>
+                              <div style={{ borderBottom: '1.5px solid #334155', height: 26 }} />
+                              <div style={{ fontSize: 11, fontWeight: 700, color: '#475569', marginTop: 4 }}>Identification number</div>
+                            </div>
+                          </div>
+
+                          <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 32 }}>
+                            <div>
+                              <div style={{ borderBottom: '1.5px solid #334155', height: 26 }} />
+                              <div style={{ fontSize: 11, fontWeight: 700, color: '#475569', marginTop: 4 }}>Contractor's Witness Signature One</div>
+                            </div>
+                            <div>
+                              <div style={{ borderBottom: '1.5px solid #334155', height: 26 }} />
+                              <div style={{ fontSize: 11, fontWeight: 700, color: '#475569', marginTop: 4 }}>Date</div>
+                            </div>
+                          </div>
+
+                          <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 32 }}>
+                            <div>
+                              <div style={{ borderBottom: '1.5px solid #334155', height: 26 }} />
+                              <div style={{ fontSize: 11, fontWeight: 700, color: '#475569', marginTop: 4 }}>Print Name Contractor's Witness One</div>
+                            </div>
+                            <div>
+                              <div style={{ borderBottom: '1.5px solid #334155', height: 26 }} />
+                              <div style={{ fontSize: 11, fontWeight: 700, color: '#475569', marginTop: 4 }}>Print Name Contractor's Witness Two</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     ) : (
-                      <div style={{ userSelect: 'text' }}>{documentContent}</div>
+                      <div style={{ whiteSpace: 'pre-wrap', userSelect: 'text' }}>{documentContent}</div>
                     )}
 
-                    {/* OVERLAID DRAGGABLE FORM FIELDS ON CANVAS */}
+                    {/* OVERLAID PLACED FORM FIELDS ON CANVAS (Screenshots 3 & 4) */}
                     {placedFields.map((field) => {
                       const isSelected = selectedFieldId === field.id
-                      const isDragging = draggingFieldId === field.id
                       const scale = zoomLevel / 100
                       const fX = (field.x ?? 60) * scale
                       const fY = (field.y ?? 400) * scale
                       const fW = (field.width ?? 220) * scale
-                      const fH = (field.height ?? 48) * scale
+                      const fH = (field.height ?? 46) * scale
 
                       const signer = signers[field.signerIndex || 0] || signers[0] || { name: 'Candidate' }
 
-                      let borderColor = isSelected ? '#2563EB' : '#0284C7'
-                      let bgColor = isSelected ? '#EFF6FF' : '#F0F9FF'
-                      let icon = '📝'
-                      let tagLabel = field.label
-
-                      if (field.type === 'signature') {
-                        borderColor = isSelected ? '#2563EB' : '#D97706'
-                        bgColor = isSelected ? '#EFF6FF' : 'rgba(254, 243, 199, 0.95)'
-                        icon = '✍️'
-                      } else if (field.type === 'initials') {
-                        borderColor = isSelected ? '#2563EB' : '#7C3AED'
-                        bgColor = isSelected ? '#EFF6FF' : '#F5F3FF'
-                        icon = 'Aa'
-                      } else if (field.type === 'date') {
-                        borderColor = isSelected ? '#2563EB' : '#059669'
-                        bgColor = isSelected ? '#EFF6FF' : '#ECFDF5'
-                        icon = '📅'
-                      } else if (field.type === 'name') {
-                        borderColor = isSelected ? '#2563EB' : '#0284C7'
-                        bgColor = isSelected ? '#EFF6FF' : '#F0F9FF'
-                        icon = '👤'
-                      } else if (field.type === 'textbox') {
-                        borderColor = isSelected ? '#2563EB' : '#475569'
-                        bgColor = isSelected ? '#EFF6FF' : '#F8FAFC'
-                        icon = '🔤'
-                      } else if (field.type === 'checkbox') {
-                        borderColor = isSelected ? '#2563EB' : '#0D9488'
-                        bgColor = isSelected ? '#EFF6FF' : '#F0FDFA'
-                        icon = '☑'
+                      // In Preview Mode (Screenshot 4): Render interactive candidate view!
+                      if (isPreviewMode) {
+                        return (
+                          <div
+                            key={field.id}
+                            style={{
+                              position: 'absolute',
+                              left: fX,
+                              top: fY,
+                              width: fW,
+                              minHeight: fH,
+                              zIndex: 20,
+                              boxSizing: 'border-box'
+                            }}
+                          >
+                            {field.type === 'signature' ? (
+                              <div
+                                style={{
+                                  width: '100%',
+                                  height: '100%',
+                                  backgroundColor: '#FEF2F2',
+                                  border: '2px dashed #DC2626',
+                                  borderRadius: 6,
+                                  color: '#DC2626',
+                                  fontSize: 12.5 * scale,
+                                  fontWeight: 800,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  gap: 6,
+                                  padding: '6px 10px',
+                                  boxSizing: 'border-box',
+                                  boxShadow: '0 2px 6px rgba(220, 38, 38, 0.15)'
+                                }}
+                              >
+                                <span>✍️</span> Click to sign *
+                              </div>
+                            ) : field.type === 'date' ? (
+                              <div
+                                style={{
+                                  width: '100%',
+                                  height: '100%',
+                                  backgroundColor: '#F8FAFC',
+                                  border: '1px solid #CBD5E1',
+                                  borderRadius: 4,
+                                  padding: '6px 10px',
+                                  fontSize: 12 * scale,
+                                  fontWeight: 700,
+                                  color: '#0F172A',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  boxSizing: 'border-box'
+                                }}
+                              >
+                                {new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }).replace(/\//g, ' / ')}
+                              </div>
+                            ) : field.type === 'name' ? (
+                              <div
+                                style={{
+                                  width: '100%',
+                                  height: '100%',
+                                  backgroundColor: '#F8FAFC',
+                                  border: '1px solid #CBD5E1',
+                                  borderRadius: 4,
+                                  padding: '6px 10px',
+                                  fontSize: 12 * scale,
+                                  fontWeight: 700,
+                                  color: '#0F172A',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  boxSizing: 'border-box'
+                                }}
+                              >
+                                {signer.name || 'Candidate Legal Name'}
+                              </div>
+                            ) : (
+                              <div
+                                style={{
+                                  width: '100%',
+                                  height: '100%',
+                                  backgroundColor: '#FFFFFF',
+                                  border: '1px solid #CBD5E1',
+                                  borderRadius: 4,
+                                  padding: '6px 10px',
+                                  fontSize: 11.5 * scale,
+                                  color: '#64748B',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  boxSizing: 'border-box'
+                                }}
+                              >
+                                {field.label} {field.required ? '*' : ''}
+                              </div>
+                            )}
+                          </div>
+                        )
                       }
 
+                      // In Editor Mode (Screenshot 3): Cyan HelloSign placement box!
                       return (
                         <div
                           key={field.id}
@@ -2404,11 +3118,11 @@ export default function SmartSignRtrPage() {
                             top: fY,
                             width: fW,
                             minHeight: fH,
-                            backgroundColor: bgColor,
-                            border: isSelected ? '2.5px solid #2563EB' : `2px dashed ${borderColor}`,
-                            borderRadius: 6,
+                            backgroundColor: isSelected ? '#D8F3F7' : 'rgba(216, 243, 247, 0.88)',
+                            border: isSelected ? '2px solid #0087A4' : '1.5px solid #00A3C4',
+                            borderRadius: 4,
                             padding: '4px 8px',
-                            boxShadow: isSelected ? '0 4px 16px rgba(37, 99, 235, 0.35)' : '0 2px 6px rgba(0,0,0,0.06)',
+                            boxShadow: isSelected ? '0 0 0 2px rgba(0, 163, 196, 0.35)' : '0 1px 4px rgba(0,0,0,0.06)',
                             cursor: 'move',
                             userSelect: 'none',
                             zIndex: isSelected ? 30 : 15,
@@ -2418,11 +3132,20 @@ export default function SmartSignRtrPage() {
                             boxSizing: 'border-box'
                           }}
                         >
+                          {/* 4 Corner Resize Handles when selected (Screenshot 3) */}
+                          {isSelected && (
+                            <>
+                              <div style={{ position: 'absolute', left: -4, top: -4, width: 7, height: 7, backgroundColor: '#FFFFFF', border: '1.5px solid #0087A4', borderRadius: 1 }} />
+                              <div style={{ position: 'absolute', right: -4, top: -4, width: 7, height: 7, backgroundColor: '#FFFFFF', border: '1.5px solid #0087A4', borderRadius: 1 }} />
+                              <div style={{ position: 'absolute', left: -4, bottom: -4, width: 7, height: 7, backgroundColor: '#FFFFFF', border: '1.5px solid #0087A4', borderRadius: 1 }} />
+                              <div style={{ position: 'absolute', right: -4, bottom: -4, width: 7, height: 7, backgroundColor: '#FFFFFF', border: '1.5px solid #0087A4', borderRadius: 1 }} />
+                            </>
+                          )}
+
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                              <span style={{ fontSize: 10, color: '#64748B', cursor: 'grab' }}>⠿</span>
-                              <span style={{ fontSize: 11 * scale, fontWeight: 800, color: '#0F172A', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
-                                {icon} {tagLabel} {field.required ? '*' : ''}
+                              <span style={{ fontSize: 11 * scale, fontWeight: 800, color: '#0A6C84', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                                {field.label} {field.required ? '*' : ''}
                               </span>
                             </div>
                             <button
@@ -2434,11 +3157,12 @@ export default function SmartSignRtrPage() {
                               style={{
                                 background: 'none',
                                 border: 'none',
-                                color: '#EF4444',
-                                fontSize: 12,
+                                color: '#0A6C84',
+                                fontSize: 11,
                                 cursor: 'pointer',
                                 padding: '0 2px',
-                                lineHeight: 1
+                                lineHeight: 1,
+                                fontWeight: 800
                               }}
                               title="Delete field"
                             >
@@ -2446,68 +3170,23 @@ export default function SmartSignRtrPage() {
                             </button>
                           </div>
 
-                          <div style={{ fontSize: 9.5 * scale, color: '#64748B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          <div style={{ fontSize: 9.5 * scale, color: '#0E7490', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: 600 }}>
                             Signer: {signer.name || 'Candidate'}
                           </div>
                         </div>
                       )
                     })}
-
-                    {/* Placed Fields Summary Section at bottom */}
-                    <div style={{ marginTop: 48, paddingTop: 20, borderTop: '2px dashed #CBD5E1' }}>
-                      <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <span>✦</span> Required Document Signatures ({placedFields.length} fields placed)
-                      </div>
-                      <div style={{ fontSize: 11.5, color: '#64748B', marginBottom: 12 }}>
-                        Fields appear on the document canvas above. Click any field below to navigate directly to it, or drag it on the document:
-                      </div>
-
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10 }}>
-                        {placedFields.map(f => {
-                          const isSel = selectedFieldId === f.id
-                          return (
-                            <div
-                              key={f.id}
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                setSelectedFieldId(f.id)
-                                if (docScrollContainerRef.current) {
-                                  docScrollContainerRef.current.scrollTo({ top: (f.y - 120) * (zoomLevel / 100), behavior: 'smooth' })
-                                }
-                              }}
-                              style={{
-                                border: isSel ? '2px solid #2563EB' : '1px solid #E2E8F0',
-                                backgroundColor: isSel ? '#EFF6FF' : '#F8FAFC',
-                                borderRadius: 6,
-                                padding: '8px 12px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                cursor: 'pointer'
-                              }}
-                            >
-                              <div style={{ fontSize: 12, fontWeight: 700, color: isSel ? '#1D4ED8' : '#334155' }}>
-                                {f.label} {f.required && <span style={{ color: '#EF4444' }}>*</span>}
-                              </div>
-                              <span style={{ fontSize: 10.5, color: '#64748B' }}>
-                                X: {f.x}, Y: {f.y}
-                              </span>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    </div>
                   </div>
                 </div>
 
-                {/* Footer Bar (Screenshot 4 & 5: Preview, Back, Next) */}
+                {/* Footer Bar (Screenshot 2: Preview toggle, Back, Next) */}
                 <div style={{ height: 56, backgroundColor: '#FFFFFF', borderTop: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px' }}>
                   <button
                     type="button"
-                    onClick={() => showToast('Preview mode active')}
-                    style={{ background: 'none', border: 'none', color: '#475569', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+                    onClick={() => setIsPreviewMode(!isPreviewMode)}
+                    style={{ background: 'none', border: 'none', color: isPreviewMode ? '#0061FE' : '#475569', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
                   >
-                    👁 Preview
+                    <span>{isPreviewMode ? '✏️' : '👁'}</span> {isPreviewMode ? 'Return to editing' : 'Preview document'}
                   </button>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -2520,8 +3199,11 @@ export default function SmartSignRtrPage() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => setWizardStep(4)}
-                      style={{ backgroundColor: '#0F172A', color: '#FFFFFF', border: 'none', padding: '8px 22px', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+                      onClick={() => {
+                        setIsPreviewMode(false)
+                        setWizardStep(4)
+                      }}
+                      style={{ backgroundColor: '#0061FE', color: '#FFFFFF', border: 'none', padding: '8px 24px', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
                     >
                       Next
                     </button>
@@ -2529,30 +3211,91 @@ export default function SmartSignRtrPage() {
                 </div>
               </div>
 
-              {/* Right Inspector Sidebar (Screenshot 4 & 5) */}
-              <div style={{ width: 230, borderLeft: '1px solid #E2E8F0', backgroundColor: '#FFFFFF', padding: 20, display: 'flex', flexDirection: 'column' }}>
-                {selectedFieldId ? (
+              {/* Right Inspector Sidebar (Screenshots 3 & 4) */}
+              <div style={{ width: 250, borderLeft: '1px solid #E2E8F0', backgroundColor: '#FFFFFF', padding: 20, display: 'flex', flexDirection: 'column' }}>
+                {isPreviewMode ? (
+                  /* Preview Mode Inspector (Screenshot 4) */
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', marginBottom: 6 }}>Signer</div>
+                    <div style={{ backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, padding: 12, marginBottom: 16 }}>
+                      <div style={{ fontSize: 11, color: '#64748B', marginBottom: 2 }}>Viewing as:</div>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A' }}>{signers[0]?.name || 'Candidate Signer'}</div>
+                    </div>
+
+                    <div style={{ backgroundColor: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 8, padding: 14, marginBottom: 18 }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: '#1E40AF', marginBottom: 4 }}>
+                        Fields to complete:
+                      </div>
+                      <div style={{ fontSize: 13.5, fontWeight: 800, color: '#1D4ED8' }}>
+                        {placedFields.filter(f => f.required).length} required field{placedFields.filter(f => f.required).length !== 1 ? 's' : ''}
+                      </div>
+                    </div>
+
+                    <p style={{ fontSize: 12, color: '#64748B', lineHeight: 1.5 }}>
+                      This live preview displays the red <strong>[ Click to sign * ]</strong> prompt exactly as your recipient will experience it.
+                    </p>
+                  </div>
+                ) : selectedFieldId ? (
+                  /* Field Properties Inspector (Screenshot 3) */
                   (() => {
                     const f = placedFields.find(x => x.id === selectedFieldId)
                     if (!f) return null
                     return (
                       <div>
-                        <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A', marginBottom: 14 }}>Field Settings</div>
-                        <div style={{ marginBottom: 12 }}>
-                          <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#64748B', marginBottom: 4 }}>Label</label>
-                          <input
-                            type="text"
-                            value={f.label}
-                            onChange={(e) => {
-                              const updated = placedFields.map(x => x.id === f.id ? { ...x, label: e.target.value } : x)
-                              setPlacedFields(updated)
-                            }}
-                            style={{ width: '100%', padding: '6px 10px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 12 }}
-                          />
+                        {/* Header: UPPERCASE FIELD TYPE + Trash icon (Screenshot 3) */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, paddingBottom: 10, borderBottom: '1px solid #E2E8F0' }}>
+                          <span style={{ fontSize: 13, fontWeight: 900, color: '#0F172A', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                            {f.type.toUpperCase()}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveField(f.id)}
+                            style={{ background: 'none', border: 'none', color: '#DC2626', cursor: 'pointer', padding: 4 }}
+                            title="Delete this field"
+                          >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                          </button>
                         </div>
 
+                        {/* Assigned to dropdown (Screenshot 3) */}
                         <div style={{ marginBottom: 14 }}>
-                          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#334155', cursor: 'pointer' }}>
+                          <label style={{ display: 'block', fontSize: 11.5, fontWeight: 700, color: '#475569', marginBottom: 5 }}>Assigned to</label>
+                          <select
+                            value={f.signerIndex || 0}
+                            onChange={(e) => {
+                              const updated = placedFields.map(x => x.id === f.id ? { ...x, signerIndex: Number(e.target.value) } : x)
+                              setPlacedFields(updated)
+                            }}
+                            style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 12.5, backgroundColor: '#FFFFFF' }}
+                          >
+                            {signers.map((s, idx) => (
+                              <option key={s.id || idx} value={idx}>{s.name} ({s.email || 'Signer ' + (idx + 1)})</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Field name (required) input (Screenshot 3) */}
+                        <div style={{ marginBottom: 14 }}>
+                          <label style={{ display: 'block', fontSize: 11.5, fontWeight: 700, color: '#475569', marginBottom: 5 }}>
+                            Field name (required)
+                          </label>
+                          <input
+                            type="text"
+                            value={f.fieldName || f.label.replace(/\s+/g, '')}
+                            onChange={(e) => {
+                              const updated = placedFields.map(x => x.id === f.id ? { ...x, fieldName: e.target.value } : x)
+                              setPlacedFields(updated)
+                            }}
+                            style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 12.5 }}
+                          />
+                          <div style={{ fontSize: 10.5, color: '#64748B', marginTop: 4 }}>
+                            Must be unique within the document
+                          </div>
+                        </div>
+
+                        {/* Required field checkbox (Screenshot 3) */}
+                        <div style={{ marginBottom: 18 }}>
+                          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, color: '#334155', cursor: 'pointer', fontWeight: 600 }}>
                             <input
                               type="checkbox"
                               checked={f.required}
@@ -2560,7 +3303,7 @@ export default function SmartSignRtrPage() {
                                 const updated = placedFields.map(x => x.id === f.id ? { ...x, required: e.target.checked } : x)
                                 setPlacedFields(updated)
                               }}
-                              style={{ accentColor: '#2563EB' }}
+                              style={{ width: 16, height: 16, accentColor: '#0061FE' }}
                             />
                             Required field
                           </label>
@@ -2573,9 +3316,8 @@ export default function SmartSignRtrPage() {
                             <button
                               type="button"
                               onClick={() => {
-                                const contentLen = (documentContent || '').length
-                                const targetY = Math.max(500, Math.min(1800, Math.round(contentLen * 0.45) + 120))
-                                const updated = placedFields.map(x => x.id === f.id ? { ...x, y: targetY + 60 } : x)
+                                const targetY = 610
+                                const updated = placedFields.map(x => x.id === f.id ? { ...x, y: targetY } : x)
                                 setPlacedFields(updated)
                                 if (docScrollContainerRef.current) {
                                   docScrollContainerRef.current.scrollTo({ top: (targetY - 60) * (zoomLevel / 100), behavior: 'smooth' })
@@ -2607,51 +3349,53 @@ export default function SmartSignRtrPage() {
                             </button>
                           </div>
                         </div>
-
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveField(f.id)}
-                          style={{ backgroundColor: '#FEE2E2', color: '#DC2626', border: 'none', padding: '6px 12px', borderRadius: 6, fontSize: 11.5, fontWeight: 700, cursor: 'pointer', width: '100%' }}
-                        >
-                          Delete Field
-                        </button>
                       </div>
                     )
                   })()
                 ) : (
+                  /* No field selected state (Screenshot 2) */
                   <div style={{ textAlign: 'center', color: '#94A3B8', marginTop: 40 }}>
-                    <div style={{ fontSize: 24, marginBottom: 8 }}>✎</div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#334155', marginBottom: 4 }}>Nothing selected</div>
-                    <div style={{ fontSize: 11.5, color: '#94A3B8' }}>Select or click a field to configure</div>
+                    <div style={{ width: 60, height: 80, border: '1.5px solid #CBD5E1', borderRadius: 4, margin: '0 auto 12px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#F8FAFC', fontSize: 11, fontWeight: 700, color: '#64748B' }}>
+                      Page 1
+                    </div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#334155', marginBottom: 4 }}>Select a field</div>
+                    <div style={{ fontSize: 11.5, color: '#94A3B8', lineHeight: 1.4 }}>
+                      Click on any cyan box on the document to edit properties, or add new fields from the left palette.
+                    </div>
                   </div>
                 )}
               </div>
             </div>
           )}
 
-          {/* ─── STEP 4: REVIEW AND SEND ─── */}
+          {/* ─── STEP 4: REVIEW AND SEND (Matching Screenshot 5) ─── */}
           {wizardStep === 4 && (
-            <div style={{ flex: 1, padding: '40px 24px', overflowY: 'auto', display: 'flex', justifyContent: 'center' }}>
-              <div style={{ maxWidth: 640, width: '100%' }}>
-                <h2 style={{ fontSize: 22, fontWeight: 900, color: '#0F172A', marginBottom: 8 }}>Review and send</h2>
+            <div style={{ flex: 1, padding: '40px 24px', overflowY: 'auto', display: 'flex', justifyContent: 'center', backgroundColor: '#F8FAFC' }}>
+              <div style={{ maxWidth: 680, width: '100%' }}>
+                <h2 style={{ fontSize: 24, fontWeight: 900, color: '#0F172A', marginBottom: 6 }}>Review and send</h2>
                 <p style={{ fontSize: 13.5, color: '#64748B', marginBottom: 24 }}>
                   Add an optional message for your signers and review document details.
                 </p>
 
                 {createdAgreement ? (
-                  <div style={{ backgroundColor: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 12, padding: 24, textAlign: 'center' }}>
-                    <div style={{ width: 48, height: 48, borderRadius: '50%', backgroundColor: '#22C55E', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, margin: '0 auto 12px' }}>✓</div>
-                    <h3 style={{ fontSize: 18, fontWeight: 800, color: '#14532D', marginBottom: 6 }}>Ready for Signature!</h3>
-                    <p style={{ fontSize: 13, color: '#166534', marginBottom: 18 }}>
-                      Direct signing link has been generated for <strong>{createdAgreement.candidateName}</strong>:
+                  <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #BBF7D0', borderRadius: 12, padding: 32, textAlign: 'center', boxShadow: '0 4px 16px rgba(0,0,0,0.06)' }}>
+                    <div style={{ width: 52, height: 52, borderRadius: '50%', backgroundColor: '#22C55E', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, margin: '0 auto 14px' }}>✓</div>
+                    <h3 style={{ fontSize: 20, fontWeight: 900, color: '#14532D', marginBottom: 8 }}>Ready for Signature!</h3>
+                    <p style={{ fontSize: 13.5, color: '#166534', marginBottom: 8 }}>
+                      Direct signing link generated and notification dispatched to <strong>{createdAgreement.candidateName}</strong> ({createdAgreement.candidateEmail}):
                     </p>
+                    {ccRecipients.length > 0 && (
+                      <p style={{ fontSize: 12, color: '#475569', marginBottom: 20 }}>
+                        CC Copies notified: {ccRecipients.join(', ')}
+                      </p>
+                    )}
 
-                    <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
+                    <div style={{ display: 'flex', gap: 8, marginBottom: 22 }}>
                       <input
                         type="text"
                         readOnly
                         value={createdAgreement.fullSigningUrl}
-                        style={{ flex: 1, padding: '8px 12px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 12, backgroundColor: '#FFFFFF' }}
+                        style={{ flex: 1, padding: '9px 12px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 12.5, backgroundColor: '#F8FAFC', color: '#0F172A' }}
                       />
                       <button
                         type="button"
@@ -2661,7 +3405,7 @@ export default function SmartSignRtrPage() {
                             showToast('✓ Link copied to clipboard!')
                           }
                         }}
-                        style={{ backgroundColor: '#0F172A', color: '#FFFFFF', border: 'none', padding: '8px 16px', borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+                        style={{ backgroundColor: '#0F172A', color: '#FFFFFF', border: 'none', padding: '9px 18px', borderRadius: 6, fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}
                       >
                         Copy Link
                       </button>
@@ -2671,7 +3415,7 @@ export default function SmartSignRtrPage() {
                       <button
                         type="button"
                         onClick={() => window.open(createdAgreement.signingUrl, '_blank')}
-                        style={{ backgroundColor: '#0061FE', color: '#FFFFFF', border: 'none', padding: '9px 18px', borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}
+                        style={{ backgroundColor: '#0061FE', color: '#FFFFFF', border: 'none', padding: '10px 22px', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
                       >
                         Open Signer View ↗
                       </button>
@@ -2681,52 +3425,125 @@ export default function SmartSignRtrPage() {
                           setWizardOpen(false)
                           setActiveTab('documents')
                         }}
-                        style={{ backgroundColor: '#FFFFFF', color: '#334155', border: '1px solid #CBD5E1', padding: '9px 18px', borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}
+                        style={{ backgroundColor: '#FFFFFF', color: '#334155', border: '1px solid #CBD5E1', padding: '10px 20px', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
                       >
                         Done / View Documents
                       </button>
                     </div>
                   </div>
                 ) : (
-                  <div>
-                    <div style={{ backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 10, padding: 18, marginBottom: 20 }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', marginBottom: 8 }}>Document Summary</div>
-                      <div style={{ fontSize: 13.5, fontWeight: 800, color: '#0F172A', marginBottom: 2 }}>{documentTitle}</div>
-                      <div style={{ fontSize: 12.5, color: '#475569' }}>
-                        Signer: <strong>{signers[0]?.name}</strong> ({signers[0]?.email})
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                    {/* Section 1: Signers (Screenshot 5) */}
+                    <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 10, padding: '20px 22px' }}>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: '#0F172A', marginBottom: 12 }}>Signers</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 8, backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0', marginBottom: 12 }}>
+                        <span style={{ width: 26, height: 26, borderRadius: '50%', backgroundColor: '#0284C7', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800 }}>
+                          {(signers[0]?.name || 'P').charAt(0).toUpperCase()}
+                        </span>
+                        <div style={{ flex: 1 }}>
+                          <span style={{ fontSize: 13, fontWeight: 800, color: '#0F172A' }}>{signers[0]?.name}</span>
+                          <span style={{ fontSize: 12, color: '#64748B', marginLeft: 8 }}>({signers[0]?.email || 'No email specified'})</span>
+                        </div>
                       </div>
-                      <div style={{ fontSize: 12, color: '#0284C7', marginTop: 4 }}>
-                        {placedFields.length} interactive fields placed (Signatures, Dates, Names)
+
+                      {/* CC Recipients Section */}
+                      {ccRecipients.length > 0 && (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+                          {ccRecipients.map(email => (
+                            <span key={email} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, backgroundColor: '#EFF6FF', color: '#1E40AF', padding: '4px 10px', borderRadius: 20, fontSize: 11.5, fontWeight: 600 }}>
+                              <span>CC: {email}</span>
+                              <button type="button" onClick={() => handleRemoveCc(email)} style={{ background: 'none', border: 'none', color: '#1E40AF', cursor: 'pointer', fontSize: 12, padding: 0 }}>✕</button>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      {showAddCc ? (
+                        <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                          <input
+                            type="email"
+                            value={ccInput}
+                            onChange={(e) => setCcInput(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleAddCc()}
+                            placeholder="Enter CC email (e.g. manager@coolsofttech.com)"
+                            style={{ flex: 1, padding: '7px 12px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 12.5 }}
+                          />
+                          <button
+                            type="button"
+                            onClick={handleAddCc}
+                            style={{ backgroundColor: '#0F172A', color: '#FFFFFF', border: 'none', padding: '7px 16px', borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+                          >
+                            Add
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setShowAddCc(false)}
+                            style={{ backgroundColor: 'transparent', color: '#64748B', border: 'none', padding: '7px 10px', fontSize: 12, cursor: 'pointer' }}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setShowAddCc(true)}
+                          style={{ background: 'none', border: 'none', color: '#0061FE', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                        >
+                          <span>+</span> Add CC recipient
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Section 2: Document Options (Screenshot 5) */}
+                    <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 10, padding: '20px 22px' }}>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: '#0F172A', marginBottom: 12 }}>Document options</div>
+                      <div>
+                        <label style={{ display: 'block', fontSize: 11.5, fontWeight: 700, color: '#475569', marginBottom: 6 }}>Document expiration</label>
+                        <select
+                          value={expiryDays}
+                          onChange={(e) => setExpiryDays(Number(e.target.value))}
+                          style={{ width: '100%', maxWidth: 280, padding: '8px 12px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 12.5, backgroundColor: '#FFFFFF' }}
+                        >
+                          <option value={30}>30 days</option>
+                          <option value={60}>60 days</option>
+                          <option value={90}>90 days</option>
+                          <option value={180}>180 days</option>
+                        </select>
                       </div>
                     </div>
 
-                    <div style={{ marginBottom: 16 }}>
-                      <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#334155', marginBottom: 6 }}>Email Subject:</label>
-                      <input
-                        type="text"
-                        value={emailSubject}
-                        onChange={(e) => setEmailSubject(e.target.value)}
-                        placeholder={`Please sign: ${documentTitle}`}
-                        style={{ width: '100%', padding: '9px 12px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 13 }}
-                      />
+                    {/* Section 3: Email to signers (Screenshot 5) */}
+                    <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 10, padding: '20px 22px' }}>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: '#0F172A', marginBottom: 14 }}>Email to signers</div>
+
+                      <div style={{ marginBottom: 16 }}>
+                        <label style={{ display: 'block', fontSize: 11.5, fontWeight: 700, color: '#475569', marginBottom: 6 }}>Email Title / Subject:</label>
+                        <input
+                          type="text"
+                          value={emailSubject || `Signature requested: ${documentTitle}`}
+                          onChange={(e) => setEmailSubject(e.target.value)}
+                          placeholder={`Signature requested: ${documentTitle}`}
+                          style={{ width: '100%', padding: '9px 12px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 13 }}
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ display: 'block', fontSize: 11.5, fontWeight: 700, color: '#475569', marginBottom: 6 }}>Message to signers (optional):</label>
+                        <textarea
+                          rows={4}
+                          value={emailMessage || `Hi ${signers[0]?.name || ''},\n\nPlease review and electronically sign this Florida Exhibit E Resume Self-Certification document for our client submission.\n\nThank you,\nCOOLSOFT Staffing Team`}
+                          onChange={(e) => setEmailMessage(e.target.value)}
+                          style={{ width: '100%', padding: '9px 12px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 13, resize: 'vertical', lineHeight: 1.5 }}
+                        />
+                      </div>
                     </div>
 
-                    <div style={{ marginBottom: 28 }}>
-                      <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#334155', marginBottom: 6 }}>Message to signers (optional):</label>
-                      <textarea
-                        rows={4}
-                        value={emailMessage}
-                        onChange={(e) => setEmailMessage(e.target.value)}
-                        placeholder="Hi! Please review and complete this Right to Represent agreement for our client submission."
-                        style={{ width: '100%', padding: '9px 12px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 13, resize: 'vertical' }}
-                      />
-                    </div>
-
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
+                    {/* Footer Actions (Screenshot 5) */}
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 8 }}>
                       <button
                         type="button"
                         onClick={() => setWizardStep(3)}
-                        style={{ backgroundColor: '#F8FAFC', color: '#475569', border: '1px solid #CBD5E1', padding: '10px 22px', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+                        style={{ backgroundColor: '#FFFFFF', color: '#475569', border: '1px solid #CBD5E1', padding: '10px 22px', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
                       >
                         Back
                       </button>
@@ -2734,9 +3551,9 @@ export default function SmartSignRtrPage() {
                         type="button"
                         onClick={handleSendForSignature}
                         disabled={isSending}
-                        style={{ backgroundColor: '#0061FE', color: '#FFFFFF', border: 'none', padding: '10px 24px', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: isSending ? 'wait' : 'pointer' }}
+                        style={{ backgroundColor: '#0061FE', color: '#FFFFFF', border: 'none', padding: '10px 26px', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: isSending ? 'wait' : 'pointer', boxShadow: '0 2px 8px rgba(0, 97, 254, 0.3)' }}
                       >
-                        {isSending ? 'Sending...' : 'Send for signature'}
+                        {isSending ? 'Sending Document...' : 'Send for signature'}
                       </button>
                     </div>
                   </div>
