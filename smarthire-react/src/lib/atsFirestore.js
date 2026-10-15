@@ -21,6 +21,7 @@ import {
   query,
   orderBy,
   limit,
+  where,
   onSnapshot,
   serverTimestamp
 } from 'firebase/firestore'
@@ -40,6 +41,46 @@ export const REQUISITIONS_COLLECTION = 'atsRequisitions'
 export const USERS_COLLECTION = 'atsUsers'
 export const MESSAGES_COLLECTION = 'atsMessages'
 export const INQUIRIES_COLLECTION = 'atsInquiries'
+export const HOTLISTS_COLLECTION = 'atsHotlists'
+
+// ─────────────────────────────────────────
+// BILLING & PERFORMANCE OPTIMIZATION ENGINE
+// Multi-tier in-memory & localStorage caching to minimize Firestore document reads and prevent billing spikes.
+// ─────────────────────────────────────────
+const CACHE_TTL_MS = 3 * 60 * 1000 // 3 minutes TTL for candidates, jobs, hotlists
+const USERS_CACHE_TTL_MS = 10 * 60 * 1000 // 10 minutes TTL for team users
+
+const candidatesCache = { data: null, timestamp: 0 }
+const jobsCache = { data: null, timestamp: 0 }
+const usersCache = { data: null, timestamp: 0 }
+const hotlistsCache = { data: null, timestamp: 0 }
+const applicationsCache = { data: null, timestamp: 0 }
+const inquiriesCache = { data: null, timestamp: 0 }
+const messagesCache = { data: null, timestamp: 0 }
+
+/**
+ * Manually bust or clear the local Firestore cache across all collections
+ */
+export function clearAtsFirestoreCache() {
+  candidatesCache.data = null
+  candidatesCache.timestamp = 0
+  jobsCache.data = null
+  jobsCache.timestamp = 0
+  usersCache.data = null
+  usersCache.timestamp = 0
+  hotlistsCache.data = null
+  hotlistsCache.timestamp = 0
+  applicationsCache.data = null
+  applicationsCache.timestamp = 0
+  inquiriesCache.data = null
+  inquiriesCache.timestamp = 0
+  messagesCache.data = null
+  messagesCache.timestamp = 0
+  try {
+    localStorage.removeItem('smarthire_firestore_candidates_cache')
+    localStorage.removeItem('smarthire_firestore_candidates_meta')
+  } catch (e) {}
+}
 
 // ─────────────────────────────────────────
 // 1. CANDIDATE & LEGAL DOCS (A to Z Structured)
@@ -117,13 +158,29 @@ export async function saveCandidate(canId, data) {
     ...(data.lastChangedRole     && { lastChangedRole:     data.lastChangedRole }),
     ...(cleanReqId               && { reqId:               cleanReqId, job_id: `J-${cleanReqId}`, jobId: cleanReqId }),
     ...(data.resumeName          && { resumeName:          data.resumeName }),
-    ...(data.resumeText          && { resumeText:          data.resumeText }),
+    ...(data.resumeText          && { resumeText:          typeof data.resumeText === 'string' && data.resumeText.length > 50000 ? data.resumeText.slice(0, 50000) : data.resumeText }),
+    ...((data.resumeText || data.resumeSnippet) && { resumeSnippet: data.resumeSnippet || (typeof data.resumeText === 'string' ? data.resumeText.slice(0, 300) : '') }),
     ...(data.resumeUrl           && { resumeUrl:           data.resumeUrl }),
     legalDocs: cleanedLegalDocs,
     updatedAt: serverTimestamp()
   }
 
   await setDoc(doc(db, CANDIDATES_COLLECTION, String(canId)), payload, { merge: true })
+
+  // Synchronously update in-memory cache to guarantee instant UI rendering with 0 extra reads
+  if (candidatesCache.data) {
+    const cleanId = String(canId)
+    const existingIdx = candidatesCache.data.findIndex(c => String(c.id || c.canId) === cleanId)
+    if (existingIdx >= 0) {
+      candidatesCache.data[existingIdx] = { ...candidatesCache.data[existingIdx], ...payload }
+    } else {
+      candidatesCache.data.unshift(payload)
+    }
+    try {
+      localStorage.setItem('smarthire_firestore_candidates_cache', JSON.stringify(candidatesCache.data))
+    } catch (e) {}
+  }
+
   return payload
 }
 
@@ -216,23 +273,43 @@ export async function saveAtsJob(jobId, jobData) {
   }
 
   await setDoc(doc(db, JOBS_COLLECTION, cleanId), payload, { merge: true })
+
+  // Synchronously update jobsCache to eliminate duplicate reads
+  if (jobsCache.data) {
+    const idx = jobsCache.data.findIndex(j => String(j.id) === cleanId)
+    if (idx >= 0) {
+      jobsCache.data[idx] = { ...jobsCache.data[idx], ...payload }
+    } else {
+      jobsCache.data.unshift(payload)
+    }
+  }
+
   return payload
 }
 
 /**
- * Fetch all Jobs from Firestore
+ * Fetch all Jobs from Firestore with multi-tier caching (Zero extra document reads on tab navigation)
  */
-export async function getAtsJobs() {
+export async function getAtsJobs(opts = {}) {
   try {
+    const force = opts && opts.forceRefresh === true
+    const now = Date.now()
+    if (!force && jobsCache.data && (now - jobsCache.timestamp < CACHE_TTL_MS)) {
+      return jobsCache.data
+    }
+
     const snap = await getDocs(collection(db, JOBS_COLLECTION))
     const jobs = []
     snap.forEach(docSnap => {
       jobs.push({ id: docSnap.id, ...docSnap.data() })
     })
+
+    jobsCache.data = jobs
+    jobsCache.timestamp = now
     return jobs
   } catch (err) {
     console.warn('Failed to fetch jobs from Firestore:', err)
-    return []
+    return jobsCache.data || []
   }
 }
 
@@ -357,19 +434,32 @@ export async function saveCareerApplication(appData, resumeFileOrDataUrl = null)
 }
 
 /**
- * Fetch all Applications from Firestore
+ * Fetch all Applications from Firestore with caching & optional limit
  */
-export async function getCareerApplications() {
+export async function getCareerApplications(opts = {}) {
   try {
-    const snap = await getDocs(collection(db, APPLICATIONS_COLLECTION))
+    const force = opts && opts.forceRefresh === true
+    const now = Date.now()
+    if (!force && applicationsCache.data && (now - applicationsCache.timestamp < CACHE_TTL_MS)) {
+      return applicationsCache.data
+    }
+
+    const q = (opts && opts.limit && Number(opts.limit) > 0)
+      ? query(collection(db, APPLICATIONS_COLLECTION), limit(Number(opts.limit)))
+      : collection(db, APPLICATIONS_COLLECTION)
+
+    const snap = await getDocs(q)
     const apps = []
     snap.forEach(docSnap => {
       apps.push({ id: docSnap.id, ...docSnap.data() })
     })
+
+    applicationsCache.data = apps
+    applicationsCache.timestamp = now
     return apps
   } catch (err) {
     console.warn('Failed to fetch applications from Firestore:', err)
-    return []
+    return applicationsCache.data || []
   }
 }
 
@@ -378,30 +468,76 @@ export async function getCareerApplications() {
 // ─────────────────────────────────────────
 
 /**
- * Fetch all Candidates from Firestore atsCandidates collection
+ * Fetch Candidates from Firestore atsCandidates collection with tiered caching & query limits.
+ * Protects Firebase billing by serving cached data on navigation/re-renders (0 Firestore reads).
  */
-export async function getAllCandidates() {
+export async function getAllCandidates(opts = {}) {
   try {
-    const snap = await getDocs(collection(db, CANDIDATES_COLLECTION))
+    const force = opts && opts.forceRefresh === true
+    const now = Date.now()
+    if (!force && candidatesCache.data && (now - candidatesCache.timestamp < CACHE_TTL_MS)) {
+      return candidatesCache.data
+    }
+
+    // Check localStorage cache as fallback if memory cache is empty
+    if (!force && !candidatesCache.data) {
+      try {
+        const stored = localStorage.getItem('smarthire_firestore_candidates_cache')
+        const storedMeta = JSON.parse(localStorage.getItem('smarthire_firestore_candidates_meta') || '{}')
+        if (stored && storedMeta.timestamp && (now - storedMeta.timestamp < CACHE_TTL_MS)) {
+          const parsed = JSON.parse(stored)
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            candidatesCache.data = parsed
+            candidatesCache.timestamp = storedMeta.timestamp
+            return parsed
+          }
+        }
+      } catch (e) {}
+    }
+
+    // Use query limit if requested to prevent massive unconstrained reads
+    let q
+    if (opts && opts.limit && Number(opts.limit) > 0) {
+      q = query(collection(db, CANDIDATES_COLLECTION), limit(Number(opts.limit)))
+    } else {
+      q = collection(db, CANDIDATES_COLLECTION)
+    }
+
+    const snap = await getDocs(q)
     const candidates = []
     snap.forEach(docSnap => {
       candidates.push({ id: docSnap.id, canId: docSnap.id, candidate_id: docSnap.id, ...docSnap.data() })
     })
+
+    // Update in-memory and local storage cache
+    candidatesCache.data = candidates
+    candidatesCache.timestamp = now
+    try {
+      localStorage.setItem('smarthire_firestore_candidates_cache', JSON.stringify(candidates))
+      localStorage.setItem('smarthire_firestore_candidates_meta', JSON.stringify({ timestamp: now, count: candidates.length }))
+    } catch (e) {}
+
     return candidates
   } catch (err) {
     console.warn('Failed to fetch all candidates from Firestore:', err)
-    return []
+    return candidatesCache.data || []
   }
 }
 
 /**
- * Permanently delete a candidate from Firestore
+ * Permanently delete a candidate from Firestore & invalidate cache
  */
 export async function deleteCandidateFirestore(canId) {
   if (!canId) return
   try {
     const cleanId = String(canId).trim()
     await deleteDoc(doc(db, CANDIDATES_COLLECTION, cleanId))
+    if (candidatesCache.data) {
+      candidatesCache.data = candidatesCache.data.filter(c => String(c.id || c.canId) !== cleanId)
+    }
+    try {
+      localStorage.setItem('smarthire_firestore_candidates_cache', JSON.stringify(candidatesCache.data || []))
+    } catch (e) {}
   } catch (err) {
     console.warn('Failed to delete candidate from Firestore:', err)
   }
@@ -496,16 +632,28 @@ export async function saveTeamUsersFirestore(usersList) {
         }, { merge: true })
       }
     }
+    // Update local cache
+    usersCache.data = usersList.map(u => {
+      const { password: _p, ...clean } = u
+      return clean
+    })
+    usersCache.timestamp = Date.now()
   } catch (err) {
     console.warn('Failed to save team users to Firestore:', err)
   }
 }
 
 /**
- * Fetch team users from Firestore
+ * Fetch team users from Firestore with caching
  */
-export async function getTeamUsersFirestore() {
+export async function getTeamUsersFirestore(opts = {}) {
   try {
+    const force = opts && opts.forceRefresh === true
+    const now = Date.now()
+    if (!force && usersCache.data && (now - usersCache.timestamp < USERS_CACHE_TTL_MS)) {
+      return usersCache.data
+    }
+
     const snap = await getDocs(collection(db, USERS_COLLECTION))
     const users = []
     snap.forEach(docSnap => {
@@ -513,28 +661,38 @@ export async function getTeamUsersFirestore() {
       delete data.password // Defensive: never expose password
       users.push({ id: docSnap.id, ...data })
     })
+
+    usersCache.data = users
+    usersCache.timestamp = now
     return users
   } catch (err) {
     console.warn('Failed to fetch team users from Firestore:', err)
-    return []
+    return usersCache.data || []
   }
 }
 
 /**
- * Look up user profile by email in Firestore
+ * Look up user profile by email in Firestore using targeted query (1 document read instead of scanning entire collection)
  */
 export async function getUserProfileByEmailFirestore(email) {
   try {
     if (!email) return null
     const clean = String(email).toLowerCase().trim()
-    const snap = await getDocs(collection(db, USERS_COLLECTION))
+
+    // 1. Check in-memory users cache first (0 reads)
+    if (usersCache.data && (Date.now() - usersCache.timestamp < USERS_CACHE_TTL_MS)) {
+      const cached = usersCache.data.find(u => (u.email || '').toLowerCase().trim() === clean)
+      if (cached) return cached
+    }
+
+    // 2. Targeted Firestore query with where('email', '==', clean) & limit(1) (1 read)
+    const q = query(collection(db, USERS_COLLECTION), where('email', '==', clean), limit(1))
+    const snap = await getDocs(q)
     let found = null
     snap.forEach(docSnap => {
       const data = docSnap.data() || {}
-      if ((data.email || '').toLowerCase().trim() === clean) {
-        delete data.password
-        found = { id: docSnap.id, ...data }
-      }
+      delete data.password
+      found = { id: docSnap.id, ...data }
     })
     return found
   } catch (err) {
@@ -684,19 +842,32 @@ export async function getMessagesFirestore(threadId) {
 }
 
 /**
- * Fetch all threads from Firestore
+ * Fetch all threads from Firestore with caching & optional limit
  */
-export async function getAllThreadsFirestore() {
+export async function getAllThreadsFirestore(opts = {}) {
   try {
-    const snap = await getDocs(collection(db, MESSAGES_COLLECTION))
+    const force = opts && opts.forceRefresh === true
+    const now = Date.now()
+    if (!force && messagesCache.data && (now - messagesCache.timestamp < CACHE_TTL_MS)) {
+      return messagesCache.data
+    }
+
+    const q = (opts && opts.limit && Number(opts.limit) > 0)
+      ? query(collection(db, MESSAGES_COLLECTION), limit(Number(opts.limit)))
+      : collection(db, MESSAGES_COLLECTION)
+
+    const snap = await getDocs(q)
     const threads = []
     snap.forEach(d => {
       threads.push({ id: d.id, ...d.data() })
     })
+
+    messagesCache.data = threads
+    messagesCache.timestamp = now
     return threads
   } catch (err) {
     console.warn('getAllThreadsFirestore warning:', err)
-    return []
+    return messagesCache.data || []
   }
 }
 
@@ -722,6 +893,13 @@ export async function saveInquiryFirestore(inquiryData) {
       updatedAt: serverTimestamp()
     }
     await setDoc(inquiryDocRef, payload, { merge: true })
+
+    if (inquiriesCache.data) {
+      const idx = inquiriesCache.data.findIndex(i => i.id === id)
+      if (idx >= 0) inquiriesCache.data[idx] = { ...inquiriesCache.data[idx], ...payload }
+      else inquiriesCache.data.unshift(payload)
+    }
+
     return payload
   } catch (err) {
     console.warn('saveInquiryFirestore warning:', err)
@@ -730,19 +908,108 @@ export async function saveInquiryFirestore(inquiryData) {
 }
 
 /**
- * Fetch all enterprise inquiries from Firestore
+ * Fetch all enterprise inquiries from Firestore with caching & optional limit
  */
-export async function getInquiriesFirestore() {
+export async function getInquiriesFirestore(opts = {}) {
   try {
-    const snap = await getDocs(collection(db, INQUIRIES_COLLECTION))
+    const force = opts && opts.forceRefresh === true
+    const now = Date.now()
+    if (!force && inquiriesCache.data && (now - inquiriesCache.timestamp < CACHE_TTL_MS)) {
+      return inquiriesCache.data
+    }
+
+    const q = (opts && opts.limit && Number(opts.limit) > 0)
+      ? query(collection(db, INQUIRIES_COLLECTION), limit(Number(opts.limit)))
+      : collection(db, INQUIRIES_COLLECTION)
+
+    const snap = await getDocs(q)
     const inquiries = []
     snap.forEach(d => {
       inquiries.push({ id: d.id, ...d.data() })
     })
+
+    inquiriesCache.data = inquiries
+    inquiriesCache.timestamp = now
     return inquiries
   } catch (err) {
     console.warn('getInquiriesFirestore warning:', err)
-    return []
+    return inquiriesCache.data || []
+  }
+}
+
+// ─────────────────────────────────────────
+// 8. VENDOR HOTLISTS (BATCHED INGESTION — 98% BILLING REDUCTION)
+// ─────────────────────────────────────────
+
+/**
+ * Save vendor hotlist batch to Firestore.
+ * Storing an entire batch of bench profiles in a single document reduces Firestore write
+ * billing by up to 98% (e.g. 50 profiles = 1 write operation instead of 50 writes).
+ */
+export async function saveHotlistBatchFirestore(batchId, batchData) {
+  if (!batchId) throw new Error('batchId is required')
+  const cleanId = String(batchId).trim()
+  const payload = {
+    id: cleanId,
+    vendorName: batchData.vendorName || 'Vendor Partner',
+    vendorEmail: (batchData.vendorEmail || '').toLowerCase().trim(),
+    vendorPhone: batchData.vendorPhone || '',
+    receivedDate: batchData.receivedDate || new Date().toISOString(),
+    recruiterEmail: (batchData.recruiterEmail || '').toLowerCase().trim(),
+    count: Array.isArray(batchData.candidates) ? batchData.candidates.length : 0,
+    candidates: (batchData.candidates || []).map((c, idx) => ({
+      id: c.id || `${cleanId}-${idx + 1}`,
+      name: c.name || c.candidateName || 'Candidate',
+      role: c.role || c.jobTitle || '',
+      skills: Array.isArray(c.skills) ? c.skills : (typeof c.skills === 'string' ? c.skills.split(',').map(s => s.trim()) : []),
+      exp: c.exp || c.experience || '',
+      location: c.location || '',
+      relocation: c.relocation || '',
+      visa: c.visa || c.workAuth || '',
+      rate: c.rate || '',
+      summary: (c.summary || c.notes || '').slice(0, 300)
+    })),
+    updatedAt: serverTimestamp()
+  }
+
+  await setDoc(doc(db, HOTLISTS_COLLECTION, cleanId), payload, { merge: true })
+
+  // Update in-memory hotlists cache
+  if (hotlistsCache.data) {
+    const idx = hotlistsCache.data.findIndex(b => b.id === cleanId)
+    if (idx >= 0) hotlistsCache.data[idx] = payload
+    else hotlistsCache.data.unshift(payload)
+  }
+
+  return payload
+}
+
+/**
+ * Fetch vendor hotlist batches with caching & query limit.
+ * Reads 20 batches (500+ candidates) in only 20 Firestore reads instead of 500 reads.
+ */
+export async function getHotlistBatchesFirestore(opts = {}) {
+  try {
+    const force = opts && opts.forceRefresh === true
+    const now = Date.now()
+    if (!force && hotlistsCache.data && (now - hotlistsCache.timestamp < CACHE_TTL_MS)) {
+      return hotlistsCache.data
+    }
+
+    const q = (opts && opts.limit && Number(opts.limit) > 0)
+      ? query(collection(db, HOTLISTS_COLLECTION), limit(Number(opts.limit)))
+      : collection(db, HOTLISTS_COLLECTION)
+
+    const snap = await getDocs(q)
+    const batches = []
+    snap.forEach(d => batches.push({ id: d.id, ...d.data() }))
+
+    hotlistsCache.data = batches
+    hotlistsCache.timestamp = now
+    return batches
+  } catch (err) {
+    console.warn('Failed to fetch hotlist batches from Firestore:', err)
+    return hotlistsCache.data || []
   }
 }
 
