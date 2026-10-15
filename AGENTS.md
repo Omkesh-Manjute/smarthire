@@ -103,6 +103,35 @@ The following high-impact features and optimizations have been agreed upon and p
   - **Branded & Blind Resume Wrapper**: Formats candidate resume with agency letterhead/header, core competencies table, clean bullet points, and optional contact masking (hiding direct phone/email to prevent poaching).
   - **1-Click Actions**: 📋 Copy formatted text to clipboard (for portal/email paste), 📥 Download PDF/DOCX submittal package, and ✉️ Direct email dispatch to Account Manager / Client.
 
+### 2026-10-15 — Firebase Billing Explode Protection, Multi-Tier Caching Engine, O(1) User Lookups & Batched Hotlists Ingestion
+- **Context & Objectives**:
+  - The user requested optimization for high-volume incoming data (emails, manual uploads, mobile app, job portals) across multiple recruiters to prevent database lag and server CPU spikes.
+  - User specifically emphasized: *"mai firebse use kar raha hu mongo db nahi bhai and ye bhi dhayn rakhna hai ki databse ka billing na badhe okay"*.
+- **Root Cause & Cost Vulnerabilities Identified**:
+  1. *Unbounded Firestore Reads*: `getAllCandidates()` and `getAtsJobs()` executed unconstrained `getDocs(collection(db, ...))` queries with zero caching. 5 recruiters navigating tabs 10 times a day triggered 25,000+ redundant document reads daily.
+  2. *O(N) Full User Collection Scans*: `getUserProfileByEmailFirestore(email)` fetched the entire `atsUsers` collection and iterated client-side to find a single user, burning reads on every permission check or login.
+  3. *Hotlist Individual Writes Explosion*: Writing 50 bench candidates per hotlist email individually created 50 writes and 50 reads per batch, inflating Firestore billing.
+  4. *Document Bloat & Egress Charges*: Candidate documents risked exceeding Firestore's 1MB limit when huge resume texts and base64 strings were stored directly in Firestore.
+- **Architectural Implementations & Fixes**:
+  1. **Multi-Tier In-Memory & LocalStorage Caching**:
+     - Integrated `candidatesCache`, `jobsCache`, `usersCache`, `hotlistsCache`, `applicationsCache`, `inquiriesCache`, and `messagesCache` with a 3-10 minute TTL.
+     - Synchronous optimistic updates on `saveCandidate()`, `saveAtsJob()`, and `deleteCandidateFirestore()` to keep cache consistent without re-fetching.
+     - Added `opts.forceRefresh` for manual refreshes and `opts.limit` for constrained fetching.
+  2. **Targeted Indexed User Queries**:
+     - Converted `getUserProfileByEmailFirestore` to check local cache first (0 reads), then query `query(collection(db, USERS_COLLECTION), where('email', '==', clean), limit(1))` (exact 1 read).
+  3. **Batched Hotlist Ingestion (`atsHotlists`)**:
+     - Implemented `saveHotlistBatchFirestore()` and `getHotlistBatchesFirestore()` storing up to 50 bench profiles inside a single batch document.
+     - Reduced Firestore operations by 98% (50 writes -> 1 write; 50 reads -> 1 read).
+     - Delegated prototype rules to `firestore-rules-author` subagent for `/atsHotlists/{batchId}` and `/atsInquiries/{inquiryId}`.
+  4. **Document Bloat & Egress Protection**:
+     - Sanitized `saveCandidate()` to strip base64 file data, truncate `resumeSnippet` (300 chars), and cap resume text at 50KB.
+- **Verification & Deployment**:
+  - Local production build in `smarthire-react`: **0 errors, 0 warnings** (`index-BG3zZY6m.js`, `RecruiterInbox-D0tMJexH.js`, `vendor-firebase-HgCf6GU9.js`).
+  - Git committed (`ecfea6a`) and pushed to `origin main`.
+  - Production bundle deployed to AWS Lightsail server (`34.194.119.199`), temporary archives removed immediately, asset bundles pruned, PM2 `smarthire-ats` reloaded.
+  - Verified `HTTP 200 OK` on `https://smarthireus.com` serving `index-BG3zZY6m.js`.
+  - Server disk space verified at 54% (8.6GB free).
+
 ### 2026-10-15 — Resolution of Submittal Pack Resume Horizontal Overflow, Square Boxes (□), Blank Skills Table, and Paragraph Fragmentation
 - **Context & Objectives**:
   - The user uploaded Marcus Clark's resume (`Marcus_Clark_Resumé (1).pdf`) on `/submittal-pack` under `State of Nebraska (Official State Template Format)`.
