@@ -1,0 +1,132 @@
+/* =========================================================================
+   SOLAR SYSTEM TECH ECOSYSTEM ORBIT (VengeanceUI)
+   ========================================================================= */
+
+.solar-system-root {
+  --radius-inner: 175px;
+  --radius-mid: 285px;
+  --radius-outer: 395px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 960px;
+  height: 480px;
+  margin: 0 auto;
+  perspective: 1200px;
+  user-select: none;
+  overflow: visible;
+}
+
+@media (max-width: 768px) {
+  .solar-system-root {
+    --radius-inner: 105px;
+    --radius-mid: 170px;
+    --radius-outer: 235px;
+    height: 380px;
+  }
+}
+
+@media (max-width: 480px) {
+  .solar-system-root {
+    --radius-inner: 75px;
+    --radius-mid: 120px;
+    --radius-outer: 165px;
+    height: 300px;
+  }
+}
+
+/* Orbit revolutions */
+@keyframes custom-orbitMove {
+  0% {
+    transform: translate(-50%, -50%) rotateZ(0deg) translateX(var(--orbit-radius));
+  }
+  100% {
+    transform: translate(-50%, -50%) rotateZ(-360deg) translateX(var(--orbit-radius));
+  }
+}
+
+/* Billboard counter-rotation (cancels the 65deg X-tilt and -10deg Y-tilt) */
+@keyframes custom-billboardCancel {
+  0% {
+    transform: translate(-50%, -50%) rotateZ(0deg) rotateY(10deg) rotateX(-65deg);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotateZ(360deg) rotateY(10deg) rotateX(-65deg);
+  }
+}
+
+/* Sun glow pulsations */
+@keyframes custom-sun-pulse {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.65;
+  }
+  100% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+}
+
+/* Sun ring accessory speeds */
+@keyframes custom-spin-clockwise {
+  0% { transform: rotateX(65deg) rotateY(-10deg) rotateZ(0deg); }
+  100% { transform: rotateX(65deg) rotateY(-10deg) rotateZ(360deg); }
+}
+@keyframes custom-spin-counter {
+  0% { transform: rotateX(65deg) rotateY(-10deg) rotateZ(0deg); }
+  100% { transform: rotateX(65deg) rotateY(-10deg) rotateZ(-360deg); }
+}
+
+.animate-custom-orbit {
+  animation: custom-orbitMove var(--orbit-duration) linear infinite;
+  animation-play-state: var(--orbit-play-state, running);
+}
+
+.animate-custom-billboard {
+  animation: custom-billboardCancel var(--orbit-duration) linear infinite;
+  animation-play-state: var(--orbit-play-state, running);
+}
+
+.animate-custom-sun-pulse {
+  animation: custom-sun-pulse 4s ease-in-out infinite alternate;
+}
+
+.animate-custom-spin-cw {
+  animation: custom-spin-clockwise 20s linear infinite;
+}
+
+.animate-custom-spin-ccw {
+  animation: custom-spin-counter 30s linear infinite;
+}
+
+/* Planet logo cards base styles */
+.orbit-logo-card {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 9999px;
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
+  user-select: none;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: border-color 0.3s, color 0.3s, background 0.3s, box-shadow 0.3s, transform 0.3s;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.orbit-logo-card:hover {
+  background: rgba(15, 23, 42, 0.95);
+  border-color: #3b82f6;
+  box-shadow: 0 6px 25px rgba(37, 99, 235, 0.35);
+}

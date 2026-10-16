@@ -1,0 +1,185 @@
+/* =========================================================================
+   SOCIAL FLIP BUTTON (VengeanceUI)
+   ========================================================================= */
+
+.social-flip-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 12px 0;
+}
+
+.social-flip-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 18px;
+  background: #ffffff;
+  padding: 14px 18px;
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+}
+
+.dark .social-flip-card,
+[data-theme='dark'] .social-flip-card {
+  background: #0f172a;
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+}
+
+/* Border laser lines container */
+.social-flip-laser-wrap {
+  position: absolute;
+  inset: -1px;
+  overflow: hidden;
+  border-radius: 18px;
+  pointer-events: none;
+}
+
+.social-flip-laser-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 2px;
+  width: 100%;
+  background: linear-gradient(90deg, transparent 0%, #2563eb 50%, transparent 100%);
+}
+
+.social-flip-laser-bottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  width: 100%;
+  background: linear-gradient(90deg, transparent 0%, #2563eb 50%, transparent 100%);
+}
+
+/* Node / Tile */
+.social-flip-node {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  cursor: pointer;
+  perspective: 1000px;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.social-flip-flipper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+}
+
+/* Front - Letter */
+.social-flip-front {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: #f1f5f9;
+  font-size: 17px;
+  font-weight: 800;
+  color: #1e293b;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e2e8f0;
+  backface-visibility: hidden;
+  user-select: none;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.dark .social-flip-front,
+[data-theme='dark'] .social-flip-front {
+  background: #1e293b;
+  color: #f8fafc;
+  border-color: #334155;
+}
+
+/* Back - Social Icon */
+.social-flip-back {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: #0f172a;
+  font-size: 18px;
+  color: #ffffff;
+  backface-visibility: hidden;
+  transform: rotateY(180deg);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  border: 1px solid #1e293b;
+  transition: transform 0.2s ease;
+}
+
+.social-flip-back.social-back-linkedin {
+  background: #0a66c2;
+  border-color: #0a66c2;
+}
+
+.social-flip-back.social-back-github {
+  background: #181717;
+  border-color: #24292e;
+}
+
+.social-flip-back.social-back-twitter {
+  background: #000000;
+  border-color: #1a1a1a;
+}
+
+.social-flip-back.social-back-instagram {
+  background: radial-gradient(circle at 25% 100%, #fbbc45 0%, #ee5554 31%, #d6289b 59%, #742cc4 90%);
+  border-color: #be478f;
+}
+
+.social-flip-back.social-back-facebook {
+  background: #1877f2;
+  border-color: #1877f2;
+}
+
+.social-flip-back.social-back-email {
+  background: #2563eb;
+  border-color: #1d4ed8;
+}
+
+.social-flip-back.social-back-discord {
+  background: #5865f2;
+  border-color: #5865f2;
+}
+
+/* Tooltip */
+.social-flip-tooltip {
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  margin-bottom: 8px;
+  transform: translateX(-50%);
+  z-index: 50;
+  white-space: nowrap;
+  border-radius: 8px;
+  background: #0f172a;
+  padding: 5px 10px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #ffffff;
+  box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+}
+
+.social-flip-tooltip-arrow {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+  margin-top: -3px;
+  width: 6px;
+  height: 6px;
+  background: #0f172a;
+}

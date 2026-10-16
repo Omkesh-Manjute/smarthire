@@ -8,6 +8,8 @@ import CreepyButton from '../components/ui/CreepyButton'
 import FaqAccordion from '../components/ui/FaqAccordion'
 import { motion } from 'framer-motion'
 import { staggeredContainerVariants, staggeredItemVariants } from '../components/ui/StaggeredGrid'
+import SolarSystem from '../components/ui/SolarSystem'
+import SocialFlipButton from '../components/ui/SocialFlipButton'
 
 function Homepage() {
   const navigate = useNavigate()
@@ -962,6 +964,25 @@ function Homepage() {
               </motion.div>
 
             </motion.div>
+          </div>
+        </section>
+
+        {/* =========================================================================
+            SECTION: 3D TECH ECOSYSTEM ORBIT (VENGEANCE UI SOLAR SYSTEM)
+            ========================================================================= */}
+        <section className="tf-solar-ecosystem-section" style={{ padding: '80px 20px', background: '#090d16', color: '#ffffff', overflow: 'hidden', position: 'relative' }}>
+          <div className="tf-container" style={{ maxWidth: '1100px', margin: '0 auto', textAlign: 'center' }}>
+            <span style={{ fontSize: '11.5px', fontWeight: 800, color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.08em', background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.25)', padding: '4px 14px', borderRadius: '9999px', display: 'inline-block', marginBottom: '14px' }}>
+              Deep Skill Ontology & Neural Matching
+            </span>
+            <h2 style={{ fontSize: '34px', fontWeight: 800, color: '#ffffff', margin: '0 0 12px', letterSpacing: '-0.02em' }}>
+              Orbiting Around Your AI Talent Core
+            </h2>
+            <p style={{ fontSize: '16px', color: '#94a3b8', margin: '0 auto 40px', maxWidth: '680px', lineHeight: 1.6 }}>
+              SmartHire automatically models semantic skill relationships across full-stack ecosystems — React, TypeScript, Python AI, Next.js, Cloud, and Systems — identifying genuine technical depth over keyword stuffing.
+            </p>
+
+            <SolarSystem />
           </div>
         </section>
 
@@ -2698,6 +2719,25 @@ function Homepage() {
                 }
               ]}
             />
+          </div>
+        </section>
+
+        {/* =========================================================================
+            SECTION 8: VENGEANCE UI SOCIAL FLIP INTERACTION (C-O-N-T-A-C-T)
+            ========================================================================= */}
+        <section className="tf-social-connect-section" style={{ padding: '60px 20px', background: '#ffffff', borderTop: '1px solid #e2e8f0', textAlign: 'center' }}>
+          <div className="tf-container" style={{ maxWidth: '800px', margin: '0 auto' }}>
+            <span style={{ fontSize: '11px', fontWeight: 800, color: '#2563eb', textTransform: 'uppercase', letterSpacing: '0.08em', background: '#eff6ff', border: '1px solid #bfdbfe', padding: '4px 12px', borderRadius: '9999px', display: 'inline-block', marginBottom: '12px' }}>
+              Connect & Engage
+            </span>
+            <h2 style={{ fontSize: '28px', fontWeight: 800, color: '#0f172a', margin: '0 0 10px 0', letterSpacing: '-0.02em' }}>
+              Get In Touch With Our Talent Network
+            </h2>
+            <p style={{ fontSize: '15px', color: '#64748b', margin: '0 auto 28px', maxWidth: '540px' }}>
+              Hover over the contact blocks to connect with SmartHire on LinkedIn, X, GitHub, Discord, or direct support.
+            </p>
+
+            <SocialFlipButton />
           </div>
         </section>
 

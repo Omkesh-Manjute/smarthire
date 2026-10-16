@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { resolveReqId } from '../utils/formatJobDescription'
+import ShareSheet from './ui/ShareSheet'
 
 // ─── Crisp SVG Icons for Wellfound UI ───────────────────────────────────────
 function SearchIcon({ size = 18, color = '#6B7280' }) {
@@ -2697,6 +2698,41 @@ export default function WellfoundCareersView({
                       <BookmarkIcon size={15} filled={isSaved} color={colors.textPrimary} />
                       <span>{isSaved ? 'Saved' : 'Save'}</span>
                     </button>
+
+                    {/* VengeanceUI Share Sheet for Job */}
+                    <ShareSheet
+                      url={typeof window !== 'undefined' ? `${window.location.origin}/jobs?jobId=${resolveReqId(selectedJob) || selectedJob.id}` : ''}
+                      title={`${selectedJob.jobTitle || selectedJob.title || 'Career Opening'} at SmartHire`}
+                      text={`Check out this opening: ${selectedJob.jobTitle || selectedJob.title || 'Role'} in ${selectedJob.location || 'Remote'} on SmartHire!`}
+                      trigger={
+                        <button
+                          type="button"
+                          style={{
+                            padding: '10px 18px',
+                            borderRadius: 8,
+                            border: `1px solid ${colors.border}`,
+                            backgroundColor: colors.cardBg,
+                            color: colors.textPrimary,
+                            fontSize: 13.5,
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 6,
+                            transition: 'background-color 0.15s ease'
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.hoverBg}
+                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.cardBg}
+                        >
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+                            <polyline points="16 6 12 2 8 6"/>
+                            <line x1="12" y1="2" x2="12" y2="15"/>
+                          </svg>
+                          <span>Share</span>
+                        </button>
+                      }
+                    />
 
                     <button
                       onClick={() => handleApplyClick && handleApplyClick(selectedJob)}

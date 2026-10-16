@@ -1,0 +1,161 @@
+/* =========================================================================
+   SPOTLIGHT NAVBAR (VengeanceUI)
+   ========================================================================= */
+
+.spotlight-nav-container {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.spotlight-nav {
+  position: relative;
+  height: 44px;
+  border-radius: 9999px;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  /* Light mode colors */
+  --spotlight-color: rgba(37, 99, 235, 0.12);
+  --ambience-color: rgba(37, 99, 235, 0.95);
+}
+
+.dark .spotlight-nav,
+[data-theme='dark'] .spotlight-nav {
+  --spotlight-color: rgba(255, 255, 255, 0.18);
+  --ambience-color: rgba(255, 255, 255, 1);
+}
+
+.spotlight-nav-bg {
+  background-color: #fafafa;
+}
+
+.dark .spotlight-nav-bg,
+[data-theme='dark'] .spotlight-nav-bg {
+  background-color: #0a0a0a;
+}
+
+.glass-border {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.dark .glass-border,
+[data-theme='dark'] .glass-border {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.spotlight-nav-shadow {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+}
+
+.dark .spotlight-nav-shadow,
+[data-theme='dark'] .spotlight-nav-shadow {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+}
+
+.spotlight-nav-list {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 8px;
+  margin: 0;
+  list-style: none;
+  gap: 2px;
+  z-index: 10;
+}
+
+.spotlight-nav-item {
+  position: relative;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.spotlight-nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 9999px;
+  text-decoration: none;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  white-space: nowrap;
+  transition: color 0.2s ease;
+  font-family: inherit;
+  color: #64748b;
+}
+
+.spotlight-nav-link:hover {
+  color: #0f172a;
+}
+
+.spotlight-nav-link.active {
+  color: #2563eb;
+  font-weight: 700;
+}
+
+.dark .spotlight-nav-link {
+  color: #a3a3a3;
+}
+
+.dark .spotlight-nav-link:hover {
+  color: #ffffff;
+}
+
+.dark .spotlight-nav-link.active {
+  color: #ffffff;
+}
+
+.spotlight-badge {
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: #2563eb;
+  color: #ffffff;
+  padding: 1px 5px;
+  border-radius: 4px;
+  line-height: 1.2;
+}
+
+/* 1. The Moving Spotlight (Follows Mouse) */
+.spotlight-layer-beam {
+  pointer-events: none;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  transition: opacity 0.3s ease;
+  background: radial-gradient(
+    120px circle at var(--spotlight-x, 0px) 100%,
+    var(--spotlight-color, rgba(37, 99, 235, 0.12)) 0%,
+    transparent 55%
+  );
+}
+
+/* 2. The Active State Ambience (Tracks Active Item) */
+.spotlight-layer-ambience {
+  pointer-events: none;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  z-index: 2;
+  background: radial-gradient(
+    70px circle at var(--ambience-x, 0px) 0%,
+    var(--ambience-color, rgba(37, 99, 235, 0.95)) 0%,
+    transparent 100%
+  );
+}

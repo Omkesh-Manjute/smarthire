@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import QuickSearchModal from './QuickSearchModal'
 import ActivityNotificationBell from './ActivityNotificationBell'
+import SpotlightNavbar from './ui/SpotlightNavbar'
 
 function Navigation() {
   const location = useLocation()
@@ -326,139 +327,104 @@ function Navigation() {
             <div className="nav-vertical-divider" />
           </div>
 
-          {/* ─── CENTER: PRIMARY ENTERPRISE TABS ─── */}
+          {/* ─── CENTER: PRIMARY ENTERPRISE TABS (SPOTLIGHT NAVBAR) ─── */}
           <nav className="nav-center-menu">
             {isAuthenticated ? (
-              <>
-                {isPageAllowed('dashboard') && (
-                  <Link
-                    to="/dashboard"
-                    className={`nav-tab-item ${location.pathname === '/dashboard' ? 'active' : ''}`}
-                  >
-                    <span>{isEmployee ? 'My Workspace' : 'Dashboard'}</span>
-                  </Link>
-                )}
-
-                {/* ATS Workspace with Direct Navigation & Dropdown - Controlled by isPageAllowed('ats') */}
-                {!isEmployee && isPageAllowed('ats') && (
-                  <div
-                    className="nav-dropdown-wrapper"
-                    ref={atsMenuRef}
-                    onMouseEnter={() => setAtsMenuOpen(true)}
-                    onMouseLeave={() => setAtsMenuOpen(false)}
-                    style={{ display: 'inline-flex', position: 'relative' }}
-                  >
-                    <Link
-                      to="/ats"
-                      className={`nav-tab-item dropdown-toggle ${
-                        location.pathname.startsWith('/ats') ? 'active' : ''
-                      } ${atsMenuOpen ? 'menu-open' : ''}`}
-                      onClick={() => setAtsMenuOpen(false)}
-                      style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-                    >
-                      <span>ATS Workspace</span>
-                      <span
-                        onClick={(e) => {
-                          e.preventDefault()
-                          e.stopPropagation()
-                          setAtsMenuOpen(!atsMenuOpen)
-                        }}
-                        style={{ display: 'inline-flex', alignItems: 'center', padding: '2px', cursor: 'pointer' }}
-                        title="View ATS Modules"
+              <SpotlightNavbar
+                className="w-auto"
+                items={[
+                  ...(isPageAllowed('dashboard') ? [{
+                    label: isEmployee ? 'My Workspace' : 'Dashboard',
+                    to: '/dashboard'
+                  }] : []),
+                  ...(!isEmployee && isPageAllowed('ats') ? [{
+                    label: 'ATS Workspace',
+                    to: '/ats',
+                    render: ({ idx, isActive }) => (
+                      <div
+                        className="nav-dropdown-wrapper"
+                        ref={atsMenuRef}
+                        onMouseEnter={() => setAtsMenuOpen(true)}
+                        onMouseLeave={() => setAtsMenuOpen(false)}
+                        style={{ display: 'inline-flex', position: 'relative', height: '100%', alignItems: 'center' }}
                       >
-                        <svg className="chevron-down-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                          <polyline points="6 9 12 15 18 9" />
-                        </svg>
-                      </span>
-                    </Link>
-
-                    {atsMenuOpen && (
-                      <div className="nav-sub-dropdown shadow-enterprise" style={{ zIndex: 1000 }}>
-                        <div className="dropdown-section-title">Core ATS Modules</div>
-                        {atsSubModules.map((sub) => (
-                          <button
-                            key={sub.id}
-                            className="dropdown-item-btn"
-                            onClick={() => navigateToAtsTab(sub.id)}
-                          >
-                            <div className="dropdown-item-content">
-                              <span className="dropdown-item-label">{sub.label}</span>
-                              <span className="dropdown-item-sub">{sub.desc}</span>
-                            </div>
-                          </button>
-                        ))}
-
-                        <div className="dropdown-divider" />
-                        <button
-                          className="dropdown-item-btn open-all-btn"
-                          onClick={() => {
-                            setAtsMenuOpen(false)
-                            navigate('/ats')
-                          }}
+                        <Link
+                          to="/ats"
+                          data-index={idx}
+                          className={`spotlight-nav-link ${location.pathname.startsWith('/ats') ? 'active' : ''} ${atsMenuOpen ? 'menu-open' : ''}`}
+                          onClick={() => setAtsMenuOpen(false)}
+                          style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                         >
-                          <span>Open Full ATS Console</span>
-                          <span>→</span>
-                        </button>
+                          <span>ATS Workspace</span>
+                          <span
+                            onClick={(e) => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              setAtsMenuOpen(!atsMenuOpen)
+                            }}
+                            style={{ display: 'inline-flex', alignItems: 'center', padding: '2px', cursor: 'pointer' }}
+                            title="View ATS Modules"
+                          >
+                            <svg className="chevron-down-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                              <polyline points="6 9 12 15 18 9" />
+                            </svg>
+                          </span>
+                        </Link>
+
+                        {atsMenuOpen && (
+                          <div className="nav-sub-dropdown shadow-enterprise" style={{ zIndex: 1000 }}>
+                            <div className="dropdown-section-title">Core ATS Modules</div>
+                            {atsSubModules.map((sub) => (
+                              <button
+                                key={sub.id}
+                                className="dropdown-item-btn"
+                                onClick={() => navigateToAtsTab(sub.id)}
+                              >
+                                <div className="dropdown-item-content">
+                                  <span className="dropdown-item-label">{sub.label}</span>
+                                  <span className="dropdown-item-sub">{sub.desc}</span>
+                                </div>
+                              </button>
+                            ))}
+
+                            <div className="dropdown-divider" />
+                            <button
+                              className="dropdown-item-btn open-all-btn"
+                              onClick={() => {
+                                setAtsMenuOpen(false)
+                                navigate('/ats')
+                              }}
+                            >
+                              <span>Open Full ATS Console</span>
+                              <span>→</span>
+                            </button>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                )}
-
-                {isPageAllowed('reports') && (
-                  <Link
-                    to="/reports"
-                    className={`nav-tab-item ${location.pathname === '/reports' ? 'active' : ''}`}
-                  >
-                    <span>Reports</span>
-                  </Link>
-                )}
-
-                {!isEmployee && isPageAllowed('jobs') && (
-                  <Link
-                    to="/jobs"
-                    className={`nav-tab-item ${location.pathname === '/jobs' ? 'active' : ''}`}
-                  >
-                    <span>Careers</span>
-                  </Link>
-                )}
-              </>
+                    )
+                  }] : []),
+                  ...(isPageAllowed('reports') ? [{
+                    label: 'Reports',
+                    to: '/reports'
+                  }] : []),
+                  ...(!isEmployee && isPageAllowed('jobs') ? [{
+                    label: 'Careers',
+                    to: '/jobs'
+                  }] : [])
+                ]}
+              />
             ) : (
-              <>
-                <a href="/#features" className="nav-tab-item">
-                  Core Features
-                </a>
-                <Link
-                  to="/smartscreen"
-                  className={`nav-tab-item ${location.pathname === '/smartscreen' ? 'active' : ''}`}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-                >
-                  <span>SmartScreen AI</span>
-                  <span style={{
-                    fontSize: '9px',
-                    fontWeight: 800,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.04em',
-                    background: '#2563eb',
-                    color: '#ffffff',
-                    padding: '1px 5px',
-                    borderRadius: '4px'
-                  }}>
-                    VIDEO
-                  </span>
-                </Link>
-                <Link to="/jobs" className="nav-tab-item">
-                  Careers Portal
-                </Link>
-                <a href="/#pricing" className="nav-tab-item">
-                  Enterprise Pricing
-                </a>
-                <Link to="/about" className="nav-tab-item">
-                  About & AI
-                </Link>
-                <Link to="/about#support" className="nav-tab-item">
-                  Support & Inquiries
-                </Link>
-              </>
+              <SpotlightNavbar
+                className="w-auto"
+                items={[
+                  { label: 'Core Features', href: '/#features' },
+                  { label: 'SmartScreen AI', to: '/smartscreen', badge: 'VIDEO' },
+                  { label: 'Careers Portal', to: '/jobs' },
+                  { label: 'Enterprise Pricing', href: '/#pricing' },
+                  { label: 'About & AI', to: '/about' },
+                  { label: 'Support & Inquiries', to: '/about#support' }
+                ]}
+              />
             )}
           </nav>
 
