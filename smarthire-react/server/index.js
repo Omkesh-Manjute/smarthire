@@ -12991,13 +12991,23 @@ app.post('/api/recruiter/sourcing/bulk-import', express.json({ limit: '10mb' }),
         if (targetReqId && !existing.targetReqId) {
           existing.targetReqId = String(targetReqId);
           existing.matchedJobTitle = matchedJobTitle;
-          existing.updatedAt = new Date().toISOString();
         }
+        existing.status = 'New';
+        existing.isNew = true;
+        existing.updatedAt = new Date().toISOString();
+        existing.receivedAt = new Date().toISOString();
+        existing.receivedDate = new Date().toISOString();
         if (cleanPhone && (!existing.phone || existing.phone.includes('555-0199'))) {
           existing.phone = cleanPhone;
         }
         if (c.skills && Array.isArray(c.skills) && c.skills.length > (existing.skills || []).length) {
           existing.skills = c.skills;
+        }
+        // Move existing to the very front so it appears at top of list
+        const exIdx = candidatesStore.indexOf(existing);
+        if (exIdx > -1) {
+          candidatesStore.splice(exIdx, 1);
+          candidatesStore.unshift(existing);
         }
         updatedCount++;
         importedList.push(existing);
@@ -13005,6 +13015,7 @@ app.post('/api/recruiter/sourcing/bulk-import', express.json({ limit: '10mb' }),
       }
 
       const candId = `cand-ext-${Date.now().toString().slice(-6)}-${Math.floor(Math.random()*900+100)}`;
+      const nowIso = new Date().toISOString();
       const newCand = {
         id: candId,
         candidate_id: candId,
@@ -13016,15 +13027,18 @@ app.post('/api/recruiter/sourcing/bulk-import', express.json({ limit: '10mb' }),
         location: c.location || 'United States',
         skills: Array.isArray(c.skills) ? c.skills : (c.skills ? String(c.skills).split(',').map(s=>s.trim()).filter(Boolean) : []),
         experience: c.experience ? String(c.experience) : (c.years_of_experience ? `${c.years_of_experience}+ Years` : '5+ Years'),
-        status: targetReqId ? 'Screened' : 'New',
-        source: c.source || source || 'Chrome Extension (Monster/Dice)',
+        status: 'New',
+        isNew: true,
+        source: c.source || source || 'Monster+ Copilot Extension',
         sourceCategory: (c.source || source || '').toLowerCase().includes('dice') ? 'dice' : 'monster_plus',
         recruiterEmail: assignedRecruiterEmail,
         recruiterName: assignedRecruiterName,
         assignedBy: assignedRecruiterName,
         recruiter: assignedRecruiterName,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        createdAt: nowIso,
+        updatedAt: nowIso,
+        receivedDate: nowIso,
+        receivedAt: nowIso,
         notes: `Sourced via SmartHire Extension. ${c.notes || ''} Profile: ${c.profileUrl || c.profile_url || ''}`,
         targetReqId: targetReqId ? String(targetReqId) : null,
         matchScore: c.matchScore || c.match_score || 88,

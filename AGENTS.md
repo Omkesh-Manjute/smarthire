@@ -67,6 +67,25 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
     - The engine must automatically detect responsibilities (lines following `Responsibilities:`, action verbs, or list items) even when converted from plain text or Word documents without literal Unicode bullets.
 
 
+### 2026-10-17 — Monster+ Multi-Candidate Deep Scraper Fix, Live 512 Requisition Sync (#159348) & Top-Row ATS Candidate Ingestion Sorting
+- **Context & Objectives**:
+  - The user reported three interconnected issues with the Chrome Extension and Candidate Ingestion:
+    1. *Monster+ Deep Scrape Loop*: On Monster+ search stream with 5 candidate cards, the scraper stopped after extracting only Candidate 1 ("Sandeep Reddy Maram").
+    2. *Requisition #159348 Missing*: Requisition `#159348` was not searchable in the extension ATS target dropdown, which reported only 180 fallback jobs.
+    3. *ATS Table Placement*: Imported candidates did not appear at the top of the table in `https://smarthireus.com/inbox`.
+- **Architectural Fixes**:
+  1. *Monster+ Card-Level Name Extraction & Traversal (`content_monster.js`, `injected_dock.js`)*:
+     - Discovered that candidate name was being resolved from `.candidate-name` in the global right-side detail drawer. When Card 2 was clicked, network latency kept Candidate 1's name in the DOM, triggering `seenNames.has(name)` and skipping cards 2 through 5.
+     - Resolved candidate name strictly from the card container element first (`cardNameEl = card.querySelector(...)`) before any click/poll.
+     - Enhanced `getMonsterCards()` to detect all candidate cards via individual row checkboxes (`input[type="checkbox"]`, `smui-checkbox`), excluding the select-all master checkbox.
+  2. *Live 512 Requisitions Sync & Dropdown Search (`background.js`, `injected_dock.js`, `bundled_jobs.js`)*:
+     - Fixed `background.js` `FETCH_JOBS` handler: `https://smarthireus.com/api/jobs` returns `{ success: true, total: 512, jobs: [...] }`. Standardized response to `jobs: Array.isArray(data) ? data : data.jobs`.
+     - Bundled all 512 live ATS jobs into `bundled_jobs.js` (including `#159348`, "Enterprise Program Manager - Project Lead").
+     - Added auto-fetching of live jobs on mount in `injected_dock.js` along with an interactive `Refresh` trigger.
+  3. *Row #1 Candidate Placement in ATS (`server/index.js`, `RecruiterInbox.jsx`)*:
+     - In `server/index.js`, updated `/api/recruiter/sourcing/bulk-import` to assign `status: 'New'`, `isNew: true`, `receivedAt: nowIso`, `receivedDate: nowIso`, and `candidatesStore.unshift(cand)` so newly ingested candidates always sit at index 0.
+     - In `RecruiterInbox.jsx`, fixed `date_desc` sorting to strictly prioritize latest timestamp (`tB - tA`), ensuring the newest candidate is always Row #1. Included `monster_plus` and `dice` sources in `tableCategory === 'inbox'` and `jobSitesCount`.
+
 ### 2026-10-17 — Automated Recruiter Email Notification on Candidate AI Video/Voice Screening Completion
 - **Context & Objectives**:
   - The user requested an automated email notification system: When a candidate submits and completes their AI video/voice screening interview (`/api/screening/:sessionId/submit-response` or `/api/screening/:sessionId/submit`), an email must be dispatched to the assigned recruiter from Omkesh's configured Yahoo email (`omkesh@coolsofttech.com`) notifying them that the candidate has successfully completed the interview, formatted with candidate name, email, target job title, AI match score, recommendation, and a direct review link in the ATS.

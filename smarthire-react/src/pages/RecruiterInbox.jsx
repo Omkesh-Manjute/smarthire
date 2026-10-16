@@ -4780,7 +4780,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
   }, [streamCandidates, isSuperAdmin, isManager, currentUser?.name, currentUser?.email, openJobsList, teamUsersList])
 
   const mobileAppCount = useMemo(() => (roleScopedCandidates || []).filter(c => (c.sourceCategory === 'mobile_app') || (c.source || '').toLowerCase().includes('mobile')).length, [roleScopedCandidates])
-  const jobSitesCount = useMemo(() => (roleScopedCandidates || []).filter(c => (c.sourceCategory === 'careers_portal') || (c.source || '').toLowerCase().includes('career') || (c.source || '').toLowerCase().includes('job site')).length, [roleScopedCandidates])
+  const jobSitesCount = useMemo(() => (roleScopedCandidates || []).filter(c => (c.sourceCategory === 'careers_portal' || c.sourceCategory === 'monster_plus' || c.sourceCategory === 'dice') || (c.source || '').toLowerCase().includes('career') || (c.source || '').toLowerCase().includes('job site') || (c.source || '').toLowerCase().includes('monster') || (c.source || '').toLowerCase().includes('dice')).length, [roleScopedCandidates])
 
   const filteredCandidates = useMemo(() => {
     const rawFiltered = roleScopedCandidates.filter(c => {
@@ -4791,9 +4791,9 @@ export default function RecruiterInbox({ defaultViewMode }) {
       if (tableCategory === 'all') { /* show all */ }
       else if (tableCategory === 'active' && (c.status === 'Archived' || c.status === 'Rejected' || c.status === 'Closed')) return false
       else if (tableCategory === 'review' && c.status !== 'In Review' && c.status !== 'Review') return false
-      else if (tableCategory === 'inbox' && c.sourceCategory !== 'email_inbox') return false
+      else if (tableCategory === 'inbox' && c.sourceCategory !== 'email_inbox' && c.sourceCategory !== 'monster_plus' && c.sourceCategory !== 'dice' && !c.isNew) return false
       else if (tableCategory === 'spam' && c.sourceCategory !== 'email_spam' && !c.isSpamRecovery) return false
-      else if (tableCategory === 'careers' && c.sourceCategory !== 'careers_portal') return false
+      else if (tableCategory === 'careers' && c.sourceCategory !== 'careers_portal' && c.sourceCategory !== 'monster_plus' && c.sourceCategory !== 'dice') return false
       else if (tableCategory === 'vendor' && c.sourceCategory !== 'vendor_bench') return false
       if (tableCategory === 'favorites') {
         const candId = c.id || c.email
@@ -4854,8 +4854,8 @@ export default function RecruiterInbox({ defaultViewMode }) {
         const src = (c.source || '').toLowerCase()
         const cat = (c.sourceCategory || '').toLowerCase()
         if (filterSource === 'mobile' && cat !== 'mobile_app' && !src.includes('mobile') && !src.includes('app')) return false
-        if (filterSource === 'careers' && cat !== 'careers_portal' && !src.includes('career') && !src.includes('job site') && !src.includes('indeed') && !src.includes('linkedin') && !src.includes('/jobs')) return false
-        if (filterSource === 'email' && cat !== 'email_inbox' && !src.includes('inbox') && !src.includes('monster') && !src.includes('dice')) return false
+        if (filterSource === 'careers' && cat !== 'careers_portal' && cat !== 'monster_plus' && cat !== 'dice' && !src.includes('career') && !src.includes('job site') && !src.includes('monster') && !src.includes('dice') && !src.includes('indeed') && !src.includes('linkedin') && !src.includes('/jobs')) return false
+        if (filterSource === 'email' && cat !== 'email_inbox' && cat !== 'monster_plus' && cat !== 'dice' && !src.includes('inbox') && !src.includes('monster') && !src.includes('dice')) return false
         if (filterSource === 'spam' && cat !== 'email_spam' && !c.isSpamRecovery && !src.includes('spam')) return false
         if (filterSource === 'manual' && cat !== 'manual_entry' && !src.includes('manual') && !src.includes('direct')) return false
         if (filterSource === 'vendor' && cat !== 'vendor_bench' && !src.includes('vendor') && !src.includes('bench')) return false
@@ -5000,12 +5000,13 @@ export default function RecruiterInbox({ defaultViewMode }) {
         const tA = getCandTime(a)
         const tB = getCandTime(b)
 
-        // Fresh newly ingested candidates strictly come at the very top
+        // Timestamp descending: newest ingestion strictly comes at the very top (Row #1)
+        if (tB !== tA) return tB - tA
+
         const isNewA = (a.status === 'New' || a.isNew) ? 1 : 0
         const isNewB = (b.status === 'New' || b.isNew) ? 1 : 0
         if (isNewA !== isNewB) return isNewB - isNewA
 
-        if (tB !== tA) return tB - tA
         return (b.matchScore || 0) - (a.matchScore || 0)
       }
       if (sortOption === 'date_asc') {

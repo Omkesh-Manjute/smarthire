@@ -62,39 +62,69 @@
       .trim();
   };
 
-  // Find all candidate cards on Monster+ (Browserflow selector: smui-card)
+  // Find all candidate cards on Monster+ (Browserflow selector: smui-card / result rows)
   window.getMonsterCards = function() {
-    // 1. Direct smui-card tag
-    const smuiCards = document.querySelectorAll('smui-card');
-    if (smuiCards && smuiCards.length > 0) {
-      return Array.from(smuiCards);
+    const isExcluded = (el) => {
+      if (!el) return true;
+      if (el.closest('#smarthire-copilot-drawer') || el.closest('#smarthire-copilot-trigger')) return true;
+      // Exclude side drawer / profile detail view so we don't treat the detail pane as a candidate card
+      if (el.closest('aside') || el.closest('[role="dialog"]') || el.closest('[class*="drawer"]')) return true;
+      return false;
+    };
+
+    // Strategy 1: smui-card tag in candidate results area
+    const smuiCards = Array.from(document.querySelectorAll('smui-card')).filter(c => !isExcluded(c));
+    if (smuiCards.length > 1) return smuiCards;
+
+    // Strategy 2: elements containing candidate checkboxes (Monster+ search cards all have a selection checkbox)
+    const candidateCheckboxes = Array.from(document.querySelectorAll('input[type="checkbox"], smui-checkbox, [role="checkbox"]')).filter(cb => {
+      if (isExcluded(cb)) return false;
+      const aria = (cb.getAttribute('aria-label') || '').toLowerCase();
+      return !aria.includes('select all') && !aria.includes('all candidate');
+    });
+
+    if (candidateCheckboxes.length > 0) {
+      const cardList = [];
+      const seen = new Set();
+      candidateCheckboxes.forEach(cb => {
+        const card = cb.closest('smui-card') || 
+                     cb.closest('[class*="smui-card"]') || 
+                     cb.closest('[class*="card"]') || 
+                     cb.closest('article') || 
+                     cb.closest('li') || 
+                     cb.parentElement?.parentElement?.parentElement;
+        if (card && !seen.has(card) && !isExcluded(card)) {
+          seen.add(card);
+          cardList.push(card);
+        }
+      });
+      if (cardList.length > 0) return cardList;
     }
 
-    // 2. Class containing smui-card
-    const cardsByClass = document.querySelectorAll('[class*="smui-card"]');
-    if (cardsByClass && cardsByClass.length > 0) {
-      const filtered = Array.from(cardsByClass).filter(el => 
-        el.tagName.toLowerCase() === 'smui-card' || 
-        (!el.classList.contains('smui-card-body') && !el.classList.contains('smui-card-header') && el.querySelector('.smui-card-body'))
-      );
-      if (filtered.length > 0) return filtered;
-    }
+    // Strategy 3: class containing smui-card
+    const cardsByClass = Array.from(document.querySelectorAll('[class*="smui-card"]')).filter(el => {
+      if (isExcluded(el)) return false;
+      return el.tagName.toLowerCase() === 'smui-card' || 
+             (!el.classList.contains('smui-card-body') && !el.classList.contains('smui-card-header') && el.querySelector('.smui-card-body'));
+    });
+    if (cardsByClass.length > 0) return cardsByClass;
 
-    // 3. Fallback candidate result cards
-    const candidates = document.querySelectorAll('[data-testid*="candidate-card"], [data-testid*="candidate-item"], article');
-    if (candidates && candidates.length > 0) return Array.from(candidates);
+    // Strategy 4: Candidate result cards by testid or article
+    const candidates = Array.from(document.querySelectorAll('[data-testid*="candidate-card"], [data-testid*="candidate-item"], article')).filter(c => !isExcluded(c));
+    if (candidates.length > 0) return candidates;
 
-    // 4. Cards with checkboxes or candidate name links
-    const nameLinks = document.querySelectorAll('a[href*="/candidate/"], a[href*="/candidates/"]');
-    if (nameLinks && nameLinks.length > 0) {
+    // Strategy 5: Cards with candidate name links
+    const nameLinks = Array.from(document.querySelectorAll('a[href*="/candidate/"], a[href*="/candidates/"]')).filter(a => !isExcluded(a));
+    if (nameLinks.length > 0) {
       const cardSet = new Set();
       nameLinks.forEach(a => {
         const c = a.closest('smui-card') || a.closest('article') || a.closest('li') || a.parentElement?.parentElement;
-        if (c) cardSet.add(c);
+        if (c && !isExcluded(c)) cardSet.add(c);
       });
       if (cardSet.size > 0) return Array.from(cardSet);
     }
 
+    if (smuiCards.length > 0) return smuiCards;
     return [];
   };
 
@@ -265,17 +295,21 @@
           if (!phone && cardPhones.length > 0) phone = cardPhones[0];
         }
 
-        // Candidate Name
+        // Candidate Name (STRICTLY FROM THIS CARD CONTAINER FIRST)
         let name = '';
-        const detailNameEl = document.querySelector('.candidate-name > div:nth-of-type(1) > span:nth-of-type(1), .candidate-name span, .candidate-name');
-        if (detailNameEl && detailNameEl.innerText.trim().length > 1) {
-          name = detailNameEl.innerText.replace(/open\s*in\s*new\s*tab/gi, '').replace(/\s+/g, ' ').trim();
+        const cardNameEl = card.querySelector('a[href*="/candidate/"], a[href*="/candidates/"], h2, h3, h4, [class*="name"], [class*="Name"]');
+        if (cardNameEl && cardNameEl.innerText.trim()) {
+          name = window.extractCleanMonsterName(cardNameEl.innerText);
         }
-        if (!name || name.toLowerCase().includes('open in') || name.length < 2) {
+        if (!name || name.length < 2) {
           name = rawName || `Candidate ${i + 1}`;
         }
+        name = name.replace(/sms\s*opt-in/gi, '').replace(/viewed/gi, '').replace(/·/g, '').trim();
 
-        if (seenNames.has(name.toLowerCase())) {
+        // Check deduplication per candidate name on card
+        const nameKey = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (seenNames.has(nameKey)) {
+          console.log(`[SmartHire Copilot] Skipping already seen candidate: ${name}`);
           continue;
         }
 
@@ -325,7 +359,7 @@
           });
         }
 
-        seenNames.add(name.toLowerCase());
+        seenNames.add(nameKey);
 
         const candidateItem = {
           id: `mon-${i}-${Date.now().toString().slice(-4)}`,

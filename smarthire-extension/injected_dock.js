@@ -85,14 +85,17 @@
           <div class="smarthire-card">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
               <label class="smarthire-label" style="margin-bottom:0;">ATS Target Requisition</label>
-              <span id="smarthire-job-count-badge" style="font-size:10px; color:#2563EB; font-weight:700;">${allJobs.length} Jobs</span>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span id="smarthire-job-count-badge" style="font-size:10px; color:#2563EB; font-weight:700;">${allJobs.length} Jobs</span>
+                <span id="smarthire-refresh-jobs" style="font-size:10px; color:#64748B; cursor:pointer; text-decoration:underline;">Refresh</span>
+              </div>
             </div>
 
-            <!-- Instant Search Input for 180+ Requisitions -->
+            <!-- Instant Search Input for 500+ Requisitions -->
             <input 
               type="text" 
               id="smarthire-req-filter" 
-              placeholder="Filter 180+ jobs (.NET, BA, Java, #159287)..." 
+              placeholder="Filter 500+ jobs (.NET, BA, Java, #159348)..." 
               class="smarthire-input" 
               style="margin-bottom:6px; font-size:11.5px; padding:6px 9px;"
             />
@@ -414,6 +417,32 @@
     document.getElementById('smarthire-btn-import-ats').addEventListener('click', () => {
       importToSmartHireAts();
     });
+
+    // Refresh Jobs Button
+    document.getElementById('smarthire-refresh-jobs')?.addEventListener('click', () => {
+      fetchLiveJobs();
+    });
+
+    // Auto-fetch fresh live jobs on mount
+    fetchLiveJobs();
+  }
+
+  function fetchLiveJobs() {
+    const badge = document.getElementById('smarthire-job-count-badge');
+    if (badge) badge.innerText = 'Refreshing...';
+    try {
+      chrome.runtime.sendMessage({ action: 'FETCH_JOBS' }, (response) => {
+        if (response && response.success && Array.isArray(response.jobs) && response.jobs.length > 0) {
+          allJobs = response.jobs;
+          filteredJobs = [...allJobs];
+          renderJobsSelect(true);
+        } else if (badge) {
+          badge.innerText = `${allJobs.length} Jobs`;
+        }
+      });
+    } catch (e) {
+      if (badge) badge.innerText = `${allJobs.length} Jobs`;
+    }
   }
 
   function renderJobsSelect(preserveSelection = false) {
@@ -803,20 +832,15 @@
           name = window.extractCleanMonsterName ? window.extractCleanMonsterName(container.innerText) : container.innerText.split('\n')[0];
         }
         if (!name || name.toLowerCase().includes('need help') || name.length < 2) {
-          const detailNameEl = document.querySelector('.candidate-name > div > span, .candidate-name, [data-testid*="candidate-name"]');
-          if (detailNameEl && detailNameEl.innerText.trim()) {
-            name = window.extractCleanMonsterName(detailNameEl.innerText);
-          }
-        }
-        name = name.replace(/sms\s*opt-in/gi, '').replace(/viewed/gi, '').replace(/·/g, '').trim();
-        if (!name || name.toLowerCase().includes('need help')) {
           name = `Candidate ${i + 1}`;
         }
 
-        if (seenNames.has(name.toLowerCase())) {
+        const nameKey = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (seenNames.has(nameKey)) {
           container.style.outline = oldOutline;
           continue;
         }
+        seenNames.add(nameKey);
 
         // Fallback to container text if drawer did not disclose
         if (!email || !phone) {
@@ -854,7 +878,6 @@
           location = locMatch[0].trim();
         }
 
-        seenNames.add(name.toLowerCase());
         container.style.outline = oldOutline;
 
         results.push({

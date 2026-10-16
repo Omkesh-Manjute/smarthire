@@ -46,7 +46,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'FETCH_JOBS') {
     fetch('https://smarthireus.com/api/jobs')
       .then(res => res.json())
-      .then(data => sendResponse({ success: true, jobs: data }))
+      .then(data => {
+        const jobsList = Array.isArray(data) ? data : (Array.isArray(data?.jobs) ? data.jobs : []);
+        sendResponse({ success: true, jobs: jobsList, total: jobsList.length });
+      })
       .catch(err => {
         console.error('[Background] Failed to fetch jobs:', err);
         sendResponse({ success: false, error: err.message, jobs: [] });
