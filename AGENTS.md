@@ -67,6 +67,64 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
     - The engine must automatically detect responsibilities (lines following `Responsibilities:`, action verbs, or list items) even when converted from plain text or Word documents without literal Unicode bullets.
 
 
+### 2026-10-17 — FAQ AI Screening Overhaul, Modern Interactive Footer Pill Buttons, Blog & Careers ShareSheet Polish, and Removal of Table Initial Monograms
+- **Context & Objectives**:
+  - The user requested four key refinements:
+    1. *Homepage FAQ Updates*: Remove third-party vendor names (`JobsInHand or Coolworks`) from matching question; replace facial liveness/anti-proxy claims with actual SmartSign RTR digital signature & deduplication protection; replace placed candidate resumes training question with the AI Video & Voice Screening workflow (asynchronous, email link with expiration date, no-login intake, instant ATS scoring).
+    2. *Footer Modernization*: Modernize the footer from plain text links to sleek interactive pill buttons with SVG line icons, cubic-bezier hover elevation, border color transitions, pulsating live system operational beacon, and enterprise compliance trust badges (SOC-2 Type II, EEOC/FCRA, 256-Bit SSL).
+    3. *Blog Page Polish*: Fix author name displaying literal `&nearr;` entity (`Omkesh Singh Thakur &nearr;`); replace custom blue button and redundant LinkedIn/Copy Link buttons with the authentic VengeanceUI `ShareSheet` component (`.kss-trigger` dark pill).
+    4. *Careers / Jobs Page Polish*: Remove initial monogram avatar boxes (`IS`, `DW`, `TC`, etc.) from the front of all job rows; remove `Share` button from front table rows so only `View Job >` remains; position the `Share Opening` button inside the job dossier at the bottom alongside `Apply for this position →`.
+- **Architectural Implementations & Fixes**:
+  1. **FAQ Section (`Homepage.jsx`)**:
+     - Question 1 updated to "How does the AI Video & Voice Screening workflow work for candidates?" highlighting time-sensitive links, zero-login candidate intake, and automated transcript scoring.
+     - Question 2 cleaned of vendor portal references, focusing on isolated talent vaults and real-time audio/in-app match chimes.
+     - Question 4 & 5 updated to emphasize SmartSign RTR digital audit trails (SHA-256 hash, timestamps, IP geolocation) and candidate deduplication.
+  2. **Elevated Footer (`Footer.jsx` & `footer.css`)**:
+     - Implemented `site-footer-enterprise` layout with pulsating green beacon (`#10b981`), corporate ATS briefcase badge, and 7 interactive pill buttons (`footer-pill-btn`) with smooth micro-interactions.
+  3. **Blog Author & ShareSheet Polish (`Blog.jsx`, `ShareSheet.jsx`, `share-sheet.css`)**:
+     - Cleaned author name link from literal `&nearr;` entity.
+     - Replaced manual social toolbar with authentic VengeanceUI `ShareSheet` trigger button.
+     - Fixed Framer Motion modal centering (`x: '-50%', y: '-50%'`) to prevent coordinate reset displacement.
+  4. **Careers / Jobs Page Refinements (`WellfoundCareersView.jsx`)**:
+     - Removed `CompanyLogo` monogram initials from full-width table rows (`renderFullWidthTableRow`), split-view cards (`renderSplitViewCard`), and similar job recommendations.
+     - Replaced dossier header monogram with a sleek corporate briefcase SVG icon in brand gradient container.
+     - Removed `ShareSheet` from table row Column 5 (Action), leaving a clean `View Job >` action button.
+     - Integrated `ShareSheet` (`variant="outline"`, `label="Share Opening"`) inside the job dossier at the bottom action bar.
+- **Verification & Deployment**:
+  - Local production build in `smarthire-react`: **0 errors, 0 warnings** (`index-GpI37cgh.js`, `PublicCareers-CFCjGSxc.js`, `Blog-D66x_y-7.js`).
+  - Git committed (`dd1b65b`, `cbe2372`) and pushed to `main`.
+  - Production bundle deployed to AWS Lightsail server (`34.194.119.199`), temporary archives removed immediately (Rule 5), asset bundles pruned, PM2 `smarthire-ats` reloaded.
+  - Verified `HTTP 200 OK` on `https://smarthireus.com` serving `index-GpI37cgh.js`.
+  - Verified via Playwright on live site: clean author name without `&nearr;`, VengeanceUI ShareSheet button, clean job rows without initials, only `View Job` in front table, and `Share Opening` at the bottom of the job dossier.
+
+### 2026-10-17 — Integration of VengeanceUI SpotlightNavbar, SocialFlipButton, ShareSheet, and 3D SolarSystem Ecosystem
+- **Context & Objectives**:
+  - The user requested integration of 4 interactive VengeanceUI components:
+    1. `SpotlightNavbar`: Apply to the main navigation bar.
+    2. `SocialFlipButton`: Add social interaction blocks.
+    3. `ShareSheet`: Add to the blog page and careers/jobs page so visitors can share any article or job requisition.
+    4. `SolarSystem`: Inquire whether it would make the site heavy and determine the best placement.
+- **Architectural Implementations & Optimization**:
+  1. **SpotlightNavbar (`src/components/ui/SpotlightNavbar.jsx` & `spotlight-navbar.css`)**:
+     - Built with real-time cursor tracking for `--spotlight-x` and spring-animated ambience active indicator line (`--ambience-x`, `stiffness: 220, damping: 22`).
+     - Integrated directly into `src/components/Navigation.jsx` (`.nav-center-menu`), powering both public navigation (`Core Features`, `SmartScreen AI`, `Careers Portal`, `Enterprise Pricing`, `About & AI`, `Support & Inquiries`) and authenticated multi-role enterprise tabs (`Dashboard`, `ATS Workspace` with dropdowns, `Reports`, `Careers`).
+  2. **SocialFlipButton (`src/components/ui/SocialFlipButton.jsx` & `social-flip-button.css`)**:
+     - Implemented 3D perspective flip cards (`perspective: 1000px`, `transform-style: preserve-3d`) displaying letters (`C - O - N - T - A - C - T`) on the front, flipping on hover with spring cascade (`delay: index * 0.07`) to show GitHub, X, LinkedIn, Instagram, Facebook, Email, and Discord.
+     - Added continuous animated laser border lines and AnimatePresence tooltips.
+     - Integrated in `Homepage.jsx` (Connect & Engage section) and `Footer.jsx` across all pages.
+  3. **ShareSheet (`src/components/ui/ShareSheet.jsx` & `share-sheet.css`)**:
+     - Modal portal with native SVG channel icons (Copy Link with animated check state, WhatsApp, Telegram, X, Instagram, and More with local QR code generation via `qrcode-generator`).
+     - Integrated in `Blog.jsx` (article share toolbar) and `WellfoundCareersView.jsx` (both inside the Job Dossier detail view and on each job row in the live feed).
+  4. **SolarSystem (`src/components/ui/SolarSystem.jsx` & `solar-system.css`)**:
+     - Evaluated performance: 100% pure CSS 3D transforms (`rotateX(65deg) rotateY(-10deg) rotateZ()`, `transform-style: preserve-3d`, billboard cancel keyframes). Zero heavy WebGL, zero Three.js, zero canvas buffers, GPU compositor accelerated with ~0 CPU overhead.
+     - Positioned on `Homepage.jsx` right after Section 2 as the "Deep Skill Ontology & Neural Matching" section with tech stacks (React, TypeScript, Python AI, Next.js, Flutter, Rust, Go, Vue) orbiting the SmartHire AI Neural Core.
+- **Verification & Deployment**:
+  - Local production build in `smarthire-react`: **0 errors, 0 warnings** (`index-WD_9sPGb.js`, `PublicCareers-UHWP0jDR.js`, `Blog-DPlzlawE.js`).
+  - Git committed (`bb7a53b`, `3c6bb27`) and pushed to `main`.
+  - Deployed to AWS Lightsail server (`34.194.119.199`), archives removed immediately, PM2 `smarthire-ats` reloaded.
+  - Verified `HTTP 200 OK` on `https://smarthireus.com` serving `index-WD_9sPGb.js`.
+  - End-to-end verified via Playwright: confirmed SpotlightNavbar hover/active states, SolarSystem 3D orbits, SocialFlipButton flip cascade, Blog ShareSheet modal, and Careers feed ShareSheet modal.
+
 ## Product Roadmap & Architecture Plan (Queued Features)
 
 The following high-impact features and optimizations have been agreed upon and prioritized for upcoming execution sessions (No direct action taken yet; planned & architected):
@@ -103,30 +161,6 @@ The following high-impact features and optimizations have been agreed upon and p
   - **Branded & Blind Resume Wrapper**: Formats candidate resume with agency letterhead/header, core competencies table, clean bullet points, and optional contact masking (hiding direct phone/email to prevent poaching).
   - **1-Click Actions**: 📋 Copy formatted text to clipboard (for portal/email paste), 📥 Download PDF/DOCX submittal package, and ✉️ Direct email dispatch to Account Manager / Client.
 
-### 2026-10-17 — VengeanceUI CreepyButton, FaqAccordion & StaggeredGrid Animations Live Deployment
-- **Context & Objectives**:
-  - The user requested integration of three VengeanceUI components via shadcn registry:
-    1. `creepy-button` (`https://raw.githubusercontent.com/Ashutoshx7/VengeanceUI/main/public/r/creepy-button.json`): Applied to the hero section on the main page for both "Start now" and the neighboring "Explore Features" button.
-    2. `faq-accordion` (`https://raw.githubusercontent.com/Ashutoshx7/VengeanceUI/main/public/r/faq-accordion.json`): Added to the FAQ section on the main page (`Homepage.jsx`), as well as unifying the FAQs on `About.jsx` and `SmartScreenProduct.jsx`.
-    3. `staggered-grid` (`https://raw.githubusercontent.com/Ashutoshx7/VengeanceUI/main/public/r/staggered-grid.json`): Applied to Section 2 ("Engineered for High-Velocity Recruiter Workflows" 8 feature cards) so that cards animate upwards in a staggered sequence as users scroll into view.
-- **Architectural Implementations & Fixes**:
-  1. **CreepyButton Component (`src/components/ui/CreepyButton.jsx`)**:
-     - Built with Framer Motion spring rotation (`rotate: isHovered ? -12 : 0`) around pivot `origin-[1.25em_50%]`.
-     - Underlying hidden eyes container calculates trigonometric cursor angles and distances, smoothly animating pupils (`Math.atan2(-dy, dx) + PI/2`) with real-time mouse/touch tracking and 3-second blinking loops.
-     - Supports `primary` (brand blue `#2563eb`), `outline`/`secondary` (crisp white `#ffffff` with black inner shadow), button click handlers, client-side routing (`to="/ats"` via `useNavigate`), and anchor hash scrolling (`href="#features"`).
-  2. **FaqAccordion Component (`src/components/ui/FaqAccordion.jsx`)**:
-     - Built with VengeanceUI design specifications: 7px left accent bar (`#cbd5e1` idle, `#0f172a` active), dynamic indicator (`+` / `−`), rotating chevron arrow (133° down to -44° up), and CSS grid-template-rows expansion (`0fr` -> `1fr`).
-     - Added dedicated FAQ section to `Homepage.jsx` covering semantic AI training, proactive JD matching, RBAC vault isolation, manager approvals, anti-proxy biometric safeguards, and Excel submittal exports.
-     - Upgraded `About.jsx` and `SmartScreenProduct.jsx` to use `FaqAccordion`.
-  3. **StaggeredGrid Component (`src/components/ui/StaggeredGrid.jsx`)**:
-     - Engineered Framer Motion staggered container (`staggerChildren: 0.08`, `delayChildren: 0.1`) and item variants (`y: 35 -> 0`, `opacity: 0 -> 1`, `scale: 0.98 -> 1`).
-     - Wrapped the 8 feature cards in Section 2 of `Homepage.jsx` with viewport triggers (`once: true, amount: 0.12`) and smooth hover lift (`whileHover: { y: -6 }`).
-- **Verification & Deployment**:
-  - Local production build in `smarthire-react`: **0 errors, 0 warnings** in 2.88s (`index-CqLvWsct.js`, `index-D0izMHrF.css`).
-  - Git committed and pushed to `origin main` (`0e8f657`).
-  - Bundle extracted to Lightsail `/var/www/html/` and `/home/ubuntu/smarthire/dist/`, archives cleaned immediately, old bundles pruned, PM2 `smarthire-ats` reloaded.
-  - End-to-end verified via Playwright against `https://smarthireus.com`: HTTP 200 OK, both Creepy buttons interactive, 8 staggered cards animating, FAQ accordion expanding. Disk space verified at 55% (8.4GB free).
-
 ### 2026-10-15 — Firebase Billing Explode Protection, Multi-Tier Caching Engine, O(1) User Lookups & Batched Hotlists Ingestion
 - **Context & Objectives**:
   - The user requested optimization for high-volume incoming data (emails, manual uploads, mobile app, job portals) across multiple recruiters to prevent database lag and server CPU spikes.
@@ -154,7 +188,40 @@ The following high-impact features and optimizations have been agreed upon and p
   - Git committed (`ecfea6a`) and pushed to `origin main`.
   - Production bundle deployed to AWS Lightsail server (`34.194.119.199`), temporary archives removed immediately, asset bundles pruned, PM2 `smarthire-ats` reloaded.
   - Verified `HTTP 200 OK` on `https://smarthireus.com` serving `index-BG3zZY6m.js`.
-  - Server disk space verified at 54% (8.6GB free).
+
+### 2026-10-16 — SmartSign RTR: Dropbox Sign (HelloSign) Parity, Official Florida Exhibit E Contract Engine, Interactive Preview, CC Dispatch & Certified 2-Page Audit Certificate
+- **Context & Objectives**:
+  - The user requested a complete overhaul of SmartSign RTR (`/sign-rtr`) to match the authentic Dropbox Sign (HelloSign) format and workflow based on 5 screenshots and 2 sample documents:
+    1. `Doc/RTR_FL-pankajmaharwade829_gmail.com.pdf` (Florida Exhibit E Resume Self-Certification Form with contract no. `80101507-23-STC-ITSA`).
+    2. `Doc/Audit Trail.pdf` (Official HelloSign Audit Trail Certificate with Document ID SHA-256 hash, timestamps, and IP addresses).
+  - Requirements included:
+    - Eliminate clunky bottom summary boxes on the document canvas.
+    - Authentic Florida Exhibit E legal contract sheet layout with perjury & release clauses.
+    - Cyan field boxes (`#D8F3F7`, `#00A3C4`, corner handles when selected).
+    - Interactive Preview mode toggling red prompt `[ Click to sign * ]` and formatted dates `MM / DD / YYYY`.
+    - Right sidebar field inspector: uppercase field title, delete icon, `Assigned to` dropdown, `Field name (required)` input, `[x] Required field` checkbox.
+    - Step 4 Review & Send: Signers list, `+ Add CC recipient` tag manager, Document expiration dropdown, Subject & Message inputs, `Send for signature` button.
+    - Automated HTML email dispatch: invitation email to candidate & CCs, and completion notice with SHA-256 hash upon signing.
+    - Certified 2-Page Completion View: Page 1 (Signed Contract) + Page 2 (Official Certified Audit Trail Certificate).
+- **Architectural Implementations & Fixes**:
+  1. **Backend Integration (`server/index.js`)**:
+     - Updated `/api/rtr/upload-document`: detects Florida Exhibit E (`80101507-23-STC-ITSA`, `Exhibit E`, `Resume Self-Certification`, `FL-`) and returns formatted text, `isFloridaExhibitE: true`.
+     - Integrated `sendRtrEmailNotification` using configured Yahoo SMTP (`omkesh@coolsofttech.com`) to send invitation emails with direct signing link and completion notices with SHA-256 hash to candidate and CC recipients.
+  2. **Frontend Workflow & Templates (`SmartSignRtrPage.jsx`)**:
+     - Configured `DEFAULT_FLORIDA_EXHIBIT_E_DOCUMENT` as primary template with Contract No. `80101507-23-STC-ITSA` and default field metadata.
+     - Implemented authentic Florida Exhibit E contract paper canvas with centered headers, quote clauses, and underline blanks.
+     - Styled editor fields in authentic HelloSign cyan (`#D8F3F7`, `#00A3C4`, corner handles).
+     - Implemented `isPreviewMode` toggle rendering candidate perspective with red button **`[ ✍️ Click to sign * ]`**, `MM / DD / YYYY` dates, and `← Return to editing` header button.
+     - Implemented right sidebar inspector with uppercase header, delete icon, signer assignment, and unique field name input.
+     - Implemented Step 4 Review & Send with CC recipient manager (`ccRecipients`), document expiration dropdown, pre-filled invitation copy, and copyable signing link.
+     - Candidate signing view renders authentic 2-page document: Page 1 (Signed Document) + Page 2 (Official Certified Audit Trail Certificate matching `Doc/Audit Trail.pdf`).
+     - Replaced decorative Unicode emojis with sleek SVG line icons (Rule 8 compliant).
+- **Verification & Dual-Sync Deployment**:
+  - Local production build in `smarthire-react`: **0 errors, 0 warnings** (`SmartSignRtrPage-BLbs4Gce.js`, `index-C_6UErVU.js`).
+  - Git committed (`abfad0c`) and pushed to `main`.
+  - Deployed to AWS Lightsail server (`34.194.119.199`), bundle extracted to `/var/www/html/` and `/home/ubuntu/smarthire/dist/`, archives removed immediately (Rule 5), asset bundles pruned, PM2 `smarthire-ats` reloaded.
+  - Verified `HTTP 200 OK` on `https://smarthireus.com` serving `index-C_6UErVU.js`.
+  - Full end-to-end verification via Playwright: verified Select documents, Florida Exhibit E template, Add signers, Place fields canvas, Preview mode (`[ Click to sign * ]`), Review and send, CC recipient management, and expiration dropdown.
 
 ### 2026-10-15 — Resolution of Submittal Pack Resume Horizontal Overflow, Square Boxes (□), Blank Skills Table, and Paragraph Fragmentation
 - **Context & Objectives**:
