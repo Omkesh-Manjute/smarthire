@@ -13027,6 +13027,9 @@ app.post('/api/recruiter/sourcing/bulk-import', express.json({ limit: '10mb' }),
         }
         existing.status = 'New';
         existing.isNew = true;
+        existing.isSourcedFromExtension = true;
+        existing.isExtensionSourced = true;
+        existing.sourcedAt = new Date().toISOString();
         existing.updatedAt = new Date().toISOString();
         existing.receivedAt = new Date().toISOString();
         existing.receivedDate = new Date().toISOString();
@@ -13062,6 +13065,9 @@ app.post('/api/recruiter/sourcing/bulk-import', express.json({ limit: '10mb' }),
         experience: c.experience ? String(c.experience) : (c.years_of_experience ? `${c.years_of_experience}+ Years` : '5+ Years'),
         status: 'New',
         isNew: true,
+        isSourcedFromExtension: true,
+        isExtensionSourced: true,
+        sourcedAt: nowIso,
         source: c.source || source || 'Monster+ Copilot Extension',
         sourceCategory: (c.source || source || '').toLowerCase().includes('dice') ? 'dice' : 'monster_plus',
         recruiterEmail: assignedRecruiterEmail,

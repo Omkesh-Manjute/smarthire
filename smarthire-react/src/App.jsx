@@ -110,6 +110,8 @@ function App() {
           <Route path="/pricing" element={<ProtectedRoute><Pricing /></ProtectedRoute>} />
           <Route path="/branding" element={<ProtectedRoute><BrandingCenter /></ProtectedRoute>} />
           <Route path="/inbox" element={<ProtectedRoute><RecruiterInbox /></ProtectedRoute>} />
+          <Route path="/sourcing" element={<ProtectedRoute><RecruiterInbox defaultTableCategory="extension_sourced" /></ProtectedRoute>} />
+          <Route path="/extension-sourced" element={<ProtectedRoute><RecruiterInbox defaultTableCategory="extension_sourced" /></ProtectedRoute>} />
           <Route path="/messages" element={<ProtectedRoute><RecruiterInbox defaultViewMode="chat" /></ProtectedRoute>} />
           <Route path="/linkedin-posts" element={<SuperAdminRoute><LinkedInPosts /></SuperAdminRoute>} />
           <Route path="/submittal-pack" element={<ProtectedRoute><SubmittalPackPage /></ProtectedRoute>} />

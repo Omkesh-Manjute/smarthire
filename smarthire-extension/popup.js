@@ -8,12 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let activeVariant = 1;
   let scrapedCandidates = [];
   let selectedCandidateIds = new Set();
-  let currentUser = {
-    name: 'Omkesh Manjute',
-    email: 'omkesh@coolsofttech.com',
-    role: 'superadmin',
-    company: 'COOLSOFT LLC'
-  };
+  let currentUser = null;
   let isUserAuthenticated = false;
   let activePopupCand = null;
   const sentCandidateEmails = new Set();
@@ -28,7 +23,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const popupLoginEmail = document.getElementById('popupLoginEmail');
   const popupLoginPass = document.getElementById('popupLoginPass');
   const popupDoLoginBtn = document.getElementById('popupDoLoginBtn');
-  const popupOmkeshQuickBtn = document.getElementById('popupOmkeshQuickBtn');
   const popupCloseLoginBtn = document.getElementById('popupCloseLoginBtn');
   const popupLoginMsg = document.getElementById('popupLoginMsg');
 
@@ -43,6 +37,23 @@ document.addEventListener('DOMContentLoaded', () => {
   const popupCompStatus = document.getElementById('popupCompStatus');
   const popupCompCancel = document.getElementById('popupCompCancel');
   const popupCompSend = document.getElementById('popupCompSend');
+
+  const popupBulkOutreachBtn = document.getElementById('popupBulkOutreachBtn');
+  const popupBulkCountBadge = document.getElementById('popupBulkCountBadge');
+  const popupBulkOverlay = document.getElementById('popupBulkOverlay');
+  const popupBulkClose = document.getElementById('popupBulkClose');
+  const popupBulkSender = document.getElementById('popupBulkSender');
+  const popupBulkRecipientsCount = document.getElementById('popupBulkRecipientsCount');
+  const popupBulkRecipientsChips = document.getElementById('popupBulkRecipientsChips');
+  const popupBulkTitle = document.getElementById('popupBulkTitle');
+  const popupBulkSubject = document.getElementById('popupBulkSubject');
+  const popupBulkBody = document.getElementById('popupBulkBody');
+  const popupBulkProgressContainer = document.getElementById('popupBulkProgressContainer');
+  const popupBulkProgressBar = document.getElementById('popupBulkProgressBar');
+  const popupBulkLiveLog = document.getElementById('popupBulkLiveLog');
+  const popupBulkStatus = document.getElementById('popupBulkStatus');
+  const popupBulkCancel = document.getElementById('popupBulkCancel');
+  const popupBulkSend = document.getElementById('popupBulkSend');
 
   const portalBadge = document.getElementById('portalBadge');
   const portalName = document.getElementById('portalName');
@@ -520,6 +531,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const count = selectedCandidateIds.size;
     selectedCountBadge.innerText = count;
     selectAllCheckbox.checked = count === scrapedCandidates.length && count > 0;
+    const validEmailsCount = scrapedCandidates.filter(c => 
+      selectedCandidateIds.has(c.id) && c.email && c.email.includes('@') && !c.email.includes('@monster.talent') && c.email !== 'Not Disclosed'
+    ).length;
+    if (popupBulkCountBadge) popupBulkCountBadge.innerText = validEmailsCount;
   }
 
   // 6. Action 1: Copy to Excel (TSV)
@@ -596,6 +611,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Action 3: 1-Click Bulk Import to SmartHire ATS
   importAtsBtn.addEventListener('click', () => {
+    if (!isUserAuthenticated || !currentUser) {
+      alert('Authentication required: Please sign in with your SmartHire ATS recruiter credentials.');
+      if (popupLoginCard) popupLoginCard.style.display = 'block';
+      return;
+    }
+
     const selected = scrapedCandidates.filter(c => selectedCandidateIds.has(c.id));
     if (selected.length === 0) {
       alert('Please select candidates to import.');
@@ -613,8 +634,8 @@ document.addEventListener('DOMContentLoaded', () => {
         candidates: selected,
         targetReqId,
         source: `${detectedPortal} Copilot Extension`,
-        recruiterEmail: currentUser.email || 'omkesh@coolsofttech.com',
-        recruiterName: currentUser.name || 'Omkesh Manjute'
+        recruiterEmail: currentUser.email,
+        recruiterName: currentUser.name
       }
     }, (response) => {
       if (response && response.success && response.data) {
@@ -631,28 +652,53 @@ document.addEventListener('DOMContentLoaded', () => {
   function fetchCurrentUser() {
     try {
       chrome.runtime.sendMessage({ action: 'GET_CURRENT_USER' }, (res) => {
-        if (res && res.success && res.user) {
+        if (res && res.success && res.user && res.isLoggedIn) {
           currentUser = res.user;
-          isUserAuthenticated = !!res.isLoggedIn;
-          updateRecruiterBarUI();
+          isUserAuthenticated = true;
+        } else {
+          currentUser = null;
+          isUserAuthenticated = false;
         }
+        updateRecruiterBarUI();
       });
-    } catch (e) {}
+    } catch (e) {
+      currentUser = null;
+      isUserAuthenticated = false;
+      updateRecruiterBarUI();
+    }
   }
 
   function updateRecruiterBarUI() {
-    if (popupRecruiterName) popupRecruiterName.innerText = currentUser.name || 'Recruiter';
-    if (popupRecruiterEmail) popupRecruiterEmail.innerText = `(${currentUser.email || 'omkesh@coolsofttech.com'})`;
-    if (popupAuthToggle) popupAuthToggle.innerText = isUserAuthenticated ? 'Sign Out / Switch' : 'Login / Switch';
+    if (isUserAuthenticated && currentUser) {
+      if (popupRecruiterName) popupRecruiterName.innerText = currentUser.name || 'Recruiter';
+      if (popupRecruiterEmail) popupRecruiterEmail.innerText = `(${currentUser.email})`;
+      if (popupAuthToggle) {
+        popupAuthToggle.innerText = 'Sign Out';
+        popupAuthToggle.style.color = '#F87171';
+      }
+    } else {
+      if (popupRecruiterName) popupRecruiterName.innerText = 'Not Signed In';
+      if (popupRecruiterEmail) popupRecruiterEmail.innerText = '(Login Required)';
+      if (popupAuthToggle) {
+        popupAuthToggle.innerText = 'Sign In';
+        popupAuthToggle.style.color = '#38BDF8';
+      }
+    }
   }
 
   function setupAuthEvents() {
     if (popupAuthToggle) {
       popupAuthToggle.addEventListener('click', () => {
-        if (popupLoginCard.style.display === 'none' || !popupLoginCard.style.display) {
-          popupLoginCard.style.display = 'block';
+        if (isUserAuthenticated && currentUser) {
+          if (confirm(`Sign out of SmartHire ATS (${currentUser.name})?`)) {
+            chrome.runtime.sendMessage({ action: 'LOGOUT_USER' }, () => {
+              currentUser = null;
+              isUserAuthenticated = false;
+              updateRecruiterBarUI();
+            });
+          }
         } else {
-          popupLoginCard.style.display = 'none';
+          popupLoginCard.style.display = (popupLoginCard.style.display === 'none' || !popupLoginCard.style.display) ? 'block' : 'none';
         }
       });
     }
@@ -660,14 +706,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (popupCloseLoginBtn) {
       popupCloseLoginBtn.addEventListener('click', () => {
         popupLoginCard.style.display = 'none';
-      });
-    }
-
-    if (popupOmkeshQuickBtn) {
-      popupOmkeshQuickBtn.addEventListener('click', () => {
-        popupLoginEmail.value = 'omkesh@coolsofttech.com';
-        popupLoginPass.value = 'admin';
-        performPopupLogin();
       });
     }
 
@@ -728,11 +766,17 @@ document.addEventListener('DOMContentLoaded', () => {
     text = text.replace(/\b(req|requisition|job\s*id|req\s*#|req\s*id)\s*[:#=-]?\s*#?\d+/gi, '');
     text = text.replace(/#\d{5,8}\b/g, '');
     text = text.replace(/\b159\d{3}\b/g, '');
-    // 3. Strip internal submission deadlines
-    text = text.replace(/Submission deadline\s*:.*$/gim, '');
-    text = text.replace(/Start date\s*:.*$/gim, '');
-    text = text.replace(/End Date\s*:.*$/gim, '');
-    // Clean duplicate newlines
+    // 3. Strip internal submission deadlines (do NOT use .*$ as that wipes all remaining text on single-line strings)
+    text = text.replace(/Submission deadline\s*:\s*[\d\/\:\sAMPamp]+/gi, '');
+    text = text.replace(/Start date\s*:\s*\d{1,2}\/\d{1,2}\/\d{2,4}/gi, '');
+    text = text.replace(/End Date\s*:\s*\d{1,2}\/\d{1,2}\/\d{2,4}/gi, '');
+    // 4. Structure sections and bullet points cleanly
+    text = text.replace(/\s*Description:\s*/gi, '\n\nJob Responsibilities & Scope:\n');
+    text = text.replace(/\s*Note:\s*/gi, '\n\nKey Position Notes:\n');
+    text = text.replace(/([.?!])\s*•\s*/g, '$1\n\n• ');
+    text = text.replace(/\s*•\s*/g, '\n• ');
+    text = text.replace(/([.?!])\s*\*\s*/g, '$1\n\n* ');
+    text = text.replace(/[ \t]+/g, ' ');
     text = text.replace(/\n{3,}/g, '\n\n').trim();
     return text;
   }
@@ -752,10 +796,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const firstName = rawName.split(' ')[0] || 'there';
     const cleanTitle = cleanJobTitle(job ? job.title : 'Technical Specialist');
     const location = job?.location || 'United States (Remote / Onsite as required)';
-    const skills = Array.isArray(job?.skills) ? job.skills.slice(0, 4).join(', ') : '';
+    const skills = Array.isArray(job?.skills) ? job.skills.slice(0, 5).join(', ') : '';
     const cleanDesc = sanitizeJobDescription(job?.description || job?.fullDescription || job?.rawDescription || '');
 
     const subject = `Career Opportunity: ${cleanTitle} — COOLSOFT LLC`;
+
+    const recruiterDisplayName = currentUser ? currentUser.name : 'Technical Recruiter';
+    const recruiterWorkEmail = currentUser ? currentUser.email : 'recruiting@coolsofttech.com';
 
     const body = `Hi ${firstName},
 
@@ -768,16 +815,15 @@ Role: ${cleanTitle}
 Location: ${location}
 Work Authorization: US Citizen / Green Card / Authorized to Work in US
 
-Position Overview & Requirements:
 ${cleanDesc}
 
 If you are open to exploring this opportunity, please reply to this email with your updated resume, or let me know a convenient time for a brief introductory call.
 
 Best regards,
 
-${currentUser.name || 'Omkesh Manjute'}
+${recruiterDisplayName}
 Technical Recruiter | COOLSOFT LLC
-Email: ${currentUser.email || 'omkesh@coolsofttech.com'}
+Email: ${recruiterWorkEmail}
 Website: http://www.coolsofttech.com`;
 
     return {
@@ -794,9 +840,20 @@ Website: http://www.coolsofttech.com`;
     if (popupComposerClose) popupComposerClose.addEventListener('click', closePopupComposer);
     if (popupCompCancel) popupCompCancel.addEventListener('click', closePopupComposer);
     if (popupCompSend) popupCompSend.addEventListener('click', sendPopupOutreach);
+
+    if (popupBulkOutreachBtn) popupBulkOutreachBtn.addEventListener('click', openPopupBulkComposer);
+    if (popupBulkClose) popupBulkClose.addEventListener('click', closePopupBulkComposer);
+    if (popupBulkCancel) popupBulkCancel.addEventListener('click', closePopupBulkComposer);
+    if (popupBulkSend) popupBulkSend.addEventListener('click', sendPopupBulkOutreach);
   }
 
   function openPopupComposer(candidate, job) {
+    if (!isUserAuthenticated || !currentUser) {
+      alert('Authentication required: Please sign in with your SmartHire ATS recruiter credentials.');
+      if (popupLoginCard) popupLoginCard.style.display = 'block';
+      return;
+    }
+
     if (!candidate) return;
     activePopupCand = candidate;
     const targetJob = job || selectedJob;
@@ -823,6 +880,11 @@ Website: http://www.coolsofttech.com`;
   }
 
   function sendPopupOutreach() {
+    if (!isUserAuthenticated || !currentUser) {
+      alert('Authentication required.');
+      return;
+    }
+
     const to = popupCompEmail?.value.trim();
     const subject = popupCompSubject?.value.trim();
     const body = popupCompBody?.value.trim();
@@ -874,5 +936,167 @@ Website: http://www.coolsofttech.com`;
         if (popupCompStatus) popupCompStatus.innerHTML = `<span style="color:#DC2626; font-weight:600;">Failed: ${res?.message || 'SMTP delivery rejected'}</span>`;
       }
     });
+  }
+
+  function openPopupBulkComposer() {
+    if (!isUserAuthenticated || !currentUser) {
+      alert('Authentication required: Please sign in with your SmartHire ATS credentials to send bulk emails.');
+      if (popupLoginCard) popupLoginCard.style.display = 'block';
+      return;
+    }
+
+    const validCandidates = scrapedCandidates.filter(c => 
+      selectedCandidateIds.has(c.id) && c.email && c.email.includes('@') && !c.email.includes('@monster.talent') && c.email !== 'Not Disclosed'
+    );
+
+    if (validCandidates.length === 0) {
+      alert('Please select at least one candidate with a valid email address.');
+      return;
+    }
+
+    if (popupBulkSender) popupBulkSender.innerText = `${currentUser.name} <${currentUser.email}>`;
+    if (popupBulkRecipientsCount) popupBulkRecipientsCount.innerText = validCandidates.length;
+
+    if (popupBulkRecipientsChips) {
+      popupBulkRecipientsChips.innerHTML = validCandidates.map(c => `
+        <span style="background:#EFF6FF; color:#1E40AF; border:1px solid #BFDBFE; font-size:10px; font-weight:600; padding:1px 6px; border-radius:3px; display:inline-block;">
+          ${c.name} &lt;${c.email}&gt;
+        </span>
+      `).join('');
+    }
+
+    const cleanTitle = cleanJobTitle(selectedJob ? selectedJob.title : 'Technical Specialist');
+    const location = selectedJob?.location || 'United States (Remote / Onsite as required)';
+    const cleanDesc = sanitizeJobDescription(selectedJob?.description || selectedJob?.fullDescription || selectedJob?.rawDescription || '');
+
+    if (popupBulkTitle) popupBulkTitle.value = cleanTitle;
+    if (popupBulkSubject) popupBulkSubject.value = `Career Opportunity: ${cleanTitle} — COOLSOFT LLC`;
+
+    if (popupBulkBody) {
+      popupBulkBody.value = `Hi {{firstName}},
+
+I hope this email finds you well.
+
+I came across your profile and was very impressed by your background. We currently have an immediate opening for a ${cleanTitle} role that aligns closely with your expertise.
+
+--- Position Details ---
+Role: ${cleanTitle}
+Location: ${location}
+Work Authorization: US Citizen / Green Card / Authorized to Work in US
+
+${cleanDesc}
+
+If you are open to exploring this opportunity, please reply to this email with your updated resume, or let me know a convenient time for a brief introductory call.
+
+Best regards,
+
+${currentUser.name}
+Technical Recruiter | COOLSOFT LLC
+Email: ${currentUser.email}
+Website: http://www.coolsofttech.com`;
+    }
+
+    if (popupBulkProgressContainer) popupBulkProgressContainer.style.display = 'none';
+    if (popupBulkLiveLog) popupBulkLiveLog.innerHTML = '';
+    if (popupBulkStatus) popupBulkStatus.innerHTML = '';
+    if (popupBulkSend) {
+      popupBulkSend.disabled = false;
+      popupBulkSend.innerText = `Send Bulk Emails (${validCandidates.length})`;
+    }
+
+    if (popupBulkOverlay) popupBulkOverlay.style.display = 'flex';
+  }
+
+  function closePopupBulkComposer() {
+    if (popupBulkOverlay) popupBulkOverlay.style.display = 'none';
+  }
+
+  async function sendPopupBulkOutreach() {
+    if (!isUserAuthenticated || !currentUser) {
+      alert('Authentication required.');
+      return;
+    }
+
+    const validCandidates = scrapedCandidates.filter(c => 
+      selectedCandidateIds.has(c.id) && c.email && c.email.includes('@') && !c.email.includes('@monster.talent') && c.email !== 'Not Disclosed'
+    );
+
+    if (validCandidates.length === 0) return;
+
+    const subjectTemplate = popupBulkSubject?.value.trim();
+    const bodyTemplate = popupBulkBody?.value.trim();
+
+    if (!subjectTemplate || !bodyTemplate) {
+      if (popupBulkStatus) popupBulkStatus.innerHTML = '<span style="color:#DC2626;">Subject and message template required</span>';
+      return;
+    }
+
+    popupBulkSend.disabled = true;
+    if (popupBulkProgressContainer) popupBulkProgressContainer.style.display = 'block';
+
+    let successCount = 0;
+    let failCount = 0;
+
+    for (let i = 0; i < validCandidates.length; i++) {
+      const cand = validCandidates[i];
+      const firstName = (cand.name || 'there').split(' ')[0] || 'there';
+      const personalizedBody = bodyTemplate.replace(/\{\{firstName\}\}/g, firstName);
+
+      popupBulkSend.innerText = `Sending ${i + 1} of ${validCandidates.length}...`;
+      const pct = Math.round(((i + 1) / validCandidates.length) * 100);
+      if (popupBulkProgressBar) popupBulkProgressBar.style.width = `${pct}%`;
+
+      try {
+        const res = await new Promise((resolve) => {
+          chrome.runtime.sendMessage({
+            action: 'SEND_OUTREACH_EMAIL',
+            payload: {
+              recruiterEmail: currentUser.email,
+              recruiterName: currentUser.name,
+              to: cand.email,
+              subject: subjectTemplate,
+              body: personalizedBody,
+              html: personalizedBody.replace(/\n/g, '<br>')
+            }
+          }, resolve);
+        });
+
+        if (res && res.success) {
+          successCount++;
+          sentCandidateEmails.add(cand.email.toLowerCase());
+          sentCandidateEmails.add((cand.name || '').toLowerCase());
+          if (popupBulkLiveLog) {
+            const row = document.createElement('div');
+            row.style.color = '#059669';
+            row.innerText = `✓ [${i+1}/${validCandidates.length}] Delivered to ${cand.name} (${cand.email})`;
+            popupBulkLiveLog.appendChild(row);
+            popupBulkLiveLog.scrollTop = popupBulkLiveLog.scrollHeight;
+          }
+        } else {
+          failCount++;
+          if (popupBulkLiveLog) {
+            const row = document.createElement('div');
+            row.style.color = '#DC2626';
+            row.innerText = `✗ [${i+1}/${validCandidates.length}] Failed for ${cand.name}: ${res?.message || 'Error'}`;
+            popupBulkLiveLog.appendChild(row);
+            popupBulkLiveLog.scrollTop = popupBulkLiveLog.scrollHeight;
+          }
+        }
+      } catch (err) {
+        failCount++;
+      }
+
+      await new Promise(r => setTimeout(r, 350));
+    }
+
+    if (popupBulkStatus) {
+      popupBulkStatus.innerHTML = `<span style="color:#059669; font-weight:700;">✓ Dispatched: ${successCount} sent, ${failCount} failed</span>`;
+    }
+    popupBulkSend.innerText = 'Completed!';
+    renderTable();
+
+    setTimeout(() => {
+      closePopupBulkComposer();
+    }, 2200);
   }
 });

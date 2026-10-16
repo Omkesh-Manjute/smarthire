@@ -43,15 +43,11 @@
     if (saved) activeFlow = Object.assign(activeFlow, JSON.parse(saved));
   } catch (e) {}
 
-  let currentUser = {
-    name: 'Omkesh Manjute',
-    email: 'omkesh@coolsofttech.com',
-    role: 'superadmin',
-    company: 'COOLSOFT LLC'
-  };
+  let currentUser = null;
   let isUserAuthenticated = false;
   let activeOutreachCandidate = null;
   const sentCandidateEmails = new Set();
+  let selectedCandidateIndices = new Set();
 
   function sanitizeJobDescription(desc) {
     if (!desc) return '';
@@ -66,11 +62,17 @@
     text = text.replace(/\b(req|requisition|job\s*id|req\s*#|req\s*id)\s*[:#=-]?\s*#?\d+/gi, '');
     text = text.replace(/#\d{5,8}\b/g, '');
     text = text.replace(/\b159\d{3}\b/g, '');
-    // 3. Strip internal submission deadlines
-    text = text.replace(/Submission deadline\s*:.*$/gim, '');
-    text = text.replace(/Start date\s*:.*$/gim, '');
-    text = text.replace(/End Date\s*:.*$/gim, '');
-    // Clean duplicate newlines
+    // 3. Strip internal submission deadlines (do NOT use .*$ as that wipes all remaining text on single-line strings)
+    text = text.replace(/Submission deadline\s*:\s*[\d\/\:\sAMPamp]+/gi, '');
+    text = text.replace(/Start date\s*:\s*\d{1,2}\/\d{1,2}\/\d{2,4}/gi, '');
+    text = text.replace(/End Date\s*:\s*\d{1,2}\/\d{1,2}\/\d{2,4}/gi, '');
+    // 4. Structure sections and bullet points cleanly
+    text = text.replace(/\s*Description:\s*/gi, '\n\nJob Responsibilities & Scope:\n');
+    text = text.replace(/\s*Note:\s*/gi, '\n\nKey Position Notes:\n');
+    text = text.replace(/([.?!])\s*•\s*/g, '$1\n\n• ');
+    text = text.replace(/\s*•\s*/g, '\n• ');
+    text = text.replace(/([.?!])\s*\*\s*/g, '$1\n\n* ');
+    text = text.replace(/[ \t]+/g, ' ');
     text = text.replace(/\n{3,}/g, '\n\n').trim();
     return text;
   }
@@ -90,10 +92,13 @@
     const firstName = rawName.split(' ')[0] || 'there';
     const cleanTitle = cleanJobTitle(job ? job.title : 'Technical Specialist');
     const location = job?.location || 'United States (Remote / Onsite as required)';
-    const skills = Array.isArray(job?.skills) ? job.skills.slice(0, 4).join(', ') : '';
+    const skills = Array.isArray(job?.skills) ? job.skills.slice(0, 5).join(', ') : '';
     const cleanDesc = sanitizeJobDescription(job?.description || job?.fullDescription || job?.rawDescription || '');
 
     const subject = `Career Opportunity: ${cleanTitle} — COOLSOFT LLC`;
+
+    const recruiterDisplayName = currentUser ? currentUser.name : 'Technical Recruiter';
+    const recruiterWorkEmail = currentUser ? currentUser.email : 'recruiting@coolsofttech.com';
 
     const body = `Hi ${firstName},
 
@@ -106,16 +111,15 @@ Role: ${cleanTitle}
 Location: ${location}
 Work Authorization: US Citizen / Green Card / Authorized to Work in US
 
-Position Overview & Requirements:
 ${cleanDesc}
 
 If you are open to exploring this opportunity, please reply to this email with your updated resume, or let me know a convenient time for a brief introductory call.
 
 Best regards,
 
-${currentUser.name || 'Omkesh Manjute'}
+${recruiterDisplayName}
 Technical Recruiter | COOLSOFT LLC
-Email: ${currentUser.email || 'omkesh@coolsofttech.com'}
+Email: ${recruiterWorkEmail}
 Website: http://www.coolsofttech.com`;
 
     return {
@@ -159,21 +163,20 @@ Website: http://www.coolsofttech.com`;
       <div id="smarthire-recruiter-bar" class="smarthire-recruiter-bar">
         <div style="display:flex; align-items:center; gap:6px;">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#38BDF8" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          <span id="smarthire-recruiter-name-label" style="font-weight:700; color:#F8FAFC; font-size:11.5px;">${currentUser.name}</span>
-          <span id="smarthire-recruiter-email-label" style="color:#94A3B8; font-size:10.5px;">(${currentUser.email})</span>
+          <span id="smarthire-recruiter-name-label" style="font-weight:700; color:#F8FAFC; font-size:11.5px;">Not Signed In</span>
+          <span id="smarthire-recruiter-email-label" style="color:#94A3B8; font-size:10.5px;">(Login Required)</span>
         </div>
-        <button id="smarthire-btn-auth-toggle" class="smarthire-link-btn">Login / Switch</button>
+        <button id="smarthire-btn-auth-toggle" class="smarthire-link-btn" style="color:#38BDF8;">Sign In</button>
       </div>
 
       <!-- Login Popover Box -->
       <div id="smarthire-login-box" class="smarthire-login-box" style="display:none;">
         <div style="font-weight:700; font-size:12px; color:#0F172A; margin-bottom:4px;">Recruiter Authentication</div>
-        <div style="font-size:10.5px; color:#64748B; margin-bottom:8px;">Sign in to send candidate emails from your work address and credit ATS submittals.</div>
+        <div style="font-size:10.5px; color:#64748B; margin-bottom:8px;">Sign in with your SmartHire ATS recruiter credentials.</div>
         <input type="email" id="smarthire-login-email" placeholder="Work email (e.g. kamal@coolsofttech.com)" class="smarthire-input" style="font-size:11.5px; margin-bottom:6px; padding:6px 8px;" />
         <input type="password" id="smarthire-login-pass" placeholder="Password" class="smarthire-input" style="font-size:11.5px; margin-bottom:8px; padding:6px 8px;" />
         <div style="display:flex; gap:6px;">
           <button id="smarthire-btn-do-login" class="smarthire-btn-primary" style="flex:1; padding:6px; font-size:11.5px;">Sign In</button>
-          <button id="smarthire-btn-omkesh-default" class="smarthire-btn-secondary" style="font-size:10.5px; padding:6px 8px;">Omkesh</button>
           <button id="smarthire-btn-login-close" class="smarthire-btn-secondary" style="font-size:10.5px; padding:6px 8px;">Cancel</button>
         </div>
         <div id="smarthire-login-status" style="font-size:10.5px; margin-top:6px; display:none;"></div>
@@ -187,6 +190,26 @@ Website: http://www.coolsofttech.com`;
 
       <div class="smarthire-drawer-body">
         
+        <!-- AUTHENTICATION REQUIRED LOCK GATE -->
+        <div id="smarthire-auth-gate" class="smarthire-auth-gate" style="display:none;">
+          <div class="smarthire-auth-gate-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2.2">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+          </div>
+          <div style="font-weight:700; font-size:13.5px; color:#0F172A; margin-bottom:4px;">Recruiter Login Required</div>
+          <div style="font-size:11px; color:#64748B; margin-bottom:14px; line-height:1.45;">
+            Please sign in with your SmartHire ATS recruiter credentials to access live requisitions, candidate scraping, and email outreach.
+          </div>
+          <input type="email" id="smarthire-gate-email" placeholder="Work email (e.g. kamal@coolsofttech.com)" class="smarthire-input" style="font-size:11.5px; margin-bottom:8px; padding:7px 10px;" />
+          <input type="password" id="smarthire-gate-pass" placeholder="Password" class="smarthire-input" style="font-size:11.5px; margin-bottom:10px; padding:7px 10px;" />
+          <button id="smarthire-gate-btn-login" class="smarthire-btn-primary" style="width:100%; padding:8px; font-size:12px; font-weight:700;">
+            Sign In to SmartHire Copilot
+          </button>
+          <div id="smarthire-gate-status" style="font-size:11px; margin-top:8px; min-height:16px;"></div>
+        </div>
+
         <!-- VIEW 1: QUICK SOURCING TAB -->
         <div id="view-quick-sourcing">
           <!-- Requisition Selector Card -->
@@ -362,6 +385,10 @@ Website: http://www.coolsofttech.com`;
           <button id="smarthire-btn-copy-tsv" class="smarthire-btn-secondary" style="margin-bottom:6px;">
             📋 Copy to Clipboard (Excel TSV Format)
           </button>
+          <button id="smarthire-btn-bulk-outreach" class="smarthire-btn-primary" style="background:#2563EB; margin-bottom:6px; display:flex; align-items:center; justify-content:center; gap:6px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            <span>✉ Bulk Send JD Email to Selected (<span id="smarthire-bulk-count">0</span>)</span>
+          </button>
           <button id="smarthire-btn-import-ats" class="smarthire-btn-primary" style="background:#059669;">
             🚀 1-Click Import to SmartHire ATS
           </button>
@@ -526,15 +553,31 @@ Website: http://www.coolsofttech.com`;
       importToSmartHireAts();
     });
 
+    // Bulk Outreach Button
+    document.getElementById('smarthire-btn-bulk-outreach')?.addEventListener('click', () => {
+      openBulkComposer();
+    });
+
     // Refresh Jobs Button
     document.getElementById('smarthire-refresh-jobs')?.addEventListener('click', () => {
       fetchLiveJobs();
     });
 
-    // Recruiter Auth Toggle & Login Handlers
+    // Recruiter Auth Toggle (Sign Out or Open Login)
     document.getElementById('smarthire-btn-auth-toggle')?.addEventListener('click', () => {
-      const box = document.getElementById('smarthire-login-box');
-      if (box) box.style.display = box.style.display === 'none' ? 'block' : 'none';
+      if (isUserAuthenticated && currentUser) {
+        if (confirm(`Sign out of SmartHire ATS (${currentUser.name})?`)) {
+          chrome.runtime.sendMessage({ action: 'LOGOUT_USER' }, () => {
+            currentUser = null;
+            isUserAuthenticated = false;
+            updateRecruiterBarUI();
+            checkAndApplyAuthGate();
+          });
+        }
+      } else {
+        const box = document.getElementById('smarthire-login-box');
+        if (box) box.style.display = box.style.display === 'none' ? 'block' : 'none';
+      }
     });
 
     document.getElementById('smarthire-btn-login-close')?.addEventListener('click', () => {
@@ -542,43 +585,127 @@ Website: http://www.coolsofttech.com`;
       if (box) box.style.display = 'none';
     });
 
-    document.getElementById('smarthire-btn-omkesh-default')?.addEventListener('click', () => {
-      document.getElementById('smarthire-login-email').value = 'omkesh@coolsofttech.com';
-      document.getElementById('smarthire-login-pass').value = 'admin';
-      performRecruiterLogin();
-    });
-
     document.getElementById('smarthire-btn-do-login')?.addEventListener('click', () => {
       performRecruiterLogin();
     });
 
-    // Mount Outreach Composer Modal Overlay in DOM
+    // Auth Lock Gate Login Button
+    document.getElementById('smarthire-gate-btn-login')?.addEventListener('click', () => {
+      performGateLogin();
+    });
+
+    // Mount Outreach & Bulk Composer Modal Overlays in DOM
     initOutreachComposerModal();
+    initBulkComposerModal();
 
     // Auto-fetch fresh live jobs & recruiter identity on mount
     fetchCurrentUser();
     fetchLiveJobs();
   }
 
+  function checkAndApplyAuthGate() {
+    const gate = document.getElementById('smarthire-auth-gate');
+    const quickView = document.getElementById('view-quick-sourcing');
+    const flowView = document.getElementById('view-flow-studio');
+    const resultsCard = document.getElementById('smarthire-results-card');
+    const navTabs = document.querySelector('.smarthire-nav-tabs');
+
+    if (!isUserAuthenticated || !currentUser) {
+      if (gate) gate.style.display = 'block';
+      if (quickView) quickView.style.display = 'none';
+      if (flowView) flowView.style.display = 'none';
+      if (resultsCard) resultsCard.style.display = 'none';
+      if (navTabs) navTabs.style.display = 'none';
+    } else {
+      if (gate) gate.style.display = 'none';
+      if (quickView) quickView.style.display = 'block';
+      if (navTabs) navTabs.style.display = 'flex';
+      if (scrapedCandidates.length > 0 && resultsCard) resultsCard.style.display = 'block';
+    }
+  }
+
   function updateRecruiterBarUI() {
     const nameEl = document.getElementById('smarthire-recruiter-name-label');
     const emailEl = document.getElementById('smarthire-recruiter-email-label');
     const toggleBtn = document.getElementById('smarthire-btn-auth-toggle');
-    if (nameEl) nameEl.innerText = currentUser.name || 'Omkesh Manjute';
-    if (emailEl) emailEl.innerText = `(${currentUser.email || 'omkesh@coolsofttech.com'})`;
-    if (toggleBtn) toggleBtn.innerText = isUserAuthenticated ? 'Sign Out / Switch' : 'Login / Switch';
+    if (isUserAuthenticated && currentUser) {
+      if (nameEl) nameEl.innerText = currentUser.name || 'Recruiter';
+      if (emailEl) emailEl.innerText = `(${currentUser.email})`;
+      if (toggleBtn) {
+        toggleBtn.innerText = 'Sign Out';
+        toggleBtn.style.color = '#F87171';
+      }
+    } else {
+      if (nameEl) nameEl.innerText = 'Not Signed In';
+      if (emailEl) emailEl.innerText = '(Login Required)';
+      if (toggleBtn) {
+        toggleBtn.innerText = 'Sign In';
+        toggleBtn.style.color = '#38BDF8';
+      }
+    }
   }
 
   function fetchCurrentUser() {
     try {
       chrome.runtime.sendMessage({ action: 'GET_CURRENT_USER' }, (res) => {
-        if (res && res.success && res.user) {
+        if (res && res.success && res.user && res.isLoggedIn) {
           currentUser = res.user;
-          isUserAuthenticated = !!res.isLoggedIn;
-          updateRecruiterBarUI();
+          isUserAuthenticated = true;
+        } else {
+          currentUser = null;
+          isUserAuthenticated = false;
         }
+        updateRecruiterBarUI();
+        checkAndApplyAuthGate();
       });
-    } catch (e) {}
+    } catch (e) {
+      currentUser = null;
+      isUserAuthenticated = false;
+      updateRecruiterBarUI();
+      checkAndApplyAuthGate();
+    }
+  }
+
+  function performGateLogin() {
+    const email = document.getElementById('smarthire-gate-email')?.value.trim();
+    const password = document.getElementById('smarthire-gate-pass')?.value.trim();
+    const statusEl = document.getElementById('smarthire-gate-status');
+    const btn = document.getElementById('smarthire-gate-btn-login');
+
+    if (!email || !password) {
+      if (statusEl) {
+        statusEl.style.color = '#DC2626';
+        statusEl.innerText = 'Please enter both email and password';
+      }
+      return;
+    }
+
+    if (btn) {
+      btn.disabled = true;
+      btn.innerText = 'Signing In...';
+    }
+    if (statusEl) {
+      statusEl.style.color = '#2563EB';
+      statusEl.innerText = 'Authenticating with SmartHire ATS...';
+    }
+
+    chrome.runtime.sendMessage({ action: 'LOGIN_USER', email, password }, (res) => {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerText = 'Sign In to SmartHire Copilot';
+      }
+      if (res && res.success && res.user) {
+        currentUser = res.user;
+        isUserAuthenticated = true;
+        updateRecruiterBarUI();
+        checkAndApplyAuthGate();
+      } else {
+        if (statusEl) {
+          statusEl.style.color = '#DC2626';
+          statusEl.innerText = res?.message || 'Invalid email or password';
+        }
+      }
+    });
   }
 
   function performRecruiterLogin() {
@@ -616,6 +743,7 @@ Website: http://www.coolsofttech.com`;
           currentUser = res.user;
           isUserAuthenticated = true;
           updateRecruiterBarUI();
+          checkAndApplyAuthGate();
           if (statusEl) {
             statusEl.style.color = '#059669';
             statusEl.innerText = `✓ Welcome, ${currentUser.name}!`;
@@ -814,6 +942,263 @@ Website: http://www.coolsofttech.com`;
       sendBtn.innerText = 'Send Outreach Email';
       if (statusEl) statusEl.innerHTML = `<span style="color:#DC2626;">Error: ${e.message}</span>`;
     }
+  }
+
+  function initBulkComposerModal() {
+    if (document.getElementById('smarthire-bulk-overlay')) return;
+    const overlay = document.createElement('div');
+    overlay.id = 'smarthire-bulk-overlay';
+    overlay.style.display = 'none';
+    overlay.innerHTML = `
+      <div id="smarthire-bulk-modal">
+        <div class="smarthire-composer-header" style="background:#1E293B;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#60A5FA" stroke-width="2.2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            <span style="font-weight:700; font-size:13.5px; color:#FFFFFF;">Bulk JD Outreach Composer</span>
+          </div>
+          <button id="smarthire-bulk-close" style="background:none; border:none; color:#94A3B8; font-size:22px; cursor:pointer; line-height:1; padding:0 4px;">&times;</button>
+        </div>
+        <div class="smarthire-composer-body">
+          <div style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:6px; padding:7px 10px; font-size:11px; color:#1E40AF; display:flex; justify-content:space-between; align-items:center;">
+            <span>Sending as: <strong id="smarthire-bulk-sender-label"></strong></span>
+            <span style="color:#059669; font-size:10px; font-weight:700; background:#ECFDF5; border:1px solid #A7F3D0; padding:1px 6px; border-radius:3px;">No Rate · No Req # · Dynamic {{firstName}}</span>
+          </div>
+          
+          <div class="smarthire-composer-field">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <label>Target Recipients (<span id="smarthire-bulk-recipients-count">0</span> Candidates)</label>
+              <span style="font-size:10px; color:#64748B;">Candidates with verified email addresses</span>
+            </div>
+            <div id="smarthire-bulk-recipients-chips" class="smarthire-chip-container"></div>
+          </div>
+
+          <div class="smarthire-composer-field">
+            <label>Position Title (Clean Title Only)</label>
+            <input type="text" id="smarthire-bulk-job-title" />
+          </div>
+
+          <div class="smarthire-composer-field">
+            <label>Subject Line Template</label>
+            <input type="text" id="smarthire-bulk-subject" />
+          </div>
+
+          <div class="smarthire-composer-field" style="flex:1;">
+            <label>Message Body & Formatted JD Template (Fully Editable)</label>
+            <textarea id="smarthire-bulk-body" rows="11" style="font-size:11.5px;"></textarea>
+          </div>
+
+          <div class="smarthire-progress-container" id="smarthire-bulk-progress-container">
+            <div class="smarthire-progress-bar" id="smarthire-bulk-progress-bar"></div>
+          </div>
+          <div id="smarthire-bulk-live-log" style="font-size:11px; color:#64748B; max-height:48px; overflow-y:auto; line-height:1.4;"></div>
+        </div>
+        <div class="smarthire-composer-footer">
+          <div id="smarthire-bulk-status" style="font-size:11.5px; font-weight:600; min-height:18px;"></div>
+          <div style="display:flex; gap:8px;">
+            <button type="button" id="smarthire-bulk-cancel" class="smarthire-btn-secondary" style="margin:0; font-size:11.5px; padding:6px 14px;">Cancel</button>
+            <button type="button" id="smarthire-bulk-send" class="smarthire-btn-primary" style="margin:0; font-size:11.5px; padding:6px 16px; background:#2563EB;">Send Bulk Emails</button>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    document.getElementById('smarthire-bulk-close')?.addEventListener('click', closeBulkComposer);
+    document.getElementById('smarthire-bulk-cancel')?.addEventListener('click', closeBulkComposer);
+    document.getElementById('smarthire-bulk-send')?.addEventListener('click', sendBulkOutreachEmails);
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) closeBulkComposer();
+    });
+  }
+
+  function openBulkComposer() {
+    if (!isUserAuthenticated || !currentUser) {
+      alert('Authentication Required: Please sign in with your SmartHire ATS credentials to send bulk emails.');
+      checkAndApplyAuthGate();
+      return;
+    }
+
+    const validCandidates = scrapedCandidates.filter((c, i) => 
+      (selectedCandidateIndices.size === 0 || selectedCandidateIndices.has(i)) && 
+      c.email && c.email.includes('@') && !c.email.includes('@monster.talent') && c.email !== 'Not Disclosed'
+    );
+
+    if (validCandidates.length === 0) {
+      alert('Please select at least one candidate with a valid email address.');
+      return;
+    }
+
+    initBulkComposerModal();
+    const overlay = document.getElementById('smarthire-bulk-overlay');
+    if (!overlay) return;
+
+    const senderEl = document.getElementById('smarthire-bulk-sender-label');
+    if (senderEl) senderEl.innerText = `${currentUser.name} <${currentUser.email}>`;
+
+    const countEl = document.getElementById('smarthire-bulk-recipients-count');
+    if (countEl) countEl.innerText = validCandidates.length;
+
+    const chipsContainer = document.getElementById('smarthire-bulk-recipients-chips');
+    if (chipsContainer) {
+      chipsContainer.innerHTML = validCandidates.map(c => `
+        <span class="smarthire-chip-tag" title="${c.email}">
+          ${c.name} &lt;${c.email}&gt;
+        </span>
+      `).join('');
+    }
+
+    const cleanTitle = cleanJobTitle(selectedJob ? selectedJob.title : 'Technical Specialist');
+    const location = selectedJob?.location || 'United States (Remote / Onsite as required)';
+    const cleanDesc = sanitizeJobDescription(selectedJob?.description || selectedJob?.fullDescription || selectedJob?.rawDescription || '');
+
+    const titleInput = document.getElementById('smarthire-bulk-job-title');
+    if (titleInput) titleInput.value = cleanTitle;
+
+    const subjInput = document.getElementById('smarthire-bulk-subject');
+    if (subjInput) subjInput.value = `Career Opportunity: ${cleanTitle} — COOLSOFT LLC`;
+
+    const bodyInput = document.getElementById('smarthire-bulk-body');
+    if (bodyInput) {
+      bodyInput.value = `Hi {{firstName}},
+
+I hope this email finds you well.
+
+I came across your profile and was very impressed by your background. We currently have an immediate opening for a ${cleanTitle} role that aligns closely with your expertise.
+
+--- Position Details ---
+Role: ${cleanTitle}
+Location: ${location}
+Work Authorization: US Citizen / Green Card / Authorized to Work in US
+
+${cleanDesc}
+
+If you are open to exploring this opportunity, please reply to this email with your updated resume, or let me know a convenient time for a brief introductory call.
+
+Best regards,
+
+${currentUser.name}
+Technical Recruiter | COOLSOFT LLC
+Email: ${currentUser.email}
+Website: http://www.coolsofttech.com`;
+    }
+
+    const progContainer = document.getElementById('smarthire-bulk-progress-container');
+    if (progContainer) progContainer.style.display = 'none';
+
+    const liveLog = document.getElementById('smarthire-bulk-live-log');
+    if (liveLog) liveLog.innerHTML = '';
+
+    const statusEl = document.getElementById('smarthire-bulk-status');
+    if (statusEl) statusEl.innerHTML = '';
+
+    const sendBtn = document.getElementById('smarthire-bulk-send');
+    if (sendBtn) {
+      sendBtn.disabled = false;
+      sendBtn.innerText = `Send Bulk Emails (${validCandidates.length})`;
+    }
+
+    overlay.style.display = 'flex';
+  }
+
+  function closeBulkComposer() {
+    const overlay = document.getElementById('smarthire-bulk-overlay');
+    if (overlay) overlay.style.display = 'none';
+  }
+
+  async function sendBulkOutreachEmails() {
+    if (!isUserAuthenticated || !currentUser) {
+      alert('Authentication required.');
+      return;
+    }
+
+    const validCandidates = scrapedCandidates.filter((c, i) => 
+      (selectedCandidateIndices.size === 0 || selectedCandidateIndices.has(i)) && 
+      c.email && c.email.includes('@') && !c.email.includes('@monster.talent') && c.email !== 'Not Disclosed'
+    );
+
+    if (validCandidates.length === 0) return;
+
+    const subjectTemplate = document.getElementById('smarthire-bulk-subject')?.value.trim();
+    const bodyTemplate = document.getElementById('smarthire-bulk-body')?.value.trim();
+    const statusEl = document.getElementById('smarthire-bulk-status');
+    const sendBtn = document.getElementById('smarthire-bulk-send');
+    const progContainer = document.getElementById('smarthire-bulk-progress-container');
+    const progBar = document.getElementById('smarthire-bulk-progress-bar');
+    const liveLog = document.getElementById('smarthire-bulk-live-log');
+
+    if (!subjectTemplate || !bodyTemplate) {
+      if (statusEl) statusEl.innerHTML = '<span style="color:#DC2626;">Subject and message template required</span>';
+      return;
+    }
+
+    sendBtn.disabled = true;
+    if (progContainer) progContainer.style.display = 'block';
+
+    let successCount = 0;
+    let failCount = 0;
+
+    for (let i = 0; i < validCandidates.length; i++) {
+      const cand = validCandidates[i];
+      const firstName = (cand.name || 'there').split(' ')[0] || 'there';
+      const personalizedBody = bodyTemplate.replace(/\{\{firstName\}\}/g, firstName);
+
+      sendBtn.innerText = `Sending ${i + 1} of ${validCandidates.length}...`;
+      const pct = Math.round(((i + 1) / validCandidates.length) * 100);
+      if (progBar) progBar.style.width = `${pct}%`;
+
+      try {
+        const res = await new Promise((resolve) => {
+          chrome.runtime.sendMessage({
+            action: 'SEND_OUTREACH_EMAIL',
+            payload: {
+              recruiterEmail: currentUser.email,
+              recruiterName: currentUser.name,
+              to: cand.email,
+              subject: subjectTemplate,
+              body: personalizedBody,
+              html: personalizedBody.replace(/\n/g, '<br>')
+            }
+          }, resolve);
+        });
+
+        if (res && res.success) {
+          successCount++;
+          sentCandidateEmails.add(cand.email.toLowerCase());
+          sentCandidateEmails.add((cand.name || '').toLowerCase());
+          if (liveLog) {
+            const row = document.createElement('div');
+            row.style.color = '#059669';
+            row.innerText = `✓ [${i+1}/${validCandidates.length}] Delivered to ${cand.name} (${cand.email})`;
+            liveLog.appendChild(row);
+            liveLog.scrollTop = liveLog.scrollHeight;
+          }
+        } else {
+          failCount++;
+          if (liveLog) {
+            const row = document.createElement('div');
+            row.style.color = '#DC2626';
+            row.innerText = `✗ [${i+1}/${validCandidates.length}] Failed for ${cand.name}: ${res?.message || 'Error'}`;
+            liveLog.appendChild(row);
+            liveLog.scrollTop = liveLog.scrollHeight;
+          }
+        }
+      } catch (err) {
+        failCount++;
+      }
+
+      // 350ms throttle delay
+      await new Promise(r => setTimeout(r, 350));
+    }
+
+    if (statusEl) {
+      statusEl.innerHTML = `<span style="color:#059669; font-weight:700;">✓ Dispatched: ${successCount} sent, ${failCount} failed</span>`;
+    }
+    sendBtn.innerText = 'Completed!';
+    renderResults(scrapedCandidates);
+
+    setTimeout(() => {
+      closeBulkComposer();
+    }, 2200);
   }
 
   function fetchLiveJobs() {
@@ -1334,27 +1719,36 @@ Website: http://www.coolsofttech.com`;
       resultsCard.style.display = 'block';
       countEl.innerText = list.length;
 
+      // Select all by default if set is empty
+      if (selectedCandidateIndices.size === 0) {
+        list.forEach((_, i) => selectedCandidateIndices.add(i));
+      }
+
       previewList.innerHTML = list.map((c, i) => {
         const hasPhone = c.phone && c.phone.length >= 7 && !c.phone.includes('555-0199') && c.phone !== 'Not Disclosed';
         const hasEmail = c.email && c.email.includes('@') && !c.email.includes('@monster.talent') && c.email !== 'Not Disclosed';
         const isVerified = hasPhone || hasEmail;
         const isSent = (c.email && sentCandidateEmails.has(c.email.toLowerCase())) || (c.name && sentCandidateEmails.has(c.name.toLowerCase()));
+        const isChecked = selectedCandidateIndices.has(i);
 
         return `
-          <div style="padding:10px 12px; border-bottom:1px solid #F1F5F9; font-size:11px;">
+          <div style="padding:10px 12px; border-bottom:1px solid #F1F5F9; font-size:11px; background:${isChecked ? '#FAFAFA' : '#FFFFFF'};">
             <div style="display:flex; justify-content:space-between; align-items:center;">
-              <span style="font-weight:700; color:#0F172A; font-size:11.5px;">${i + 1}. ${c.name}</span>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <input type="checkbox" class="smarthire-cand-check" data-idx="${i}" ${isChecked ? 'checked' : ''} style="cursor:pointer; accent-color:#2563EB;" />
+                <span style="font-weight:700; color:#0F172A; font-size:11.5px;">${i + 1}. ${c.name}</span>
+              </div>
               ${isVerified 
                 ? '<span style="background:#DCFCE7; color:#15803D; font-size:9.5px; font-weight:700; padding:2px 6px; border-radius:3px;">VERIFIED CONTACT</span>' 
                 : '<span style="background:#F1F5F9; color:#64748B; font-size:9.5px; font-weight:600; padding:2px 6px; border-radius:3px;">PROFILE ONLY</span>'}
             </div>
-            <div style="color:#475569; font-size:11px; margin-top:2px;">${c.title} · ${c.location}</div>
-            <div style="margin-top:4px; font-size:11px; display:flex; flex-direction:column; gap:2px;">
+            <div style="color:#475569; font-size:11px; margin-top:2px; padding-left:20px;">${c.title} · ${c.location}</div>
+            <div style="margin-top:4px; font-size:11px; display:flex; flex-direction:column; gap:2px; padding-left:20px;">
               <div style="color:#2563EB;"><strong>Email:</strong> ${c.email}</div>
               <div style="color:#0F172A; font-family:monospace;"><strong>Phone:</strong> ${c.phone}</div>
             </div>
             ${hasEmail ? `
-              <div style="margin-top:6px; display:flex; justify-content:space-between; align-items:center;">
+              <div style="margin-top:6px; padding-left:20px; display:flex; justify-content:space-between; align-items:center;">
                 <button type="button" class="smarthire-btn-outreach" data-cidx="${i}">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                   <span>Send JD Email</span>
@@ -1368,6 +1762,19 @@ Website: http://www.coolsofttech.com`;
         `;
       }).join('');
 
+      // Checkbox event listeners
+      previewList.querySelectorAll('.smarthire-cand-check').forEach(cb => {
+        cb.addEventListener('change', (e) => {
+          const idx = parseInt(e.target.getAttribute('data-idx'), 10);
+          if (e.target.checked) {
+            selectedCandidateIndices.add(idx);
+          } else {
+            selectedCandidateIndices.delete(idx);
+          }
+          updateBulkEmailCount();
+        });
+      });
+
       // Bind outreach click events to each candidate
       previewList.querySelectorAll('.smarthire-btn-outreach').forEach(btn => {
         btn.addEventListener('click', (e) => {
@@ -1379,9 +1786,20 @@ Website: http://www.coolsofttech.com`;
         });
       });
 
+      updateBulkEmailCount();
+
     } else {
       resultsCard.style.display = 'none';
     }
+  }
+
+  function updateBulkEmailCount() {
+    const validCount = scrapedCandidates.filter((c, i) => 
+      (selectedCandidateIndices.size === 0 || selectedCandidateIndices.has(i)) &&
+      c.email && c.email.includes('@') && !c.email.includes('@monster.talent') && c.email !== 'Not Disclosed'
+    ).length;
+    const badge = document.getElementById('smarthire-bulk-count');
+    if (badge) badge.innerText = validCount;
   }
 
   async function copyCandidatesToClipboard() {
@@ -1426,6 +1844,15 @@ Website: http://www.coolsofttech.com`;
 
   function importToSmartHireAts() {
     const msg = document.getElementById('smarthire-import-msg');
+    if (!isUserAuthenticated || !currentUser) {
+      if (msg) {
+        msg.style.color = '#DC2626';
+        msg.innerText = 'Authentication required. Please sign in to SmartHire ATS.';
+      }
+      checkAndApplyAuthGate();
+      return;
+    }
+
     if (!scrapedCandidates || scrapedCandidates.length === 0) {
       msg.innerText = 'No candidates to import.';
       return;
@@ -1442,8 +1869,8 @@ Website: http://www.coolsofttech.com`;
           candidates: scrapedCandidates,
           targetReqId,
           source: window.smartHirePortal || 'Monster+ Flow Studio',
-          recruiterEmail: currentUser.email || 'omkesh@coolsofttech.com',
-          recruiterName: currentUser.name || 'Omkesh Manjute'
+          recruiterEmail: currentUser.email,
+          recruiterName: currentUser.name
         }
       }, (response) => {
         if (chrome.runtime.lastError) {

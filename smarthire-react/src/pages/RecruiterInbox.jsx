@@ -1827,7 +1827,7 @@ function getCandidateAllDocuments(cand) {
   return docs
 }
 
-export default function RecruiterInbox({ defaultViewMode }) {
+export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }) {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const [themeMode, setThemeMode] = useState(() => localStorage.getItem('smarthire_theme') || 'light')
@@ -2448,7 +2448,32 @@ export default function RecruiterInbox({ defaultViewMode }) {
   // Candidates View Mode: 'card' (Candidate Card / Split View) or 'table' (Database Table View)
   const [inboxSubMode, setInboxSubMode] = useState('table')
   const [activeTobuTab, setActiveTobuTab] = useState('overview')
-  const [tableCategory, setTableCategory] = useState('all')
+  const [tableCategory, setTableCategory] = useState(() => {
+    try {
+      const qCat = searchParams.get('category') || searchParams.get('tab')
+      if (qCat === 'extension' || qCat === 'extension_sourced' || qCat === 'sourcing') return 'extension_sourced'
+      if (defaultTableCategory) return defaultTableCategory
+      if (qCat && ['all', 'active', 'inbox', 'review', 'spam', 'careers', 'vendor', 'favorites', 'extension_sourced'].includes(qCat)) return qCat
+    } catch (e) {}
+    return defaultTableCategory || 'all'
+  })
+
+  useEffect(() => {
+    if (defaultTableCategory) {
+      setTableCategory(defaultTableCategory)
+      setInboxViewMode('stream')
+      setInboxSubMode('table')
+    }
+  }, [defaultTableCategory])
+
+  useEffect(() => {
+    const qCat = searchParams.get('category') || searchParams.get('tab')
+    if (qCat === 'extension' || qCat === 'extension_sourced' || qCat === 'sourcing') {
+      setTableCategory('extension_sourced')
+      setInboxViewMode('stream')
+      setInboxSubMode('table')
+    }
+  }, [searchParams])
   const [tablePage, setTablePage] = useState(1)
   const [tablePageSize, setTablePageSize] = useState(25)
   const [filterLocation, setFilterLocation] = useState('all')
@@ -4781,6 +4806,13 @@ export default function RecruiterInbox({ defaultViewMode }) {
 
   const mobileAppCount = useMemo(() => (roleScopedCandidates || []).filter(c => (c.sourceCategory === 'mobile_app') || (c.source || '').toLowerCase().includes('mobile')).length, [roleScopedCandidates])
   const jobSitesCount = useMemo(() => (roleScopedCandidates || []).filter(c => (c.sourceCategory === 'careers_portal' || c.sourceCategory === 'monster_plus' || c.sourceCategory === 'dice') || (c.source || '').toLowerCase().includes('career') || (c.source || '').toLowerCase().includes('job site') || (c.source || '').toLowerCase().includes('monster') || (c.source || '').toLowerCase().includes('dice')).length, [roleScopedCandidates])
+  const extensionSourcedCount = useMemo(() => (roleScopedCandidates || []).filter(c => 
+    c.isSourcedFromExtension || 
+    c.isExtensionSourced || 
+    c.sourceCategory === 'monster_plus' || 
+    c.sourceCategory === 'dice' || 
+    (c.source && (c.source.toLowerCase().includes('monster') || c.source.toLowerCase().includes('dice') || c.source.toLowerCase().includes('extension')))
+  ).length, [roleScopedCandidates])
 
   const filteredCandidates = useMemo(() => {
     const rawFiltered = roleScopedCandidates.filter(c => {
@@ -4795,6 +4827,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
       else if (tableCategory === 'spam' && c.sourceCategory !== 'email_spam' && !c.isSpamRecovery) return false
       else if (tableCategory === 'careers' && c.sourceCategory !== 'careers_portal' && c.sourceCategory !== 'monster_plus' && c.sourceCategory !== 'dice') return false
       else if (tableCategory === 'vendor' && c.sourceCategory !== 'vendor_bench') return false
+      else if (tableCategory === 'extension_sourced' && !c.isSourcedFromExtension && !c.isExtensionSourced && c.sourceCategory !== 'monster_plus' && c.sourceCategory !== 'dice' && !(c.source && (c.source.toLowerCase().includes('monster') || c.source.toLowerCase().includes('dice') || c.source.toLowerCase().includes('extension')))) return false
       if (tableCategory === 'favorites') {
         const candId = c.id || c.email
         if (!favoriteCandidateIds.has(candId)) return false
@@ -7522,6 +7555,59 @@ export default function RecruiterInbox({ defaultViewMode }) {
               </span>
               <span style={{ fontSize: 10, background: 'rgba(255,255,255,0.16)', color: '#FFFFFF', padding: '1px 6px', borderRadius: 8, fontWeight: 700 }}>
                 {jobSitesCount}
+              </span>
+            </button>
+          )}
+
+          {/* Sub-channel: Extension Sourced */}
+          {!sidebarCollapsed && (
+            <button
+              type="button"
+              title={`Extension Sourced Candidates (${extensionSourcedCount})`}
+              onMouseEnter={() => setHoveredNav('extension_sourced')}
+              onMouseLeave={() => setHoveredNav(null)}
+              onClick={() => {
+                setInboxViewMode('stream')
+                setInboxSubMode('table')
+                setTableCategory('extension_sourced')
+                setTablePage(1)
+                try {
+                  const url = new URL(window.location.href)
+                  url.searchParams.set('category', 'extension_sourced')
+                  window.history.replaceState({}, '', url.toString())
+                } catch (_) {}
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '6px 12px 6px 34px',
+                borderRadius: 6,
+                border: 'none',
+                background: (inboxViewMode === 'stream' && tableCategory === 'extension_sourced')
+                  ? 'rgba(124,58,237,0.35)'
+                  : (hoveredNav === 'extension_sourced' ? 'rgba(255,255,255,0.06)' : 'transparent'),
+                color: (inboxViewMode === 'stream' && tableCategory === 'extension_sourced')
+                  ? '#FFFFFF'
+                  : (hoveredNav === 'extension_sourced' ? '#FFFFFF' : 'rgba(255,255,255,0.65)'),
+                fontWeight: (inboxViewMode === 'stream' && tableCategory === 'extension_sourced') ? 700 : 500,
+                fontSize: 12,
+                cursor: 'pointer',
+                textAlign: 'left',
+                width: '100%',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                  <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                  <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                </svg>
+                <span>Extension Sourced</span>
+              </span>
+              <span style={{ fontSize: 10, background: 'rgba(124,58,237,0.4)', color: '#FFFFFF', padding: '1px 6px', borderRadius: 8, fontWeight: 700 }}>
+                {extensionSourcedCount}
               </span>
             </button>
           )}
@@ -11807,11 +11893,12 @@ export default function RecruiterInbox({ defaultViewMode }) {
                   </div>
                 </div>
 
-                {/* 5 Metric KPI Cards — Linear & Slack Segmented Tab Feel */}
+                {/* 6 Metric KPI Cards — Linear & Slack Segmented Tab Feel */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', backgroundColor: isLight ? '#F1F5F9' : '#1E293B', padding: 4, borderRadius: 10 }}>
                   {[
                     { color: '#4A154B', count: roleScopedCandidates.length, label: 'Total', filter: 'all' },
                     { color: '#0D9488', count: roleScopedCandidates.filter(c => c.status !== 'Archived' && c.status !== 'Rejected' && c.status !== 'Closed').length, label: 'Active', filter: 'active' },
+                    { color: '#7C3AED', count: extensionSourcedCount, label: 'Extension Sourced', filter: 'extension_sourced' },
                     { color: '#D97706', count: roleScopedCandidates.filter(c => c.sourceCategory === 'email_inbox' || c.sourceCategory === 'monster_plus' || c.sourceCategory === 'dice' || c.isNew).length, label: 'Inbox', filter: 'inbox' },
                     { color: '#0284C7', count: roleScopedCandidates.filter(c => c.status === 'In Review' || c.status === 'Review').length, label: 'In Review', filter: 'review' },
                     { color: '#E11D48', count: roleScopedCandidates.filter(c => c.sourceCategory === 'email_spam' || c.isSpamRecovery).length, label: 'Spam', filter: 'spam' }
@@ -12193,6 +12280,87 @@ export default function RecruiterInbox({ defaultViewMode }) {
                   </select>
                 </div>
               </div>
+
+              {/* Dedicated Extension Sourced Pipeline Banner */}
+              {tableCategory === 'extension_sourced' && (
+                <div style={{
+                  backgroundColor: isLight ? '#F5F3FF' : 'rgba(124, 58, 237, 0.12)',
+                  border: `1px solid ${isLight ? '#DDD6FE' : 'rgba(124, 58, 237, 0.3)'}`,
+                  borderRadius: 8,
+                  padding: '12px 16px',
+                  marginBottom: 16,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: 12,
+                  boxShadow: isLight ? '0 1px 2px rgba(124, 58, 237, 0.05)' : 'none'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: 32,
+                      height: 32,
+                      borderRadius: 8,
+                      backgroundColor: '#7C3AED',
+                      color: '#FFFFFF',
+                      flexShrink: 0
+                    }}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                        <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                        <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                      </svg>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: isLight ? '#5B21B6' : '#DDD6FE', letterSpacing: '-0.2px' }}>
+                        SmartHire Extension Sourcing Pipeline
+                      </div>
+                      <div style={{ fontSize: 12, color: isLight ? '#6D28D9' : '#C4B5FD', marginTop: 2 }}>
+                        Isolated stream of candidates ingested from Monster+ and Dice via the Chrome Extension Copilot.
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{
+                      backgroundColor: '#7C3AED',
+                      color: '#FFFFFF',
+                      fontSize: 11.5,
+                      fontWeight: 700,
+                      padding: '4px 12px',
+                      borderRadius: 14
+                    }}>
+                      {extensionSourcedCount} Candidates Sourced
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTableCategory('all')
+                        setTablePage(1)
+                        try {
+                          const url = new URL(window.location.href)
+                          url.searchParams.delete('category')
+                          window.history.replaceState({}, '', url.toString())
+                        } catch (_) {}
+                      }}
+                      style={{
+                        border: `1px solid ${isLight ? '#DDD6FE' : '#6D28D9'}`,
+                        background: isLight ? '#FFFFFF' : 'transparent',
+                        color: isLight ? '#5B21B6' : '#DDD6FE',
+                        borderRadius: 6,
+                        padding: '4px 10px',
+                        fontSize: 11.5,
+                        fontWeight: 600,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      View All Candidates ✕
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* 4. Candidates Data Table Card matching media_1789727370931.png */}
               <div style={{

@@ -193,6 +193,10 @@ function Navigation() {
       navigate('/inbox')
       return
     }
+    if (tab === 'sourcing') {
+      navigate('/sourcing')
+      return
+    }
     navigate(`/ats?tab=${tab}`)
     window.dispatchEvent(new CustomEvent('smarthire_switch_tab', { detail: { tab } }))
   }
@@ -212,6 +216,7 @@ function Navigation() {
   const atsSubModules = [
     { id: 'jobs', label: 'Jobs Hub', desc: 'Manage vacancies & scrape JDs' },
     { id: 'candidates', label: 'Candidates Directory', desc: 'Profiles, resumes & filters' },
+    { id: 'sourcing', label: 'Extension Sourcing', desc: 'Monster+ & Dice candidate pipeline' },
     { id: 'pipeline', label: 'Visual Pipeline', desc: 'Kanban board & hiring stages' },
     { id: 'screening', label: 'Video & Audio Screening', desc: 'SmartHire 1-way video & voice screening' },
     { id: 'submissions', label: 'Submissions & RTR', desc: 'Client submissions & tracking' },
@@ -219,6 +224,7 @@ function Navigation() {
 
   const appLauncherItems = [
     { title: 'AI Recruiter ATS', desc: 'Core talent pipeline & screening suite', path: '/ats', color: '#4f46e5' },
+    { title: 'Extension Sourcing', desc: 'Monster+ & Dice candidate pipeline', path: '/sourcing', color: '#7c3aed' },
     { title: 'SmartScreen Studio', desc: '1-way video & voice candidate screening', path: '/smartscreen', color: '#0284c7' },
     { title: 'Executive Console', desc: 'Command center & high-level stats', path: '/dashboard', color: '#2563eb', adminOnly: true },
     { title: 'Intelligence Reports', desc: 'Conversion charts & hiring velocity', path: '/reports', color: '#059669', adminOnly: true },

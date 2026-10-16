@@ -1,12 +1,9 @@
 // SmartHire Sourcing Copilot - Service Worker (Background)
 chrome.runtime.onInstalled.addListener(() => {
   console.log('[SmartHire Copilot] Extension installed and active.');
-  chrome.storage.local.get(['smarthire_api_url', 'recruiter_email'], (result) => {
+  chrome.storage.local.get(['smarthire_api_url'], (result) => {
     if (!result.smarthire_api_url) {
       chrome.storage.local.set({ smarthire_api_url: 'https://smarthireus.com' });
-    }
-    if (!result.recruiter_email) {
-      chrome.storage.local.set({ recruiter_email: 'omkesh@coolsofttech.com' });
     }
   });
 });
@@ -59,16 +56,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   if (request.action === 'GET_CURRENT_USER') {
     chrome.storage.local.get(['smarthire_user', 'smarthire_token'], (res) => {
-      if (res.smarthire_user) {
+      if (res && res.smarthire_user && res.smarthire_token) {
         sendResponse({ success: true, user: res.smarthire_user, token: res.smarthire_token, isLoggedIn: true });
       } else {
-        const defaultUser = {
-          name: 'Omkesh Manjute',
-          email: 'omkesh@coolsofttech.com',
-          role: 'superadmin',
-          company: 'COOLSOFT LLC'
-        };
-        sendResponse({ success: true, user: defaultUser, token: null, isLoggedIn: false });
+        // Strict security: Never default to any user without valid authentication
+        sendResponse({ success: false, user: null, token: null, isLoggedIn: false });
       }
     });
     return true;
@@ -104,7 +96,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (request.action === 'LOGOUT_USER') {
-    chrome.storage.local.remove(['smarthire_user', 'smarthire_token'], () => {
+    chrome.storage.local.remove(['smarthire_user', 'smarthire_token', 'recruiter_email', 'recruiter_name'], () => {
       sendResponse({ success: true });
     });
     return true;
