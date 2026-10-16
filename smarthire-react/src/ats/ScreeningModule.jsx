@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import InfinityLoader from '../components/InfinityLoader'
+import PopButton from '../components/ui/PopButton'
 
 const API = '/api/screening'
 
@@ -1104,18 +1105,18 @@ SmartHire Recruitment Team`
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-          <button
+          <PopButton
             type="button"
+            variant="primary"
             onClick={() => {
               setShowCreateModal(true)
               setCreatedLinkResult(null)
               setCandidateNameInput('')
               setCandidateEmailInput('')
             }}
-            style={styles.createCampaignBtn}
           >
             + Create Screening Link
-          </button>
+          </PopButton>
         </div>
       </div>
 

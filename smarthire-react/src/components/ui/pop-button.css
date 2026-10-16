@@ -1,0 +1,71 @@
+/* Vengeance UI - PopButton Styles */
+
+.v-pop-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: inherit;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  outline: none;
+  border-radius: 10px;
+  box-sizing: border-box;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: all 140ms cubic-bezier(0, 0, 0.58, 1);
+}
+
+/* Primary ATS Blue Pop Variant */
+.v-pop-btn--primary {
+  background-color: #2563eb;
+  color: #ffffff;
+  border: 1.5px solid #1d4ed8;
+  padding: 8px 18px;
+  font-size: 13px;
+  letter-spacing: 0.01em;
+  box-shadow: 0 4px 0 0 #1e40af, 0 8px 16px rgba(37, 99, 235, 0.28);
+}
+
+.v-pop-btn--primary:hover {
+  background-color: #1d4ed8;
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 0 #1e40af, 0 4px 10px rgba(37, 99, 235, 0.22);
+}
+
+.v-pop-btn--primary:active {
+  background-color: #1e40af;
+  transform: translateY(4px);
+  box-shadow: 0 0 0 0 #1e40af, 0 1px 3px rgba(37, 99, 235, 0.15);
+}
+
+/* Authentic Vengeance UI Retro Pop Variant */
+.v-pop-btn--retro {
+  background-color: #fff0f0;
+  color: #382b22;
+  border: 2px solid #b18597;
+  padding: 12px 24px;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  box-shadow: 0 8px 0 -2px #f9c4d2, 0 8px 0 0 #b18597, 0 16px 0 0 #ffe3e2;
+}
+
+.v-pop-btn--retro:hover {
+  background-color: #ffe9e9;
+  transform: translateY(2px);
+  box-shadow: 0 6px 0 -2px #f9c4d2, 0 6px 0 0 #b18597, 0 12px 0 0 #ffe3e2;
+}
+
+.v-pop-btn--retro:active {
+  background-color: #ffe9e9;
+  transform: translateY(6px);
+  box-shadow: 0 0px 0 -2px #f9c4d2, 0 0px 0 0 #b18597, 0 0px 0 0 #ffe3e2;
+}
+
+.v-pop-btn:focus-visible {
+  outline: 2px solid #60a5fa;
+  outline-offset: 2px;
+}

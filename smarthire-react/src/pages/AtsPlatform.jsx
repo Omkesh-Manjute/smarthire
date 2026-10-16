@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import CandidateMessengerWidget from '../components/CandidateMessengerWidget'
 import ActivityNotificationBell, { pushActivityNotification } from '../components/ActivityNotificationBell'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   DashboardModule,
   CandidatesModule,
@@ -1006,55 +1007,61 @@ export default function AtsPlatform() {
                       borderRadius: '4px'
                     }}
                   >
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: candidatesMenuExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }}>
+                    <motion.svg
+                      width="10"
+                      height="10"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      animate={{ rotate: candidatesMenuExpanded ? 180 : 0 }}
+                      transition={{ type: "spring", stiffness: 320, damping: 22 }}
+                    >
                       <polyline points="6 9 12 15 18 9"></polyline>
-                    </svg>
+                    </motion.svg>
                   </button>
                 </div>
               )}
             </div>
 
-            {/* Slack-style smooth collapsible sub-menu */}
-            {!sidebarCollapsed && candidatesMenuExpanded && (
-              <div style={{ paddingLeft: '22px', display: 'flex', flexDirection: 'column', gap: '2px', marginTop: '2px', borderLeft: '1px solid rgba(255,255,255,0.12)', marginLeft: '14px' }}>
-                <div
-                  onClick={() => navigate('/inbox')}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '8px', padding: '5px 8px', borderRadius: '4px',
-                    color: 'rgba(255,255,255,0.75)', fontSize: '11.5px', fontWeight: '500', cursor: 'pointer', transition: 'all 0.15s'
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#ffffff' }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.75)' }}
+            {/* Skiper103 Bouncy / Smooth Collapsible Sub-menu */}
+            <AnimatePresence initial={false}>
+              {!sidebarCollapsed && candidatesMenuExpanded && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ type: 'spring', stiffness: 320, damping: 24, mass: 0.8 }}
+                  style={{ overflow: 'hidden', paddingLeft: '22px', display: 'flex', flexDirection: 'column', gap: '3px', marginTop: '2px', borderLeft: '1.5px solid rgba(255,255,255,0.15)', marginLeft: '14px' }}
                 >
-                  <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)' }}>•</span>
-                  <span>Talent Hub (/inbox)</span>
-                </div>
-                <div
-                  onClick={() => navigate('/inbox?tab=monster')}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '8px', padding: '5px 8px', borderRadius: '4px',
-                    color: 'rgba(255,255,255,0.75)', fontSize: '11.5px', fontWeight: '500', cursor: 'pointer', transition: 'all 0.15s'
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#ffffff' }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.75)' }}
-                >
-                  <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)' }}>•</span>
-                  <span>Universal Search</span>
-                </div>
-                <div
-                  onClick={() => navigate('/inbox?tab=hotlist')}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '8px', padding: '5px 8px', borderRadius: '4px',
-                    color: 'rgba(255,255,255,0.75)', fontSize: '11.5px', fontWeight: '500', cursor: 'pointer', transition: 'all 0.15s'
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#ffffff' }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.75)' }}
-                >
-                  <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)' }}>•</span>
-                  <span>Vendor Hotlists</span>
-                </div>
-              </div>
-            )}
+                  {[
+                    { label: 'Talent Hub (/inbox)', path: '/inbox' },
+                    { label: 'Universal Search', path: '/inbox?tab=monster' },
+                    { label: 'Vendor Hotlists', path: '/inbox?tab=hotlist' },
+                  ].map((sub, sIdx) => (
+                    <motion.div
+                      key={sub.path}
+                      onClick={() => navigate(sub.path)}
+                      initial={{ opacity: 0, x: -8, filter: 'blur(2px)' }}
+                      animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
+                      exit={{ opacity: 0, x: -8, filter: 'blur(2px)' }}
+                      transition={{ type: 'spring', stiffness: 350, damping: 25, delay: sIdx * 0.035 }}
+                      whileHover={{ x: 4, backgroundColor: 'rgba(255,255,255,0.12)', color: '#ffffff', transition: { duration: 0.15 } }}
+                      whileTap={{ scale: 0.97 }}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 10px', borderRadius: '6px',
+                        color: 'rgba(255,255,255,0.8)', fontSize: '11.5px', fontWeight: '500', cursor: 'pointer', transition: 'color 0.15s, background-color 0.15s'
+                      }}
+                    >
+                      <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)' }}>•</span>
+                      <span>{sub.label}</span>
+                    </motion.div>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           {/* 2. Direct Talent Acquisition Pages */}
