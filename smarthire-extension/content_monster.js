@@ -98,53 +98,98 @@
     return [];
   };
 
-  // Extract contact from #contact-legend-detail or detail panel
+  // Extract contact from candidate profile, side drawer, shadow DOM, or detail panel
   window.extractMonsterContact = function() {
     let phone = '';
     let email = '';
 
-    const contactBox = document.querySelector('#contact-legend-detail, [id*="contact-legend"]');
-    if (contactBox) {
-      const boxText = contactBox.innerText || '';
-
-      // Direct mailto link
-      const mailLink = contactBox.querySelector('a[href^="mailto:"]');
-      if (mailLink) {
-        email = mailLink.href.replace('mailto:', '').split('?')[0].trim().toLowerCase();
-      } else {
-        const emailMatch = boxText.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
-        if (emailMatch && !emailMatch[1].startsWith('support@') && !emailMatch[1].startsWith('info@')) {
-          email = emailMatch[1].trim().toLowerCase();
-        }
-      }
-
-      // Direct tel link
-      const telLink = contactBox.querySelector('a[href^="tel:"]');
-      if (telLink) {
-        phone = telLink.href.replace('tel:', '').trim();
-      } else {
-        const phoneMatch = boxText.match(/(?:Phone|Mobile|Cell|Direct)?\s*[:\s]?\s*(\+?1?[-.\s]?\(?[2-9]\d{2}\)?[-.\s]?\d{3}[-.\s]?\d{4})/i) ||
-                           boxText.match(/(\+?1\d{10})/);
-        if (phoneMatch) phone = phoneMatch[1].trim();
+    // 1. Sniff direct mailto links anywhere in light DOM and shadow roots
+    const mailLinks = (utils.queryDeepAll ? utils.queryDeepAll('a[href^="mailto:"]') : Array.from(document.querySelectorAll('a[href^="mailto:"]')))
+      .filter(a => !a.closest('#smarthire-copilot-drawer'));
+    for (const a of mailLinks) {
+      const clean = a.href.replace(/^mailto:/i, '').split('?')[0].trim().toLowerCase();
+      if (clean && !clean.startsWith('support@') && !clean.startsWith('info@') && !clean.startsWith('privacy@')) {
+        email = clean;
+        break;
       }
     }
 
-    // Fallback: search right detail / resume pane
+    // 2. Sniff direct tel links anywhere in light DOM and shadow roots
+    const telLinks = (utils.queryDeepAll ? utils.queryDeepAll('a[href^="tel:"]') : Array.from(document.querySelectorAll('a[href^="tel:"]')))
+      .filter(a => !a.closest('#smarthire-copilot-drawer'));
+    for (const a of telLinks) {
+      const clean = a.href.replace(/^tel:/i, '').trim();
+      const extracted = utils.extractPhones(clean);
+      if (extracted.length > 0) {
+        phone = extracted[0];
+        break;
+      } else if (clean.length >= 7) {
+        phone = clean;
+        break;
+      }
+    }
+
+    // 3. Search dedicated contact containers & legend boxes
+    const contactBoxSelectors = [
+      '#contact-legend-detail',
+      '[id*="contact-legend"]',
+      '[data-testid*="contact"]',
+      '[data-testid*="phone"]',
+      '[data-testid*="email"]',
+      '[class*="contact-legend"]',
+      '[class*="candidate-contact"]',
+      '[class*="contact-info"]',
+      '[class*="ContactInfo"]',
+      '.candidate-header'
+    ];
+
+    let contactBox = null;
+    for (const sel of contactBoxSelectors) {
+      contactBox = utils.queryDeep ? utils.queryDeep(sel) : document.querySelector(sel);
+      if (contactBox && !contactBox.closest('#smarthire-copilot-drawer')) break;
+    }
+
+    if (contactBox) {
+      const boxText = contactBox.innerText || contactBox.textContent || '';
+
+      if (!email) {
+        const mailLink = contactBox.querySelector ? contactBox.querySelector('a[href^="mailto:"]') : null;
+        if (mailLink) {
+          email = mailLink.href.replace(/^mailto:/i, '').split('?')[0].trim().toLowerCase();
+        } else {
+          const foundEmails = utils.extractEmails(boxText);
+          if (foundEmails.length > 0) email = foundEmails[0];
+        }
+      }
+
+      if (!phone) {
+        const telLink = contactBox.querySelector ? contactBox.querySelector('a[href^="tel:"]') : null;
+        if (telLink) {
+          phone = telLink.href.replace(/^tel:/i, '').trim();
+        } else {
+          const foundPhones = utils.extractPhones(boxText);
+          if (foundPhones.length > 0) phone = foundPhones[0];
+        }
+      }
+    }
+
+    // 4. Fallback: Search side drawer, detail pane, or full resume pane text (including shadow roots)
     if (!email || !phone) {
-      const detailPanes = document.querySelectorAll('[class*="resume"], [class*="detail"], [class*="profile"], aside');
+      const detailPanes = (utils.queryDeepAll 
+        ? utils.queryDeepAll('[class*="resume"], [class*="detail"], [class*="profile"], [class*="drawer"], [class*="Drawer"], aside, [role="dialog"]')
+        : Array.from(document.querySelectorAll('[class*="resume"], [class*="detail"], [class*="profile"], [class*="drawer"], [class*="Drawer"], aside, [role="dialog"]'))
+      ).filter(p => !p.closest('#smarthire-copilot-drawer'));
+
       for (const p of detailPanes) {
-        const txt = p.innerText || '';
-        if (txt.includes('@') || txt.includes('Phone:')) {
+        const txt = utils.getTextDeep ? utils.getTextDeep(p) : (p.innerText || p.textContent || '');
+        if (txt.includes('@') || txt.includes('Phone') || txt.includes('Mobile') || txt.includes('Cell') || txt.includes('(')) {
           if (!email) {
-            const em = txt.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
-            if (em && !em[1].startsWith('support@') && !em[1].startsWith('info@')) {
-              email = em[1].trim().toLowerCase();
-            }
+            const foundEmails = utils.extractEmails(txt);
+            if (foundEmails.length > 0) email = foundEmails[0];
           }
           if (!phone) {
-            const ph = txt.match(/(?:Phone|Mobile|Cell|Direct)?\s*[:\s]?\s*(\+?1?[-.\s]?\(?[2-9]\d{2}\)?[-.\s]?\d{3}[-.\s]?\d{4})/i) ||
-                       txt.match(/(\+?1\d{10})/);
-            if (ph) phone = ph[1].trim();
+            const foundPhones = utils.extractPhones(txt);
+            if (foundPhones.length > 0) phone = foundPhones[0];
           }
           if (email && phone) break;
         }
@@ -154,10 +199,10 @@
     return { phone, email };
   };
 
-  // Deep Scraper: Click each card, reveal details, extract contact info
+  // Deep Scraper: Click each card, reveal details with polling, extract verified contact info
   window.smartHireScrapeCandidatesAsync = async function(onProgress) {
     const cards = window.getMonsterCards();
-    console.log(`[SmartHire Copilot] Found ${cards.length} cards for deep scrape.`);
+    console.log(`[SmartHire Copilot v3.7] Found ${cards.length} cards for deep scrape.`);
 
     if (cards.length === 0) {
       if (typeof onProgress === 'function') {
@@ -179,7 +224,7 @@
           onProgress(`Processing candidate ${i + 1} of ${cards.length} (${rawName || 'Candidate'})...`);
         }
 
-        // Click .smui-card-body (Browserflow exact click)
+        // Click .smui-card-body or card to open details
         const clickTarget = card.querySelector('.smui-card-body') || 
                             card.querySelector('div') || 
                             card;
@@ -189,14 +234,35 @@
         clickTarget.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true }));
         clickTarget.click();
 
-        await sleep(500);
+        // Dynamic Polling: Wait up to 1800ms for detail pane to render contact details
+        let phone = '';
+        let email = '';
+        const pollStart = Date.now();
 
-        // Click Profile tab if not active
-        const profileTab = document.querySelector('li:nth-of-type(2) > .tab__title > .tab__label') ||
-                           Array.from(document.querySelectorAll('.tab__label, button, [role="tab"]')).find(t => t.innerText && t.innerText.trim().toLowerCase() === 'profile');
-        if (profileTab && !profileTab.closest('.tab--active')) {
-          profileTab.click();
-          await sleep(250);
+        while (Date.now() - pollStart < 1800) {
+          // Click Profile tab if present and not yet active
+          const profileTab = document.querySelector('li:nth-of-type(2) > .tab__title > .tab__label') ||
+                             Array.from(document.querySelectorAll('.tab__label, button, [role="tab"]')).find(t => 
+                               t.innerText && t.innerText.trim().toLowerCase() === 'profile'
+                             );
+          if (profileTab && !profileTab.closest('.tab--active') && !profileTab.classList.contains('active')) {
+            profileTab.click();
+          }
+
+          const contact = window.extractMonsterContact();
+          if (contact.email) email = contact.email;
+          if (contact.phone) phone = contact.phone;
+
+          if (email && phone) break;
+          await sleep(150);
+        }
+
+        // If contact not found in drawer, check card text as fallback
+        if (!email || !phone) {
+          const cardEmails = utils.extractEmails(cardText);
+          const cardPhones = utils.extractPhones(cardText);
+          if (!email && cardEmails.length > 0) email = cardEmails[0];
+          if (!phone && cardPhones.length > 0) phone = cardPhones[0];
         }
 
         // Candidate Name
@@ -212,9 +278,6 @@
         if (seenNames.has(name.toLowerCase())) {
           continue;
         }
-
-        // Contact info
-        const { phone, email } = window.extractMonsterContact();
 
         // Title
         let title = 'Candidate Profile';
@@ -282,7 +345,7 @@
         candidates.push(candidateItem);
 
         if (typeof onProgress === 'function') {
-          const contactStatus = (email || phone) ? `(${email || phone})` : '(No contact disclosed)';
+          const contactStatus = (email || phone) ? `(${[email, phone].filter(Boolean).join(' · ')})` : '(No contact disclosed)';
           onProgress(`Extracted ${candidates.length} of ${cards.length}: ${name} ${contactStatus}`);
         }
       } catch (err) {

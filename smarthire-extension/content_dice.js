@@ -48,22 +48,22 @@
 
     cardElements.forEach((card, index) => {
       try {
-        const cardText = card.innerText || '';
+        const cardText = utils.getTextDeep ? utils.getTextDeep(card) : (card.innerText || '');
 
         // Candidate Name
         const nameEl = card.querySelector('[data-cy="candidate-name"], [data-cy="search-result-candidate-name"], a[data-cy*="name"], h3, h4, h5, [class*="candidate-name"], [class*="name"]');
-        let name = nameEl ? utils.cleanText(nameEl.innerText) : '';
+        let name = nameEl ? utils.cleanText(nameEl.innerText || nameEl.textContent) : '';
         name = name.replace(/^[\s\S]*?(?:Candidate|Profile|Name:)?\s*/i, '').trim();
         if (name.includes('\n')) name = name.split('\n')[0].trim();
         if (!name || name.length < 2 || name.toLowerCase().includes('dice') || name.toLowerCase() === 'view profile') return;
 
         // Title / Designation
         const titleEl = card.querySelector('[data-cy="candidate-title"], [data-cy="search-result-candidate-title"], [class*="title"], [class*="designation"], p[class*="role"]');
-        let title = titleEl ? utils.cleanText(titleEl.innerText) : 'Software Professional';
+        let title = titleEl ? utils.cleanText(titleEl.innerText || titleEl.textContent) : 'Software Professional';
         if (title.toLowerCase() === name.toLowerCase()) {
           const pEls = card.querySelectorAll('p, span');
           for (const p of pEls) {
-            const txt = utils.cleanText(p.innerText);
+            const txt = utils.cleanText(p.innerText || p.textContent);
             if (txt && txt !== name && txt.length > 3 && !txt.includes('$') && !txt.includes('Updated')) {
               title = txt;
               break;
@@ -71,11 +71,15 @@
           }
         }
 
-        // Contact details
-        const emailEl = card.querySelector('a[href^="mailto:"]');
-        const phoneEl = card.querySelector('a[href^="tel:"]');
-        let email = emailEl ? emailEl.href.replace('mailto:', '').trim() : null;
-        let phone = phoneEl ? phoneEl.href.replace('tel:', '').trim() : null;
+        // Contact details (check light DOM and shadowRoot)
+        let emailEl = card.querySelector('a[href^="mailto:"]');
+        let phoneEl = card.querySelector('a[href^="tel:"]');
+        if (card.shadowRoot) {
+          if (!emailEl) emailEl = card.shadowRoot.querySelector('a[href^="mailto:"]');
+          if (!phoneEl) phoneEl = card.shadowRoot.querySelector('a[href^="tel:"]');
+        }
+        let email = emailEl ? emailEl.href.replace(/^mailto:/i, '').split('?')[0].trim().toLowerCase() : null;
+        let phone = phoneEl ? phoneEl.href.replace(/^tel:/i, '').trim() : null;
 
         const emails = utils.extractEmails(cardText);
         const phones = utils.extractPhones(cardText);
@@ -120,7 +124,7 @@
           id: `dice-${index}-${Date.now().toString().slice(-4)}`,
           name,
           title: title.slice(0, 80),
-          email: email || `${name.toLowerCase().replace(/[^a-z0-9]/g, '.')}@dice.talent`,
+          email: email || '',
           phone: phone || '',
           location: location || 'United States',
           experience,

@@ -213,17 +213,49 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  // CSP-safe clipboard copy with fallback
+  async function safeCopyText(text) {
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+        return true;
+      }
+    } catch (e) {
+      console.warn('navigator.clipboard writeText failed, falling back:', e);
+    }
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.top = '-9999px';
+      ta.style.left = '-9999px';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      ta.setSelectionRange(0, text.length);
+      const success = document.execCommand('copy');
+      document.body.removeChild(ta);
+      return !!success;
+    } catch (e) {
+      console.error('execCommand copy failed:', e);
+      return false;
+    }
+  }
+
   // Copy Boolean Query
-  copyQueryBtn.addEventListener('click', () => {
+  copyQueryBtn.addEventListener('click', async () => {
     const q = booleanQueryInput.value;
     if (!q) return;
-    navigator.clipboard.writeText(q).then(() => {
+    const copied = await safeCopyText(q);
+    if (copied) {
       const originalText = copyQueryBtn.querySelector('span').innerText;
       copyQueryBtn.querySelector('span').innerText = 'Copied!';
       setTimeout(() => {
         copyQueryBtn.querySelector('span').innerText = originalText;
       }, 2000);
-    });
+    }
   });
 
   // Listen for background / content script progress updates
@@ -435,7 +467,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // 6. Action 1: Copy to Excel (TSV)
-  copyTsvBtn.addEventListener('click', () => {
+  copyTsvBtn.addEventListener('click', async () => {
     const selected = scrapedCandidates.filter(c => selectedCandidateIds.has(c.id));
     if (selected.length === 0) {
       alert('Please select at least one candidate to copy.');
@@ -457,11 +489,14 @@ document.addEventListener('DOMContentLoaded', () => {
     ]);
 
     const tsv = [headers.join('\t'), ...rows.map(r => r.join('\t'))].join('\n');
-    navigator.clipboard.writeText(tsv).then(() => {
+    const copied = await safeCopyText(tsv);
+    if (copied) {
       const orig = copyTsvBtn.innerText;
       copyTsvBtn.innerText = '✓ Copied TSV!';
       setTimeout(() => { copyTsvBtn.innerText = orig; }, 2500);
-    });
+    } else {
+      alert('Failed to copy to clipboard. Please check browser clipboard permissions.');
+    }
   });
 
   // Action 2: Download CSV

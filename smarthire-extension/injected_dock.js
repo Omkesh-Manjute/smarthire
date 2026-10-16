@@ -47,7 +47,7 @@
     // 1. Discreet 38px Shield Logo Trigger (No long text strip!)
     const trigger = document.createElement('div');
     trigger.id = 'smarthire-copilot-trigger';
-    trigger.title = 'SmartHire ATS Sourcing Copilot v3.6 (Click to Open)';
+    trigger.title = 'SmartHire ATS Sourcing Copilot v3.7 (Click to Open)';
     trigger.innerHTML = `
       <svg width="22" height="22" viewBox="0 0 24 24" fill="#3B82F6">
         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
@@ -66,7 +66,7 @@
             <path d="m9 11 2 2 4-4" stroke="#ffffff" stroke-width="2.5" fill="none"/>
           </svg>
           <span style="font-weight:700; font-size:14px; letter-spacing:-0.02em;">SmartHire Copilot</span>
-          <span style="background:#1E293B; color:#93C5FD; font-size:10px; font-weight:700; padding:2px 6px; border-radius:4px; border:1px solid #334155;">v3.6 Live</span>
+          <span style="background:#1E293B; color:#93C5FD; font-size:10px; font-weight:700; padding:2px 6px; border-radius:4px; border:1px solid #334155;">v3.7 Live</span>
         </div>
         <button id="smarthire-drawer-close" style="background:none; border:none; color:#94A3B8; font-size:22px; cursor:pointer; line-height:1; padding:0 4px;">&times;</button>
       </div>
@@ -747,17 +747,49 @@
         primaryTarget.dispatchEvent(new MouseEvent('mouseup', evtInit));
         primaryTarget.click();
 
-        // Wait for Monster's right pane to load
-        await sleep(delayMs || 800);
+        // Dynamic Polling: Wait up to 1800ms for detail pane to render contact details
+        let email = '';
+        let phone = '';
+        const pollStart = Date.now();
+        const maxWait = delayMs ? Math.max(delayMs, 1500) : 1800;
 
-        // Action 2: Switch to Profile tab if present
-        const profileTab = document.querySelector('li:nth-of-type(2) > .tab__title > .tab__label') ||
-                           Array.from(document.querySelectorAll('.tab__label, button, [role="tab"]')).find(t => 
-                             t.innerText && t.innerText.trim().toLowerCase() === 'profile'
-                           );
-        if (profileTab && !profileTab.closest('.tab--active')) {
-          profileTab.click();
-          await sleep(300);
+        while (Date.now() - pollStart < maxWait) {
+          // Action 2: Switch to Profile tab if present
+          const profileTab = document.querySelector('li:nth-of-type(2) > .tab__title > .tab__label') ||
+                             Array.from(document.querySelectorAll('.tab__label, button, [role="tab"]')).find(t => 
+                               t.innerText && t.innerText.trim().toLowerCase() === 'profile'
+                             );
+          if (profileTab && !profileTab.closest('.tab--active') && !profileTab.classList.contains('active')) {
+            profileTab.click();
+          }
+
+          // Check standard Monster/Dice deep contact extraction
+          if (typeof window.extractMonsterContact === 'function') {
+            const mc = window.extractMonsterContact();
+            if (mc.email) email = mc.email;
+            if (mc.phone) phone = mc.phone;
+          }
+
+          // Check custom email selector if user specified
+          if (!email && emailSelector) {
+            const el = document.querySelector(emailSelector);
+            if (el) {
+              const ems = window.SmartHireUtils ? window.SmartHireUtils.extractEmails(el.innerText || el.textContent) : [];
+              if (ems.length > 0) email = ems[0];
+            }
+          }
+
+          // Check custom phone selector if user specified
+          if (!phone && phoneSelector) {
+            const el = document.querySelector(phoneSelector);
+            if (el) {
+              const phs = window.SmartHireUtils ? window.SmartHireUtils.extractPhones(el.innerText || el.textContent) : [];
+              if (phs.length > 0) phone = phs[0];
+            }
+          }
+
+          if (email && phone) break;
+          await sleep(150);
         }
 
         // Action 3: Extract Name (STRICTLY FROM CARD CONTAINER - NEVER FROM NAVBAR!)
@@ -786,49 +818,12 @@
           continue;
         }
 
-        // Action 4: Extract Email & Phone from #contact-legend-detail or detail pane
-        let email = '';
-        let phone = '';
-
-        const contactBox = document.querySelector('#contact-legend-detail, [id*="contact-legend"], [class*="contact-legend"]') ||
-                           (emailSelector ? document.querySelector(emailSelector) : null);
-        if (contactBox) {
-          const bTxt = contactBox.innerText || '';
-          const mailLink = contactBox.querySelector ? contactBox.querySelector('a[href^="mailto:"]') : null;
-          if (mailLink) email = mailLink.href.replace('mailto:', '').split('?')[0].trim().toLowerCase();
-          if (!email) {
-            const m = bTxt.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
-            if (m && !m[1].startsWith('support@') && !m[1].startsWith('info@')) email = m[1].trim().toLowerCase();
-          }
-
-          const telLink = contactBox.querySelector ? contactBox.querySelector('a[href^="tel:"]') : null;
-          if (telLink) phone = telLink.href.replace('tel:', '').trim();
-          if (!phone) {
-            const m = bTxt.match(/(?:Phone|Mobile|Cell|Direct)?\s*[:\s]?\s*(\+?1?[-.\s]?\(?[2-9]\d{2}\)?[-.\s]?\d{3}[-.\s]?\d{4})/i) ||
-                      bTxt.match(/(\+?1\d{10})/);
-            if (m) phone = m[1].trim();
-          }
-        }
-
-        // Fallback to resume text or right detail pane
+        // Fallback to container text if drawer did not disclose
         if (!email || !phone) {
-          const detailPanes = document.querySelectorAll('[class*="resume"], [class*="detail"], [class*="profile"], aside');
-          for (const pane of detailPanes) {
-            if (pane.closest('#smarthire-copilot-drawer')) continue;
-            const pTxt = pane.innerText || '';
-            if (pTxt.includes('@') || pTxt.includes('Phone:')) {
-              if (!email) {
-                const m = pTxt.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
-                if (m && !m[1].startsWith('support@') && !m[1].startsWith('info@')) email = m[1].trim().toLowerCase();
-              }
-              if (!phone) {
-                const m = pTxt.match(/(?:Phone|Mobile|Cell|Direct)?\s*[:\s]?\s*(\+?1?[-.\s]?\(?[2-9]\d{2}\)?[-.\s]?\d{3}[-.\s]?\d{4})/i) ||
-                          pTxt.match(/(\+?1\d{10})/);
-                if (m) phone = m[1].trim();
-              }
-              if (email && phone) break;
-            }
-          }
+          const cEmails = window.SmartHireUtils ? window.SmartHireUtils.extractEmails(container.innerText) : [];
+          const cPhones = window.SmartHireUtils ? window.SmartHireUtils.extractPhones(container.innerText) : [];
+          if (!email && cEmails.length > 0) email = cEmails[0];
+          if (!phone && cPhones.length > 0) phone = cPhones[0];
         }
 
         // Title from card text
@@ -953,7 +948,7 @@
     }
   }
 
-  function copyCandidatesToClipboard() {
+  async function copyCandidatesToClipboard() {
     if (!scrapedCandidates || scrapedCandidates.length === 0) return;
     const header = ['Sl. No', 'Candidate Name', 'Job Title', 'Email', 'Phone', 'Location', 'Source', 'Profile Link'];
     const rows = scrapedCandidates.map((c, i) => [
@@ -968,12 +963,29 @@
     ]);
 
     const tsv = [header.join('\t'), ...rows.map(r => r.join('\t'))].join('\n');
-    navigator.clipboard.writeText(tsv).then(() => {
-      const msg = document.getElementById('smarthire-import-msg');
+    const msg = document.getElementById('smarthire-import-msg');
+
+    let success = false;
+    if (window.SmartHireUtils && typeof window.SmartHireUtils.safeCopyToClipboard === 'function') {
+      success = await window.SmartHireUtils.safeCopyToClipboard(tsv);
+    } else if (navigator.clipboard && navigator.clipboard.writeText) {
+      try {
+        await navigator.clipboard.writeText(tsv);
+        success = true;
+      } catch (e) {
+        success = false;
+      }
+    }
+
+    if (success) {
       msg.style.color = '#059669';
       msg.innerText = '✓ Copied TSV to clipboard! Press Ctrl+V in Excel or Google Sheets.';
       setTimeout(() => { msg.innerText = ''; }, 4000);
-    });
+    } else {
+      msg.style.color = '#DC2626';
+      msg.innerText = 'Clipboard copy error. Please grant clipboard permissions.';
+      setTimeout(() => { msg.innerText = ''; }, 4000);
+    }
   }
 
   function importToSmartHireAts() {

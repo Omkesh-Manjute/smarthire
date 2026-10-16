@@ -5,34 +5,126 @@
 
   // Global extraction helpers
   window.SmartHireUtils = {
-    // Phone regex matcher
+    // Deep Query Selector - traverses light DOM and all open shadow roots
+    queryDeep(selector, root = document) {
+      if (!root) return null;
+      try {
+        const found = root.querySelector(selector);
+        if (found) return found;
+      } catch (e) {}
+
+      const allElements = root.querySelectorAll ? root.querySelectorAll('*') : [];
+      for (const el of allElements) {
+        if (el.shadowRoot) {
+          const res = this.queryDeep(selector, el.shadowRoot);
+          if (res) return res;
+        }
+      }
+      return null;
+    },
+
+    // Deep Query All - collects matching elements across light DOM and shadow roots
+    queryDeepAll(selector, root = document) {
+      const results = [];
+      if (!root) return results;
+      try {
+        const found = root.querySelectorAll(selector);
+        if (found && found.length > 0) results.push(...Array.from(found));
+      } catch (e) {}
+
+      const allElements = root.querySelectorAll ? root.querySelectorAll('*') : [];
+      for (const el of allElements) {
+        if (el.shadowRoot) {
+          results.push(...this.queryDeepAll(selector, el.shadowRoot));
+        }
+      }
+      return results;
+    },
+
+    // Get all text content including shadow roots
+    getTextDeep(root = document.body) {
+      if (!root) return '';
+      let text = (root.innerText || root.textContent || '') + '\n';
+      const allElements = root.querySelectorAll ? root.querySelectorAll('*') : [];
+      for (const el of allElements) {
+        if (el.shadowRoot) {
+          text += this.getTextDeep(el.shadowRoot) + '\n';
+        }
+      }
+      return text;
+    },
+
+    // Robust phone regex matcher supporting standard US/international formats
     extractPhones(text) {
       if (!text) return [];
-      const phoneRegex = /(?:\+?1[-.\s]?)?\(?([0-9]{3})\)?[-.\s]?([0-9]{3})[-.\s]?([0-9]{4})/g;
       const matches = [];
+      // Handles (123) 456-7890, 123-456-7890, 123.456.7890, +1 123 456 7890, 1234567890
+      const phoneRegex = /(?:\+?1[-.\s]?)?(?:\(?([2-9]\d{2})\)?[-.\s]?([0-9]{3})[-.\s]?([0-9]{4}))\b/g;
       let m;
       while ((m = phoneRegex.exec(text)) !== null) {
         const cleaned = `(${m[1]}) ${m[2]}-${m[3]}`;
-        if (!matches.includes(cleaned)) matches.push(cleaned);
+        // Skip dummy 555-0100 to 555-0199 test numbers and duplicates
+        if (!cleaned.includes('555-01') && !matches.includes(cleaned)) {
+          matches.push(cleaned);
+        }
       }
       return matches;
     },
 
-    // Email regex matcher
+    // Robust email regex matcher
     extractEmails(text) {
       if (!text) return [];
       const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
       const matches = [];
-      const ignoreDomains = ['monster.com', 'dice.com', 'sentry.io', 'google.com', 'cloudflare.com', 'w3.org', 'example.com'];
+      // Block known system/junk senders — candidate relay emails like @contact.monster.com are KEPT!
+      const ignoreExactDomains = [
+        '@monster.com', '@info.monster.com', '@reply.monster.com', '@noreply.monster.com',
+        '@bounce.monster.com', '@email.monster.com',
+        '@dice.com', '@noreply.dice.com',
+        '@sentry.io', '@google.com', '@cloudflare.com', '@w3.org', '@example.com'
+      ];
       let m;
       while ((m = emailRegex.exec(text)) !== null) {
         const email = m[0].trim().toLowerCase();
-        const domain = email.split('@')[1];
-        if (!ignoreDomains.some(d => domain.includes(d)) && !matches.includes(email)) {
+        if (email.endsWith('.png') || email.endsWith('.jpg') || email.endsWith('.svg') || email.endsWith('.js')) continue;
+        if (!ignoreExactDomains.some(d => email.endsWith(d)) && !matches.includes(email)) {
           matches.push(email);
         }
       }
       return matches;
+    },
+
+    // CSP-safe clipboard copy with automatic fallback
+    async safeCopyToClipboard(text) {
+      if (!text) return false;
+      try {
+        if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+          await navigator.clipboard.writeText(text);
+          return true;
+        }
+      } catch (err) {
+        console.warn('[SmartHire Copilot] navigator.clipboard blocked by CSP, using textarea fallback:', err);
+      }
+
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.setAttribute('readonly', '');
+        ta.style.position = 'fixed';
+        ta.style.top = '-9999px';
+        ta.style.left = '-9999px';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        ta.setSelectionRange(0, text.length);
+        const success = document.execCommand('copy');
+        document.body.removeChild(ta);
+        return !!success;
+      } catch (err) {
+        console.error('[SmartHire Copilot] execCommand copy failed:', err);
+        return false;
+      }
     },
 
     // Experience extractor
