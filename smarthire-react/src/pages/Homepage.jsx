@@ -4,6 +4,10 @@ import SiteLayout from '../components/SiteLayout'
 import PricingSection from '../components/PricingSection'
 import { loginWithGoogle, loginWithEmail, resetPasswordWithEmail } from '../lib/firebase'
 import { getUserProfileByEmailFirestore, saveInquiryFirestore } from '../lib/atsFirestore'
+import CreepyButton from '../components/ui/CreepyButton'
+import FaqAccordion from '../components/ui/FaqAccordion'
+import { motion } from 'framer-motion'
+import { staggeredContainerVariants, staggeredItemVariants } from '../components/ui/StaggeredGrid'
 
 function Homepage() {
   const navigate = useNavigate()
@@ -465,25 +469,34 @@ function Homepage() {
                 <div className="tf-hero-actions">
                   {isAuthenticated ? (
                     <>
-                      <Link to="/ats" className="tf-btn tf-btn-primary">
+                      <CreepyButton 
+                        to="/ats" 
+                        variant="primary"
+                      >
                         Open ATS Console →
-                      </Link>
-                      <Link to="/careers" className="tf-btn tf-btn-outline">
+                      </CreepyButton>
+                      <CreepyButton 
+                        to="/careers" 
+                        variant="outline"
+                      >
                         View Careers Portal ↗
-                      </Link>
+                      </CreepyButton>
                     </>
                   ) : (
                     <>
-                      <button 
+                      <CreepyButton 
                         type="button" 
                         onClick={() => setShowLoginModal(true)} 
-                        className="tf-btn tf-btn-primary"
+                        variant="primary"
                       >
                         Start now
-                      </button>
-                      <a href="#features" className="tf-btn tf-btn-outline">
+                      </CreepyButton>
+                      <CreepyButton 
+                        href="#features" 
+                        variant="outline"
+                      >
                         Explore Features
-                      </a>
+                      </CreepyButton>
                     </>
                   )}
                 </div>
@@ -783,10 +796,20 @@ function Homepage() {
               </p>
             </div>
 
-            <div className="tf-features-cards-grid">
+            <motion.div 
+              className="tf-features-cards-grid"
+              variants={staggeredContainerVariants}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, amount: 0.12 }}
+            >
               
               {/* Feature 1: Isolated Recruiter Vaults */}
-              <div className="tf-feature-box">
+              <motion.div 
+                className="tf-feature-box"
+                variants={staggeredItemVariants}
+                whileHover={{ y: -6, transition: { duration: 0.2 } }}
+              >
                 <div className="tf-feature-icon-wrap blue-bg">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
@@ -798,10 +821,14 @@ function Homepage() {
                   Strict individual database role-based access. No recruiter can see, edit, or poach another recruiter's candidates or notes. Complete privacy for every team member with supervisor audit visibility.
                 </p>
                 <div className="tf-feature-tag">Zero-Leakage RBAC Vaults</div>
-              </div>
+              </motion.div>
 
               {/* Feature 2: Smart JD-Candidate Instant Match Alerts */}
-              <div className="tf-feature-box">
+              <motion.div 
+                className="tf-feature-box"
+                variants={staggeredItemVariants}
+                whileHover={{ y: -6, transition: { duration: 0.2 } }}
+              >
                 <div className="tf-feature-icon-wrap amber-bg">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
@@ -813,10 +840,14 @@ function Homepage() {
                   Our background intelligence engine automatically scans your candidate vault the instant a new Requisition or JD arrives. If your candidate is a strong match, you receive an immediate alert.
                 </p>
                 <div className="tf-feature-tag">Instant Talent Match Chimes</div>
-              </div>
+              </motion.div>
 
               {/* Feature 3: SmartHire Asynchronous Video, Audio & Text AI Screening */}
-              <div className="tf-feature-box">
+              <motion.div 
+                className="tf-feature-box"
+                variants={staggeredItemVariants}
+                whileHover={{ y: -6, transition: { duration: 0.2 } }}
+              >
                 <div className="tf-feature-icon-wrap emerald-bg">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M23 7l-7 5 7 5V7z" />
@@ -828,10 +859,14 @@ function Homepage() {
                   Zero-login candidate screening portal. Candidates record 1-way video answers, voice notes, or written synthesis on their schedule. Automatic AI transcripts, speech-to-text, and objective fit scoring.
                 </p>
                 <div className="tf-feature-tag">Video · Voice Note · AI Scoring</div>
-              </div>
+              </motion.div>
 
               {/* Feature 4: 1-Click Digital RTR & Compliance Document Intake */}
-              <div className="tf-feature-box">
+              <motion.div 
+                className="tf-feature-box"
+                variants={staggeredItemVariants}
+                whileHover={{ y: -6, transition: { duration: 0.2 } }}
+              >
                 <div className="tf-feature-icon-wrap indigo-bg">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -846,10 +881,14 @@ function Homepage() {
                   Collect digital Right-to-Represent (RTR) agreements, passports, visas, work authorizations (C2C/W2/1099), and rate lock confirmations in one instant step before client presentation.
                 </p>
                 <div className="tf-feature-tag">1-Click RTR Sign & Lock</div>
-              </div>
+              </motion.div>
 
               {/* Feature 5: Real-Time Candidate Chat & Close System */}
-              <div className="tf-feature-box">
+              <motion.div 
+                className="tf-feature-box"
+                variants={staggeredItemVariants}
+                whileHover={{ y: -6, transition: { duration: 0.2 } }}
+              >
                 <div className="tf-feature-icon-wrap purple-bg">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
@@ -863,10 +902,14 @@ function Homepage() {
                   Direct recruiter-to-candidate messaging portal. Negotiate bill/pay spreads, send live job briefs, and lock in submission confirmations without telephone tag delays.
                 </p>
                 <div className="tf-feature-tag">Live Recruiter-Talent Chat</div>
-              </div>
+              </motion.div>
 
               {/* Feature 6: Smart SLA Deadline & Priority Tracking */}
-              <div className="tf-feature-box">
+              <motion.div 
+                className="tf-feature-box"
+                variants={staggeredItemVariants}
+                whileHover={{ y: -6, transition: { duration: 0.2 } }}
+              >
                 <div className="tf-feature-icon-wrap cyan-bg">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <circle cx="12" cy="12" r="10"/>
@@ -878,10 +921,14 @@ function Homepage() {
                   Proactive notification engine flags expiring requisitions, client submission cut-offs, and interview schedules so your team never misses a lucrative placement window.
                 </p>
                 <div className="tf-feature-tag">Requisition Cut-off Timers</div>
-              </div>
+              </motion.div>
 
               {/* Feature 7: Manager Command Hub & Audit Reports */}
-              <div className="tf-feature-box">
+              <motion.div 
+                className="tf-feature-box"
+                variants={staggeredItemVariants}
+                whileHover={{ y: -6, transition: { duration: 0.2 } }}
+              >
                 <div className="tf-feature-icon-wrap blue-bg">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <line x1="18" y1="20" x2="18" y2="10"/>
@@ -894,10 +941,14 @@ function Homepage() {
                   Dedicated leadership views to oversee sourcing specialist throughput, track sub-recruiter pipeline metrics, review margin spreads, and export comprehensive compliance audit logs.
                 </p>
                 <div className="tf-feature-tag">Executive Pipeline Analytics</div>
-              </div>
+              </motion.div>
 
               {/* Feature 8: Anti-Proxy Biometric & Identity Flow */}
-              <div className="tf-feature-box">
+              <motion.div 
+                className="tf-feature-box"
+                variants={staggeredItemVariants}
+                whileHover={{ y: -6, transition: { duration: 0.2 } }}
+              >
                 <div className="tf-feature-icon-wrap emerald-bg">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
@@ -908,9 +959,9 @@ function Homepage() {
                   Prevent candidate substitution and proxy fraud. Candidate facial liveness verification, official ID document OCR matching, and IP geolocation telemetry guarantee authentic talent submissions.
                 </p>
                 <div className="tf-feature-tag">99.1% Biometric Precision</div>
-              </div>
+              </motion.div>
 
-            </div>
+            </motion.div>
           </div>
         </section>
 
@@ -2598,6 +2649,55 @@ function Homepage() {
               </div>
             </div>
 
+          </div>
+        </section>
+
+        {/* =========================================================================
+            SECTION 7: VENGEANCE UI FAQ ACCORDION
+            ========================================================================= */}
+        <section className="tf-faq-section" id="faq" style={{ padding: '80px 20px', background: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
+          <div className="tf-container" style={{ maxWidth: '880px', margin: '0 auto' }}>
+            <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+              <span style={{ fontSize: '12px', fontWeight: '800', color: '#2563eb', textTransform: 'uppercase', letterSpacing: '0.08em', background: '#eff6ff', border: '1px solid #bfdbfe', padding: '4px 12px', borderRadius: '9999px', display: 'inline-block', marginBottom: '12px' }}>
+                Clear & Transparent
+              </span>
+              <h2 style={{ fontSize: '32px', fontWeight: '800', color: '#0f172a', margin: '0 0 10px 0', letterSpacing: '-0.02em' }}>
+                Frequently Asked Questions
+              </h2>
+              <p style={{ fontSize: '16px', color: '#64748b', margin: 0, maxWidth: '600px', marginInline: 'auto' }}>
+                Everything you need to know about SmartHire ATS, automated candidate sourcing, and security compliance.
+              </p>
+            </div>
+
+            <FaqAccordion
+              title=""
+              items={[
+                {
+                  question: "How does SmartHire train its AI model with 100s of placed candidate resumes?",
+                  answer: "Unlike generic keyword parsers, SmartHire's matching engine was fine-tuned and benchmarked against hundreds of verified IT candidates who successfully cleared technical interviews and received client offers across Fortune 500 enterprises and state government bodies (like NC DHHS). The model learns deep semantic skill relationships, context-specific tool stacks, and rate-to-experience correlations to identify genuine technical depth over superficial keyword stuffing."
+                },
+                {
+                  question: "How does the automated candidate matching and JD alert system work?",
+                  answer: "When a new job requisition arrives from vendor portals (like JobsInHand or Coolworks) or is manually posted, SmartHire instantly analyzes the job description against candidate resumes in your isolated private vault. If a high placement probability match (>85%) is identified, assigned recruiters receive instant audio chimes and in-app notifications to review and submit the candidate before competitor submissions flood the requisition."
+                },
+                {
+                  question: "How are candidate pipelines and vaults kept isolated between recruiters?",
+                  answer: "SmartHire enforces strict zero-leakage Role-Based Access Control (RBAC). Sourcing specialists, recruiters, and managers operate in their own private candidate pools. Other recruiters cannot view, poach, or reassign candidates in your pipeline unless explicitly delegated by an organization Administrator."
+                },
+                {
+                  question: "How do Lead Managers and Super Admins approve submissions?",
+                  answer: "Lead Managers have dedicated approval consoles. In the Requisitions tab under 'Pipeline / Submissions', managers can inspect candidate verification badges, adjust bill rates, review anti-proxy biometric scores, and approve submissions for client presentation (transitioning status from Int-SubmittedToManager to Client-SubmittedToCustomer)."
+                },
+                {
+                  question: "What anti-proxy and biometric verification safeguards are built in?",
+                  answer: "SmartHire features integrated 3-tier anti-fraud screening: AI facial liveness detection, passport/work authorization OCR cross-checks, and IP geolocation telemetry. Candidates complete a 60-second digital verification before client submission, eliminating proxy candidate risks and saving recruiter reputations."
+                },
+                {
+                  question: "Can I export candidate pools, submission histories, and audit logs to Excel/CSV?",
+                  answer: "Yes. In both the Candidates Directory and Reports module, 1-click 'Export to Excel' generates standardized spreadsheets with filtered candidate records, historical submission rates, recruiter attributions, and pipeline milestones."
+                }
+              ]}
+            />
           </div>
         </section>
 

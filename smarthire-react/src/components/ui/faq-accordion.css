@@ -1,0 +1,175 @@
+/* Vengeance UI - FAQ Accordion Styles */
+
+.v-faq-container {
+  width: 100%;
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 32px 16px;
+  position: relative;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.v-faq-title {
+  text-align: center;
+  font-weight: 800;
+  font-size: 28px;
+  line-height: 1.25;
+  margin: 0 0 32px 0;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+.v-faq-subtitle {
+  text-align: center;
+  font-size: 15px;
+  color: #64748b;
+  margin: -20px 0 36px 0;
+}
+
+.v-faq-list {
+  width: 100%;
+  margin: 0 auto;
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.v-faq-item {
+  width: 100%;
+  position: relative;
+  transition: all 0.25s ease-in-out;
+  border-bottom: 2px solid #f1f5f9;
+  background: transparent;
+}
+
+.v-faq-item:last-child {
+  border-bottom: none;
+}
+
+.v-faq-item--active {
+  border-bottom: 2px solid #e2e8f0;
+}
+
+/* Question Trigger Button */
+.v-faq-trigger {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  min-height: 62px;
+  padding: 16px 44px 16px 56px;
+  position: relative;
+  margin: 0;
+  cursor: pointer;
+  border-top: none;
+  border-right: none;
+  border-bottom: none;
+  border-left: 7px solid #cbd5e1;
+  transition: all 0.2s ease;
+  text-align: left;
+  outline: none;
+  background: transparent;
+  color: #334155;
+  font-family: inherit;
+  font-size: 16.5px;
+  font-weight: 600;
+  box-sizing: border-box;
+}
+
+.v-faq-trigger:hover {
+  border-left-color: #64748b;
+  color: #0f172a;
+  background-color: #f8fafc;
+}
+
+.v-faq-trigger--active {
+  border-left-color: #0f172a !important;
+  background-color: rgba(241, 245, 249, 0.65) !important;
+  color: #0f172a !important;
+  font-weight: 700 !important;
+}
+
+/* Plus/Minus Indicator Icon */
+.v-faq-icon {
+  position: absolute;
+  left: 18px;
+  top: 50%;
+  transform: translateY(-52%);
+  transition: all 0.2s ease;
+  line-height: 1;
+  font-size: 26px;
+  font-weight: 300;
+  color: #94a3b8;
+  user-select: none;
+}
+
+.v-faq-icon--active {
+  font-size: 32px;
+  font-weight: 400;
+  color: #0f172a;
+}
+
+/* Question Label */
+.v-faq-question {
+  display: block;
+  padding-right: 12px;
+  line-height: 1.45;
+}
+
+/* Chevron Arrow */
+.v-faq-chevron {
+  position: absolute;
+  right: 22px;
+  top: calc(50% - 3px);
+  display: block;
+  width: 8px;
+  height: 8px;
+  border-top: 2.5px solid #94a3b8;
+  border-right: 2.5px solid #94a3b8;
+  transition: transform 0.22s ease-in-out, border-color 0.2s ease;
+  transform: rotate(133deg);
+  box-sizing: border-box;
+}
+
+.v-faq-chevron--active {
+  transform: rotate(-44deg);
+  border-color: #0f172a;
+}
+
+/* Expandable Grid Container */
+.v-faq-content-grid {
+  display: grid;
+  transition: grid-template-rows 0.3s ease-in-out, background-color 0.2s ease;
+  width: 100%;
+  border-left: 7px solid #cbd5e1;
+  grid-template-rows: 0fr;
+  background: transparent;
+  box-sizing: border-box;
+}
+
+.v-faq-content-grid--active {
+  grid-template-rows: 1fr;
+  border-left-color: #0f172a;
+  background-color: rgba(241, 245, 249, 0.65);
+}
+
+.v-faq-content-inner {
+  overflow: hidden;
+}
+
+.v-faq-answer {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: flex-start;
+  width: 100%;
+  padding: 4px 28px 22px 56px;
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.65;
+  color: #475569;
+  box-sizing: border-box;
+}

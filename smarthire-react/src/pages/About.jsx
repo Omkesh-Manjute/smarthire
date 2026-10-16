@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom'
 import SiteLayout from '../components/SiteLayout'
 import { pushActivityNotification } from '../components/ActivityNotificationBell'
 import { saveInquiryFirestore } from '../lib/atsFirestore'
+import FaqAccordion from '../components/ui/FaqAccordion'
 
 function About() {
   const navigate = useNavigate()
@@ -736,56 +737,10 @@ function About() {
 
             {/* Interactive FAQ Accordion */}
             <div style={{ maxWidth: '840px', margin: '0 auto' }}>
-              <h3 style={{ fontSize: '20px', fontWeight: '800', color: '#0f172a', marginBottom: '16px', textAlign: 'center' }}>
-                Frequently Asked Questions
-              </h3>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {filteredFaqs.map((faq, idx) => {
-                  const isOpen = openFaq === idx
-                  return (
-                    <div
-                      key={idx}
-                      style={{
-                        background: '#ffffff',
-                        border: '1px solid #e2e8f0',
-                        borderRadius: '8px',
-                        overflow: 'hidden',
-                        transition: 'border-color 0.15s'
-                      }}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => setOpenFaq(isOpen ? -1 : idx)}
-                        style={{
-                          width: '100%',
-                          padding: '16px 20px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          background: isOpen ? '#f8fafc' : '#ffffff',
-                          border: 'none',
-                          cursor: 'pointer',
-                          textAlign: 'left',
-                          fontSize: '14.5px',
-                          fontWeight: '700',
-                          color: isOpen ? '#2563eb' : '#0f172a',
-                          gap: '12px'
-                        }}
-                      >
-                        <span>{faq.q}</span>
-                        <span style={{ fontSize: '12px', color: '#64748b' }}>{isOpen ? '▲' : '▼'}</span>
-                      </button>
-
-                      {isOpen && (
-                        <div style={{ padding: '0 20px 18px', fontSize: '13.5px', color: '#475569', lineHeight: 1.65, borderTop: '1px solid #f1f5f9' }}>
-                          {faq.a}
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
+              <FaqAccordion 
+                items={filteredFaqs} 
+                title="Frequently Asked Questions" 
+              />
             </div>
 
           </div>

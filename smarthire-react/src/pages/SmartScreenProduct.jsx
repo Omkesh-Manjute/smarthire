@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import SiteLayout from '../components/SiteLayout'
 import PricingSection from '../components/PricingSection'
+import FaqAccordion from '../components/ui/FaqAccordion'
 
 export default function SmartScreenProduct() {
   const navigate = useNavigate()
@@ -934,70 +935,35 @@ export default function SmartScreenProduct() {
             </div>
 
             {/* Interactive Accordion */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              {[
+            <FaqAccordion
+              title=""
+              items={[
                 {
-                  q: 'Do candidates need to download an app or create an account?',
-                  a: 'No. SmartScreen is 100% browser-based. Candidates open your secure link on any smartphone, tablet, or laptop running Chrome, Safari, Edge, or Firefox without downloading any third-party app or creating passwords.'
+                  question: 'Do candidates need to download an app or create an account?',
+                  answer: 'No. SmartScreen is 100% browser-based. Candidates open your secure link on any smartphone, tablet, or laptop running Chrome, Safari, Edge, or Firefox without downloading any third-party app or creating passwords.'
                 },
                 {
-                  q: 'Can SmartScreen integrate with our existing ATS (Bullhorn, Greenhouse, Lever)?',
-                  a: 'Yes. SmartScreen includes universal webhooks and a REST API. When a candidate finishes their screening, we automatically send an HMAC SHA-256 signed JSON webhook to your ATS with the match score, PDF scorecard link, and video playback URL.'
+                  question: 'Can SmartScreen integrate with our existing ATS (Bullhorn, Greenhouse, Lever)?',
+                  answer: 'Yes. SmartScreen includes universal webhooks and a REST API. When a candidate finishes their screening, we automatically send an HMAC SHA-256 signed JSON webhook to your ATS with the match score, PDF scorecard link, and video playback URL.'
                 },
                 {
-                  q: 'How does the Anti-Cheat Single Continuous Take work?',
-                  a: 'Once a candidate begins, the video recording runs continuously from question 1 through the final question. Candidates cannot pause, re-take individual questions, or switch tabs to look up answers without the session logging a focus deviation flag.'
+                  question: 'How does the Anti-Cheat Single Continuous Take work?',
+                  answer: 'Once a candidate begins, the video recording runs continuously from question 1 through the final question. Candidates cannot pause, re-take individual questions, or switch tabs to look up answers without the session logging a focus deviation flag.'
                 },
                 {
-                  q: 'What happens when an interview link reaches its expiration date?',
-                  a: 'When a link reaches its scheduled expiration timestamp (3 days, 7 days, or a custom deadline), the server automatically returns HTTP 410 Gone. Any candidate who visits the URL will see an amber lock screen instructing them to contact your recruiter for a renewal.'
+                  question: 'What happens when an interview link reaches its expiration date?',
+                  answer: 'When a link reaches its scheduled expiration timestamp (3 days, 7 days, or a custom deadline), the server automatically returns HTTP 410 Gone. Any candidate who visits the URL will see an amber lock screen instructing them to contact your recruiter for a renewal.'
                 },
                 {
-                  q: 'Can we customize questions per requisition?',
-                  a: 'Yes. You can customize questions, time limits (e.g. 60s, 90s, 120s), and allowed response modes (video, voice, or written text) for every single job opening, or let our AI generator draft them from your job description.'
+                  question: 'Can we customize questions per requisition?',
+                  answer: 'Yes. You can customize questions, time limits (e.g. 60s, 90s, 120s), and allowed response modes (video, voice, or written text) for every single job opening, or let our AI generator draft them from your job description.'
                 },
                 {
-                  q: 'Can I purchase SmartScreen AI as a standalone tool without switching my ATS?',
-                  a: 'Absolutely. SmartScreen AI is designed from the ground up as an independent standalone product. You can keep your existing ATS and use SmartScreen exclusively for your candidate video & voice assessments.'
+                  question: 'Can I purchase SmartScreen AI as a standalone tool without switching my ATS?',
+                  answer: 'Absolutely. SmartScreen AI is designed from the ground up as an independent standalone product. You can keep your existing ATS and use SmartScreen exclusively for your candidate video & voice assessments.'
                 }
-              ].map((item, idx) => {
-                const isOpen = openFaqIndex === idx
-                return (
-                  <div
-                    key={idx}
-                    className="faq-card-interactive"
-                    onClick={() => setOpenFaqIndex(isOpen ? -1 : idx)}
-                    style={{
-                      border: '1.5px solid #e2e8f0',
-                      borderRadius: '12px',
-                      padding: '18px 22px',
-                      background: isOpen ? '#f8fafc' : '#ffffff',
-                      transition: 'all 0.2s ease'
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
-                      <h4 style={{ fontSize: '15.5px', fontWeight: '800', color: '#0f172a', margin: 0 }}>
-                        {item.q}
-                      </h4>
-                      <span style={{
-                        fontSize: '18px',
-                        fontWeight: '700',
-                        color: isOpen ? '#2563eb' : '#94a3b8',
-                        transform: isOpen ? 'rotate(45deg)' : 'rotate(0deg)',
-                        transition: 'transform 0.2s ease'
-                      }}>
-                        +
-                      </span>
-                    </div>
-                    {isOpen && (
-                      <p style={{ fontSize: '14px', color: '#475569', lineHeight: '1.6', margin: '12px 0 0', borderTop: '1px solid #e2e8f0', paddingTop: '12px' }}>
-                        {item.a}
-                      </p>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
+              ]}
+            />
           </div>
         </section>
 

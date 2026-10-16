@@ -1,0 +1,118 @@
+/* Creepy Button Component Styles - VengeanceUI Parity */
+
+.creepy-btn-root {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 9.5em;
+  border-radius: 10px;
+  background-color: #000000;
+  cursor: pointer;
+  outline: none;
+  border: none;
+  user-select: none;
+  -webkit-user-select: none;
+  text-decoration: none;
+  font-family: inherit;
+  box-sizing: border-box;
+  vertical-align: middle;
+  padding: 0;
+  margin: 0;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.creepy-btn-root:focus-visible {
+  box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #3b82f6;
+}
+
+/* Eyes Container - hidden behind the cover until hovered */
+.creepy-eyes-container {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 0.35em;
+  right: 1.15em;
+  bottom: 0.55em;
+  height: 0.85em;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Individual Eye */
+.creepy-eye {
+  position: relative;
+  width: 0.85em;
+  height: 0.85em;
+  background-color: #ffffff;
+  border-radius: 9999px;
+  overflow: hidden;
+  display: inline-block;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Eye Pupil */
+.creepy-pupil {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0.42em;
+  height: 0.42em;
+  background-color: #000000;
+  border-radius: 9999px;
+  transition: transform 75ms ease-out;
+}
+
+/* Tilting Top Cover */
+.creepy-cover {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  transform-origin: 1.25em 50%;
+  z-index: 1;
+  box-sizing: border-box;
+  padding: 13px 26px;
+  line-height: 1.2;
+  white-space: nowrap;
+  box-shadow: inset 0 0 0 0.125em rgba(0, 0, 0, 1);
+  text-decoration: none;
+}
+
+/* Cover Variants */
+.creepy-cover--primary {
+  background-color: #2563eb;
+  color: #ffffff;
+  box-shadow: inset 0 0 0 0.125em rgba(0, 0, 0, 1), 0 4px 14px rgba(37, 99, 235, 0.28);
+}
+
+.creepy-cover--outline,
+.creepy-cover--secondary {
+  background-color: #ffffff;
+  color: #1e293b;
+  box-shadow: inset 0 0 0 0.125em rgba(0, 0, 0, 1), 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Invisible Spacer to Give Natural Dimensions */
+.creepy-placeholder {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  padding: 13px 26px;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  min-width: 9.5em;
+  white-space: nowrap;
+  pointer-events: none;
+  line-height: 1.2;
+  box-sizing: border-box;
+}
