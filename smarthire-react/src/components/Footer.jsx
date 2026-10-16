@@ -1,19 +1,10 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import SocialFlipButton from './ui/SocialFlipButton'
 
 function Footer() {
   return (
-    <footer className="site-footer" style={{ borderTop: '1px solid #e2e8f0', background: '#ffffff', padding: '32px 0 24px' }}>
-      <div className="container footer-wrap" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18 }}>
-        {/* VengeanceUI Social Flip Button (C - O - N - T - A - C - T) */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#64748b' }}>
-            Connect with SmartHire Enterprise
-          </span>
-          <SocialFlipButton />
-        </div>
-
+    <footer className="site-footer" style={{ borderTop: '1px solid #e2e8f0', background: '#ffffff', padding: '28px 0 24px' }}>
+      <div className="container footer-wrap" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
         <div className="footer-links" style={{ display: 'flex', gap: 20, flexWrap: 'wrap', justifyContent: 'center' }}>
           <Link to="/smartscreen" style={{ color: '#475569', fontSize: 13, textDecoration: 'none', fontWeight: 600 }}>SmartScreen AI</Link>
           <Link to="/jobs" style={{ color: '#475569', fontSize: 13, textDecoration: 'none', fontWeight: 600 }}>Careers Portal</Link>
