@@ -93,6 +93,22 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
   - End-to-end verified on Lightsail: Simulated candidate screening submission returned HTTP 200 and logged `[SmartScreen] Screening completion email dispatched for 'Ananya Patel' to omkesh@coolsofttech.com (CC: none)`.
   - Cleaned up test screening records from `screening_sessions.json` and `candidates.json`.
   - Verified `HTTP 200 OK` on live domain `https://smarthireus.com`.
+### 2026-10-17 — SmartHire Sourcing Copilot Chrome Extension v3.7.0 Overhaul (Email/Phone Extraction, Shadow DOM & CSP Clipboard Copy)
+- **Context & Objectives**:
+  - The user reported that the Chrome extension (`smarthire-extension`) was failing to extract and copy candidate email addresses and phone numbers on Monster+ and Dice portals.
+  - Required deep root-cause analysis and an end-to-end workable overhaul so recruiters can reliably extract and copy candidate contacts to clipboard / Excel and ingest them into SmartHire ATS.
+- **Root Causes Identified & Solved**:
+  1. *Email Filter Collateral Damage (`content_common.js`)*: The domain filter checked `domain.includes('monster.com')`, which unintentionally blacklisted valid Monster+ candidate relay emails (`*.contact.monster.com`). Updated to explicitly filter only known system/junk senders (`@monster.com`, `@info.monster.com`, `@reply.monster.com`, `@noreply.monster.com`), preserving candidate relay addresses.
+  2. *Shadow DOM Isolation on Modern SPAs (`content_common.js` & `content_monster.js`)*: Monster+ and Dice render candidate details inside Web Components and Shadow DOM trees where standard `document.querySelector` returns `null`. Implemented `SmartHireUtils.queryDeep()`, `SmartHireUtils.queryDeepAll()`, and `SmartHireUtils.getTextDeep()` to recursively traverse open shadow roots.
+  3. *Async Race Conditions on Card Click (`content_monster.js` & `injected_dock.js`)*: Previously, scripts clicked candidate cards and waited a rigid 500ms before reading details. Monster+ loads candidate profiles asynchronously via API, taking 800ms-1500ms, causing empty extraction. Replaced with dynamic polling loops (polling every 150ms up to 1800ms) that wait for contact containers or drawer details to finish rendering.
+  4. *Phone & Email Regex Fragility*: Enhanced phone regex to recognize unformatted 10-digit numbers, dotted formats (`123.456.7890`), standard `(123) 456-7890`, and international `+1` formats while filtering out dummy numbers (`555-0100..0199`).
+  5. *Dice Synthetic Placeholder Emails (`content_dice.js`)*: Removed fallback that generated fake `@dice.talent` emails, ensuring clean empty strings and accurate disclosure badges.
+  6. *CSP-Blocked Clipboard Writes (`injected_dock.js` & `popup.js`)*: `navigator.clipboard.writeText()` often rejected due to strict portal CSP headers or unfocused tabs. Created `safeCopyToClipboard()` / `safeCopyText()` with fallback to offscreen `<textarea>` and `document.execCommand('copy')`.
+- **Verification & Deployment**:
+  - Validated syntax on all extension JS scripts via `node -c` (0 syntax errors).
+  - Validated React production build in `smarthire-react`: **0 errors, 0 warnings** (`vite build` in 3.32s).
+  - Packaged production distribution archive `smarthire-extension.zip`.
+  - Git committed (`7b53b1d`) and pushed to `origin main`.
 
 ### 2026-10-17 — FAQ AI Screening Overhaul, Modern Interactive Footer Pill Buttons, Blog & Careers ShareSheet Polish, and Removal of Table Initial Monograms
 - **Context & Objectives**:
