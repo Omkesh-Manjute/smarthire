@@ -3381,7 +3381,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
       const enrichedCounts = {
         ...(countsData || {}),
         candidatesTotal: cleaned.length,
-        inboxResumes: cleaned.filter(c => c.sourceCategory === 'email_inbox').length,
+        inboxResumes: cleaned.filter(c => c.sourceCategory === 'email_inbox' || c.sourceCategory === 'monster_plus' || c.sourceCategory === 'dice' || c.isNew).length,
         spamResumes: cleaned.filter(c => c.sourceCategory === 'email_spam' || c.isSpamRecovery).length,
       }
       setStreamCounts(enrichedCounts)
@@ -11812,7 +11812,7 @@ export default function RecruiterInbox({ defaultViewMode }) {
                   {[
                     { color: '#4A154B', count: roleScopedCandidates.length, label: 'Total', filter: 'all' },
                     { color: '#0D9488', count: roleScopedCandidates.filter(c => c.status !== 'Archived' && c.status !== 'Rejected' && c.status !== 'Closed').length, label: 'Active', filter: 'active' },
-                    { color: '#D97706', count: roleScopedCandidates.filter(c => c.sourceCategory === 'email_inbox').length, label: 'Inbox', filter: 'inbox' },
+                    { color: '#D97706', count: roleScopedCandidates.filter(c => c.sourceCategory === 'email_inbox' || c.sourceCategory === 'monster_plus' || c.sourceCategory === 'dice' || c.isNew).length, label: 'Inbox', filter: 'inbox' },
                     { color: '#0284C7', count: roleScopedCandidates.filter(c => c.status === 'In Review' || c.status === 'Review').length, label: 'In Review', filter: 'review' },
                     { color: '#E11D48', count: roleScopedCandidates.filter(c => c.sourceCategory === 'email_spam' || c.isSpamRecovery).length, label: 'Spam', filter: 'spam' }
                   ].map((card, cIdx) => {

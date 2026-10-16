@@ -11529,7 +11529,14 @@ app.get('/api/recruiter/email-streams', (req, res) => {
   const filteredCandidates = (candidatesStore || []).filter(c => {
     if (!c) return false;
 
-    // STRICT: Only include candidates that have an actual resume attachment
+    // STRICT: Only include candidates that have an actual resume attachment OR are sourced via extension/job sites
+    const isExtensionSourced = c.sourceCategory === 'monster_plus' || 
+                               c.sourceCategory === 'dice' || 
+                               (c.source || '').toLowerCase().includes('monster') || 
+                               (c.source || '').toLowerCase().includes('dice') || 
+                               (c.source || '').toLowerCase().includes('extension') || 
+                               c.isNew === true;
+
     const hasAttachment = (
       (c.resumeText && String(c.resumeText).length > 100) ||
       (c.attachmentName && String(c.attachmentName).trim().length > 0) ||
@@ -11537,7 +11544,8 @@ app.get('/api/recruiter/email-streams', (req, res) => {
       (c.resumeUrl && String(c.resumeUrl).trim().length > 0) ||
       (c.legalDocs?.resume?.storageUrl && c.legalDocs.resume.storageUrl.length > 0) ||
       (c.legalDocs?.resume?.hasFile === true) ||
-      (c.documents?.resume?.storageUrl && c.documents.resume.storageUrl.length > 0)
+      (c.documents?.resume?.storageUrl && c.documents.resume.storageUrl.length > 0) ||
+      isExtensionSourced
     );
     if (!hasAttachment) return false; // Skip no-attachment candidates entirely
 
@@ -11594,7 +11602,11 @@ app.get('/api/recruiter/email-streams', (req, res) => {
     // Enrich with source category and AI match against active positions
     const src = (c.source || '').toLowerCase();
     let sourceCategory = 'email_inbox';
-    if (c.sourceCategory === 'mobile_app' || src.includes('mobile') || src.includes('app')) {
+    if (c.sourceCategory === 'monster_plus' || src.includes('monster')) {
+      sourceCategory = 'monster_plus';
+    } else if (c.sourceCategory === 'dice' || src.includes('dice')) {
+      sourceCategory = 'dice';
+    } else if (c.sourceCategory === 'mobile_app' || src.includes('mobile') || src.includes('app')) {
       sourceCategory = 'mobile_app';
     } else if (c.isSpamRecovery || src.includes('spam') || src.includes('junk')) {
       sourceCategory = 'email_spam';
@@ -11797,6 +11809,23 @@ app.get('/api/recruiter/email-streams', (req, res) => {
 
   const dedupedScopedCandidates = deduplicateCandidatesArray(scopedCandidates);
 
+  // Newest candidates strictly at the very top (Row #1)
+  dedupedScopedCandidates.sort((a, b) => {
+    const getT = (cand) => {
+      const d = cand.receivedAt || cand.receivedDate || cand.createdAt || cand.updatedAt || cand.date;
+      if (!d) return 0;
+      const t = new Date(d).getTime();
+      return isNaN(t) ? 0 : t;
+    };
+    const tA = getT(a);
+    const tB = getT(b);
+    if (tB !== tA) return tB - tA;
+    const isNewA = (a.status === 'New' || a.isNew) ? 1 : 0;
+    const isNewB = (b.status === 'New' || b.isNew) ? 1 : 0;
+    if (isNewA !== isNewB) return isNewB - isNewA;
+    return (b.matchScore || 0) - (a.matchScore || 0);
+  });
+
   res.json({
     success: true,
     recruiter: {
@@ -11807,9 +11836,9 @@ app.get('/api/recruiter/email-streams', (req, res) => {
     },
     counts: {
       candidatesTotal: dedupedScopedCandidates.length,
-      inboxResumes: dedupedScopedCandidates.filter(c => c.sourceCategory === 'email_inbox').length,
+      inboxResumes: dedupedScopedCandidates.filter(c => c.sourceCategory === 'email_inbox' || c.sourceCategory === 'monster_plus' || c.sourceCategory === 'dice' || c.isNew).length,
       spamResumes: dedupedScopedCandidates.filter(c => c.sourceCategory === 'email_spam').length,
-      careersResumes: dedupedScopedCandidates.filter(c => c.sourceCategory === 'careers_portal').length,
+      careersResumes: dedupedScopedCandidates.filter(c => c.sourceCategory === 'careers_portal' || c.sourceCategory === 'monster_plus' || c.sourceCategory === 'dice').length,
       vendorResumes: dedupedScopedCandidates.filter(c => c.sourceCategory === 'vendor_bench').length,
       requirements: requirementsEmailStore.length,
       vendors: vendorSubmittalsStore.length
