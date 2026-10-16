@@ -7439,6 +7439,299 @@ app.post('/api/screening/:sessionId/upload-media', uploadScreeningMedia.single('
   }
 });
 
+// Asynchronously dispatch candidate screening completion notification email to the assigned recruiter from Omkesh's email
+async function sendScreeningCompletedNotificationEmail(session) {
+  if (!session) return false;
+  // Dedup protection: Avoid sending multiple emails for the same session
+  if (session.completionEmailSent) {
+    console.log(`[SmartScreen] Completion email already dispatched for session ${session.sessionId}`);
+    return false;
+  }
+
+  try {
+    const defaultSender = 'omkesh@coolsofttech.com';
+    const cfg = (typeof emailConfigsStore !== 'undefined' && emailConfigsStore[defaultSender])
+      ? emailConfigsStore[defaultSender]
+      : (typeof emailConfigsStore !== 'undefined' && Object.values(emailConfigsStore)[0])
+      ? Object.values(emailConfigsStore)[0]
+      : {
+          fromEmail: process.env.EMAIL_USER || defaultSender,
+          appPassword: process.env.EMAIL_PASS || process.env.COOLSOFT_PASS || '',
+          smtpHost: process.env.EMAIL_HOST || 'smtp.bizmail.yahoo.com',
+          smtpPort: parseInt(process.env.EMAIL_PORT || '465')
+        };
+
+    const fromEmail = cfg.fromEmail || defaultSender;
+    const cleanedPass = (cfg.appPassword || process.env.EMAIL_PASS || process.env.COOLSOFT_PASS || '').replace(/\s+/g, '');
+    const smtpHost = cfg.smtpHost || process.env.EMAIL_HOST || 'smtp.bizmail.yahoo.com';
+    const port = parseInt(cfg.smtpPort || process.env.EMAIL_PORT || '465');
+    const isSecure = cfg.security === 'SSL' || port === 465;
+
+    if (!cleanedPass) {
+      console.warn('[SmartScreen] No email password available to send screening completion email');
+      return false;
+    }
+
+    const nodemailerModule = await import('nodemailer').catch(() => null);
+    if (!nodemailerModule) {
+      console.warn('[SmartScreen] Nodemailer module not available');
+      return false;
+    }
+    const createTransport = nodemailerModule.default?.createTransport || nodemailerModule.createTransport;
+    if (!createTransport) {
+      console.warn('[SmartScreen] Nodemailer createTransport not found');
+      return false;
+    }
+
+    // Resolve Candidate details
+    const candidateName = session.candidateName || session.extractedProfile?.name || 'Candidate';
+    const candidateEmail = session.candidateEmail || session.extractedProfile?.email || 'N/A';
+    const candidatePhone = session.candidatePhone || session.extractedProfile?.phone || '';
+    const candidateLocation = session.candidateLocation || session.extractedProfile?.location || session.candidateGeo?.resolvedAddress || session.candidateGeo?.cityState || session.currentLocation || '';
+    const visaStatus = session.visaStatus || session.extractedProfile?.visa_status || '';
+    const expectedRate = session.expectedRate || session.extractedProfile?.expected_rate || session.extractedProfile?.target_rate || '';
+    
+    // Resolve Job details
+    const jobTitle = session.jobTitle || session.matchedJobTitle || 'Open Position';
+    const jobClient = session.jobClient || session.matchedJobClient || 'Enterprise Client';
+    const jobId = session.jobId || session.reqId || session.targetReqId || '';
+    
+    // Resolve Evaluation details
+    const aiScore = typeof session.aiScore === 'number' ? session.aiScore : (session.jdMatch?.match_score || 85);
+    const recommendation = session.recommendation || (session.jdMatch?.fit_verdict) || (aiScore >= 80 ? 'Strong Match - Recommended' : aiScore >= 65 ? 'Qualified - Recommended for Review' : 'Review Required');
+    const rawTakeaways = session.keyTakeaways || session.aiSummary;
+    const keyTakeaways = Array.isArray(rawTakeaways) ? rawTakeaways.filter(Boolean).join('; ') : (rawTakeaways || '');
+    const violationsCount = session.proctoring?.tabViolationsCount || 0;
+    const submittedTime = session.submittedAt ? new Date(session.submittedAt) : new Date();
+    const formattedDate = submittedTime.toLocaleString('en-US', {
+      timeZone: 'America/New_York',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    }) + ' EST';
+
+    // Resolve Recruiter Recipient
+    let recruiterEmail = (session.recruiterEmail || session.createdByEmail || session.referredBy || session.submittedBy || '').trim().toLowerCase();
+    if (!recruiterEmail || !recruiterEmail.includes('@')) {
+      recruiterEmail = defaultSender;
+    }
+    const rawRecruiterName = session.recruiterName || session.createdByName || (recruiterEmail.split('@')[0]);
+    const recruiterName = rawRecruiterName.charAt(0).toUpperCase() + rawRecruiterName.slice(1);
+
+    // Recipient list & CC
+    const to = recruiterEmail;
+    // Always CC Omkesh so he has full visibility of candidate submissions across all recruiters
+    const cc = (recruiterEmail !== defaultSender) ? defaultSender : undefined;
+
+    // Direct ATS Candidate Review Link
+    const atsDashboardUrl = `https://smarthireus.com/dashboard?candidate=${encodeURIComponent(candidateName)}&session=${session.sessionId}`;
+    const candidateChatUrl = `https://smarthireus.com/candidate-chat/${session.sessionId}`;
+
+    const scoreColor = aiScore >= 80 ? '#10B981' : aiScore >= 65 ? '#2563EB' : '#F59E0B';
+
+    const subject = `AI Video Screening Completed: ${candidateName} for ${jobTitle}`;
+
+    const text = `Hello ${recruiterName},
+
+Your candidate ${candidateName} has successfully completed their AI Video/Voice Screening interview for ${jobTitle} (${jobClient}).
+
+Candidate Information:
+- Name: ${candidateName}
+- Email: ${candidateEmail}
+${candidatePhone ? `- Phone: ${candidatePhone}\n` : ''}${candidateLocation ? `- Location: ${candidateLocation}\n` : ''}${visaStatus ? `- Work Authorization: ${visaStatus}\n` : ''}${expectedRate ? `- Expected Rate: $${expectedRate}/hr\n` : ''}- Completed At: ${formattedDate}
+
+AI Evaluation Summary:
+- AI Match Score: ${aiScore}%
+- Recommendation: ${recommendation}
+${keyTakeaways ? `- Key Takeaways: ${keyTakeaways}\n` : ''}- Proctoring: ${violationsCount === 0 ? 'Verified Clean (0 tab violations)' : `${violationsCount} tab violations logged`}
+
+Review Candidate Scorecard & Full Recording in ATS:
+${atsDashboardUrl}
+
+Direct Session Link:
+${candidateChatUrl}
+
+--
+SmartHire ATS AI Screening Suite
+COOLSOFT LLC | Dispatched from ${fromEmail}`;
+
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${subject}</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #F8FAFC; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1E293B;">
+  <div style="max-width: 620px; margin: 30px auto; background: #FFFFFF; border-radius: 12px; overflow: hidden; border: 1px solid #E2E8F0; box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);">
+    
+    <!-- Top Header -->
+    <div style="background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%); padding: 24px 28px; border-bottom: 2px solid #3B82F6;">
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td>
+            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: #60A5FA; margin-bottom: 4px;">SmartHire ATS &bull; AI Screening Suite</div>
+            <div style="font-size: 20px; font-weight: 800; color: #FFFFFF; letter-spacing: -0.3px;">Interview Completed</div>
+          </td>
+          <td style="text-align: right;">
+            <span style="display: inline-block; background: rgba(16, 185, 129, 0.15); border: 1px solid #10B981; color: #34D399; font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: 20px; letter-spacing: 0.5px;">
+              SCREENED
+            </span>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Main Body Content -->
+    <div style="padding: 28px;">
+      
+      <p style="font-size: 15px; line-height: 1.6; margin: 0 0 16px 0; color: #334155;">
+        Hello <strong>${recruiterName}</strong>,
+      </p>
+      
+      <p style="font-size: 15px; line-height: 1.6; margin: 0 0 24px 0; color: #334155;">
+        Your candidate <strong>${candidateName}</strong> has successfully completed the asynchronous AI Video/Voice Screening interview for the requisition <strong>${jobTitle}</strong>.
+      </p>
+
+      <!-- AI Score Card -->
+      <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 18px 20px; margin-bottom: 24px;">
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td style="width: 90px; vertical-align: middle;">
+              <div style="width: 76px; height: 76px; border-radius: 12px; background: #FFFFFF; border: 2px solid ${scoreColor}; text-align: center; display: table-cell; vertical-align: middle;">
+                <div style="font-size: 24px; font-weight: 800; color: ${scoreColor}; line-height: 1.1;">${aiScore}%</div>
+                <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #64748B; letter-spacing: 0.5px; margin-top: 2px;">AI Score</div>
+              </div>
+            </td>
+            <td style="vertical-align: middle; padding-left: 16px;">
+              <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: #64748B; margin-bottom: 4px;">Recommendation</div>
+              <div style="font-size: 16px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">${recommendation}</div>
+              <div style="font-size: 12px; color: #475569; line-height: 1.4;">
+                Proctoring: <strong style="color: ${violationsCount === 0 ? '#10B981' : '#F59E0B'};">${violationsCount === 0 ? 'Verified Clean (0 tab violations)' : `${violationsCount} tab violations logged`}</strong>
+              </div>
+            </td>
+          </tr>
+        </table>
+        ${keyTakeaways ? `
+        <div style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed #CBD5E1; font-size: 13px; color: #334155; line-height: 1.5;">
+          <strong>Evaluation Notes:</strong> ${keyTakeaways}
+        </div>
+        ` : ''}
+      </div>
+
+      <!-- Candidate Details Table -->
+      <div style="margin-bottom: 26px;">
+        <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #64748B; margin-bottom: 10px;">
+          Candidate & Position Summary
+        </div>
+        <table style="width: 100%; border-collapse: collapse; font-size: 14px; border: 1px solid #E2E8F0; border-radius: 8px; overflow: hidden;">
+          <tr style="background-color: #FFFFFF;">
+            <td style="padding: 10px 14px; font-weight: 600; color: #64748B; width: 35%; border-bottom: 1px solid #E2E8F0;">Candidate Name</td>
+            <td style="padding: 10px 14px; font-weight: 700; color: #0F172A; border-bottom: 1px solid #E2E8F0;">${candidateName}</td>
+          </tr>
+          <tr style="background-color: #F8FAFC;">
+            <td style="padding: 10px 14px; font-weight: 600; color: #64748B; border-bottom: 1px solid #E2E8F0;">Email Address</td>
+            <td style="padding: 10px 14px; color: #2563EB; border-bottom: 1px solid #E2E8F0;"><a href="mailto:${candidateEmail}" style="color: #2563EB; text-decoration: none; font-weight: 600;">${candidateEmail}</a></td>
+          </tr>
+          ${candidatePhone ? `
+          <tr style="background-color: #FFFFFF;">
+            <td style="padding: 10px 14px; font-weight: 600; color: #64748B; border-bottom: 1px solid #E2E8F0;">Phone</td>
+            <td style="padding: 10px 14px; color: #0F172A; border-bottom: 1px solid #E2E8F0;">${candidatePhone}</td>
+          </tr>
+          ` : ''}
+          ${candidateLocation ? `
+          <tr style="background-color: #F8FAFC;">
+            <td style="padding: 10px 14px; font-weight: 600; color: #64748B; border-bottom: 1px solid #E2E8F0;">Location</td>
+            <td style="padding: 10px 14px; color: #0F172A; border-bottom: 1px solid #E2E8F0;">${candidateLocation}</td>
+          </tr>
+          ` : ''}
+          ${visaStatus ? `
+          <tr style="background-color: #FFFFFF;">
+            <td style="padding: 10px 14px; font-weight: 600; color: #64748B; border-bottom: 1px solid #E2E8F0;">Work Authorization</td>
+            <td style="padding: 10px 14px; color: #0F172A; border-bottom: 1px solid #E2E8F0;">${visaStatus}</td>
+          </tr>
+          ` : ''}
+          <tr style="background-color: #F8FAFC;">
+            <td style="padding: 10px 14px; font-weight: 600; color: #64748B; border-bottom: 1px solid #E2E8F0;">Target Requisition</td>
+            <td style="padding: 10px 14px; font-weight: 600; color: #0F172A; border-bottom: 1px solid #E2E8F0;">${jobTitle} ${jobId ? `(${jobId})` : ''}</td>
+          </tr>
+          <tr style="background-color: #FFFFFF;">
+            <td style="padding: 10px 14px; font-weight: 600; color: #64748B; border-bottom: 1px solid #E2E8F0;">Client / Account</td>
+            <td style="padding: 10px 14px; color: #0F172A; border-bottom: 1px solid #E2E8F0;">${jobClient}</td>
+          </tr>
+          <tr style="background-color: #F8FAFC;">
+            <td style="padding: 10px 14px; font-weight: 600; color: #64748B;">Completion Time</td>
+            <td style="padding: 10px 14px; color: #475569;">${formattedDate}</td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- Call to Action Button -->
+      <div style="text-align: center; margin: 30px 0 20px 0;">
+        <a href="${atsDashboardUrl}" style="display: inline-block; background-color: #2563EB; color: #FFFFFF; font-size: 15px; font-weight: 700; text-decoration: none; padding: 14px 28px; border-radius: 8px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25); letter-spacing: 0.2px;">
+          Review Candidate Scorecard in ATS &rarr;
+        </a>
+      </div>
+
+      <div style="text-align: center; font-size: 12px; color: #64748B;">
+        Or open candidate interview portal: <a href="${candidateChatUrl}" style="color: #2563EB; text-decoration: underline;">${candidateChatUrl}</a>
+      </div>
+
+    </div>
+
+    <!-- Email Footer -->
+    <div style="background: #F1F5F9; border-top: 1px solid #E2E8F0; padding: 18px 28px; font-size: 12px; line-height: 1.5; color: #64748B;">
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td>
+            <strong>SmartHire ATS &bull; AI Intelligence Suite</strong><br>
+            Automated notification dispatched from ${fromEmail}
+          </td>
+          <td style="text-align: right; color: #94A3B8;">
+            COOLSOFT LLC
+          </td>
+        </tr>
+      </table>
+    </div>
+
+  </div>
+</body>
+</html>`;
+
+    const transporter = createTransport({
+      host: smtpHost,
+      port,
+      secure: isSecure,
+      auth: { user: fromEmail, pass: cleanedPass },
+      tls: { rejectUnauthorized: false, minVersion: 'TLSv1.2' },
+      connectionTimeout: 8000,
+      greetingTimeout: 8000,
+      socketTimeout: 10000
+    });
+
+    await transporter.sendMail({
+      from: `"Omkesh Manjute via SmartHire ATS" <${fromEmail}>`,
+      to,
+      cc: cc || undefined,
+      subject,
+      text,
+      html
+    });
+
+    session.completionEmailSent = true;
+    session.completionEmailSentAt = new Date().toISOString();
+    session.completionEmailRecipient = to;
+    console.log(`[SmartScreen] Screening completion email dispatched for '${candidateName}' to ${to} (CC: ${cc || 'none'})`);
+    return true;
+  } catch (err) {
+    console.warn('[SmartScreen] Failed to send screening completion email:', err.message);
+    return false;
+  }
+}
+
 // Candidate submits all SmartHire screening responses
 app.post('/api/screening/:sessionId/submit-response', async (req, res) => {
   const session = getOrCreateScreeningSession(req.params.sessionId);
@@ -7519,6 +7812,16 @@ app.post('/api/screening/:sessionId/submit-response', async (req, res) => {
     session.status = 'submitted';
     session.screeningComplete = true;
     session.submittedAt = new Date().toISOString();
+    session.jobId = session.jobId || job.id;
+    session.jobTitle = session.jobTitle || job.title;
+    session.jobClient = session.jobClient || job.client;
+    if (!session.recruiterEmail && !session.createdByEmail) {
+      if (job.recruiterEmail) {
+        session.recruiterEmail = job.recruiterEmail;
+      } else if (job.assignedRecruiter) {
+        session.recruiterEmail = job.assignedRecruiter;
+      }
+    }
 
     // Auto-create or update candidate in candidatesStore
     if (session.candidateEmail || session.candidateName) {
@@ -7562,6 +7865,11 @@ app.post('/api/screening/:sessionId/submit-response', async (req, res) => {
 
     saveScreeningToDisk();
     dispatchExternalScreeningWebhook(session);
+
+    // Asynchronously dispatch interview completion email notification to recruiter from Omkesh's email
+    sendScreeningCompletedNotificationEmail(session).catch(e => {
+      console.warn('[SmartScreen] Background screening notification email error:', e.message);
+    });
 
     // Push notification to ATS
     if (notificationsStore) {
@@ -8584,6 +8892,11 @@ app.post('/api/screening/:sessionId/submit', (req, res) => {
   saveCandidatesToDisk();
   saveScreeningToDisk();
   dispatchExternalScreeningWebhook(session);
+
+  // Asynchronously dispatch interview completion email notification to recruiter from Omkesh's email
+  sendScreeningCompletedNotificationEmail(session).catch(e => {
+    console.warn('[SmartScreen] Background screening notification email error:', e.message);
+  });
 
   res.json({
     success: true,
