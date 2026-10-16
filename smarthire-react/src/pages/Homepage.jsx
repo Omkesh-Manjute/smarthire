@@ -2694,12 +2694,12 @@ function Homepage() {
               title=""
               items={[
                 {
-                  question: "How does SmartHire train its AI model with 100s of placed candidate resumes?",
-                  answer: "Unlike generic keyword parsers, SmartHire's matching engine was fine-tuned and benchmarked against hundreds of verified IT candidates who successfully cleared technical interviews and received client offers across Fortune 500 enterprises and state government bodies (like NC DHHS). The model learns deep semantic skill relationships, context-specific tool stacks, and rate-to-experience correlations to identify genuine technical depth over superficial keyword stuffing."
+                  question: "How does the AI Video & Voice Screening workflow work for candidates?",
+                  answer: "Recruiters can generate secure, time-sensitive screening links with customizable expiration deadlines and dispatch them directly via email. Candidates complete structured asynchronous video, audio, or text assessments from any device without creating an account or logging in. Once completed, SmartHire's AI engine evaluates transcripts, analyzes technical depth, and generates instant scorecards directly inside the recruiter console."
                 },
                 {
                   question: "How does the automated candidate matching and JD alert system work?",
-                  answer: "When a new job requisition arrives from vendor portals (like JobsInHand or Coolworks) or is manually posted, SmartHire instantly analyzes the job description against candidate resumes in your isolated private vault. If a high placement probability match (>85%) is identified, assigned recruiters receive instant audio chimes and in-app notifications to review and submit the candidate before competitor submissions flood the requisition."
+                  answer: "When a new job requisition arrives from vendor portals, direct client emails, or is manually posted, SmartHire instantly analyzes the job description against candidate resumes in your isolated private talent vault. If a high placement probability match (>85%) is identified, assigned recruiters receive instant audio chimes and in-app notifications to review and submit the candidate before competitor submissions flood the requisition."
                 },
                 {
                   question: "How are candidate pipelines and vaults kept isolated between recruiters?",
@@ -2707,11 +2707,11 @@ function Homepage() {
                 },
                 {
                   question: "How do Lead Managers and Super Admins approve submissions?",
-                  answer: "Lead Managers have dedicated approval consoles. In the Requisitions tab under 'Pipeline / Submissions', managers can inspect candidate verification badges, adjust bill rates, review anti-proxy biometric scores, and approve submissions for client presentation (transitioning status from Int-SubmittedToManager to Client-SubmittedToCustomer)."
+                  answer: "Lead Managers have dedicated approval consoles. In the Requisitions tab under 'Pipeline / Submissions', managers can inspect candidate verification badges, adjust bill rates, review candidate match scores and compliance documents, and approve submissions for client presentation (transitioning status from Int-SubmittedToManager to Client-SubmittedToCustomer)."
                 },
                 {
-                  question: "What anti-proxy and biometric verification safeguards are built in?",
-                  answer: "SmartHire features integrated 3-tier anti-fraud screening: AI facial liveness detection, passport/work authorization OCR cross-checks, and IP geolocation telemetry. Candidates complete a 60-second digital verification before client submission, eliminating proxy candidate risks and saving recruiter reputations."
+                  question: "How does SmartHire protect candidate authenticity and prevent duplicate representation?",
+                  answer: "SmartHire integrates built-in SmartSign RTR (Right to Represent) digital agreements with certified audit trails capturing IP addresses, UTC timestamps, and SHA-256 cryptographic hashes. Combined with real-time candidate deduplication across email and phone records, SmartHire prevents double submissions, verifies representation exclusivity, and safeguards recruiter reputations."
                 },
                 {
                   question: "Can I export candidate pools, submission histories, and audit logs to Excel/CSV?",
