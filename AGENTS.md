@@ -103,6 +103,30 @@ The following high-impact features and optimizations have been agreed upon and p
   - **Branded & Blind Resume Wrapper**: Formats candidate resume with agency letterhead/header, core competencies table, clean bullet points, and optional contact masking (hiding direct phone/email to prevent poaching).
   - **1-Click Actions**: 📋 Copy formatted text to clipboard (for portal/email paste), 📥 Download PDF/DOCX submittal package, and ✉️ Direct email dispatch to Account Manager / Client.
 
+### 2026-10-17 — VengeanceUI CreepyButton, FaqAccordion & StaggeredGrid Animations Live Deployment
+- **Context & Objectives**:
+  - The user requested integration of three VengeanceUI components via shadcn registry:
+    1. `creepy-button` (`https://raw.githubusercontent.com/Ashutoshx7/VengeanceUI/main/public/r/creepy-button.json`): Applied to the hero section on the main page for both "Start now" and the neighboring "Explore Features" button.
+    2. `faq-accordion` (`https://raw.githubusercontent.com/Ashutoshx7/VengeanceUI/main/public/r/faq-accordion.json`): Added to the FAQ section on the main page (`Homepage.jsx`), as well as unifying the FAQs on `About.jsx` and `SmartScreenProduct.jsx`.
+    3. `staggered-grid` (`https://raw.githubusercontent.com/Ashutoshx7/VengeanceUI/main/public/r/staggered-grid.json`): Applied to Section 2 ("Engineered for High-Velocity Recruiter Workflows" 8 feature cards) so that cards animate upwards in a staggered sequence as users scroll into view.
+- **Architectural Implementations & Fixes**:
+  1. **CreepyButton Component (`src/components/ui/CreepyButton.jsx`)**:
+     - Built with Framer Motion spring rotation (`rotate: isHovered ? -12 : 0`) around pivot `origin-[1.25em_50%]`.
+     - Underlying hidden eyes container calculates trigonometric cursor angles and distances, smoothly animating pupils (`Math.atan2(-dy, dx) + PI/2`) with real-time mouse/touch tracking and 3-second blinking loops.
+     - Supports `primary` (brand blue `#2563eb`), `outline`/`secondary` (crisp white `#ffffff` with black inner shadow), button click handlers, client-side routing (`to="/ats"` via `useNavigate`), and anchor hash scrolling (`href="#features"`).
+  2. **FaqAccordion Component (`src/components/ui/FaqAccordion.jsx`)**:
+     - Built with VengeanceUI design specifications: 7px left accent bar (`#cbd5e1` idle, `#0f172a` active), dynamic indicator (`+` / `−`), rotating chevron arrow (133° down to -44° up), and CSS grid-template-rows expansion (`0fr` -> `1fr`).
+     - Added dedicated FAQ section to `Homepage.jsx` covering semantic AI training, proactive JD matching, RBAC vault isolation, manager approvals, anti-proxy biometric safeguards, and Excel submittal exports.
+     - Upgraded `About.jsx` and `SmartScreenProduct.jsx` to use `FaqAccordion`.
+  3. **StaggeredGrid Component (`src/components/ui/StaggeredGrid.jsx`)**:
+     - Engineered Framer Motion staggered container (`staggerChildren: 0.08`, `delayChildren: 0.1`) and item variants (`y: 35 -> 0`, `opacity: 0 -> 1`, `scale: 0.98 -> 1`).
+     - Wrapped the 8 feature cards in Section 2 of `Homepage.jsx` with viewport triggers (`once: true, amount: 0.12`) and smooth hover lift (`whileHover: { y: -6 }`).
+- **Verification & Deployment**:
+  - Local production build in `smarthire-react`: **0 errors, 0 warnings** in 2.88s (`index-CqLvWsct.js`, `index-D0izMHrF.css`).
+  - Git committed and pushed to `origin main` (`0e8f657`).
+  - Bundle extracted to Lightsail `/var/www/html/` and `/home/ubuntu/smarthire/dist/`, archives cleaned immediately, old bundles pruned, PM2 `smarthire-ats` reloaded.
+  - End-to-end verified via Playwright against `https://smarthireus.com`: HTTP 200 OK, both Creepy buttons interactive, 8 staggered cards animating, FAQ accordion expanding. Disk space verified at 55% (8.4GB free).
+
 ### 2026-10-15 — Firebase Billing Explode Protection, Multi-Tier Caching Engine, O(1) User Lookups & Batched Hotlists Ingestion
 - **Context & Objectives**:
   - The user requested optimization for high-volume incoming data (emails, manual uploads, mobile app, job portals) across multiple recruiters to prevent database lag and server CPU spikes.
