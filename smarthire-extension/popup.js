@@ -8,10 +8,42 @@ document.addEventListener('DOMContentLoaded', () => {
   let activeVariant = 1;
   let scrapedCandidates = [];
   let selectedCandidateIds = new Set();
+  let currentUser = {
+    name: 'Omkesh Manjute',
+    email: 'omkesh@coolsofttech.com',
+    role: 'superadmin',
+    company: 'COOLSOFT LLC'
+  };
+  let isUserAuthenticated = false;
+  let activePopupCand = null;
+  const sentCandidateEmails = new Set();
 
   const API_BASE = 'https://smarthireus.com';
 
   // DOM Elements
+  const popupRecruiterName = document.getElementById('popupRecruiterName');
+  const popupRecruiterEmail = document.getElementById('popupRecruiterEmail');
+  const popupAuthToggle = document.getElementById('popupAuthToggle');
+  const popupLoginCard = document.getElementById('popupLoginCard');
+  const popupLoginEmail = document.getElementById('popupLoginEmail');
+  const popupLoginPass = document.getElementById('popupLoginPass');
+  const popupDoLoginBtn = document.getElementById('popupDoLoginBtn');
+  const popupOmkeshQuickBtn = document.getElementById('popupOmkeshQuickBtn');
+  const popupCloseLoginBtn = document.getElementById('popupCloseLoginBtn');
+  const popupLoginMsg = document.getElementById('popupLoginMsg');
+
+  const popupComposerOverlay = document.getElementById('popupComposerOverlay');
+  const popupComposerClose = document.getElementById('popupComposerClose');
+  const popupCompSender = document.getElementById('popupCompSender');
+  const popupCompName = document.getElementById('popupCompName');
+  const popupCompEmail = document.getElementById('popupCompEmail');
+  const popupCompTitle = document.getElementById('popupCompTitle');
+  const popupCompSubject = document.getElementById('popupCompSubject');
+  const popupCompBody = document.getElementById('popupCompBody');
+  const popupCompStatus = document.getElementById('popupCompStatus');
+  const popupCompCancel = document.getElementById('popupCompCancel');
+  const popupCompSend = document.getElementById('popupCompSend');
+
   const portalBadge = document.getElementById('portalBadge');
   const portalName = document.getElementById('portalName');
   const jobSelect = document.getElementById('jobSelect');
@@ -39,7 +71,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Initialize
   checkActiveTab();
+  fetchCurrentUser();
   loadRequisitions();
+  setupAuthEvents();
+  setupComposerEvents();
 
   // 1. Detect Active Tab
   async function checkActiveTab() {
@@ -412,6 +447,9 @@ document.addEventListener('DOMContentLoaded', () => {
     candidatesTableBody.innerHTML = scrapedCandidates.map((c, idx) => {
       const isSelected = selectedCandidateIds.has(c.id);
       const skillsStr = Array.isArray(c.skills) ? c.skills.join(', ') : (c.skills || '');
+      const hasEmail = c.email && c.email.includes('@') && !c.email.includes('@monster.talent') && c.email !== 'Not Disclosed';
+      const isSent = (c.email && sentCandidateEmails.has(c.email.toLowerCase())) || (c.name && sentCandidateEmails.has(c.name.toLowerCase()));
+
       return `
         <tr data-id="${c.id}">
           <td style="text-align:center;">
@@ -426,6 +464,13 @@ document.addEventListener('DOMContentLoaded', () => {
           <td>${c.experience || '—'}</td>
           <td title="${skillsStr}">${skillsStr || '—'}</td>
           <td><span style="font-size:10px; font-weight:700; color:#475569;">${c.source || detectedPortal}</span></td>
+          <td style="text-align:center;">
+            ${hasEmail ? `
+              <button type="button" class="btn-popup-outreach" data-idx="${idx}" style="background:#2563EB; color:#fff; border:none; border-radius:4px; padding:3px 8px; font-size:10px; font-weight:600; cursor:pointer;">
+                ${isSent ? '✓ Sent' : '✉ Send JD'}
+              </button>
+            ` : '<span style="color:#94A3B8; font-size:9.5px;">No Email</span>'}
+          </td>
         </tr>
       `;
     }).join('');
@@ -442,6 +487,17 @@ document.addEventListener('DOMContentLoaded', () => {
           selectedCandidateIds.delete(id);
         }
         updateSelectionBadges();
+      });
+    });
+
+    // Attach outreach button handlers
+    document.querySelectorAll('.btn-popup-outreach').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const idx = parseInt(e.currentTarget.getAttribute('data-idx'), 10);
+        const cand = scrapedCandidates[idx];
+        if (cand) {
+          openPopupComposer(cand, selectedJob);
+        }
       });
     });
   }
@@ -557,8 +613,8 @@ document.addEventListener('DOMContentLoaded', () => {
         candidates: selected,
         targetReqId,
         source: `${detectedPortal} Copilot Extension`,
-        recruiterEmail: 'omkesh@coolsofttech.com',
-        recruiterName: 'Omkesh Manjute'
+        recruiterEmail: currentUser.email || 'omkesh@coolsofttech.com',
+        recruiterName: currentUser.name || 'Omkesh Manjute'
       }
     }, (response) => {
       if (response && response.success && response.data) {
@@ -570,4 +626,253 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   });
+
+  // Recruiter Identity & Authentication
+  function fetchCurrentUser() {
+    try {
+      chrome.runtime.sendMessage({ action: 'GET_CURRENT_USER' }, (res) => {
+        if (res && res.success && res.user) {
+          currentUser = res.user;
+          isUserAuthenticated = !!res.isLoggedIn;
+          updateRecruiterBarUI();
+        }
+      });
+    } catch (e) {}
+  }
+
+  function updateRecruiterBarUI() {
+    if (popupRecruiterName) popupRecruiterName.innerText = currentUser.name || 'Recruiter';
+    if (popupRecruiterEmail) popupRecruiterEmail.innerText = `(${currentUser.email || 'omkesh@coolsofttech.com'})`;
+    if (popupAuthToggle) popupAuthToggle.innerText = isUserAuthenticated ? 'Sign Out / Switch' : 'Login / Switch';
+  }
+
+  function setupAuthEvents() {
+    if (popupAuthToggle) {
+      popupAuthToggle.addEventListener('click', () => {
+        if (popupLoginCard.style.display === 'none' || !popupLoginCard.style.display) {
+          popupLoginCard.style.display = 'block';
+        } else {
+          popupLoginCard.style.display = 'none';
+        }
+      });
+    }
+
+    if (popupCloseLoginBtn) {
+      popupCloseLoginBtn.addEventListener('click', () => {
+        popupLoginCard.style.display = 'none';
+      });
+    }
+
+    if (popupOmkeshQuickBtn) {
+      popupOmkeshQuickBtn.addEventListener('click', () => {
+        popupLoginEmail.value = 'omkesh@coolsofttech.com';
+        popupLoginPass.value = 'admin';
+        performPopupLogin();
+      });
+    }
+
+    if (popupDoLoginBtn) {
+      popupDoLoginBtn.addEventListener('click', performPopupLogin);
+    }
+  }
+
+  function performPopupLogin() {
+    const email = popupLoginEmail.value.trim();
+    const password = popupLoginPass.value.trim();
+
+    if (!email || !password) {
+      popupLoginMsg.style.display = 'block';
+      popupLoginMsg.style.color = '#DC2626';
+      popupLoginMsg.innerText = 'Please enter both email and password';
+      return;
+    }
+
+    popupDoLoginBtn.disabled = true;
+    popupDoLoginBtn.innerText = 'Signing In...';
+    popupLoginMsg.style.display = 'block';
+    popupLoginMsg.style.color = '#2563EB';
+    popupLoginMsg.innerText = 'Authenticating with SmartHire ATS...';
+
+    chrome.runtime.sendMessage({ action: 'LOGIN_USER', email, password }, (res) => {
+      popupDoLoginBtn.disabled = false;
+      popupDoLoginBtn.innerText = 'Sign In';
+
+      if (res && res.success && res.user) {
+        currentUser = res.user;
+        isUserAuthenticated = true;
+        updateRecruiterBarUI();
+        popupLoginMsg.style.color = '#059669';
+        popupLoginMsg.innerText = `✓ Welcome, ${currentUser.name}!`;
+        setTimeout(() => {
+          popupLoginCard.style.display = 'none';
+          popupLoginMsg.style.display = 'none';
+        }, 1200);
+      } else {
+        popupLoginMsg.style.color = '#DC2626';
+        popupLoginMsg.innerText = res?.message || 'Invalid credentials';
+      }
+    });
+  }
+
+  // Sanitizers: Stripping Rates & Requisition IDs
+  function sanitizeJobDescription(desc) {
+    if (!desc) return '';
+    let text = String(desc);
+    // 1. Strip rates and pay numbers per user requirement
+    text = text.replace(/(bill\s*rate|pay\s*rate|hourly\s*rate|rate|salary|budget|compensation)\s*[:=-]?\s*\$?\s*\d+(\.\d+)?(\s*[\/\-]\s*(hr|hour|yr|year|annum))?/gi, '');
+    text = text.replace(/\$\d+(\.\d+)?\s*[\/\-]\s*(hr|hour|yr|year|annum)/gi, '');
+    text = text.replace(/\$\d{2,3}(,\d{3})*(\s*[\/\-]\s*(hr|hour|yr|year|annum))?/gi, '');
+    text = text.replace(/\b\d{2,3}\s*[\/\-]\s*hr\b/gi, '');
+    text = text.replace(/\b\d{2,3}\s*-\s*\d{2,3}\s*[\/\-]\s*hr\b/gi, '');
+    // 2. Strip requisition numbers per user requirement
+    text = text.replace(/\b(req|requisition|job\s*id|req\s*#|req\s*id)\s*[:#=-]?\s*#?\d+/gi, '');
+    text = text.replace(/#\d{5,8}\b/g, '');
+    text = text.replace(/\b159\d{3}\b/g, '');
+    // 3. Strip internal submission deadlines
+    text = text.replace(/Submission deadline\s*:.*$/gim, '');
+    text = text.replace(/Start date\s*:.*$/gim, '');
+    text = text.replace(/End Date\s*:.*$/gim, '');
+    // Clean duplicate newlines
+    text = text.replace(/\n{3,}/g, '\n\n').trim();
+    return text;
+  }
+
+  function cleanJobTitle(title) {
+    if (!title) return 'Technical Specialist';
+    return String(title)
+      .replace(/#\d+/g, '')
+      .replace(/REQ-\d+/gi, '')
+      .replace(/\b159\d{3}\b/g, '')
+      .replace(/\(\s*#?\d+\s*\)/g, '')
+      .trim();
+  }
+
+  function generateOutreachDraft(candidate, job) {
+    const rawName = (candidate.name || 'Candidate').replace(/\(.*\)/g, '').trim();
+    const firstName = rawName.split(' ')[0] || 'there';
+    const cleanTitle = cleanJobTitle(job ? job.title : 'Technical Specialist');
+    const location = job?.location || 'United States (Remote / Onsite as required)';
+    const skills = Array.isArray(job?.skills) ? job.skills.slice(0, 4).join(', ') : '';
+    const cleanDesc = sanitizeJobDescription(job?.description || job?.fullDescription || job?.rawDescription || '');
+
+    const subject = `Career Opportunity: ${cleanTitle} — COOLSOFT LLC`;
+
+    const body = `Hi ${firstName},
+
+I hope this email finds you well.
+
+I came across your profile and was very impressed by your background${skills ? ` in ${skills}` : ''}. We currently have an immediate opening for a ${cleanTitle} role that aligns closely with your expertise.
+
+--- Position Details ---
+Role: ${cleanTitle}
+Location: ${location}
+Work Authorization: US Citizen / Green Card / Authorized to Work in US
+
+Position Overview & Requirements:
+${cleanDesc}
+
+If you are open to exploring this opportunity, please reply to this email with your updated resume, or let me know a convenient time for a brief introductory call.
+
+Best regards,
+
+${currentUser.name || 'Omkesh Manjute'}
+Technical Recruiter | COOLSOFT LLC
+Email: ${currentUser.email || 'omkesh@coolsofttech.com'}
+Website: http://www.coolsofttech.com`;
+
+    return {
+      to: candidate.email || '',
+      candidateName: rawName,
+      subject,
+      body,
+      cleanTitle
+    };
+  }
+
+  // Outreach Composer Modal Events
+  function setupComposerEvents() {
+    if (popupComposerClose) popupComposerClose.addEventListener('click', closePopupComposer);
+    if (popupCompCancel) popupCompCancel.addEventListener('click', closePopupComposer);
+    if (popupCompSend) popupCompSend.addEventListener('click', sendPopupOutreach);
+  }
+
+  function openPopupComposer(candidate, job) {
+    if (!candidate) return;
+    activePopupCand = candidate;
+    const targetJob = job || selectedJob;
+    const draft = generateOutreachDraft(candidate, targetJob);
+
+    if (popupCompSender) popupCompSender.innerText = `${currentUser.name} <${currentUser.email}>`;
+    if (popupCompName) popupCompName.value = draft.candidateName;
+    if (popupCompEmail) popupCompEmail.value = draft.to;
+    if (popupCompTitle) popupCompTitle.value = draft.cleanTitle;
+    if (popupCompSubject) popupCompSubject.value = draft.subject;
+    if (popupCompBody) popupCompBody.value = draft.body;
+    if (popupCompStatus) popupCompStatus.innerHTML = '';
+    if (popupCompSend) {
+      popupCompSend.disabled = false;
+      popupCompSend.innerText = 'Send Email';
+    }
+
+    if (popupComposerOverlay) popupComposerOverlay.style.display = 'flex';
+  }
+
+  function closePopupComposer() {
+    if (popupComposerOverlay) popupComposerOverlay.style.display = 'none';
+    activePopupCand = null;
+  }
+
+  function sendPopupOutreach() {
+    const to = popupCompEmail?.value.trim();
+    const subject = popupCompSubject?.value.trim();
+    const body = popupCompBody?.value.trim();
+
+    if (!to || !to.includes('@')) {
+      if (popupCompStatus) popupCompStatus.innerHTML = '<span style="color:#DC2626;">Valid candidate email required</span>';
+      return;
+    }
+    if (!subject || !body) {
+      if (popupCompStatus) popupCompStatus.innerHTML = '<span style="color:#DC2626;">Subject and message body required</span>';
+      return;
+    }
+
+    popupCompSend.disabled = true;
+    popupCompSend.innerText = 'Sending...';
+    if (popupCompStatus) popupCompStatus.innerHTML = `<span style="color:#2563EB;">Delivering email to ${to}...</span>`;
+
+    chrome.runtime.sendMessage({
+      action: 'SEND_OUTREACH_EMAIL',
+      payload: {
+        recruiterEmail: currentUser.email,
+        recruiterName: currentUser.name,
+        to,
+        subject,
+        body,
+        html: body.replace(/\n/g, '<br>')
+      }
+    }, (res) => {
+      if (chrome.runtime.lastError) {
+        popupCompSend.disabled = false;
+        popupCompSend.innerText = 'Send Email';
+        if (popupCompStatus) popupCompStatus.innerHTML = `<span style="color:#DC2626;">Error: ${chrome.runtime.lastError.message}</span>`;
+        return;
+      }
+
+      if (res && res.success) {
+        if (popupCompStatus) popupCompStatus.innerHTML = `<span style="color:#059669; font-weight:700;">✓ Email delivered from ${currentUser.email}!</span>`;
+        sentCandidateEmails.add(to.toLowerCase());
+        if (activePopupCand) {
+          sentCandidateEmails.add((activePopupCand.name || '').toLowerCase());
+        }
+        renderTable();
+        setTimeout(() => {
+          closePopupComposer();
+        }, 1600);
+      } else {
+        popupCompSend.disabled = false;
+        popupCompSend.innerText = 'Retry Send';
+        if (popupCompStatus) popupCompStatus.innerHTML = `<span style="color:#DC2626; font-weight:600;">Failed: ${res?.message || 'SMTP delivery rejected'}</span>`;
+      }
+    });
+  }
 });

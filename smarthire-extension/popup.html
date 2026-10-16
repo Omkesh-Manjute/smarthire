@@ -22,6 +22,30 @@
       </div>
     </header>
 
+    <!-- Recruiter Identity Bar -->
+    <div class="popup-recruiter-bar" id="popupRecruiterBar" style="padding:6px 16px; background:#0F172A; border-bottom:1px solid #1E293B; display:flex; align-items:center; justify-content:space-between; font-size:11px;">
+      <div style="display:flex; align-items:center; gap:6px;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#38BDF8" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span id="popupRecruiterName" style="font-weight:700; color:#F8FAFC;">Omkesh Manjute</span>
+        <span id="popupRecruiterEmail" style="color:#94A3B8; font-size:10.5px;">(omkesh@coolsofttech.com)</span>
+      </div>
+      <button type="button" id="popupAuthToggle" style="background:none; border:none; color:#38BDF8; font-size:11px; font-weight:600; cursor:pointer; text-decoration:underline;">Switch</button>
+    </div>
+
+    <!-- Login Card (collapsible) -->
+    <div class="popup-login-card" id="popupLoginCard" style="display:none; padding:10px 16px; background:#FFFFFF; border-bottom:1px solid #CBD5E1;">
+      <div style="font-weight:700; font-size:11.5px; color:#0F172A; margin-bottom:4px;">Recruiter Authentication</div>
+      <div style="font-size:10.5px; color:#64748B; margin-bottom:8px;">Sign in with your SmartHire work credentials to send candidate emails directly.</div>
+      <input type="email" id="popupLoginEmail" placeholder="Work email" class="form-control" style="margin-bottom:6px; font-size:11px; padding:5px 8px;" />
+      <input type="password" id="popupLoginPass" placeholder="Password" class="form-control" style="margin-bottom:6px; font-size:11px; padding:5px 8px;" />
+      <div style="display:flex; gap:6px;">
+        <button type="button" class="btn btn-primary" id="popupDoLoginBtn" style="flex:1; padding:5px; font-size:11px;">Sign In</button>
+        <button type="button" class="btn btn-secondary" id="popupOmkeshQuickBtn" style="padding:5px 8px; font-size:10.5px;">Omkesh</button>
+        <button type="button" class="btn btn-secondary" id="popupCloseLoginBtn" style="padding:5px 8px; font-size:10.5px;">Close</button>
+      </div>
+      <div id="popupLoginMsg" style="font-size:10.5px; margin-top:4px; display:none;"></div>
+    </div>
+
     <!-- Main Content Area -->
     <main class="main-body">
       <!-- Requisition & JD Selection Box -->
@@ -116,6 +140,7 @@
                 <th style="width: 65px;">Exp</th>
                 <th style="width: 140px;">Skills</th>
                 <th style="width: 70px;">Source</th>
+                <th style="width: 85px;">Outreach</th>
               </tr>
             </thead>
             <tbody id="candidatesTableBody">
@@ -133,6 +158,54 @@
         </div>
       </section>
     </main>
+
+    <!-- Outreach Composer Modal -->
+    <div id="popupComposerOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.65); z-index:9999; backdrop-filter:blur(2px); align-items:center; justify-content:center;">
+      <div style="background:#FFFFFF; width:560px; max-width:92%; max-height:90vh; border-radius:8px; border:1px solid #CBD5E1; box-shadow:0 12px 30px rgba(0,0,0,0.25); display:flex; flex-direction:column; overflow:hidden;">
+        <div style="background:#0F172A; color:#FFFFFF; padding:10px 16px; display:flex; align-items:center; justify-content:space-between;">
+          <div style="display:flex; align-items:center; gap:6px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#60A5FA" stroke-width="2.2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            <span style="font-weight:700; font-size:12.5px;">Send JD Outreach Email</span>
+          </div>
+          <button id="popupComposerClose" style="background:none; border:none; color:#94A3B8; font-size:20px; cursor:pointer; line-height:1;">&times;</button>
+        </div>
+        <div style="padding:12px 16px; overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:8px; background:#F8FAFC;">
+          <div style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:4px; padding:6px 10px; font-size:11px; color:#1E40AF; display:flex; justify-content:space-between; align-items:center;">
+            <span>From: <strong id="popupCompSender"></strong></span>
+            <span style="color:#059669; font-size:9.5px; font-weight:700; background:#ECFDF5; border:1px solid #A7F3D0; padding:1px 5px; border-radius:3px;">No Rate · No Req #</span>
+          </div>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+            <div>
+              <label style="font-size:10.5px; font-weight:700; color:#334155; display:block; margin-bottom:2px;">Candidate Name</label>
+              <input type="text" id="popupCompName" class="form-control" style="font-size:11.5px; padding:5px 8px;" />
+            </div>
+            <div>
+              <label style="font-size:10.5px; font-weight:700; color:#334155; display:block; margin-bottom:2px;">Candidate Email</label>
+              <input type="email" id="popupCompEmail" class="form-control" style="font-size:11.5px; padding:5px 8px;" />
+            </div>
+          </div>
+          <div>
+            <label style="font-size:10.5px; font-weight:700; color:#334155; display:block; margin-bottom:2px;">Target Title (Clean Name Only)</label>
+            <input type="text" id="popupCompTitle" class="form-control" style="font-size:11.5px; padding:5px 8px;" />
+          </div>
+          <div>
+            <label style="font-size:10.5px; font-weight:700; color:#334155; display:block; margin-bottom:2px;">Subject Line</label>
+            <input type="text" id="popupCompSubject" class="form-control" style="font-size:11.5px; padding:5px 8px;" />
+          </div>
+          <div>
+            <label style="font-size:10.5px; font-weight:700; color:#334155; display:block; margin-bottom:2px;">Message Body & Formatted JD (Editable)</label>
+            <textarea id="popupCompBody" class="form-control" rows="9" style="font-size:11.5px; line-height:1.45; resize:vertical; padding:6px 8px;"></textarea>
+          </div>
+        </div>
+        <div style="padding:10px 16px; background:#FFFFFF; border-top:1px solid #E2E8F0; display:flex; align-items:center; justify-content:space-between;">
+          <div id="popupCompStatus" style="font-size:11px; font-weight:600;"></div>
+          <div style="display:flex; gap:6px;">
+            <button type="button" class="btn btn-secondary" id="popupCompCancel" style="padding:5px 12px; font-size:11px;">Cancel</button>
+            <button type="button" class="btn btn-primary" id="popupCompSend" style="padding:5px 14px; font-size:11px; background:#2563EB;">Send Email</button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- Footer -->
     <footer class="app-footer">

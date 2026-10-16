@@ -269,3 +269,155 @@
   font-weight: 700;
   cursor: pointer;
 }
+
+/* Recruiter Header Bar */
+.smarthire-recruiter-bar {
+  background: #0B1120;
+  border-bottom: 1px solid #1E293B;
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+}
+.smarthire-link-btn {
+  background: none;
+  border: none;
+  color: #38BDF8;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+.smarthire-link-btn:hover {
+  color: #7DD3FC;
+}
+
+/* Login Popover Box */
+.smarthire-login-box {
+  background: #FFFFFF;
+  border: 1px solid #CBD5E1;
+  border-radius: 8px;
+  padding: 12px;
+  margin: 10px 16px 0 16px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* Outreach Action Button */
+.smarthire-btn-outreach {
+  background: #2563EB;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 5px;
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: background 0.15s ease;
+}
+.smarthire-btn-outreach:hover {
+  background: #1D4ED8;
+}
+
+/* Outreach Composer Modal */
+#smarthire-composer-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(15, 23, 42, 0.6);
+  z-index: 2147483646;
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#smarthire-composer-modal {
+  background: #FFFFFF;
+  width: 580px;
+  max-width: 92vw;
+  max-height: 90vh;
+  border-radius: 10px;
+  border: 1px solid #E2E8F0;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.25);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  z-index: 2147483647;
+}
+
+.smarthire-composer-header {
+  background: #0F172A;
+  color: #FFFFFF;
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.smarthire-composer-body {
+  padding: 14px 18px;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: #F8FAFC;
+}
+
+.smarthire-composer-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.smarthire-composer-field label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #334155;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.smarthire-composer-field input,
+.smarthire-composer-field select,
+.smarthire-composer-field textarea {
+  background: #FFFFFF;
+  border: 1px solid #CBD5E1;
+  border-radius: 6px;
+  padding: 7px 10px;
+  font-size: 12px;
+  color: #0F172A;
+  font-family: inherit;
+  transition: border-color 0.15s ease;
+}
+
+.smarthire-composer-field textarea {
+  font-size: 12px;
+  line-height: 1.5;
+  resize: vertical;
+  min-height: 180px;
+}
+
+.smarthire-composer-field input:focus,
+.smarthire-composer-field textarea:focus {
+  outline: none;
+  border-color: #2563EB;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
+.smarthire-composer-footer {
+  padding: 12px 18px;
+  background: #FFFFFF;
+  border-top: 1px solid #E2E8F0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}

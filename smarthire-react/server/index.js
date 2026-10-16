@@ -10335,8 +10335,10 @@ app.post('/api/recruiter/send-email', express.json(), async (req, res) => {
       socketTimeout: 10000
     });
 
-    const senderDisplayName = cfg.displayName || 'Omkesh Manjute (COOLSOFT LLC)';
-    const defaultCoolsoftSig = 'With Regards,\nOmkesh Manjute\nCOOLSOFT LLC | http://www.coolsofttech.com';
+    const senderDisplayName = req.body.recruiterName 
+      ? `${req.body.recruiterName} (COOLSOFT LLC)` 
+      : (cfg.displayName || 'Omkesh Manjute (COOLSOFT LLC)');
+    const defaultCoolsoftSig = `With Regards,\n${req.body.recruiterName || 'Omkesh Manjute'}\nCOOLSOFT LLC | http://www.coolsofttech.com`;
     const activeSig = cfg.signature || defaultCoolsoftSig;
     const bodyAlreadyHasSig = (body || '').includes('Regards') || (body || '').includes('COOLSOFT');
     const emailSignature = (!bodyAlreadyHasSig && activeSig) ? `\n\n--\n${activeSig}` : '';
@@ -10344,10 +10346,12 @@ app.post('/api/recruiter/send-email', express.json(), async (req, res) => {
     const htmlAlreadyHasSig = (html || '').includes('Regards') || (html || '').includes('COOLSOFT');
     const htmlSignature = (!htmlAlreadyHasSig && activeSig) ? `<br><br>--<br>${activeSig.replace(/\n/g, '<br>')}` : '';
 
+    const actualReplyTo = replyTo || (recruiterEmail ? recruiterEmail : (cfg.fromEmail || fromEmail));
+
     await transporter.sendMail({
       from: `"${senderDisplayName}" <${cfg.fromEmail || fromEmail}>`,
       to: Array.isArray(to) ? to.join(', ') : to,
-      replyTo: replyTo || cfg.fromEmail || fromEmail,
+      replyTo: actualReplyTo,
       subject,
       text: (body || '') + emailSignature,
       html: html ? (html + htmlSignature) : undefined
