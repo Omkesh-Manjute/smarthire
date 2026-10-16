@@ -335,7 +335,7 @@ function BlogPostContent({ post }) {
               <div style={{ fontWeight: 700, fontSize: 15, color: '#111827' }}>
                 {post.authorUrl ? (
                   <a href={post.authorUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#111827', textDecoration: 'none' }}>
-                    {post.author} &nearr;
+                    {post.author}
                   </a>
                 ) : (
                   post.author
@@ -352,53 +352,9 @@ function BlogPostContent({ post }) {
             <ShareSheet
               url={postUrl}
               title={post.title}
-              trigger={
-                <button
-                  type="button"
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    padding: '7px 14px',
-                    background: '#2563eb',
-                    border: 'none',
-                    borderRadius: 6,
-                    fontSize: 12.5,
-                    color: '#FFFFFF',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    boxShadow: '0 2px 6px rgba(37,99,235,0.2)',
-                    transition: 'opacity 0.15s ease'
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
-                  onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
-                >
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
-                    <polyline points="16 6 12 2 8 6"/>
-                    <line x1="12" y1="2" x2="12" y2="15"/>
-                  </svg>
-                  Share Article
-                </button>
-              }
+              text={`Read "${post.title}" on SmartHire Publication`}
+              label="Share"
             />
-            <a
-              href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(postUrl)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Share on LinkedIn"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '7px 12px', background: '#FFFFFF', border: '1px solid #D1D5DB', borderRadius: 6, fontSize: 12.5, color: '#0A66C2', textDecoration: 'none', fontWeight: 600 }}
-            >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z"/></svg>
-              LinkedIn
-            </a>
-            <button
-              onClick={handleCopyLink}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '7px 12px', background: copiedLink ? '#0D6B5F' : '#FFFFFF', border: `1px solid ${copiedLink ? '#0D6B5F' : '#D1D5DB'}`, color: copiedLink ? '#FFFFFF' : '#374151', borderRadius: 6, fontSize: 12.5, fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s ease' }}
-            >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-              {copiedLink ? 'Copied!' : 'Copy Link'}
-            </button>
           </div>
         </div>
 

@@ -944,9 +944,8 @@ export default function WellfoundCareersView({
           e.currentTarget.style.backgroundColor = colors.cardBg
         }}
       >
-        {/* Column 1: Monogram Logo + Role Title & Experience */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
-          <CompanyLogo job={job} size={38} />
+        {/* Column 1: Role Title & Experience */}
+        <div style={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
           <div style={{ minWidth: 0, flex: 1 }}>
             <h4 style={{
               margin: '0 0 3px',
@@ -1056,45 +1055,8 @@ export default function WellfoundCareersView({
           )}
         </div>
 
-        {/* Column 5: Action Buttons (Share & View Job) */}
+        {/* Column 5: Action Button (View Job) */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6, flexShrink: 0 }}>
-          <ShareSheet
-            url={typeof window !== 'undefined' ? `${window.location.origin}/jobs?jobId=${resolveReqId(job) || job.id}` : ''}
-            title={`${job.title || 'Career Opening'} at SmartHire`}
-            text={`Check out this opening: ${job.title || 'Role'} in ${loc || 'Remote'} on SmartHire!`}
-            trigger={
-              <button
-                type="button"
-                onClick={(e) => e.stopPropagation()}
-                title="Share requisition"
-                aria-label="Share requisition"
-                style={{
-                  padding: '6px 10px',
-                  borderRadius: 6,
-                  border: `1px solid ${colors.border}`,
-                  backgroundColor: isLight ? '#FFFFFF' : '#1F2937',
-                  color: colors.textSecondary,
-                  fontSize: 12,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 4,
-                  transition: 'background-color 0.15s ease'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.hoverBg}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = isLight ? '#FFFFFF' : '#1F2937'}
-              >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                  <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
-                  <polyline points="16 6 12 2 8 6"/>
-                  <line x1="12" y1="2" x2="12" y2="15"/>
-                </svg>
-                <span>Share</span>
-              </button>
-            }
-          />
-
           <button
             onClick={(e) => {
               e.stopPropagation()
@@ -2556,12 +2518,10 @@ export default function WellfoundCareersView({
                         }
                       }}
                     >
-                      {/* Top Row: Avatar, Title & Right Arrow */}
+                      {/* Top Row: Title & Right Arrow */}
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flex: 1 }}>
-                          <CompanyLogo job={job} size={38} />
-                          <div style={{ minWidth: 0, flex: 1 }}>
-                            <h4 style={{
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <h4 style={{
                               margin: '0 0 2px',
                               fontSize: 14.5,
                               fontWeight: 700,
@@ -2574,15 +2534,14 @@ export default function WellfoundCareersView({
                               {cleanTitle}
                             </h4>
                             <div style={{
-                              fontSize: 12,
-                              fontWeight: 600,
-                              color: colors.textSecondary,
-                              whiteSpace: 'nowrap',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis'
-                            }}>
-                              {domainName}
-                            </div>
+                            fontSize: 12,
+                            fontWeight: 600,
+                            color: colors.textSecondary,
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
+                          }}>
+                            {domainName}
                           </div>
                         </div>
 
@@ -2684,7 +2643,23 @@ export default function WellfoundCareersView({
                   flexWrap: 'wrap'
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                    <CompanyLogo job={selectedJob} size={58} />
+                    <div style={{
+                      width: 48,
+                      height: 48,
+                      borderRadius: 10,
+                      background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+                      color: '#ffffff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                      boxShadow: '0 4px 12px rgba(37, 99, 235, 0.2)'
+                    }}>
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                      </svg>
+                    </div>
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                         <span style={{ fontSize: 16, fontWeight: 800, color: colors.textPrimary }}>
@@ -3217,25 +3192,35 @@ export default function WellfoundCareersView({
                     </div>
                   </div>
 
-                  <button
-                    onClick={() => handleApplyClick && handleApplyClick(selectedJob)}
-                    style={{
-                      backgroundColor: colors.buttonDark,
-                      color: colors.buttonDarkText,
-                      border: 'none',
-                      borderRadius: 8,
-                      padding: '12px 28px',
-                      fontSize: 14.5,
-                      fontWeight: 800,
-                      cursor: 'pointer',
-                      boxShadow: '0 2px 10px rgba(0,0,0,0.15)',
-                      transition: 'opacity 0.15s ease'
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.opacity = '0.88'}
-                    onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
-                  >
-                    Apply for this position →
-                  </button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                    <ShareSheet
+                      url={typeof window !== 'undefined' ? `${window.location.origin}/jobs?jobId=${resolveReqId(selectedJob) || selectedJob.id}` : ''}
+                      title={`${selectedJob.jobTitle || selectedJob.title || 'Career Opening'} at SmartHire`}
+                      text={`Check out this opening: ${selectedJob.jobTitle || selectedJob.title || 'Role'} in ${selectedJob.location || 'Remote'} on SmartHire!`}
+                      label="Share Opening"
+                      variant="outline"
+                    />
+
+                    <button
+                      onClick={() => handleApplyClick && handleApplyClick(selectedJob)}
+                      style={{
+                        backgroundColor: colors.buttonDark,
+                        color: colors.buttonDarkText,
+                        border: 'none',
+                        borderRadius: 8,
+                        padding: '12px 28px',
+                        fontSize: 14.5,
+                        fontWeight: 800,
+                        cursor: 'pointer',
+                        boxShadow: '0 2px 10px rgba(0,0,0,0.15)',
+                        transition: 'opacity 0.15s ease'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.opacity = '0.88'}
+                      onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+                    >
+                      Apply for this position →
+                    </button>
+                  </div>
                 </div>
 
                 {/* ── 7. SIMILAR JOBS RECOMMENDATION FOOTER ── */}
@@ -3287,8 +3272,7 @@ export default function WellfoundCareersView({
                           }}
                         >
                           <div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                              <CompanyLogo job={simJob} size={32} />
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
                               <div style={{ fontSize: 12, fontWeight: 700, color: colors.textSecondary }}>
                                 {resolveClientDomainName(simJob)}
                               </div>

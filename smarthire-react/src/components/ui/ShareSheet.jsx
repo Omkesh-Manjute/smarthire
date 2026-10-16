@@ -167,6 +167,8 @@ export function ShareSheet({
   onClose,
   trigger,
   theme = 'auto',
+  label = 'Share',
+  variant = 'default',
   onShare
 }) {
   const isControlled = typeof isOpen === 'boolean'
@@ -301,11 +303,11 @@ export function ShareSheet({
         ) : (
           <button
             type="button"
-            className="kss-trigger"
+            className={`kss-trigger ${variant === 'outline' ? 'kss-trigger-outline' : ''}`}
             onClick={() => setInternalOpen(true)}
           >
             <Icon name="share" size={16} />
-            <span>Share</span>
+            <span>{label}</span>
           </button>
         )
       )}
@@ -316,10 +318,11 @@ export function ShareSheet({
 
           <motion.div
             className="kss-sheet"
-            initial={{ opacity: 0, scale: 0.92, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.92, y: 20 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+            initial={{ opacity: 0, scale: 0.94, x: '-50%', y: '-45%' }}
+            animate={{ opacity: 1, scale: 1, x: '-50%', y: '-50%' }}
+            exit={{ opacity: 0, scale: 0.94, x: '-50%', y: '-45%' }}
+            transition={{ type: 'spring', stiffness: 350, damping: 25 }}
+            style={{ position: 'fixed', left: '50%', top: '50%' }}
             role="dialog"
             aria-modal="true"
             aria-labelledby={titleId}
