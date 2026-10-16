@@ -1056,8 +1056,45 @@ export default function WellfoundCareersView({
           )}
         </div>
 
-        {/* Column 5: Action Button */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', flexShrink: 0 }}>
+        {/* Column 5: Action Buttons (Share & View Job) */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6, flexShrink: 0 }}>
+          <ShareSheet
+            url={typeof window !== 'undefined' ? `${window.location.origin}/jobs?jobId=${resolveReqId(job) || job.id}` : ''}
+            title={`${job.title || 'Career Opening'} at SmartHire`}
+            text={`Check out this opening: ${job.title || 'Role'} in ${loc || 'Remote'} on SmartHire!`}
+            trigger={
+              <button
+                type="button"
+                onClick={(e) => e.stopPropagation()}
+                title="Share requisition"
+                aria-label="Share requisition"
+                style={{
+                  padding: '6px 10px',
+                  borderRadius: 6,
+                  border: `1px solid ${colors.border}`,
+                  backgroundColor: isLight ? '#FFFFFF' : '#1F2937',
+                  color: colors.textSecondary,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  transition: 'background-color 0.15s ease'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.hoverBg}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = isLight ? '#FFFFFF' : '#1F2937'}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                  <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+                  <polyline points="16 6 12 2 8 6"/>
+                  <line x1="12" y1="2" x2="12" y2="15"/>
+                </svg>
+                <span>Share</span>
+              </button>
+            }
+          />
+
           <button
             onClick={(e) => {
               e.stopPropagation()
