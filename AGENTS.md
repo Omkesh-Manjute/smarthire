@@ -67,6 +67,33 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
     - The engine must automatically detect responsibilities (lines following `Responsibilities:`, action verbs, or list items) even when converted from plain text or Word documents without literal Unicode bullets.
 
 
+### 2026-10-17 — Automated Recruiter Email Notification on Candidate AI Video/Voice Screening Completion
+- **Context & Objectives**:
+  - The user requested an automated email notification system: When a candidate submits and completes their AI video/voice screening interview (`/api/screening/:sessionId/submit-response` or `/api/screening/:sessionId/submit`), an email must be dispatched to the assigned recruiter from Omkesh's configured Yahoo email (`omkesh@coolsofttech.com`) notifying them that the candidate has successfully completed the interview, formatted with candidate name, email, target job title, AI match score, recommendation, and a direct review link in the ATS.
+- **Architectural Implementations & Workflow**:
+  1. **Nodemailer SMTP Integration (`server/index.js`)**:
+     - Built `sendScreeningCompletedNotificationEmail(session)` using authenticated Yahoo SMTP (`smtp.bizmail.yahoo.com:465` SSL) from `omkesh@coolsofttech.com`.
+     - Recipient resolution: Dynamically targets assigned recruiter (`session.recruiterEmail || session.createdByEmail || session.referredBy || session.submittedBy || job.recruiterEmail || job.assignedRecruiter`).
+     - Global Visibility: If recruiter is someone other than Omkesh, Omkesh (`omkesh@coolsofttech.com`) is automatically added to `CC` so all candidate completions are tracked.
+     - Built-in deduplication protection: Sets `session.completionEmailSent = true` and `session.completionEmailSentAt = ISO timestamp` to prevent multiple emails if a candidate triggers both `submit-response` and consent `submit`.
+  2. **Enterprise Responsive HTML Email Template**:
+     - Modern navy/slate gradient header (`#0F172A` to `#1E293B`) with emerald `SCREENED` pill badge.
+     - Headline & Greeting: Personalized recruiter greeting (`Hello ${recruiterName}, Your candidate ${candidateName} has successfully completed...`).
+     - AI Score Card: Color-coded visual score box (emerald $\ge 80\%$, blue $\ge 65\%$, amber $<65\%$), hiring recommendation, proctoring/tab integrity check, and AI evaluation notes.
+     - Candidate & Position Summary Table: Name, clickable email link (`mailto:`), phone, location, work authorization/visa, target requisition (`jobTitle (reqId)`), client/account, and formatted completion time (EST).
+     - Prominent Call to Action (CTA) Button: `[ Review Candidate Scorecard in ATS → ]` linking directly to `https://smarthireus.com/dashboard?candidate=...`.
+     - Strict Rule 8 Compliant: Zero unrequested decorative emojis in email template.
+  3. **Endpoint Integration**:
+     - Wired into `POST /api/screening/:sessionId/submit-response` right after `saveScreeningToDisk()` and webhook dispatch.
+     - Wired into `POST /api/screening/:sessionId/submit` for fallback consent submissions.
+- **Verification & Deployment**:
+  - Local production build in `smarthire-react`: **0 errors, 0 warnings** (`vite build` completed in 3.22s).
+  - Git committed (`8b1b55a`) and pushed to `origin main`.
+  - Production server (`34.194.119.199`) updated with new `server/index.js`, PM2 `smarthire-ats` reloaded.
+  - End-to-end verified on Lightsail: Simulated candidate screening submission returned HTTP 200 and logged `[SmartScreen] Screening completion email dispatched for 'Ananya Patel' to omkesh@coolsofttech.com (CC: none)`.
+  - Cleaned up test screening records from `screening_sessions.json` and `candidates.json`.
+  - Verified `HTTP 200 OK` on live domain `https://smarthireus.com`.
+
 ### 2026-10-17 — FAQ AI Screening Overhaul, Modern Interactive Footer Pill Buttons, Blog & Careers ShareSheet Polish, and Removal of Table Initial Monograms
 - **Context & Objectives**:
   - The user requested four key refinements:
