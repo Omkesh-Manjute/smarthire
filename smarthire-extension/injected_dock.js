@@ -135,7 +135,7 @@ Website: http://www.coolsofttech.com`;
     // 1. Discreet 38px Shield Logo Trigger (No long text strip!)
     const trigger = document.createElement('div');
     trigger.id = 'smarthire-copilot-trigger';
-    trigger.title = 'SmartHire ATS Sourcing Copilot v3.8 (Click to Open)';
+    trigger.title = 'SmartHire ATS Sourcing Copilot v3.9 (Click to Open)';
     trigger.innerHTML = `
       <svg width="22" height="22" viewBox="0 0 24 24" fill="#3B82F6">
         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
@@ -154,7 +154,7 @@ Website: http://www.coolsofttech.com`;
             <path d="m9 11 2 2 4-4" stroke="#ffffff" stroke-width="2.5" fill="none"/>
           </svg>
           <span style="font-weight:700; font-size:14px; letter-spacing:-0.02em;">SmartHire Copilot</span>
-          <span style="background:#1E293B; color:#93C5FD; font-size:10px; font-weight:700; padding:2px 6px; border-radius:4px; border:1px solid #334155;">v3.8 Live</span>
+          <span style="background:#1E293B; color:#93C5FD; font-size:10px; font-weight:700; padding:2px 6px; border-radius:4px; border:1px solid #334155;">v3.9 Live</span>
         </div>
         <button id="smarthire-drawer-close" style="background:none; border:none; color:#94A3B8; font-size:22px; cursor:pointer; line-height:1; padding:0 4px;">&times;</button>
       </div>
@@ -668,12 +668,28 @@ Website: http://www.coolsofttech.com`;
   }
 
   function fetchCurrentUser() {
+    // Check localStorage fallback in case background service worker disconnected
+    try {
+      const cached = localStorage.getItem('smarthire_user_cached');
+      if (cached) {
+        const u = JSON.parse(cached);
+        if (u && u.email) {
+          currentUser = u;
+          isUserAuthenticated = true;
+          updateRecruiterBarUI();
+          checkAndApplyAuthGate();
+        }
+      }
+    } catch (_) {}
+
     try {
       chrome.runtime.sendMessage({ action: 'GET_CURRENT_USER' }, (res) => {
+        if (chrome.runtime.lastError) return;
         if (res && res.success && res.user && res.isLoggedIn) {
           currentUser = res.user;
           isUserAuthenticated = true;
-        } else {
+          try { localStorage.setItem('smarthire_user_cached', JSON.stringify(currentUser)); } catch (_) {}
+        } else if (!currentUser) {
           currentUser = null;
           isUserAuthenticated = false;
         }
@@ -681,10 +697,12 @@ Website: http://www.coolsofttech.com`;
         checkAndApplyAuthGate();
       });
     } catch (e) {
-      currentUser = null;
-      isUserAuthenticated = false;
-      updateRecruiterBarUI();
-      checkAndApplyAuthGate();
+      if (!currentUser) {
+        currentUser = null;
+        isUserAuthenticated = false;
+        updateRecruiterBarUI();
+        checkAndApplyAuthGate();
+      }
     }
   }
 
@@ -702,6 +720,16 @@ Website: http://www.coolsofttech.com`;
       return;
     }
 
+    const resetButton = () => {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = `
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+          <span>Sign In to SmartHire Copilot</span>
+        `;
+      }
+    };
+
     if (btn) {
       btn.disabled = true;
       btn.innerText = 'Signing In...';
@@ -711,32 +739,99 @@ Website: http://www.coolsofttech.com`;
       statusEl.innerText = 'Authenticating with SmartHire ATS...';
     }
 
-    chrome.runtime.sendMessage({ action: 'LOGIN_USER', email, password }, (res) => {
-      if (btn) {
-        btn.disabled = false;
-        btn.innerHTML = `
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-          <span>Sign In to SmartHire Copilot</span>
-        `;
-      }
-      if (res && res.success && res.user) {
-        currentUser = res.user;
-        isUserAuthenticated = true;
-        if (statusEl) {
-          statusEl.style.color = '#059669';
-          statusEl.innerText = `✓ Welcome, ${currentUser.name || 'Recruiter'}!`;
+    let responded = false;
+
+    const handleSuccess = (user, token) => {
+      if (responded) return;
+      responded = true;
+      currentUser = user;
+      isUserAuthenticated = true;
+      try {
+        localStorage.setItem('smarthire_user_cached', JSON.stringify(user));
+        localStorage.setItem('smarthire_token_cached', token || '');
+      } catch (_) {}
+
+      try {
+        if (chrome?.storage?.local) {
+          chrome.storage.local.set({
+            smarthire_user: user,
+            smarthire_token: token,
+            recruiter_email: user.email,
+            recruiter_name: user.name
+          });
         }
-        updateRecruiterBarUI();
-        setTimeout(() => {
-          checkAndApplyAuthGate();
-        }, 400);
-      } else {
-        if (statusEl) {
-          statusEl.style.color = '#DC2626';
-          statusEl.innerText = res?.message || 'Invalid email or password. Please verify credentials.';
-        }
+      } catch (_) {}
+
+      resetButton();
+      if (statusEl) {
+        statusEl.style.color = '#059669';
+        statusEl.innerText = `✓ Welcome, ${user.name || 'Recruiter'}!`;
       }
-    });
+      updateRecruiterBarUI();
+      setTimeout(() => {
+        checkAndApplyAuthGate();
+      }, 400);
+    };
+
+    const handleFailure = (msg) => {
+      if (responded) return;
+      responded = true;
+      resetButton();
+      if (statusEl) {
+        statusEl.style.color = '#DC2626';
+        statusEl.innerText = msg || 'Invalid email or password. Please verify credentials.';
+      }
+    };
+
+    // Strategy 1: Direct fetch to ATS server (bypasses any background service worker issues)
+    fetch('https://smarthireus.com/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.success && data.user) {
+          handleSuccess(data.user, data.token);
+        } else {
+          handleFailure(data?.message || 'Invalid email or password');
+        }
+      })
+      .catch(err => {
+        console.warn('[SmartHire Dock] Direct fetch error:', err);
+        // Fallback to background relay if direct fetch failed
+        try {
+          chrome.runtime.sendMessage({ action: 'LOGIN_USER', email, password }, (res) => {
+            if (chrome.runtime.lastError) {
+              handleFailure('Unable to connect to SmartHire ATS. Please check network or refresh page.');
+              return;
+            }
+            if (res && res.success && res.user) {
+              handleSuccess(res.user, res.token);
+            } else {
+              handleFailure(res?.message || 'Invalid email or password');
+            }
+          });
+        } catch (e) {
+          handleFailure('Extension context disconnected. Please refresh this page (Cmd+R or F5).');
+        }
+      });
+
+    // Strategy 2: Parallel background relay to keep chrome.storage synced
+    try {
+      chrome.runtime.sendMessage({ action: 'LOGIN_USER', email, password }, (res) => {
+        if (!chrome.runtime.lastError && res && res.success && res.user) {
+          handleSuccess(res.user, res.token);
+        }
+      });
+    } catch (_) {}
+
+    // Safety timeout: Re-enable the button if no network response within 7 seconds
+    setTimeout(() => {
+      if (!responded) {
+        handleFailure('Authentication timed out. Please check your connection or refresh the page.');
+      }
+    }, 7000);
   }
 
   function initOutreachComposerModal() {

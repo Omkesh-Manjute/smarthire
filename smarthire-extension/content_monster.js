@@ -1,7 +1,7 @@
-// SmartHire Sourcing Copilot v3.6 - Monster+ Content Script
+// SmartHire Sourcing Copilot v3.9 - Monster+ Content Script
 (function() {
   window.smartHirePortal = 'Monster+';
-  console.log('[SmartHire Copilot v3.6] Monster+ content script loaded on:', window.location.href);
+  console.log('[SmartHire Copilot v3.9] Monster+ content script loaded on:', window.location.href);
 
   const utils = window.SmartHireUtils || {
     extractEmails: (text) => {
@@ -624,7 +624,7 @@
   // Deep Scraper: Click each card, reveal details with polling, extract verified contact info
   window.smartHireScrapeCandidatesAsync = async function(onProgress) {
     const cards = window.getMonsterCards();
-    console.log(`[SmartHire Copilot v3.8] Found ${cards.length} cards for deep scrape.`);
+    console.log(`[SmartHire Copilot v3.9] Found ${cards.length} cards for deep scrape.`);
 
     if (cards.length === 0) {
       if (typeof onProgress === 'function') {

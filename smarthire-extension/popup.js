@@ -97,6 +97,11 @@ document.addEventListener('DOMContentLoaded', () => {
   let activeDossierCand = null;
 
   // Initialize
+  const versionTextEl = document.getElementById('versionText');
+  if (versionTextEl) {
+    const v = chrome.runtime?.getManifest?.()?.version || '3.9.0';
+    versionTextEl.innerText = `v${v} Live`;
+  }
   checkActiveTab();
   fetchCurrentUser();
   loadRequisitions();
@@ -207,7 +212,11 @@ document.addEventListener('DOMContentLoaded', () => {
   function handleJobSelected(job) {
     selectedJob = job;
     if (window.SmartHireMatchingEngine && window.SmartHireMatchingEngine.sessionCache) {
-      window.SmartHireMatchingEngine.sessionCache.clearForNewSession();
+      if (typeof window.SmartHireMatchingEngine.sessionCache.clearForNewSession === 'function') {
+        window.SmartHireMatchingEngine.sessionCache.clearForNewSession();
+      } else if (typeof window.SmartHireMatchingEngine.sessionCache.clear === 'function') {
+        window.SmartHireMatchingEngine.sessionCache.clear();
+      }
     }
     jobMeta.style.display = 'flex';
     const loc = job.location || (job.city ? `${job.city}, ${job.state || ''}` : 'Remote');
@@ -818,25 +827,75 @@ document.addEventListener('DOMContentLoaded', () => {
     popupLoginMsg.style.color = '#2563EB';
     popupLoginMsg.innerText = 'Authenticating with SmartHire ATS...';
 
-    chrome.runtime.sendMessage({ action: 'LOGIN_USER', email, password }, (res) => {
+    let responded = false;
+
+    const handleSuccess = (user, token) => {
+      if (responded) return;
+      responded = true;
       popupDoLoginBtn.disabled = false;
       popupDoLoginBtn.innerText = 'Sign In';
+      currentUser = user;
+      isUserAuthenticated = true;
+      updateRecruiterBarUI();
+      popupLoginMsg.style.color = '#059669';
+      popupLoginMsg.innerText = `✓ Welcome, ${user.name || 'Recruiter'}!`;
+      setTimeout(() => {
+        popupLoginCard.style.display = 'none';
+        popupLoginMsg.style.display = 'none';
+      }, 1200);
+    };
 
-      if (res && res.success && res.user) {
-        currentUser = res.user;
-        isUserAuthenticated = true;
-        updateRecruiterBarUI();
-        popupLoginMsg.style.color = '#059669';
-        popupLoginMsg.innerText = `✓ Welcome, ${currentUser.name}!`;
-        setTimeout(() => {
-          popupLoginCard.style.display = 'none';
-          popupLoginMsg.style.display = 'none';
-        }, 1200);
-      } else {
-        popupLoginMsg.style.color = '#DC2626';
-        popupLoginMsg.innerText = res?.message || 'Invalid credentials';
+    const handleFailure = (msg) => {
+      if (responded) return;
+      responded = true;
+      popupDoLoginBtn.disabled = false;
+      popupDoLoginBtn.innerText = 'Sign In';
+      popupLoginMsg.style.color = '#DC2626';
+      popupLoginMsg.innerText = msg || 'Invalid email or password';
+    };
+
+    // Direct fetch to ATS server
+    fetch(`${API_BASE}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.success && data.user) {
+          try {
+            chrome.storage.local.set({
+              smarthire_user: data.user,
+              smarthire_token: data.token,
+              recruiter_email: data.user.email,
+              recruiter_name: data.user.name
+            });
+          } catch (_) {}
+          handleSuccess(data.user, data.token);
+        } else {
+          handleFailure(data?.message || 'Invalid email or password');
+        }
+      })
+      .catch(err => {
+        console.warn('[Popup] Direct fetch error:', err);
+        try {
+          chrome.runtime.sendMessage({ action: 'LOGIN_USER', email, password }, (res) => {
+            if (res && res.success && res.user) {
+              handleSuccess(res.user, res.token);
+            } else {
+              handleFailure(res?.message || 'Invalid credentials');
+            }
+          });
+        } catch (_) {
+          handleFailure('Network error connecting to SmartHire');
+        }
+      });
+
+    setTimeout(() => {
+      if (!responded) {
+        handleFailure('Authentication timed out. Please try again.');
       }
-    });
+    }, 7000);
   }
 
   // Sanitizers: Stripping Rates & Requisition IDs

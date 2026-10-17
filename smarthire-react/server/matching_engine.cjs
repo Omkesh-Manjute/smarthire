@@ -1629,6 +1629,11 @@
       this._cache.clear();
     }
 
+    clearForNewSession() {
+      this.clear();
+      this._activeJdHash = null;
+    }
+
     size() {
       return this._cache.size;
     }

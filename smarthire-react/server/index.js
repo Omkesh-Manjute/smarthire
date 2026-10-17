@@ -1292,7 +1292,9 @@ app.use(cors({
       ALLOWED_ORIGINS.includes(origin) ||
       origin.startsWith('chrome-extension://') ||
       origin.endsWith('.smarthireus.com') ||
-      origin.endsWith('.onrender.com')
+      origin.endsWith('.onrender.com') ||
+      origin.includes('monster.com') ||
+      origin.includes('dice.com')
     ) {
       return callback(null, true);
     }
