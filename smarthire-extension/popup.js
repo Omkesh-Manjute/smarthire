@@ -206,6 +206,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function handleJobSelected(job) {
     selectedJob = job;
+    if (window.SmartHireMatchingEngine && window.SmartHireMatchingEngine.sessionCache) {
+      window.SmartHireMatchingEngine.sessionCache.clearForNewSession();
+    }
     jobMeta.style.display = 'flex';
     const loc = job.location || (job.city ? `${job.city}, ${job.state || ''}` : 'Remote');
     metaLocation.innerText = `Location: ${loc}`;
@@ -216,9 +219,21 @@ document.addEventListener('DOMContentLoaded', () => {
     generateBooleanVariants();
   }
 
-  // 3. Dynamic Boolean Query Generation with 3 Variants
+  // 3. Dynamic Boolean Query Generation with Variants
   function generateBooleanVariants() {
     if (!selectedJob) return;
+
+    if (window.SmartHireMatchingEngine && typeof window.SmartHireMatchingEngine.generateBooleanQueries === 'function') {
+      const bq = window.SmartHireMatchingEngine.generateBooleanQueries(selectedJob);
+      selectedJob._variants = {
+        1: bq.primary,
+        2: bq.variants?.biAndDw || bq.variants?.dataPlatforms || bq.primary,
+        3: bq.variants?.jiraScrum || bq.variants?.safeScaledAgile || bq.primary
+      };
+      booleanQueryInput.value = selectedJob._variants[activeVariant] || bq.primary;
+      return;
+    }
+
     const title = (selectedJob.title || selectedJob.positionTitle || 'Software Engineer')
       .replace(/\(.*?\)/g, '')
       .replace(/\[.*?\]/g, '')
@@ -1194,10 +1209,25 @@ Website: http://www.coolsofttech.com`;
   function openPopupAiDossier(cand, job) {
     activeDossierCand = cand;
     const targetJob = job || selectedJob;
-    const score = cand.matchScore || (cand.aiMatch ? cand.aiMatch.score : 75);
-    const color = score >= 85 ? '#059669' : (score >= 70 ? '#2563EB' : '#D97706');
 
-    const match = cand.aiMatch || {
+    let match = cand.aiMatch;
+    // Single Authoritative Engine Check: If candidate does not have an evaluation, evaluate once and cache
+    if (!match && window.SmartHireMatchingEngine && targetJob) {
+      const norm = window.SmartHireMatchingEngine.normalizeJobDescription(targetJob);
+      match = window.SmartHireMatchingEngine.sessionCache.getOrEvaluate(cand, norm);
+      cand.aiMatch = match;
+      cand.matchScore = match.score;
+      cand.verdict = match.verdict;
+      cand.fitCategory = match.fitCategory;
+      cand.recommendation = match.recommendation;
+      cand.eligibilityStatus = match.eligibilityStatus;
+      cand.extractionStatus = match.extractionStatus;
+    }
+
+    const score = cand.matchScore || (match ? match.score : 75);
+    const color = match?.color || (score >= 85 ? '#059669' : (score >= 70 ? '#2563EB' : '#D97706'));
+
+    const activeMatch = match || {
       score: score,
       fitCategory: score >= 85 ? 'Strong Fit' : (score >= 70 ? 'Good Fit' : 'Partial Fit'),
       verdict: score >= 85 ? 'STRONG FIT' : (score >= 70 ? 'GOOD FIT' : 'PARTIAL FIT'),
@@ -1225,6 +1255,17 @@ Website: http://www.coolsofttech.com`;
       ]
     };
 
+    const provBanner = document.getElementById('popupDossierProvisionalBanner');
+    if (provBanner) {
+      const isProv = (activeMatch.extractionVerification?.isProvisional) || (activeMatch.extractionStatus && activeMatch.extractionStatus !== 'FULL_RESUME_EXTRACTED') || (cand.extractionStatus && cand.extractionStatus !== 'FULL_RESUME_EXTRACTED');
+      if (isProv) {
+        provBanner.style.display = 'block';
+        provBanner.innerHTML = `⚠️ <strong>PARTIAL PROFILE WARNING:</strong> Candidate profile has limited text (${(cand.extractionStatus || activeMatch.extractionStatus || 'PARTIAL_RESUME_EXTRACTED').replace(/_/g, ' ')}). This evaluation is PROVISIONAL. Inspect the full resume before submitting.`;
+      } else {
+        provBanner.style.display = 'none';
+      }
+    }
+
     if (popupDossierCandName) popupDossierCandName.innerText = cand.name || 'Candidate Profile';
     if (popupDossierCandRole) popupDossierCandRole.innerText = `${cand.title || 'Specialist'} · ${cand.location || 'United States'} · ${cand.visaStatus || 'US Authorized'}`;
     if (popupDossierJobTitle) popupDossierJobTitle.innerText = `Target: ${targetJob ? targetJob.title : 'Selected Requisition'}`;
@@ -1235,15 +1276,19 @@ Website: http://www.coolsofttech.com`;
       popupDossierScoreVal.style.background = color + '15';
     }
     if (popupDossierVerdictTag) {
-      popupDossierVerdictTag.innerText = String(match.fitCategory || match.verdict || 'EVALUATED').toUpperCase();
+      popupDossierVerdictTag.innerText = String(activeMatch.fitCategory || activeMatch.verdict || 'EVALUATED').toUpperCase();
       popupDossierVerdictTag.style.color = color;
     }
 
     const recBadge = document.getElementById('popupDossierRecBadge');
     if (recBadge) {
-      const rec = match.recommendation || (score >= 80 ? 'Submit' : (score >= 65 ? 'Interview' : 'Hold'));
+      const rec = activeMatch.recommendation || (score >= 80 ? 'Submit' : (score >= 65 ? 'Interview' : 'Hold'));
       recBadge.innerText = `RECOMMENDATION: ${rec.toUpperCase()}`;
-      if (rec.toLowerCase().includes('submit')) {
+      if (rec.toLowerCase().includes('reject')) {
+        recBadge.style.background = '#FEE2E2';
+        recBadge.style.color = '#991B1B';
+        recBadge.style.borderColor = '#FCA5A5';
+      } else if (rec.toLowerCase().includes('submit')) {
         recBadge.style.background = '#ECFDF5';
         recBadge.style.color = '#065F46';
         recBadge.style.borderColor = '#A7F3D0';
@@ -1259,30 +1304,30 @@ Website: http://www.coolsofttech.com`;
     }
 
     const confEl = document.getElementById('popupDossierConfidence');
-    if (confEl) confEl.innerText = match.confidence || (score >= 70 ? 'High' : 'Medium');
+    if (confEl) confEl.innerText = activeMatch.confidence || (score >= 70 ? 'High' : 'Medium');
 
     const covEl = document.getElementById('popupDossierCoverage');
-    if (covEl) covEl.innerText = match.evidenceCoverage || 'High';
+    if (covEl) covEl.innerText = activeMatch.evidenceCoverage || 'High';
 
     const eligEl = document.getElementById('popupDossierEligibility');
     if (eligEl) {
-      const el = match.eligibilityStatus || 'Verified';
+      const el = activeMatch.eligibilityStatus || 'Verified';
       eligEl.innerText = el.includes('Eligible') ? 'Verified' : el;
-      eligEl.style.color = el.includes('Eligible') ? '#059669' : '#D97706';
+      eligEl.style.color = el.includes('Eligible') ? '#059669' : (el.toLowerCase().includes('ineligible') ? '#DC2626' : '#D97706');
     }
 
-    if (popupDossierReasoning) popupDossierReasoning.innerText = match.recommendationExplanation || match.reasoning || cand.aiReasoning || 'No reasoning available.';
+    if (popupDossierReasoning) popupDossierReasoning.innerText = activeMatch.recommendationExplanation || activeMatch.reasoning || cand.aiReasoning || 'No reasoning available.';
 
     const notesEl = document.getElementById('popupDossierEligNotes');
     if (notesEl) {
-      notesEl.innerHTML = `<strong>Location &amp; Eligibility:</strong> ${match.eligibilityNotes || `${cand.location || 'United States'} fits requisition requirements.`}`;
+      notesEl.innerHTML = `<strong>Location &amp; Eligibility:</strong> ${activeMatch.eligibilityNotes || `${cand.location || 'United States'} fits requisition requirements.`}`;
     }
 
     // Skills Matrix Table
     const tableBody = document.getElementById('popupDossierSkillsTable');
     if (tableBody) {
-      const rows = match.skillsMatchTable && Array.isArray(match.skillsMatchTable) && match.skillsMatchTable.length > 0
-        ? match.skillsMatchTable
+      const rows = activeMatch.skillsMatchTable && Array.isArray(activeMatch.skillsMatchTable) && activeMatch.skillsMatchTable.length > 0
+        ? activeMatch.skillsMatchTable
         : (cand.skills || []).map(s => ({
             requirement: s,
             evidenceStatus: 'DIRECT MATCH',
@@ -1302,6 +1347,9 @@ Website: http://www.coolsofttech.com`;
         } else if (st.includes('PARTIAL')) {
           badgeBg = '#FEF3C7';
           badgeColor = '#B45309';
+        } else if (st.includes('NOT') || st.includes('REJECT')) {
+          badgeBg = '#FEE2E2';
+          badgeColor = '#991B1B';
         } else if (st.includes('VERIFICATION')) {
           badgeBg = '#F3E8FF';
           badgeColor = '#6B21A8';
@@ -1325,19 +1373,20 @@ Website: http://www.coolsofttech.com`;
     }
 
     if (popupDossierStrengths) {
-      popupDossierStrengths.innerHTML = (match.strengths && match.strengths.length > 0)
-        ? match.strengths.map(s => `<div>• ${s}</div>`).join('')
+      popupDossierStrengths.innerHTML = (activeMatch.strengths && activeMatch.strengths.length > 0)
+        ? activeMatch.strengths.map(s => `<div>• ${s}</div>`).join('')
         : '<div>• Strong foundational experience aligned with target role</div>';
     }
     if (popupDossierGaps) {
-      popupDossierGaps.innerHTML = (match.gaps && match.gaps.length > 0)
-        ? match.gaps.map(g => `<div>• ${g}</div>`).join('')
+      popupDossierGaps.innerHTML = (activeMatch.gaps && activeMatch.gaps.length > 0)
+        ? activeMatch.gaps.map(g => `<div>• ${g}</div>`).join('')
         : '<div>• No critical gaps detected against job profile</div>';
     }
     if (popupDossierQuestions) {
-      popupDossierQuestions.innerHTML = (match.interviewQuestions && match.interviewQuestions.length > 0)
-        ? match.interviewQuestions.map((q, qIdx) => `<div><strong>Q${qIdx + 1}:</strong> ${q}</div>`).join('')
-        : '<div>• Can you summarize your primary technical contributions in your recent project?</div>';
+      const qList = (activeMatch.interviewQuestions && activeMatch.interviewQuestions.length > 0)
+        ? activeMatch.interviewQuestions
+        : ['Can you summarize your primary technical contributions in your recent project?'];
+      popupDossierQuestions.innerHTML = qList.map((q, qIdx) => `<div><strong>Q${qIdx + 1}:</strong> ${q}</div>`).join('');
     }
 
     const copyBtn = document.getElementById('popupDossierCopyBtn');
@@ -1474,8 +1523,12 @@ ${(match.interviewQuestions || []).map((q, i) => `Q${i + 1}: ${q}`).join('\n\n')
           }
         });
 
-        // Sort candidates by AI matchScore descending
-        scrapedCandidates.sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0));
+        // Sort candidates using authoritative matching engine ranking
+        if (window.SmartHireMatchingEngine && typeof window.SmartHireMatchingEngine.rankCandidates === 'function') {
+          scrapedCandidates = window.SmartHireMatchingEngine.rankCandidates(scrapedCandidates);
+        } else {
+          scrapedCandidates.sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0));
+        }
 
         renderTable();
         if (popupAiMatchBtn) popupAiMatchBtn.innerText = `✓ Ranked by AI (${scrapedCandidates.length})`;

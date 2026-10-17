@@ -126,7 +126,7 @@
         }
         const candidateFullText = (diceDetailText && diceDetailText.length > 120) ? diceDetailText : cardText;
 
-        candidates.push({
+        const candidateObj = {
           id: `dice-${index}-${Date.now().toString().slice(-4)}`,
           name,
           title: title.slice(0, 80),
@@ -142,7 +142,25 @@
           notes: `${updated} · Work Auth: ${visaStatus}. Sourced from Dice Talent Search.`,
           resumeText: candidateFullText,
           summary: candidateFullText.slice(0, 5000)
-        });
+        };
+
+        // Complete Resume Extraction & Verification (Section 4)
+        if (window.SmartHireMatchingEngine && typeof window.SmartHireMatchingEngine.verifyAndClassifyResume === 'function') {
+          const v = window.SmartHireMatchingEngine.verifyAndClassifyResume(candidateObj);
+          candidateObj.extractionStatus = v.status;
+          candidateObj.sourceSectionsFound = v.sourceSectionsFound;
+          candidateObj.isTruncated = v.isTruncated;
+          candidateObj.extractedLength = v.extractedLength;
+          candidateObj.missingExpectedSections = v.missingExpectedSections;
+          candidateObj.extractionWarnings = v.warnings;
+          candidateObj.isProvisional = v.isProvisional;
+        } else {
+          candidateObj.extractionStatus = candidateFullText.length > 800 ? 'FULL_RESUME_EXTRACTED' : (candidateFullText.length > 250 ? 'PARTIAL_RESUME_EXTRACTED' : 'PROFILE_ONLY');
+          candidateObj.extractedLength = candidateFullText.length;
+          candidateObj.isProvisional = candidateFullText.length < 800;
+        }
+
+        candidates.push(candidateObj);
       } catch (err) {
         console.warn('[SmartHire Copilot] Error parsing Dice candidate card:', err);
       }

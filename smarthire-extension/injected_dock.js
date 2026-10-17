@@ -1223,6 +1223,9 @@ Website: http://www.coolsofttech.com`;
             </div>
           </div>
 
+          <!-- Provisional Profile Warning Banner -->
+          <div id="dossier-provisional-banner" style="display:none; padding:8px 12px; margin-bottom:10px; border-radius:6px; background:#FFFBEB; border:1px solid #FDE68A; font-size:11px; color:#92400E; font-weight:600;"></div>
+
           <!-- Executive Summary & Recruiter Rationale -->
           <div style="background:#FFFFFF; border:1px solid #CBD5E1; border-radius:8px; padding:12px;">
             <div style="font-size:11px; font-weight:800; color:#334155; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:5px;">
@@ -1396,33 +1399,23 @@ ${(match.interviewQuestions || [
     if (!overlay) return;
 
     const targetJob = job || selectedJob;
-    const match = candidate.aiMatch || {
-      score: candidate.matchScore || 75,
-      fitCategory: (candidate.matchScore || 75) >= 85 ? 'Strong Fit' : ((candidate.matchScore || 75) >= 70 ? 'Good Fit' : 'Partial Fit'),
-      verdict: (candidate.matchScore || 75) >= 85 ? 'STRONG FIT' : ((candidate.matchScore || 75) >= 70 ? 'GOOD FIT' : 'PARTIAL FIT'),
-      color: (candidate.matchScore || 75) >= 85 ? '#059669' : ((candidate.matchScore || 75) >= 70 ? '#2563EB' : '#D97706'),
-      recommendation: (candidate.matchScore || 75) >= 80 ? 'Submit' : ((candidate.matchScore || 75) >= 65 ? 'Interview' : 'Hold for Verification'),
-      confidence: 'High',
-      evidenceCoverage: 'High',
-      eligibilityStatus: 'Eligible — Evidence Available',
-      eligibilityNotes: `${candidate.location || 'United States'} aligned with target position requirements.`,
-      reasoning: candidate.aiReasoning || `${candidate.name} has relevant technical skills for ${targetJob ? targetJob.title : 'the position'}.`,
-      recommendationExplanation: candidate.aiReasoning || `${candidate.name} demonstrates solid qualification alignment.`,
-      strengths: candidate.strengths || (candidate.skills ? (Array.isArray(candidate.skills) ? candidate.skills.slice(0, 3) : String(candidate.skills).split(',').slice(0, 3)).map(s=>`Matches key skill: ${s.trim()}`) : ['Demonstrated relevant domain expertise']),
-      gaps: candidate.gaps || ['Verify deep experience with specialized toolsets during initial technical screen'],
-      skillsMatchTable: (candidate.skills || []).map((s, idx) => ({
-        requirement: s,
-        category: 'Mandatory Technical',
-        classification: 'Mandatory',
-        evidenceStatus: 'DIRECT MATCH',
-        resumeEvidence: `Demonstrated experience with ${s} listed in profile.`,
-        gapOrQualification: ''
-      })),
-      interviewQuestions: candidate.aiMatch?.interviewQuestions || [
-        `Can you describe your hands-on experience with ${Array.isArray(candidate.skills) ? candidate.skills[0] || 'core technologies' : 'key technologies'} in enterprise client projects?`,
-        `How do you collaborate with distributed technical teams under tight release cycles?`
-      ]
-    };
+    let match = candidate.aiMatch;
+
+    // Single Authoritative Engine Check: If candidate does not have an evaluation, evaluate once and cache
+    if (!match && window.SmartHireMatchingEngine && targetJob) {
+      const norm = window.SmartHireMatchingEngine.normalizeJobDescription(targetJob);
+      match = window.SmartHireMatchingEngine.sessionCache.getOrEvaluate(candidate, norm);
+      candidate.aiMatch = match;
+      candidate.matchScore = match.score;
+      candidate.verdict = match.verdict;
+      candidate.fitCategory = match.fitCategory;
+      candidate.recommendation = match.recommendation;
+      candidate.eligibilityStatus = match.eligibilityStatus;
+      candidate.extractionStatus = match.extractionStatus;
+      renderResults(scrapedCandidates);
+    }
+
+    if (!match) return;
 
     const nameEl = document.getElementById('dossier-cand-name');
     const roleEl = document.getElementById('dossier-cand-role');
@@ -1439,10 +1432,21 @@ ${(match.interviewQuestions || [
     const strengthsBox = document.getElementById('dossier-strengths-box');
     const gapsBox = document.getElementById('dossier-gaps-box');
     const questionsBox = document.getElementById('dossier-questions-box');
+    const provBanner = document.getElementById('dossier-provisional-banner');
 
     if (nameEl) nameEl.innerText = candidate.name || 'Candidate';
     if (roleEl) roleEl.innerText = `${candidate.title || 'Specialist'} · ${candidate.location || 'United States'} · ${candidate.visaStatus || 'US Work Authorized'}`;
     if (jobEl) jobEl.innerText = `Target: ${cleanJobTitle(targetJob?.title || 'Open Position')}`;
+
+    // Provisional warning display
+    if (provBanner) {
+      if (match.extractionVerification?.isProvisional || match.extractionStatus !== 'FULL_RESUME_EXTRACTED') {
+        provBanner.style.display = 'block';
+        provBanner.innerHTML = `⚠️ <strong>PARTIAL PROFILE WARNING:</strong> Candidate profile has limited text (${(match.extractionStatus || 'PARTIAL_RESUME_EXTRACTED').replace(/_/g, ' ')}). This evaluation is PROVISIONAL. Inspect the full resume before submitting.`;
+      } else {
+        provBanner.style.display = 'none';
+      }
+    }
 
     const score = match.score ?? candidate.matchScore ?? 75;
     const color = match.color || (score >= 85 ? '#059669' : (score >= 70 ? '#2563EB' : '#D97706'));
@@ -1468,6 +1472,10 @@ ${(match.interviewQuestions || [
         recBadge.style.background = '#EFF6FF';
         recBadge.style.color = '#1E40AF';
         recBadge.style.borderColor = '#BFDBFE';
+      } else if (rec.toLowerCase().includes('reject')) {
+        recBadge.style.background = '#FEE2E2';
+        recBadge.style.color = '#991B1B';
+        recBadge.style.borderColor = '#FECACA';
       } else {
         recBadge.style.background = '#FFFBEB';
         recBadge.style.color = '#92400E';
@@ -1480,7 +1488,7 @@ ${(match.interviewQuestions || [
     if (metaEligibility) {
       const elig = match.eligibilityStatus || 'Eligible — Evidence Available';
       metaEligibility.innerText = elig;
-      metaEligibility.style.color = elig.includes('Eligible') ? '#059669' : (elig.includes('Conflict') ? '#DC2626' : '#D97706');
+      metaEligibility.style.color = (elig.includes('Eligible') || elig === 'VERIFIED_ELIGIBLE') ? '#059669' : ((elig.includes('Conflict') || elig === 'INELIGIBLE') ? '#DC2626' : '#D97706');
     }
 
     if (reasoningText) reasoningText.innerText = match.recommendationExplanation || match.reasoning || candidate.aiReasoning || 'Candidate evaluated against job description.';
@@ -1786,20 +1794,49 @@ ${(match.interviewQuestions || [
     const info = document.getElementById('smarthire-req-info');
     if (!selectedJob || !info) return;
 
+    const bQueries = window.SmartHireMatchingEngine 
+      ? window.SmartHireMatchingEngine.generateBooleanQueries(selectedJob)
+      : null;
+
     const skills = Array.isArray(selectedJob.skills) 
       ? selectedJob.skills.slice(0, 5).join(', ') 
       : (selectedJob.skills || 'Core Skills');
+
+    const primaryQuery = bQueries ? bQueries.primaryTemplate : generateBooleanQuery(selectedJob);
+    const locNotice = bQueries?.locationFilterNotice || (selectedJob.location || 'Remote');
 
     info.innerHTML = `
       <div style="font-weight:700; color:#0F172A; margin-bottom:3px;">#${selectedJob.id} · ${selectedJob.title}</div>
       <div style="color:#64748B;"><strong>Location:</strong> ${selectedJob.location || 'Remote'} | <strong>Rate:</strong> ${selectedJob.rate || 'Open'}</div>
       <div style="color:#2563EB; margin-top:2px;"><strong>Key Skills:</strong> ${skills}</div>
+      <div style="margin-top:6px; padding:6px 8px; background:#F1F5F9; border-radius:4px; border:1px solid #CBD5E1;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:3px;">
+          <strong style="color:#1E293B; font-size:10px;">BOOLEAN SOURCING QUERY:</strong>
+          <button type="button" id="smarthire-btn-copy-query" style="font-size:9.5px; padding:1px 6px; background:#FFFFFF; border:1px solid #CBD5E1; border-radius:3px; cursor:pointer; color:#2563EB; font-weight:700;">Copy</button>
+        </div>
+        <div id="smarthire-query-text" style="font-family:monospace; font-size:10px; color:#334155; word-break:break-all; max-height:45px; overflow-y:auto;">${primaryQuery}</div>
+        ${bQueries?.mandatoryResidency ? `<div style="color:#92400E; font-size:9.5px; margin-top:4px; font-weight:600;">• ${locNotice}</div>` : ''}
+      </div>
     `;
+
+    document.getElementById('smarthire-btn-copy-query')?.addEventListener('click', () => {
+      if (window.SmartHireUtils && typeof window.SmartHireUtils.safeCopyToClipboard === 'function') {
+        window.SmartHireUtils.safeCopyToClipboard(primaryQuery);
+      } else if (navigator.clipboard) {
+        navigator.clipboard.writeText(primaryQuery);
+      }
+      const btn = document.getElementById('smarthire-btn-copy-query');
+      if (btn) btn.innerText = 'Copied!';
+      setTimeout(() => { if (btn) btn.innerText = 'Copy'; }, 1500);
+    });
   }
 
   function generateBooleanQuery(job) {
-    const title = (job.title || '').replace(/\(.*?\)/g, '').replace(/\[.*?\]/g, '').trim();
-    const skills = Array.isArray(job.skills) ? job.skills.slice(0, 3) : (job.skills ? String(job.skills).split(',').slice(0, 3) : []);
+    if (window.SmartHireMatchingEngine) {
+      return window.SmartHireMatchingEngine.generateBooleanQueries(job).primaryTemplate;
+    }
+    const title = (job?.title || '').replace(/\(.*?\)/g, '').replace(/\[.*?\]/g, '').trim();
+    const skills = Array.isArray(job?.skills) ? job.skills.slice(0, 3) : (job?.skills ? String(job.skills).split(',').slice(0, 3) : []);
     if (skills.length > 0) {
       const skillClause = skills.map(s => `"${s.trim()}"`).join(' OR ');
       return `("${title}") AND (${skillClause})`;
@@ -2268,16 +2305,45 @@ ${(match.interviewQuestions || [
         const aiVerdict = c.aiMatch ? c.aiMatch.verdict : (aiScore ? (aiScore >= 85 ? 'STRONG FIT' : (aiScore >= 70 ? 'GOOD FIT' : 'MODERATE FIT')) : null);
         const aiColor = c.aiMatch ? c.aiMatch.color : (aiScore ? (aiScore >= 85 ? '#059669' : (aiScore >= 70 ? '#2563EB' : '#D97706')) : '#7C3AED');
 
+        const extStatus = c.extractionStatus || (c.resumeText && c.resumeText.length >= 800 ? 'FULL_RESUME_EXTRACTED' : (c.resumeText && c.resumeText.length >= 100 ? 'PARTIAL_RESUME_EXTRACTED' : 'PROFILE_ONLY'));
+        let extPill = '<span style="background:#DCFCE7; color:#15803D; font-size:9.5px; font-weight:700; padding:2px 6px; border-radius:3px;">FULL RESUME</span>';
+        if (extStatus === 'PARTIAL_RESUME_EXTRACTED') {
+          extPill = '<span style="background:#FEF3C7; color:#B45309; font-size:9.5px; font-weight:700; padding:2px 6px; border-radius:3px;" title="Partial profile extracted">PARTIAL PROFILE ⚠️</span>';
+        } else if (extStatus === 'PROFILE_ONLY') {
+          extPill = '<span style="background:#F1F5F9; color:#64748B; font-size:9.5px; font-weight:600; padding:2px 6px; border-radius:3px;">PROFILE ONLY</span>';
+        } else if (extStatus === 'EXTRACTION_FAILED') {
+          extPill = '<span style="background:#FEE2E2; color:#DC2626; font-size:9.5px; font-weight:700; padding:2px 6px; border-radius:3px;">EXTRACTION FAILED</span>';
+        }
+
+        const rec = c.aiMatch?.recommendation || c.recommendation;
+        const recPill = rec ? `
+          <span style="font-size:9.5px; font-weight:800; padding:2px 6px; border-radius:3px; background:${rec.toLowerCase().includes('submit') ? '#ECFDF5' : (rec.toLowerCase().includes('interview') ? '#EFF6FF' : (rec.toLowerCase().includes('reject') ? '#FEE2E2' : '#FFFBEB'))}; color:${rec.toLowerCase().includes('submit') ? '#065F46' : (rec.toLowerCase().includes('interview') ? '#1E40AF' : (rec.toLowerCase().includes('reject') ? '#991B1B' : '#92400E'))}; border:1px solid ${rec.toLowerCase().includes('submit') ? '#A7F3D0' : (rec.toLowerCase().includes('interview') ? '#BFDBFE' : (rec.toLowerCase().includes('reject') ? '#FECACA' : '#FDE68A'))};">
+            ${rec.toUpperCase()}
+          </span>
+        ` : '';
+
+        const elig = c.aiMatch?.eligibilityStatus || c.eligibilityStatus;
+        const eligPill = elig ? `
+          <span style="font-size:9.5px; font-weight:700; padding:2px 6px; border-radius:3px; background:${elig === 'INELIGIBLE' || elig.includes('Conflict') ? '#FEE2E2' : (elig === 'PENDING_VERIFICATION' ? '#FFFBEB' : '#DCFCE7')}; color:${elig === 'INELIGIBLE' || elig.includes('Conflict') ? '#991B1B' : (elig === 'PENDING_VERIFICATION' ? '#92400E' : '#15803D')}; border:1px solid ${elig === 'INELIGIBLE' || elig.includes('Conflict') ? '#FECACA' : (elig === 'PENDING_VERIFICATION' ? '#FDE68A' : '#A7F3D0')};">
+            ${elig === 'INELIGIBLE' || elig.includes('Conflict') ? 'INELIGIBLE' : (elig === 'PENDING_VERIFICATION' ? 'RESIDENCY PENDING' : 'ELIGIBLE')}
+          </span>
+        ` : '';
+
         return `
           <div style="padding:10px 12px; border-bottom:1px solid #F1F5F9; font-size:11px; background:${isChecked ? '#FAFAFA' : '#FFFFFF'};">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px;">
               <div style="display:flex; align-items:center; gap:6px;">
                 <input type="checkbox" class="smarthire-cand-check" data-idx="${i}" ${isChecked ? 'checked' : ''} style="cursor:pointer; accent-color:#2563EB;" />
-                <span style="font-weight:700; color:#0F172A; font-size:11.5px;">${i + 1}. ${c.name}</span>
+                <span style="font-weight:700; color:#0F172A; font-size:11.5px;">${c.aiMatch?.rank ? `#${c.aiMatch.rank} · ` : `${i + 1}. `}${c.name}</span>
               </div>
-              ${isVerified 
-                ? '<span style="background:#DCFCE7; color:#15803D; font-size:9.5px; font-weight:700; padding:2px 6px; border-radius:3px;">VERIFIED CONTACT</span>' 
-                : '<span style="background:#F1F5F9; color:#64748B; font-size:9.5px; font-weight:600; padding:2px 6px; border-radius:3px;">PROFILE ONLY</span>'}
+              <div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap;">
+                ${extPill}
+                ${eligPill}
+                ${recPill}
+                ${isVerified 
+                  ? '<span style="background:#DCFCE7; color:#15803D; font-size:9.5px; font-weight:700; padding:2px 6px; border-radius:3px;">VERIFIED CONTACT</span>' 
+                  : '<span style="background:#F1F5F9; color:#64748B; font-size:9.5px; font-weight:600; padding:2px 6px; border-radius:3px;">PROFILE ONLY</span>'}
+              </div>
             </div>
             <div style="color:#475569; font-size:11px; margin-top:2px; padding-left:20px;">${c.title} · ${c.location}</div>
             <div style="margin-top:4px; font-size:11px; display:flex; flex-direction:column; gap:2px; padding-left:20px;">

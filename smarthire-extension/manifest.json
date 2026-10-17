@@ -38,6 +38,7 @@
       ],
       "js": [
         "bundled_jobs.js",
+        "matching_engine.js",
         "content_common.js",
         "content_monster.js",
         "injected_dock.js"
@@ -55,6 +56,7 @@
       ],
       "js": [
         "bundled_jobs.js",
+        "matching_engine.js",
         "content_common.js",
         "content_dice.js",
         "injected_dock.js"
@@ -76,7 +78,8 @@
         "icons/icon16.png",
         "icons/icon48.png",
         "icons/icon128.png",
-        "bundled_jobs.js"
+        "bundled_jobs.js",
+        "matching_engine.js"
       ],
       "matches": [
         "https://manage.monster.com/*",

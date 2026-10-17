@@ -396,6 +396,22 @@
           summary: candidateFullText.slice(0, 5000)
         };
 
+        // Complete Resume Extraction & Verification (Section 4)
+        if (window.SmartHireMatchingEngine && typeof window.SmartHireMatchingEngine.verifyAndClassifyResume === 'function') {
+          const v = window.SmartHireMatchingEngine.verifyAndClassifyResume(candidateItem);
+          candidateItem.extractionStatus = v.status;
+          candidateItem.sourceSectionsFound = v.sourceSectionsFound;
+          candidateItem.isTruncated = v.isTruncated;
+          candidateItem.extractedLength = v.extractedLength;
+          candidateItem.missingExpectedSections = v.missingExpectedSections;
+          candidateItem.extractionWarnings = v.warnings;
+          candidateItem.isProvisional = v.isProvisional;
+        } else {
+          candidateItem.extractionStatus = candidateFullText.length > 800 ? 'FULL_RESUME_EXTRACTED' : (candidateFullText.length > 250 ? 'PARTIAL_RESUME_EXTRACTED' : 'PROFILE_ONLY');
+          candidateItem.extractedLength = candidateFullText.length;
+          candidateItem.isProvisional = candidateFullText.length < 800;
+        }
+
         candidates.push(candidateItem);
 
         if (typeof onProgress === 'function') {
