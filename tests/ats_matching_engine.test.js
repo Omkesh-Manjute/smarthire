@@ -394,12 +394,193 @@ runTest('Error handling for missing candidate data and failed extraction', () =>
 });
 
 // ---------------------------------------------------------------------
+// TEST 11: FIX 1 - RESUME-ONLY EVIDENCE (MONSTER & DICE BUTTON STRIPPING)
+// ---------------------------------------------------------------------
+runTest('Fix 1: Monster/Dice action buttons & card boilerplate excluded from evidence snippets', () => {
+  const jd = SmartHireMatchingEngine.normalizeJobDescription({
+    title: 'Project Manager / Scrum Master — Data & Analytics',
+    skills: ['Scrum Master', 'Jira', 'Stakeholder Reporting']
+  });
+
+  const noisyCand = {
+    name: 'Noisy Profile',
+    title: 'Scrum Master',
+    location: 'Madison, WI',
+    resumeText: `Select a Card Number-1, Open In New Tab, Favorite, SMS Opt-in
+Candidate 1 of 24
+Back to search results
+Contact candidate · Send message · Add to Pipeline · Export to ATS · Next candidate
+• Facilitated end-to-end Scrum ceremonies, daily standups, and Jira backlog refinement for data engineering teams.
+• Presented weekly status reports and executive updates to key business stakeholders and steering committee.
+Viewed by: recruiter@coolsofttech.com
+Actions · Print · Share · Overview Profile Resume Activity Notes`
+  };
+
+  const res = SmartHireMatchingEngine.evaluateCandidate(noisyCand, jd);
+  assert.ok(res.skillsMatchTable.length > 0);
+
+  // Evidence snippets must NOT contain any Monster button text
+  for (const row of res.skillsMatchTable) {
+    const ev = (row.resumeEvidence || '').toLowerCase();
+    assert.ok(!ev.includes('select a card'), 'Evidence snippet must not contain "Select a Card" button text');
+    assert.ok(!ev.includes('contact candidate'), 'Evidence snippet must not contain "Contact candidate"');
+    assert.ok(!ev.includes('export to ats'), 'Evidence snippet must not contain "Export to ATS"');
+    assert.ok(!ev.includes('next candidate'), 'Evidence snippet must not contain "Next candidate"');
+  }
+});
+
+// ---------------------------------------------------------------------
+// TEST 12: FIX 2 - FULL-RESUME RECONCILIATION FOR SCRUM MASTER
+// ---------------------------------------------------------------------
+runTest('Fix 2: Scrum Master in candidate credentials never evaluates as NOT_DEMONSTRATED', () => {
+  const jd = SmartHireMatchingEngine.normalizeJobDescription({
+    title: 'Project Manager / Scrum Master — Data & Analytics',
+    skills: ['Scrum Master', 'Jira', 'Agile']
+  });
+
+  const cand = {
+    name: 'Scrum Leader',
+    title: 'Agile Project Manager / Scrum Master',
+    skills: ['Scrum Master', 'Agile', 'Jira'],
+    resumeText: 'Certified Scrum Master with extensive experience leading multi-team Agile ceremonies and sprint retrospectives.'
+  };
+
+  const res = SmartHireMatchingEngine.evaluateCandidate(cand, jd);
+  const scrumRow = res.skillsMatchTable.find(r => r.requirement.toLowerCase().includes('scrum'));
+  assert.ok(scrumRow, 'Scrum requirement must exist in table');
+  assert.notStrictEqual(scrumRow.evidenceStatus, 'NOT_DEMONSTRATED', 'Scrum Master must NEVER evaluate as NOT_DEMONSTRATED when present in resume');
+  assert.strictEqual(scrumRow.evidenceStatus, 'DIRECT_MATCH');
+});
+
+// ---------------------------------------------------------------------
+// TEST 13: FIX 3 - RAVI KUMAR FULL REQUIREMENT COVERAGE
+// ---------------------------------------------------------------------
+runTest('Fix 3: Ravi Kumar profile achieves complete requirement coverage (Scrum, Experience, Reporting)', () => {
+  const jd = SmartHireMatchingEngine.normalizeJobDescription({
+    id: '159348',
+    title: 'Project Manager / Scrum Master — Data & Analytics',
+    location: 'Madison, WI',
+    skills: ['Scrum Master', 'Agile', 'Jira', 'Business Intelligence', 'Data Warehouse', 'Python (preferred)'],
+    description: 'Looking for a Senior Scrum Master with 5+ years of experience leading multi-team Scrum delivery and stakeholder reporting. Wisconsin residency required.'
+  });
+
+  const raviKumar = {
+    id: 'ravi-kumar-101',
+    name: 'Ravi Kumar',
+    title: 'Agile Project Manager / Scrum Master',
+    location: 'Madison, WI',
+    experience: '10+ Years',
+    skills: ['Scrum Master', 'Agile', 'Jira', 'BigQuery', 'Hadoop', 'Spark', 'HDFS', 'Sprint Planning', 'Stakeholder Management'],
+    resumeText: `Ravi Kumar — Agile Project Manager / Scrum Master
+Location: Madison, WI · Authorized to Work in US
+
+PROFESSIONAL SUMMARY:
+Accomplished Agile Project Manager and Certified Scrum Master with over 10+ years of enterprise IT delivery experience managing cross-functional technical teams. Proven track record leading distributed Agile teams, managing Jira backlogs, and delivering analytics and data modernization initiatives.
+
+CORE RESPONSIBILITIES & DELIVERABLES:
+• Facilitated end-to-end Scrum ceremonies including daily standups, sprint planning, backlog grooming, and sprint retrospectives for data analytics teams.
+• Managed Jira boards, burn-down metrics, and team velocity to ensure iterative on-time release cycles.
+• Prepared and presented executive status reports, milestone progress, and risk registers to business stakeholders and leadership steering committees.
+• Led big data platform modernizations using BigQuery, Hadoop, and Apache Spark for high-throughput streaming and data lake analytics.
+• Mentored developers and product owners in Agile and Scrum values.
+
+EDUCATION & CERTIFICATIONS:
+• Certified Scrum Master (CSM)
+• Bachelor of Science in Information Technology`
+  };
+
+  const res = SmartHireMatchingEngine.evaluateCandidate(raviKumar, jd);
+
+  // 1. Scrum Master must be DIRECT_MATCH
+  const scrumRow = res.skillsMatchTable.find(r => r.requirement.toLowerCase().includes('scrum'));
+  assert.ok(scrumRow);
+  assert.strictEqual(scrumRow.evidenceStatus, 'DIRECT_MATCH', 'Ravi Scrum Master must be DIRECT_MATCH');
+
+  // 2. 5+ Years Experience must be DIRECT_MATCH (Ravi has 10+ years)
+  const expRow = res.skillsMatchTable.find(r => r.requirement.toLowerCase().includes('experience'));
+  assert.ok(expRow, 'Experience requirement must exist');
+  assert.strictEqual(expRow.evidenceStatus, 'DIRECT_MATCH', '10+ years experience must satisfy 5+ years requirement as DIRECT_MATCH');
+
+  // 3. Stakeholder Reporting must be DIRECT_MATCH or STRONG_EQUIVALENT
+  const reportRow = res.skillsMatchTable.find(r => r.requirement.toLowerCase().includes('reporting') || r.requirement.toLowerCase().includes('leadership'));
+  if (reportRow) {
+    assert.ok(
+      reportRow.evidenceStatus === 'DIRECT_MATCH' || reportRow.evidenceStatus === 'STRONG_EQUIVALENT',
+      'Stakeholder reporting must be demonstrated'
+    );
+  }
+
+  // 4. Overall eligibility & score
+  assert.strictEqual(res.eligibilityStatus, 'VERIFIED_ELIGIBLE');
+  assert.strictEqual(res.isHardFailure, false);
+  assert.ok(res.score >= 80, `Ravi Kumar should score >= 80%, got ${res.score}%`);
+  assert.ok(['SUBMIT', 'INTERVIEW'].includes(res.recommendation));
+});
+
+// ---------------------------------------------------------------------
+// TEST 14: FIX 4 - RELATED DATA SKILLS (BIGQUERY, HADOOP, SPARK, HDFS)
+// ---------------------------------------------------------------------
+runTest('Fix 4: BigQuery, Hadoop, Spark, HDFS recognized as PARTIAL_MATCH for BI/DW Scrum Leadership', () => {
+  const jd = SmartHireMatchingEngine.normalizeJobDescription({
+    title: 'Project Manager / Scrum Master — Data & Analytics',
+    skills: ['Scrum Master', 'Business Intelligence', 'Data Warehouse']
+  });
+
+  const bigDataCand = {
+    name: 'Big Data Specialist',
+    title: 'Scrum Master',
+    skills: ['Scrum', 'BigQuery', 'Hadoop', 'Spark', 'HDFS'],
+    resumeText: 'Scrum Master leading big data engineering teams using BigQuery, Hadoop, Spark, and HDFS for distributed data processing.'
+  };
+
+  const res = SmartHireMatchingEngine.evaluateCandidate(bigDataCand, jd);
+  const biDwRow = res.skillsMatchTable.find(r => r.requirement.toLowerCase().includes('data warehouse') || r.requirement.toLowerCase().includes('business intelligence'));
+  assert.ok(biDwRow, 'BI/DW requirement must be present');
+  assert.strictEqual(
+    biDwRow.evidenceStatus,
+    'PARTIAL_MATCH',
+    'BigQuery/Hadoop/Spark without explicit BI/DW must be PARTIAL_MATCH (0.50), not DIRECT_MATCH'
+  );
+  assert.ok(biDwRow.gapOrQualification.includes('BigQuery/Hadoop/Spark/HDFS'));
+});
+
+// ---------------------------------------------------------------------
+// TEST 15: FIX 5 - SCORE AND RECOMMENDATION CONSISTENCY
+// ---------------------------------------------------------------------
+runTest('Fix 5: Authoritative calculation ensures identical scores between Quick Sourcing and Detailed Dossier', () => {
+  const jd = SmartHireMatchingEngine.normalizeJobDescription({
+    title: 'Project Manager / Scrum Master — Data & Analytics',
+    skills: ['Scrum Master', 'Agile', 'Jira', 'Data Warehouse']
+  });
+
+  const cand = {
+    id: 'cand-sync-test',
+    name: 'Consistency Test Candidate',
+    location: 'Madison, WI',
+    resumeText: 'Scrum Master with 7 years experience delivering agile sprints, Jira boards, and enterprise data warehouse solutions in Madison, WI.'
+  };
+
+  // Quick Sourcing entry point
+  const quickEval = SmartHireMatchingEngine.evaluateCandidate(cand, jd);
+
+  // Detailed Dossier entry point (session cache)
+  const cache = new SmartHireMatchingEngine.SessionEvaluationCache();
+  const dossierEval = cache.getOrEvaluate(cand, jd);
+
+  assert.strictEqual(quickEval.score, dossierEval.score, 'Quick Sourcing and Detailed Dossier scores MUST BE 100% IDENTICAL');
+  assert.strictEqual(quickEval.verdict, dossierEval.verdict);
+  assert.strictEqual(quickEval.fitCategory, dossierEval.fitCategory);
+  assert.strictEqual(quickEval.recommendation, dossierEval.recommendation);
+  assert.strictEqual(quickEval.eligibilityStatus, dossierEval.eligibilityStatus);
+});
+
+// ---------------------------------------------------------------------
 // SUMMARY
 // ---------------------------------------------------------------------
 console.log('\n====================================================');
 console.log(`TEST RESULTS: ${passedTests} / ${totalTests} PASSED`);
 if (passedTests === totalTests) {
-  console.log('ALL 10 ACCEPTANCE CRITERIA VERIFIED SUCCESSFULLY! ✓');
+  console.log('ALL 15 ACCEPTANCE CRITERIA & 5 MANDATORY FIXES VERIFIED SUCCESSFULLY! ✓');
 } else {
   console.error(`FAILED ${totalTests - passedTests} TEST(S)!`);
   process.exit(1);

@@ -256,7 +256,7 @@
         classification: 'Mandatory',
         importance: 'High',
         category: 'Leadership & Communication',
-        evidenceKeywords: ['stakeholder', 'steering committee', 'executive', 'leadership', 'communication']
+        evidenceKeywords: ['stakeholder', 'stakeholders', 'steering committee', 'executive reporting', 'status reporting', 'reporting to', 'leadership updates', 'presented to', 'executive leadership', 'client communication', 'management reporting', 'progress reports', 'briefings', 'status updates', 'cross-functional reporting', 'client reporting']
       });
     }
 
@@ -266,7 +266,14 @@
         classification: 'Mandatory',
         importance: 'High',
         category: 'Domain / Functional',
-        evidenceKeywords: ['data warehouse', 'analytics', 'business intelligence', 'bi', 'data platform', 'snowflake', 'databricks']
+        evidenceKeywords: ['data warehouse', 'analytics', 'business intelligence', 'bi', 'data platform', 'snowflake', 'databricks', 'bigquery', 'hadoop', 'spark', 'hdfs']
+      });
+      responsibilities.push({
+        name: 'BI & Data Warehouse Agile/Scrum Delivery Leadership',
+        classification: 'Mandatory',
+        importance: 'High',
+        category: 'Responsibilities & Delivery',
+        evidenceKeywords: ['data warehouse', 'data warehousing', 'bi', 'business intelligence', 'power bi', 'tableau', 'snowflake', 'databricks', 'etl', 'data mart', 'dimensional modeling']
       });
     }
 
@@ -484,7 +491,7 @@
       status = EXTRACTION_STATUS.FULL_RESUME_EXTRACTED;
     } else if (length >= 100 && (hasExperience || hasSkills || hasSummary)) {
       status = EXTRACTION_STATUS.PARTIAL_RESUME_EXTRACTED;
-      warnings.push('Partial resume extracted. Evaluation is PROVISIONAL based on available sections.');
+      warnings.push(`⚠️ PARTIAL RESUME EXTRACTED: Full resume document not extracted. Evaluated using partial profile snippet (${length} chars). Original resume may contain Scrum Master, experience depth, or stakeholder reporting not visible in partial card. Open candidate's Resume tab in Monster/Dice to extract complete document.`);
     } else {
       status = EXTRACTION_STATUS.PROFILE_ONLY;
       warnings.push('Only search card / headline text extracted. Full resume drawer could not be inspected.');
@@ -506,36 +513,267 @@
   }
 
   // ==========================================
-  // 5. REQUIREMENT-BY-REQUIREMENT EVIDENCE MATCHING
+  // 5. RESUME-ONLY EVIDENCE & CLEANING HELPERS
+  // ==========================================
+
+  /**
+   * Sanitizes candidate profile text, completely stripping Monster/Dice action buttons,
+   * card headers, navigation labels, and UI fragments so evidence snippets are 100% resume-only.
+   */
+  function cleanCandidateResumeText(rawText) {
+    if (!rawText) return '';
+    let text = String(rawText);
+
+    // 1. Remove accessibility & Monster/Dice card boilerplates
+    text = text
+      .replace(/Select\s+a\s+Card\s+Number-\d+,?\s*/gi, '')
+      .replace(/Open\s*In\s*New\s*Tab/gi, '')
+      .replace(/Favorite/gi, '')
+      .replace(/Veteran\s*Diversity/gi, '')
+      .replace(/SMS\s*Opt-in/gi, '')
+      .replace(/Viewed\s*(?:by:?[^\n\r]*)?/gi, '')
+      .replace(/Candidate\s+\d+\s+of\s+\d+/gi, '')
+      .replace(/Select\s+all\s+candidates/gi, '')
+      .replace(/Matched\s+to\s+job\s*[:\s]*[^\n\r]+/gi, '')
+      .replace(/Updated\s*[:\s]*[^\n\r·]+/gi, '')
+      .replace(/Top\s*Skills\s*[:\s]*[^\n\r·]+/gi, '')
+      .replace(/Dice\s+Talent\s+Search/gi, '')
+      .replace(/Quick\s+message/gi, '');
+
+    // 2. Remove Monster/Dice action buttons & navigation labels
+    text = text
+      .replace(/\b(?:Back\s+to\s+(?:search\s+results|candidates?|search))\b/gi, '')
+      .replace(/\b(?:Contact\s+candidate|Send\s+message|Send\s+email)\b/gi, '')
+      .replace(/\b(?:Add\s+to\s+(?:Pipeline|Candidate\s+Pool|Job|Folder|Project))\b/gi, '')
+      .replace(/\b(?:Export\s+to\s+ATS|Download\s+resume|View\s+profile|Save\s+candidate)\b/gi, '')
+      .replace(/\b(?:Next\s+candidate|Previous\s+candidate)\b/gi, '')
+      .replace(/\b(?:Actions|Print|Share|Report\s+profile|Skills\s+matching)\b/gi, '')
+      .replace(/\b(?:Overview\s+Profile\s+Resume\s+Activity\s+Notes)\b/gi, '');
+
+    // 3. Remove isolated noise lines
+    const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+    const cleanLines = lines.filter(line => {
+      const lower = line.toLowerCase();
+      if (lower.length < 3) return false;
+      if (/^(?:back|contact|send|add|export|view|save|actions|next|previous|print|share|download|close|cancel|submit|edit|delete|more|filter|sort|search|login|sign in|sign out)$/i.test(lower)) return false;
+      if (/^(?:overview|profile|resume|activity|notes|candidate details)$/i.test(lower)) return false;
+      if (/^select a card/i.test(lower)) return false;
+      if (/^viewed\b/i.test(lower)) return false;
+      return true;
+    });
+
+    return cleanLines.join('\n');
+  }
+
+  /**
+   * Extracts an authentic, full sentence or bullet point from clean resume text
+   * containing any of the target keywords, eliminating fragmented substrings or button labels.
+   */
+  function extractAuthenticSentenceSnippet(cleanText, matchKeywords) {
+    if (!cleanText) return '';
+    const segments = cleanText.split(/[\n\r•·▪►\t]+/)
+      .map(s => s.trim())
+      .filter(s => s.length > 15);
+
+    for (const seg of segments) {
+      const segLower = seg.toLowerCase();
+      if (/^(?:candidate|profile|updated|viewed|contact|select a card|sms opt-in|open in)/i.test(seg)) continue;
+
+      for (const kw of matchKeywords) {
+        if (segLower.includes(kw.toLowerCase())) {
+          if (seg.length > 140) {
+            const sub = seg.substring(0, 140);
+            const lastSpace = sub.lastIndexOf(' ');
+            return (lastSpace > 60 ? sub.substring(0, lastSpace) : sub) + '...';
+          }
+          return seg;
+        }
+      }
+    }
+    return '';
+  }
+
+  // ==========================================
+  // 6. REQUIREMENT-BY-REQUIREMENT EVIDENCE MATCHING
   // ==========================================
 
   /**
    * Matches candidate evidence against a specific JD requirement.
    * Returns exact evidence status, genuine resume quote snippet, gap, and earned score.
    */
-  function matchRequirementEvidence(requirement, candidateText, candidateSkills, candidateTitle) {
-    const text = candidateText.toLowerCase();
+  function matchRequirementEvidence(requirement, rawCandidateText, candidateSkills, candidateTitle, candidateExp = '', candidateObj = null) {
+    const cleanText = cleanCandidateResumeText(rawCandidateText);
+    const text = cleanText.toLowerCase();
     const reqName = requirement.name;
     const reqLower = reqName.toLowerCase();
     const keywords = requirement.evidenceKeywords || [reqLower];
 
-    // 1. Direct Match Check
+    const titleLower = (candidateTitle || '').toLowerCase();
+    const skillsLower = (Array.isArray(candidateSkills) ? candidateSkills : []).map(s => String(s).toLowerCase());
+
+    // ---------------------------------------------------------------------
+    // A. SPECIAL RULE 1: Experience Level & Complexity (5+ Years / requiredYears)
+    // ---------------------------------------------------------------------
+    if (requirement.category === 'Experience & Complexity' || requirement.requiredYears) {
+      const reqYears = requirement.requiredYears || 5;
+      
+      let candYears = 0;
+      const expStr = String(candidateExp || candidateObj?.experience || '');
+      const expMatch = expStr.match(/(\d+)\+?\s*(?:years?|yrs?)/i);
+      if (expMatch) {
+        candYears = parseInt(expMatch[1], 10);
+      } else {
+        const textExpMatch = text.match(/(\d+)\+?\s*(?:years?|yrs?)(?:\s*(?:of)?\s*experience)?/i);
+        if (textExpMatch) {
+          candYears = parseInt(textExpMatch[1], 10);
+        } else {
+          const yearMatches = text.match(/\b(19\d{2}|20\d{2})\b/g);
+          if (yearMatches && yearMatches.length >= 2) {
+            const yearsNum = yearMatches.map(y => parseInt(y, 10)).filter(y => y >= 1990 && y <= 2026);
+            if (yearsNum.length >= 2) {
+              const earliest = Math.min(...yearsNum);
+              const latest = Math.max(...yearsNum);
+              candYears = latest - earliest;
+            }
+          }
+        }
+      }
+
+      if (candYears >= reqYears) {
+        const displayYears = expStr ? expStr : `${candYears}+ Years`;
+        return {
+          evidenceStatus: EVIDENCE_STATUS.DIRECT_MATCH,
+          evidenceScore: EVIDENCE_SCORES[EVIDENCE_STATUS.DIRECT_MATCH],
+          resumeEvidence: `"Candidate demonstrates ${displayYears} of industry experience (satisfies ${reqYears}+ years requirement)"`,
+          gapOrQualification: ''
+        };
+      } else if (candYears > 0 && candYears < reqYears) {
+        return {
+          evidenceStatus: EVIDENCE_STATUS.PARTIAL_MATCH,
+          evidenceScore: EVIDENCE_SCORES[EVIDENCE_STATUS.PARTIAL_MATCH],
+          resumeEvidence: `"Demonstrates ${candYears} years experience"`,
+          gapOrQualification: `Candidate demonstrates ${candYears} years of experience; position strictly targets ${reqYears}+ years.`
+        };
+      } else if (cleanText.length > 600) {
+        return {
+          evidenceStatus: EVIDENCE_STATUS.DIRECT_MATCH,
+          evidenceScore: EVIDENCE_SCORES[EVIDENCE_STATUS.DIRECT_MATCH],
+          resumeEvidence: `"Demonstrated multi-year career progression across documented professional work history"`,
+          gapOrQualification: ''
+        };
+      } else {
+        return {
+          evidenceStatus: EVIDENCE_STATUS.NEEDS_VERIFICATION,
+          evidenceScore: EVIDENCE_SCORES[EVIDENCE_STATUS.NEEDS_VERIFICATION],
+          resumeEvidence: '',
+          gapOrQualification: `Experience depth unverified in partial profile. Inspect full resume work history to confirm ${reqYears}+ years.`
+        };
+      }
+    }
+
+    // ---------------------------------------------------------------------
+    // B. SPECIAL RULE 2: Scrum Master & Agile Project Delivery Reconciliation
+    // (If candidate resume has "Scrum Master", never label NOT_DEMONSTRATED!)
+    // ---------------------------------------------------------------------
+    const isScrumReq = reqLower.includes('scrum') || reqLower.includes('sprint planning') || reqLower.includes('ceremon');
+    if (isScrumReq) {
+      const hasScrumInTitle = titleLower.includes('scrum') || titleLower.includes('agile');
+      const hasScrumInSkills = skillsLower.some(s => s.includes('scrum') || s.includes('agile') || s.includes('csm') || s.includes('psm'));
+      const hasScrumInText = text.includes('scrum') || text.includes('sprint planning') || text.includes('standup') || text.includes('csm') || text.includes('scrum master');
+
+      if (hasScrumInText || hasScrumInTitle || hasScrumInSkills) {
+        const snippet = extractAuthenticSentenceSnippet(cleanText, ['scrum master', 'scrum', 'sprint', 'ceremonies', 'standup', 'backlog']);
+        return {
+          evidenceStatus: EVIDENCE_STATUS.DIRECT_MATCH,
+          evidenceScore: EVIDENCE_SCORES[EVIDENCE_STATUS.DIRECT_MATCH],
+          resumeEvidence: snippet ? `"${snippet}"` : (hasScrumInTitle ? `"Held title: ${candidateTitle}"` : `Verified Scrum Master qualification in candidate credentials`),
+          gapOrQualification: ''
+        };
+      }
+    }
+
+    // ---------------------------------------------------------------------
+    // C. SPECIAL RULE 3: Stakeholder Communication & Steering Committee Reporting
+    // ---------------------------------------------------------------------
+    const isStakeholderReq = reqLower.includes('stakeholder') || (reqLower.includes('communication') && reqLower.includes('report'));
+    if (isStakeholderReq) {
+      const stakeholderKeywords = [
+        'stakeholder', 'stakeholders', 'steering committee', 'executive reporting', 'status reporting',
+        'reported to', 'reporting to', 'leadership updates', 'presented to', 'executive leadership',
+        'client communication', 'management reporting', 'progress reports', 'briefings', 'status updates',
+        'cross-functional reporting', 'client reporting', 'executive presentations', 'weekly status'
+      ];
+      
+      const snippet = extractAuthenticSentenceSnippet(cleanText, stakeholderKeywords);
+      if (snippet) {
+        return {
+          evidenceStatus: EVIDENCE_STATUS.DIRECT_MATCH,
+          evidenceScore: EVIDENCE_SCORES[EVIDENCE_STATUS.DIRECT_MATCH],
+          resumeEvidence: `"${snippet}"`,
+          gapOrQualification: ''
+        };
+      }
+      
+      const hasGeneralComm = text.includes('communication') || text.includes('presented') || text.includes('collaborated') || text.includes('partnered');
+      if (hasGeneralComm) {
+        const commSnippet = extractAuthenticSentenceSnippet(cleanText, ['communication', 'collaborated', 'presented', 'partnered']);
+        return {
+          evidenceStatus: EVIDENCE_STATUS.STRONG_EQUIVALENT,
+          evidenceScore: EVIDENCE_SCORES[EVIDENCE_STATUS.STRONG_EQUIVALENT],
+          resumeEvidence: commSnippet ? `"${commSnippet}"` : `Demonstrates cross-functional communication and leadership collaboration`,
+          gapOrQualification: `Demonstrates stakeholder collaboration; verify formal executive steering committee reporting in interview.`
+        };
+      }
+    }
+
+    // ---------------------------------------------------------------------
+    // D. SPECIAL RULE 4: Related Data Skills (BigQuery, Hadoop, Spark, HDFS)
+    // (Recognize as relevant evidence; DO NOT automatically equate to direct BI/DW Scrum leadership!)
+    // ---------------------------------------------------------------------
+    const isBiDwScrumLeadershipReq = reqLower.includes('data warehouse') || reqLower.includes('bi ') || reqLower.includes('business intelligence');
+    if (isBiDwScrumLeadershipReq) {
+      const directBiDwKeywords = ['data warehouse', 'data warehousing', 'business intelligence', 'bi reporting', 'power bi', 'tableau', 'snowflake', 'databricks', 'etl', 'data mart', 'dimensional modeling'];
+      const relatedDataKeywords = ['bigquery', 'hadoop', 'spark', 'hdfs', 'hive', 'kafka', 'mapreduce', 'data pipeline', 'analytics workloads'];
+
+      const hasDirectBiDw = directBiDwKeywords.some(kw => text.includes(kw) || skillsLower.some(s => s.includes(kw)));
+      const hasRelatedData = relatedDataKeywords.some(kw => text.includes(kw) || skillsLower.some(s => s.includes(kw)));
+
+      if (hasDirectBiDw) {
+        const snippet = extractAuthenticSentenceSnippet(cleanText, directBiDwKeywords);
+        return {
+          evidenceStatus: EVIDENCE_STATUS.DIRECT_MATCH,
+          evidenceScore: EVIDENCE_SCORES[EVIDENCE_STATUS.DIRECT_MATCH],
+          resumeEvidence: snippet ? `"${snippet}"` : `Demonstrated BI and Data Warehousing platform delivery in candidate credentials`,
+          gapOrQualification: ''
+        };
+      }
+
+      if (hasRelatedData) {
+        const snippet = extractAuthenticSentenceSnippet(cleanText, relatedDataKeywords);
+        return {
+          evidenceStatus: EVIDENCE_STATUS.PARTIAL_MATCH,
+          evidenceScore: EVIDENCE_SCORES[EVIDENCE_STATUS.PARTIAL_MATCH],
+          resumeEvidence: snippet ? `"${snippet}"` : `Demonstrated experience with BigQuery, Hadoop, Spark, and HDFS analytics workloads`,
+          gapOrQualification: `Candidate demonstrates strong technical familiarity with BigQuery/Hadoop/Spark/HDFS analytics workloads; however, direct Scrum Master leadership of enterprise BI/Data Warehousing requires verification in interview.`
+        };
+      }
+    }
+
+    // ---------------------------------------------------------------------
+    // E. STANDARD DIRECT MATCH CHECK (with authentic sentence extraction)
+    // ---------------------------------------------------------------------
     let hasDirectMatch = false;
-    let snippet = '';
+    let directSnippet = '';
 
     for (const kw of keywords) {
       if (text.includes(kw)) {
         hasDirectMatch = true;
-        // Extract authentic quote around match (up to 90 chars)
-        const idx = text.indexOf(kw);
-        const start = Math.max(0, idx - 20);
-        const end = Math.min(candidateText.length, idx + kw.length + 50);
-        snippet = candidateText.substring(start, end).replace(/\s+/g, ' ').trim();
+        directSnippet = extractAuthenticSentenceSnippet(cleanText, [kw]);
         break;
       }
-      if (candidateSkills.some(cs => cs.toLowerCase().includes(kw) || kw.includes(cs.toLowerCase()))) {
+      if (skillsLower.some(cs => cs.includes(kw) || kw.includes(cs))) {
         hasDirectMatch = true;
-        snippet = `Listed in verified skills: ${kw}`;
+        directSnippet = `Listed in verified skills: ${kw}`;
         break;
       }
     }
@@ -544,16 +782,18 @@
       return {
         evidenceStatus: EVIDENCE_STATUS.DIRECT_MATCH,
         evidenceScore: EVIDENCE_SCORES[EVIDENCE_STATUS.DIRECT_MATCH],
-        resumeEvidence: snippet ? `"${snippet}"` : `Explicitly demonstrated in resume`,
+        resumeEvidence: directSnippet ? `"${directSnippet}"` : `Explicitly demonstrated in resume`,
         gapOrQualification: ''
       };
     }
 
-    // 2. Strong Equivalent Check
+    // ---------------------------------------------------------------------
+    // F. STANDARD STRONG EQUIVALENT CHECK
+    // ---------------------------------------------------------------------
     const equivalentsMap = {
       'scrum master': ['agile coach', 'agile delivery lead', 'scrum lead', 'agile project manager', 'iterative delivery'],
       'project manager': ['program manager', 'delivery manager', 'technical lead', 'engagement manager'],
-      'jira': ['azure devops', 'confluence', 'rally', 'versionone', 'sprint board'],
+      'jira': ['azure devops', 'confluence', 'rally', 'versionone', 'sprint board', 'trello'],
       'snowflake': ['redshift', 'bigquery', 'databricks', 'synapse', 'data warehouse migration'],
       'business intelligence': ['power bi', 'tableau', 'looker', 'microstrategy', 'bi reporting'],
       'data warehouse': ['etl', 'data mart', 'dimensional modeling', 'data platform'],
@@ -568,10 +808,7 @@
         for (const eq of eqs) {
           if (text.includes(eq)) {
             hasStrongEquivalent = true;
-            const idx = text.indexOf(eq);
-            const start = Math.max(0, idx - 15);
-            const end = Math.min(candidateText.length, idx + eq.length + 45);
-            eqSnippet = candidateText.substring(start, end).replace(/\s+/g, ' ').trim();
+            eqSnippet = extractAuthenticSentenceSnippet(cleanText, [eq]);
             break;
           }
         }
@@ -588,21 +825,26 @@
       };
     }
 
-    // 3. Partial Match Check
-    const titleTokens = candidateTitle.toLowerCase().split(/\s+/).filter(t => t.length > 3);
+    // ---------------------------------------------------------------------
+    // G. PARTIAL MATCH CHECK
+    // ---------------------------------------------------------------------
+    const titleTokens = titleLower.split(/\s+/).filter(t => t.length > 3);
     const reqTokens = reqLower.split(/\s+/).filter(t => t.length > 3);
     const hasOverlap = reqTokens.some(rt => text.includes(rt) || titleTokens.some(tt => tt.includes(rt)));
 
     if (hasOverlap) {
+      const partSnippet = extractAuthenticSentenceSnippet(cleanText, reqTokens);
       return {
         evidenceStatus: EVIDENCE_STATUS.PARTIAL_MATCH,
         evidenceScore: EVIDENCE_SCORES[EVIDENCE_STATUS.PARTIAL_MATCH],
-        resumeEvidence: `Related terminology or domain context present in candidate profile`,
+        resumeEvidence: partSnippet ? `"${partSnippet}"` : `Related terminology or domain context present in candidate profile`,
         gapOrQualification: `Partial match. Hands-on depth with ${reqName} requires verification.`
       };
     }
 
-    // 4. Not Demonstrated
+    // ---------------------------------------------------------------------
+    // H. NOT DEMONSTRATED
+    // ---------------------------------------------------------------------
     return {
       evidenceStatus: EVIDENCE_STATUS.NOT_DEMONSTRATED,
       evidenceScore: EVIDENCE_SCORES[EVIDENCE_STATUS.NOT_DEMONSTRATED],
@@ -727,7 +969,7 @@
         const impWeight = req.importance === 'High' ? 1.5 : (req.importance === 'Low' ? 0.7 : 1.0);
         totalImportance += impWeight;
 
-        const match = matchRequirementEvidence(req, candidateText, candidateSkills, candidateTitle);
+        const match = matchRequirementEvidence(req, candidateText, candidateSkills, candidateTitle, candidate?.experience || '', candidate);
         earnedEvidence += (impWeight * match.evidenceScore);
 
         const weightedContrib = Math.round((categoryWeight * (impWeight * match.evidenceScore / reqs.length)) * 100);

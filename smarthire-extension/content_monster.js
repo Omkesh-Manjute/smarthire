@@ -62,6 +62,111 @@
       .trim();
   };
 
+  // Resume-only Text Sanitizer: Exclude Monster action buttons, navigation labels, and UI fragments
+  window.cleanMonsterResumeText = function(rawText) {
+    if (!rawText) return '';
+    let text = String(rawText);
+
+    // 1. Remove accessibility & search card boilerplates
+    text = text
+      .replace(/Select\s+a\s+Card\s+Number-\d+,?\s*/gi, '')
+      .replace(/Open\s*In\s*New\s*Tab/gi, '')
+      .replace(/Favorite/gi, '')
+      .replace(/Veteran\s*Diversity/gi, '')
+      .replace(/SMS\s*Opt-in/gi, '')
+      .replace(/Viewed\s*(?:by:?[^\n\r]*)?/gi, '')
+      .replace(/Candidate\s+\d+\s+of\s+\d+/gi, '')
+      .replace(/Select\s+all\s+candidates/gi, '')
+      .replace(/Matched\s+to\s+job\s*[:\s]*[^\n\r]+/gi, '')
+      .replace(/Updated\s*[:\s]*[^\n\r·]+/gi, '')
+      .replace(/Top\s*Skills\s*[:\s]*[^\n\r·]+/gi, '');
+
+    // 2. Remove Monster drawer actions & navigation buttons
+    text = text
+      .replace(/\b(?:Back\s+to\s+(?:search\s+results|candidates?|search))\b/gi, '')
+      .replace(/\b(?:Contact\s+candidate|Send\s+message|Send\s+email)\b/gi, '')
+      .replace(/\b(?:Add\s+to\s+(?:Pipeline|Candidate\s+Pool|Job|Folder))\b/gi, '')
+      .replace(/\b(?:Export\s+to\s+ATS|Download\s+resume|View\s+profile|Save\s+candidate)\b/gi, '')
+      .replace(/\b(?:Next\s+candidate|Previous\s+candidate)\b/gi, '')
+      .replace(/\b(?:Actions|Print|Share|Report\s+profile)\b/gi, '')
+      .replace(/\b(?:Overview\s+Profile\s+Resume\s+Activity\s+Notes)\b/gi, '');
+
+    // 3. Remove isolated noise lines
+    const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+    const cleanLines = lines.filter(line => {
+      const lower = line.toLowerCase();
+      if (lower.length < 3) return false;
+      if (/^(?:back|contact|send|add|export|view|save|actions|next|previous|print|share|download|close|cancel|submit|edit|delete|more|filter|sort|search|login|sign in|sign out)$/i.test(lower)) return false;
+      if (/^(?:overview|profile|resume|activity|notes|candidate details)$/i.test(lower)) return false;
+      if (/^select a card/i.test(lower)) return false;
+      if (/^viewed\b/i.test(lower)) return false;
+      return true;
+    });
+
+    return cleanLines.join('\n');
+  };
+
+  // Deep Resume Extractor from Active Drawer or Card
+  window.extractCleanMonsterResumeText = function(targetCard = null) {
+    let fullText = '';
+
+    const drawerPanes = Array.from(document.querySelectorAll(
+      '[data-testid*="candidate-detail"], [data-testid*="profile-drawer"], aside, [role="dialog"], [class*="drawer"], [class*="Drawer"]'
+    )).filter(p => !p.closest('#smarthire-copilot-drawer') && !p.closest('#smarthire-copilot-trigger'));
+
+    if (drawerPanes.length > 0) {
+      const drawer = drawerPanes[0];
+
+      // 1. Check dedicated resume viewer element
+      const resumeViewers = drawer.querySelectorAll(
+        '[data-testid*="resume-view"], [data-testid*="resume-content"], [class*="resume-view"], [class*="resumeView"], [class*="document-viewer"], [class*="resume-body"], [class*="resumeText"], pre, [class*="text-resume"]'
+      );
+      for (const rv of resumeViewers) {
+        const txt = (rv.innerText || rv.textContent || '').trim();
+        if (txt.length > fullText.length) fullText = txt;
+      }
+
+      // 2. Check iframes (PDF / HTML document viewers)
+      const iframes = drawer.querySelectorAll('iframe');
+      for (const ifr of iframes) {
+        try {
+          const doc = ifr.contentDocument || ifr.contentWindow?.document;
+          if (doc && doc.body) {
+            const ifrText = (doc.body.innerText || doc.body.textContent || '').trim();
+            if (ifrText.length > fullText.length) fullText = ifrText;
+          }
+        } catch (e) {}
+      }
+
+      // If dedicated resume viewer text found, sanitize and return
+      if (fullText.length > 300) {
+        return window.cleanMonsterResumeText(fullText);
+      }
+
+      // 3. Check Work history & experience sections
+      const profileSections = drawer.querySelectorAll(
+        '[data-testid*="work-history"], [class*="work-history"], [data-testid*="experience"], [class*="experience"], [class*="profile-content"], [class*="candidate-experience"]'
+      );
+      let profileSectionText = '';
+      for (const ps of profileSections) {
+        profileSectionText += '\n' + (ps.innerText || ps.textContent || '');
+      }
+
+      if (profileSectionText.length > 200) {
+        return window.cleanMonsterResumeText(profileSectionText);
+      }
+
+      const rawDrawer = (drawer.innerText || drawer.textContent || '').trim();
+      if (rawDrawer.length > fullText.length) fullText = rawDrawer;
+    }
+
+    if ((!fullText || fullText.length < 150) && targetCard) {
+      fullText = (targetCard.innerText || '').trim();
+    }
+
+    return window.cleanMonsterResumeText(fullText);
+  };
+
   // Find all candidate cards on Monster+ (Browserflow selector: smui-card / result rows)
   window.getMonsterCards = function() {
     const isExcluded = (el) => {
@@ -361,23 +466,11 @@
 
         seenNames.add(nameKey);
 
-        // Extract full resume/drawer profile text if open
-        let drawerResumeText = '';
-        const drawerPanes = (utils.queryDeepAll 
-          ? utils.queryDeepAll('[class*="resume"], [class*="detail"], [class*="profile"], [class*="drawer"], [class*="Drawer"], aside, [role="dialog"]')
-          : Array.from(document.querySelectorAll('[class*="resume"], [class*="detail"], [class*="profile"], [class*="drawer"], [class*="Drawer"], aside, [role="dialog"]'))
-        ).filter(p => !p.closest('#smarthire-copilot-drawer'));
-
-        for (const p of drawerPanes) {
-          const txt = utils.getTextDeep ? utils.getTextDeep(p) : (p.innerText || p.textContent || '');
-          if (txt.length > drawerResumeText.length && txt.length > 80) {
-            drawerResumeText = txt.trim();
-          }
+        // Extract authentic clean resume text strictly from resume/drawer (excluding buttons, navigation, noise)
+        let candidateFullText = window.extractCleanMonsterResumeText(card);
+        if (!candidateFullText || candidateFullText.length < 50) {
+          candidateFullText = window.cleanMonsterResumeText(cardText);
         }
-
-        const candidateFullText = (drawerResumeText && drawerResumeText.length > 120)
-          ? drawerResumeText
-          : cardText;
 
         const candidateItem = {
           id: `mon-${i}-${Date.now().toString().slice(-4)}`,

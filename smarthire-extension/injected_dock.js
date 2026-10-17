@@ -1223,6 +1223,19 @@ Website: http://www.coolsofttech.com`;
             </div>
           </div>
 
+          <!-- Extraction Status & Re-Extract Action Bar -->
+          <div id="dossier-extraction-status-bar" style="display:flex; justify-content:space-between; align-items:center; background:#F8FAFC; border:1px solid #CBD5E1; border-radius:6px; padding:7px 12px; font-size:11px;">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+              <span id="dossier-extraction-badge" style="font-weight:700; color:#1E40AF;">FULL RESUME EXTRACTED</span>
+              <span id="dossier-char-count" style="color:#64748B; font-size:10.5px;">(0 chars analyzed)</span>
+            </div>
+            <button type="button" id="dossier-btn-reextract" style="background:#2563EB; color:#FFFFFF; border:none; padding:4px 10px; font-size:10.5px; font-weight:700; border-radius:4px; cursor:pointer; display:flex; align-items:center; gap:4px; box-shadow:0 1px 3px rgba(37,99,235,0.2);">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+              <span id="dossier-reextract-text">Re-Extract from Active Tab</span>
+            </button>
+          </div>
+
           <!-- Provisional Profile Warning Banner -->
           <div id="dossier-provisional-banner" style="display:none; padding:8px 12px; margin-bottom:10px; border-radius:6px; background:#FFFBEB; border:1px solid #FDE68A; font-size:11px; color:#92400E; font-weight:600;"></div>
 
@@ -1385,6 +1398,73 @@ ${(match.interviewQuestions || [
       });
     });
 
+    // Re-Extract Resume from Active Tab / Drawer Listener
+    document.getElementById('dossier-btn-reextract')?.addEventListener('click', () => {
+      const cand = activeDossierCandidate;
+      if (!cand) return;
+      const reextractBtn = document.getElementById('dossier-btn-reextract');
+      const reextractText = document.getElementById('dossier-reextract-text');
+      if (reextractBtn) reextractBtn.disabled = true;
+      if (reextractText) reextractText.innerText = 'Extracting...';
+
+      let liveResumeText = '';
+      if (typeof window.extractCleanMonsterResumeText === 'function') {
+        liveResumeText = window.extractCleanMonsterResumeText();
+      } else if (typeof window.extractCleanDiceResumeText === 'function') {
+        liveResumeText = window.extractCleanDiceResumeText();
+      }
+
+      if (!liveResumeText || liveResumeText.length < 150) {
+        // Broad scan across open document viewers and iframes
+        const viewers = document.querySelectorAll('[data-testid*="resume"], [class*="resume"], [class*="document-viewer"], iframe, pre');
+        for (const v of viewers) {
+          try {
+            const t = v.tagName === 'IFRAME' ? (v.contentDocument?.body?.innerText || '') : (v.innerText || '');
+            if (t.length > liveResumeText.length) liveResumeText = t;
+          } catch (e) {}
+        }
+        if (window.cleanMonsterResumeText && liveResumeText) {
+          liveResumeText = window.cleanMonsterResumeText(liveResumeText);
+        }
+      }
+
+      if (liveResumeText && liveResumeText.length >= 150) {
+        cand.resumeText = liveResumeText;
+        cand.summary = liveResumeText.slice(0, 5000);
+        if (window.SmartHireMatchingEngine) {
+          const v = window.SmartHireMatchingEngine.verifyAndClassifyResume(cand);
+          cand.extractionStatus = v.status;
+          cand.extractionVerification = v;
+          cand.isProvisional = v.isProvisional;
+          const targetJob = selectedJob;
+          if (targetJob) {
+            const norm = window.SmartHireMatchingEngine.normalizeJobDescription(targetJob);
+            if (window.SmartHireMatchingEngine.sessionCache) {
+              window.SmartHireMatchingEngine.sessionCache.cache.delete(`${cand.id}_${norm.title}`);
+            }
+            const freshMatch = window.SmartHireMatchingEngine.sessionCache.getOrEvaluate(cand, norm);
+            cand.aiMatch = freshMatch;
+            cand.matchScore = freshMatch.score;
+            cand.verdict = freshMatch.verdict;
+            cand.fitCategory = freshMatch.fitCategory;
+            cand.recommendation = freshMatch.recommendation;
+            cand.eligibilityStatus = freshMatch.eligibilityStatus;
+            openAiDossier(cand, targetJob);
+            renderResults(scrapedCandidates);
+          }
+        }
+        if (reextractText) reextractText.innerText = `✓ Extracted (${liveResumeText.length} chars)`;
+        setTimeout(() => {
+          if (reextractText) reextractText.innerText = 'Re-Extract from Active Tab';
+          if (reextractBtn) reextractBtn.disabled = false;
+        }, 2000);
+      } else {
+        alert('Could not detect an open resume viewer on the current page. Please click on candidate\'s Resume tab in Monster/Dice first, then click Re-Extract.');
+        if (reextractText) reextractText.innerText = 'Re-Extract from Active Tab';
+        if (reextractBtn) reextractBtn.disabled = false;
+      }
+    });
+
     overlay.addEventListener('click', (e) => {
       if (e.target === overlay) closeAiDossier();
     });
@@ -1399,6 +1479,31 @@ ${(match.interviewQuestions || [
     if (!overlay) return;
 
     const targetJob = job || selectedJob;
+
+    // Auto-reconciliation with active drawer: If candidate has short/provisional text and active tab has full resume
+    let liveResumeText = '';
+    if (typeof window.extractCleanMonsterResumeText === 'function') {
+      liveResumeText = window.extractCleanMonsterResumeText();
+    } else if (typeof window.extractCleanDiceResumeText === 'function') {
+      liveResumeText = window.extractCleanDiceResumeText();
+    }
+    const currentLen = (candidate.resumeText || '').length;
+    if (liveResumeText && (liveResumeText.length > currentLen + 150 || (currentLen < 800 && liveResumeText.length >= 250))) {
+      candidate.resumeText = liveResumeText;
+      candidate.summary = liveResumeText.slice(0, 5000);
+      if (window.SmartHireMatchingEngine && targetJob) {
+        const v = window.SmartHireMatchingEngine.verifyAndClassifyResume(candidate);
+        candidate.extractionStatus = v.status;
+        candidate.extractionVerification = v;
+        candidate.isProvisional = v.isProvisional;
+        const norm = window.SmartHireMatchingEngine.normalizeJobDescription(targetJob);
+        if (window.SmartHireMatchingEngine.sessionCache) {
+          window.SmartHireMatchingEngine.sessionCache.cache.delete(`${candidate.id}_${norm.title}`);
+        }
+        candidate.aiMatch = window.SmartHireMatchingEngine.sessionCache.getOrEvaluate(candidate, norm);
+      }
+    }
+
     let match = candidate.aiMatch;
 
     // Single Authoritative Engine Check: If candidate does not have an evaluation, evaluate once and cache
@@ -1433,10 +1538,23 @@ ${(match.interviewQuestions || [
     const gapsBox = document.getElementById('dossier-gaps-box');
     const questionsBox = document.getElementById('dossier-questions-box');
     const provBanner = document.getElementById('dossier-provisional-banner');
+    const extBadge = document.getElementById('dossier-extraction-badge');
+    const charCountEl = document.getElementById('dossier-char-count');
 
     if (nameEl) nameEl.innerText = candidate.name || 'Candidate';
     if (roleEl) roleEl.innerText = `${candidate.title || 'Specialist'} · ${candidate.location || 'United States'} · ${candidate.visaStatus || 'US Work Authorized'}`;
     if (jobEl) jobEl.innerText = `Target: ${cleanJobTitle(targetJob?.title || 'Open Position')}`;
+
+    // Extraction badge and character count
+    const resumeLen = (candidate.resumeText || '').length;
+    if (extBadge) {
+      const isProv = match.extractionVerification?.isProvisional || match.extractionStatus !== 'FULL_RESUME_EXTRACTED';
+      extBadge.innerText = (match.extractionStatus || (isProv ? 'PARTIAL_RESUME_EXTRACTED' : 'FULL_RESUME_EXTRACTED')).replace(/_/g, ' ');
+      extBadge.style.color = isProv ? '#B45309' : '#15803D';
+    }
+    if (charCountEl) {
+      charCountEl.innerText = `(${resumeLen.toLocaleString()} chars analyzed)`;
+    }
 
     // Provisional warning display
     if (provBanner) {

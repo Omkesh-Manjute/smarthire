@@ -13318,8 +13318,9 @@ async function executeAiResumeMatch(candidate, job) {
   const jobLocation = job?.location || 'United States';
 
   const normalizedJd = SmartHireMatchingEngine.normalizeJobDescription(job);
-  const eligibility = SmartHireMatchingEngine.evaluateEligibility(candidate, normalizedJd);
-  const verification = SmartHireMatchingEngine.verifyAndClassifyResume(candidate);
+  const authoritativeEval = SmartHireMatchingEngine.evaluateCandidate(candidate, normalizedJd);
+  const eligibility = authoritativeEval.eligibility || SmartHireMatchingEngine.evaluateEligibility(candidate, normalizedJd);
+  const verification = authoritativeEval.extractionVerification || SmartHireMatchingEngine.verifyAndClassifyResume(candidate);
 
   // 1. Try Groq AI with Expert ATS System Prompt
   const groqApiKey = process.env.GROQ_API_KEY;
@@ -13377,13 +13378,14 @@ Follow the System Prompt instructions and return strict valid JSON only.`;
           const content = data.choices?.[0]?.message?.content;
           if (content) {
             const parsed = JSON.parse(content.trim());
-            const score = Math.max(10, Math.min(100, Math.round(Number(parsed.score) || 75)));
-            const fitCategory = parsed.fitCategory || (score >= 85 ? 'Strong Fit' : (score >= 70 ? 'Good Fit' : (score >= 50 ? 'Partial Fit' : 'Weak Fit')));
-            const verdict = parsed.verdict || fitCategory.toUpperCase();
-            const color = score >= 85 ? '#059669' : (score >= 70 ? '#2563EB' : (score >= 50 ? '#D97706' : '#DC2626'));
+            // Mandatory Rule 5: Score, Verdict, Color, and Skills Matrix must match the Authoritative Engine 100%
+            const score = authoritativeEval.score;
+            const fitCategory = authoritativeEval.fitCategory;
+            const verdict = authoritativeEval.verdict;
+            const color = authoritativeEval.color;
             
-            let recommendation = parsed.recommendation || (score >= 80 ? 'Submit' : (score >= 65 ? 'Interview' : (score >= 50 ? 'Hold for Verification' : 'Reject')));
-            let reasoning = parsed.recommendationExplanation || parsed.reasoning || `${candName} demonstrates ${score}% qualification alignment with ${jobTitle}.`;
+            let recommendation = authoritativeEval.recommendation;
+            let reasoning = parsed.recommendationExplanation || parsed.reasoning || authoritativeEval.recommendationExplanation;
 
             // Hard Eligibility Gate: If candidate has hard failure, override recommendation to Reject!
             if (eligibility.isHardFailure) {
@@ -13408,16 +13410,16 @@ Follow the System Prompt instructions and return strict valid JSON only.`;
               extractionVerification: verification,
               recommendation,
               recommendationExplanation: reasoning,
-              eligibilityStatus: eligibility.isHardFailure ? 'Ineligible — Explicit Conflict' : (parsed.eligibilityStatus || eligibility.eligibilityStatus),
+              eligibilityStatus: eligibility.isHardFailure ? 'Ineligible — Explicit Conflict' : (authoritativeEval.eligibilityStatus || parsed.eligibilityStatus || eligibility.eligibilityStatus),
               eligibilityNotes: eligibility.eligibilityNotes,
               isHardFailure: eligibility.isHardFailure,
-              strengths: Array.isArray(parsed.strengths) ? parsed.strengths : [],
-              gaps: Array.isArray(parsed.gaps) ? parsed.gaps : [],
-              skillsMatchTable: Array.isArray(parsed.skillsMatchTable) ? parsed.skillsMatchTable : [],
-              requiredSkills: parsed.requiredSkills || { matched: [], partiallyMatched: [], notDemonstrated: [], unverified: [] },
+              strengths: Array.isArray(parsed.strengths) && parsed.strengths.length > 0 ? parsed.strengths : authoritativeEval.strengths,
+              gaps: Array.isArray(parsed.gaps) && parsed.gaps.length > 0 ? parsed.gaps : authoritativeEval.gaps,
+              skillsMatchTable: authoritativeEval.skillsMatchTable,
+              requiredSkills: authoritativeEval.requiredSkills,
               preferredSkills: parsed.preferredSkills || { matched: [], gaps: [] },
               experienceAndCertifications: parsed.experienceAndCertifications || { summary: `${candExp} of relevant experience.`, relevantYears: candExp, certificationsStatus: 'Not listed' },
-              interviewQuestions: Array.isArray(parsed.interviewQuestions) ? parsed.interviewQuestions : [],
+              interviewQuestions: Array.isArray(parsed.interviewQuestions) && parsed.interviewQuestions.length > 0 ? parsed.interviewQuestions : (authoritativeEval.interviewQuestions || []),
               reasoning: reasoning,
               source: `ai_groq_${modelName.replace(/[^a-zA-Z0-9]/g, '_')}`
             };
@@ -13433,7 +13435,7 @@ Follow the System Prompt instructions and return strict valid JSON only.`;
   }
 
   // 2. Authoritative Fallback Engine
-  return computeDeterministicFit(candidate, job);
+  return authoritativeEval;
 }
 
 // Single Candidate AI Match

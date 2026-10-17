@@ -3,6 +3,30 @@
   window.smartHirePortal = 'Dice';
   console.log('[SmartHire Copilot] Dice scraper initialized on:', window.location.href);
 
+  // Resume-only text sanitizer for Dice: strips portal navigation, buttons, and card noise
+  window.cleanDiceResumeText = function(rawText) {
+    if (!rawText) return '';
+    let text = String(rawText);
+
+    text = text
+      .replace(/Dice\s+Talent\s+Search/gi, '')
+      .replace(/Quick\s+message/gi, '')
+      .replace(/\b(?:View\s+Profile|Contact\s+Candidate|Save\s+Candidate|Send\s+Email|Send\s+Message)\b/gi, '')
+      .replace(/\b(?:Add\s+to\s+Project|Download\s+Resume|Print\s+Resume|Skills\s+Matching)\b/gi, '')
+      .replace(/\b(?:Back\s+to\s+search\s+results|Next\s+candidate|Previous\s+candidate)\b/gi, '')
+      .replace(/(?:Updated|Active|Last active)\s+[^·\n\r|]+/gi, '');
+
+    const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+    const cleanLines = lines.filter(line => {
+      const lower = line.toLowerCase();
+      if (lower.length < 3) return false;
+      if (/^(?:back|contact|send|add|export|view|save|actions|next|previous|print|share|download|close|cancel|submit|edit|delete|more|filter|sort|search|login|sign in)$/i.test(lower)) return false;
+      return true;
+    });
+
+    return cleanLines.join('\n');
+  };
+
   // Main scraper function for Dice candidate search results
   window.smartHireScrapeCandidates = function() {
     const candidates = [];
@@ -118,13 +142,16 @@
         // Recency
         let updated = 'Active on Dice';
         const updatedMatch = cardText.match(/(?:Updated|Active|Last active)\s+[^·\n\r|]+/i);
+
         // Check for open candidate drawer or detail pane in Dice
         let diceDetailText = '';
         const diceDrawer = document.querySelector('[data-cy*="candidate-detail"], [class*="candidate-detail"], [class*="profile-drawer"], aside, [role="dialog"]');
         if (diceDrawer && !diceDrawer.closest('#smarthire-copilot-drawer')) {
           diceDetailText = (diceDrawer.innerText || diceDrawer.textContent || '').trim();
         }
-        const candidateFullText = (diceDetailText && diceDetailText.length > 120) ? diceDetailText : cardText;
+
+        const rawCandidateText = (diceDetailText && diceDetailText.length > 120) ? diceDetailText : cardText;
+        const candidateFullText = window.cleanDiceResumeText ? window.cleanDiceResumeText(rawCandidateText) : rawCandidateText;
 
         const candidateObj = {
           id: `dice-${index}-${Date.now().toString().slice(-4)}`,
