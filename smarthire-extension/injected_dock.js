@@ -135,7 +135,7 @@ Website: http://www.coolsofttech.com`;
     // 1. Discreet 38px Shield Logo Trigger (No long text strip!)
     const trigger = document.createElement('div');
     trigger.id = 'smarthire-copilot-trigger';
-    trigger.title = 'SmartHire ATS Sourcing Copilot v3.7 (Click to Open)';
+    trigger.title = 'SmartHire ATS Sourcing Copilot v3.8 (Click to Open)';
     trigger.innerHTML = `
       <svg width="22" height="22" viewBox="0 0 24 24" fill="#3B82F6">
         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
@@ -154,7 +154,7 @@ Website: http://www.coolsofttech.com`;
             <path d="m9 11 2 2 4-4" stroke="#ffffff" stroke-width="2.5" fill="none"/>
           </svg>
           <span style="font-weight:700; font-size:14px; letter-spacing:-0.02em;">SmartHire Copilot</span>
-          <span style="background:#1E293B; color:#93C5FD; font-size:10px; font-weight:700; padding:2px 6px; border-radius:4px; border:1px solid #334155;">v3.7 Live</span>
+          <span style="background:#1E293B; color:#93C5FD; font-size:10px; font-weight:700; padding:2px 6px; border-radius:4px; border:1px solid #334155;">v3.8 Live</span>
         </div>
         <button id="smarthire-drawer-close" style="background:none; border:none; color:#94A3B8; font-size:22px; cursor:pointer; line-height:1; padding:0 4px;">&times;</button>
       </div>
@@ -1399,38 +1399,43 @@ ${(match.interviewQuestions || [
     });
 
     // Re-Extract Resume from Active Tab / Drawer Listener
-    document.getElementById('dossier-btn-reextract')?.addEventListener('click', () => {
+    document.getElementById('dossier-btn-reextract')?.addEventListener('click', async () => {
       const cand = activeDossierCandidate;
       if (!cand) return;
       const reextractBtn = document.getElementById('dossier-btn-reextract');
       const reextractText = document.getElementById('dossier-reextract-text');
       if (reextractBtn) reextractBtn.disabled = true;
-      if (reextractText) reextractText.innerText = 'Extracting...';
+      if (reextractText) reextractText.innerText = 'Extracting full resume...';
 
-      let liveResumeText = '';
-      if (typeof window.extractCleanMonsterResumeText === 'function') {
-        liveResumeText = window.extractCleanMonsterResumeText();
+      let extResult = null;
+      if (typeof window.extractCleanMonsterResumeTextAsync === 'function') {
+        extResult = await window.extractCleanMonsterResumeTextAsync(null, cand.name, true);
       } else if (typeof window.extractCleanDiceResumeText === 'function') {
-        liveResumeText = window.extractCleanDiceResumeText();
+        const text = window.extractCleanDiceResumeText();
+        extResult = {
+          text,
+          rawLength: text.length,
+          sourceType: text.length >= 500 ? 'RESUME_DOCUMENT' : (text.length >= 150 ? 'PROFILE_SNIPPET' : 'NONE'),
+          isProvisional: text.length < 500
+        };
+      } else if (typeof window.extractCleanMonsterResumeText === 'function') {
+        const text = window.extractCleanMonsterResumeText(null, cand.name);
+        extResult = {
+          text,
+          rawLength: text.length,
+          sourceType: text.length >= 500 ? 'RESUME_DOCUMENT' : (text.length >= 150 ? 'SEARCH_CARD_SNIPPET' : 'NONE'),
+          isProvisional: text.length < 500
+        };
       }
 
-      if (!liveResumeText || liveResumeText.length < 150) {
-        // Broad scan across open document viewers and iframes
-        const viewers = document.querySelectorAll('[data-testid*="resume"], [class*="resume"], [class*="document-viewer"], iframe, pre');
-        for (const v of viewers) {
-          try {
-            const t = v.tagName === 'IFRAME' ? (v.contentDocument?.body?.innerText || '') : (v.innerText || '');
-            if (t.length > liveResumeText.length) liveResumeText = t;
-          } catch (e) {}
-        }
-        if (window.cleanMonsterResumeText && liveResumeText) {
-          liveResumeText = window.cleanMonsterResumeText(liveResumeText);
-        }
-      }
+      const liveResumeText = extResult?.text || '';
+      const isGenuineFull = extResult && extResult.rawLength >= 500;
 
       if (liveResumeText && liveResumeText.length >= 150) {
         cand.resumeText = liveResumeText;
         cand.summary = liveResumeText.slice(0, 5000);
+        cand.resumeSourceType = extResult?.sourceType || (isGenuineFull ? 'RESUME_DOCUMENT' : 'SEARCH_CARD_SNIPPET');
+
         if (window.SmartHireMatchingEngine) {
           const v = window.SmartHireMatchingEngine.verifyAndClassifyResume(cand);
           cand.extractionStatus = v.status;
@@ -1449,17 +1454,25 @@ ${(match.interviewQuestions || [
             cand.fitCategory = freshMatch.fitCategory;
             cand.recommendation = freshMatch.recommendation;
             cand.eligibilityStatus = freshMatch.eligibilityStatus;
+            cand.extractionStatus = freshMatch.extractionStatus;
             openAiDossier(cand, targetJob);
             renderResults(scrapedCandidates);
           }
         }
-        if (reextractText) reextractText.innerText = `✓ Extracted (${liveResumeText.length} chars)`;
+
+        if (isGenuineFull) {
+          if (reextractText) reextractText.innerText = `✓ Full Resume Extracted (${liveResumeText.length.toLocaleString()} chars)`;
+        } else {
+          if (reextractText) reextractText.innerText = `Partial Extracted (${liveResumeText.length} chars)`;
+          alert(`Captured partial profile snippet (${liveResumeText.length} chars). Full resume document was not loaded. Please ensure the candidate's Resume tab in Monster/Dice is open and fully loaded, then click Re-Extract.`);
+        }
+
         setTimeout(() => {
           if (reextractText) reextractText.innerText = 'Re-Extract from Active Tab';
           if (reextractBtn) reextractBtn.disabled = false;
-        }, 2000);
+        }, 3000);
       } else {
-        alert('Could not detect an open resume viewer on the current page. Please click on candidate\'s Resume tab in Monster/Dice first, then click Re-Extract.');
+        alert('Could not detect an open resume viewer on the current page. Please click on candidate\'s card or Resume tab in Monster/Dice first, then click Re-Extract.');
         if (reextractText) reextractText.innerText = 'Re-Extract from Active Tab';
         if (reextractBtn) reextractBtn.disabled = false;
       }
@@ -1480,17 +1493,18 @@ ${(match.interviewQuestions || [
 
     const targetJob = job || selectedJob;
 
-    // Auto-reconciliation with active drawer: If candidate has short/provisional text and active tab has full resume
+    // Auto-reconciliation with active right detail pane / drawer: If candidate has short/provisional text and active tab has full resume
     let liveResumeText = '';
     if (typeof window.extractCleanMonsterResumeText === 'function') {
-      liveResumeText = window.extractCleanMonsterResumeText();
+      liveResumeText = window.extractCleanMonsterResumeText(null, candidate.name);
     } else if (typeof window.extractCleanDiceResumeText === 'function') {
       liveResumeText = window.extractCleanDiceResumeText();
     }
     const currentLen = (candidate.resumeText || '').length;
-    if (liveResumeText && (liveResumeText.length > currentLen + 150 || (currentLen < 800 && liveResumeText.length >= 250))) {
+    if (liveResumeText && (liveResumeText.length > currentLen + 200 || (currentLen < 500 && liveResumeText.length >= 500))) {
       candidate.resumeText = liveResumeText;
       candidate.summary = liveResumeText.slice(0, 5000);
+      candidate.resumeSourceType = liveResumeText.length >= 500 ? 'RESUME_DOCUMENT' : 'PROFILE_SNIPPET';
       if (window.SmartHireMatchingEngine && targetJob) {
         const v = window.SmartHireMatchingEngine.verifyAndClassifyResume(candidate);
         candidate.extractionStatus = v.status;
@@ -1501,6 +1515,12 @@ ${(match.interviewQuestions || [
           window.SmartHireMatchingEngine.sessionCache.cache.delete(`${candidate.id}_${norm.title}`);
         }
         candidate.aiMatch = window.SmartHireMatchingEngine.sessionCache.getOrEvaluate(candidate, norm);
+        candidate.matchScore = candidate.aiMatch.score;
+        candidate.verdict = candidate.aiMatch.verdict;
+        candidate.fitCategory = candidate.aiMatch.fitCategory;
+        candidate.recommendation = candidate.aiMatch.recommendation;
+        candidate.eligibilityStatus = candidate.aiMatch.eligibilityStatus;
+        candidate.extractionStatus = candidate.aiMatch.extractionStatus;
       }
     }
 

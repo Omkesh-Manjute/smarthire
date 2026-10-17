@@ -575,12 +575,237 @@ runTest('Fix 5: Authoritative calculation ensures identical scores between Quick
 });
 
 // ---------------------------------------------------------------------
+// TEST 16: FIX - 172-CHAR MONSTER CARD SNIPPET PROVISIONAL VALIDATION
+// ---------------------------------------------------------------------
+runTest('Fix: 172-char search card snippet classified as provisional and blocked from SUBMIT', () => {
+  const rajithaCardSnippet = {
+    name: 'Rajitha A',
+    title: 'Software Engineer in Test',
+    location: 'Noblesville, Indiana',
+    skills: ['Java', 'JavaScript', 'Python'],
+    resumeText: 'Rajitha A. Software Engineer in Test. Noblesville, Indiana. Updated: 1 day ago. Current: Software Engineer in Test, Walmart Global Tech. Previous: Senior QA, Avenue Code. Top Skills: Java, JavaScript, Python.' // exact length ~207 chars
+  };
+
+  const vSnippet = SmartHireMatchingEngine.verifyAndClassifyResume(rajithaCardSnippet);
+  assert.strictEqual(vSnippet.status, 'PARTIAL_RESUME_EXTRACTED', '172-200 char card snippet must be PARTIAL_RESUME_EXTRACTED');
+  assert.strictEqual(vSnippet.isProvisional, true, 'Snippet must be marked provisional');
+  assert.ok(vSnippet.extractedLength < 500, 'Snippet character count must reflect actual length');
+
+  const qaJd = SmartHireMatchingEngine.normalizeJobDescription({
+    title: 'QA Analyst / SDET',
+    location: 'Remote',
+    skills: ['Selenium', 'Playwright', 'Java', 'Python', 'Cucumber']
+  });
+
+  const evalSnippet = SmartHireMatchingEngine.evaluateCandidate(rajithaCardSnippet, qaJd);
+  assert.strictEqual(evalSnippet.isProvisional, true);
+  assert.notStrictEqual(evalSnippet.recommendation, 'SUBMIT', 'Provisional candidate with only card snippet CANNOT have SUBMIT recommendation');
+  assert.strictEqual(evalSnippet.recommendation, 'HOLD_FOR_VERIFICATION');
+});
+
+// ---------------------------------------------------------------------
+// TEST 17: FIX - RIGHT-PANE FULL RESUME EXTRACTION & RECONCILIATION
+// ---------------------------------------------------------------------
+runTest('Fix: Right-pane full resume extraction (2,000+ chars) achieves FULL_RESUME_EXTRACTED', () => {
+  const rajithaFullResume = {
+    name: 'Rajitha A',
+    title: 'Software Engineer in Test',
+    location: 'Noblesville, Indiana, United States',
+    email: 'rajitha.a.vpsxa@contact.monster.com',
+    skills: ['Java', 'JavaScript', 'Python', 'Selenium', 'Playwright', 'Cucumber', 'TestNG', 'Appium'],
+    resumeSourceType: 'RESUME_DOCUMENT',
+    resumeText: `Rajitha A
+Software Engineer in Test
+Noblesville, Indiana, United States
+rajitha.a.vpsxa@contact.monster.com
+
+SUMMARY
+Over 7+ years of experience in testing a wide range of applications across various platforms. Onboarded, coached, and motivated junior-level developers and manual testers on automation. Expertise in manual and automation testing of client/server, mobile, web-based, and cloud (AWS) applications. Familiar with both Waterfall and Agile scrum methodology. Experience in working very closely with Product owners and attending different meetings, including sprint planning, scrum, backlog grooming, sprint review, and sprint retrospective. Worked with DevOps, installing, configuring, and integrating automation scripts on continuous integration tools. Expert in Behavior Driven Development (BDD) and Test-Driven Development (TDD). Developed tests in Gherkin syntax using Cucumber, creating scenarios, scenario outlines, features, step definitions, and Cucumber reports. Proficient in developing Test Plans, Test Cases, Test Scripts, and Test Designs. Extensive experience performing various types of testing, including Sanity, Smoke, Black Box, GUI, Functional, Unit, Integration, Regression, Compatibility, System, Performance, Load, Stress, and UAT tests. Expertise in automated testing using testing frameworks, including but not limited to Playwright, Selenium, Appium, TestNG, Cucumber, Cypress, Protractor and WebDriver IO framework. Experienced across the complete SDLC/STLC, including requirements analysis, test strategy, test planning, and defect lifecycle management.
+
+PROFESSIONAL EXPERIENCE
+Walmart Global Tech - Software Engineer in Test (Current)
+• Designed and executed automated end-to-end regression suites using Playwright, TypeScript, and Selenium WebDriver.
+• Implemented continuous integration test automation pipelines in Jenkins and GitHub Actions.
+• Led daily defect triage and sprint retrospectives with cross-functional teams.
+
+Avenue Code - Senior QA Analyst (Previous)
+• Spearheaded mobile and web API automation using Postman, RestAssured, and Appium.
+• Authored comprehensive test plans, test cases, and requirement traceability matrices in JIRA.
+
+EDUCATION & CERTIFICATIONS
+Bachelor of Science in Computer Science
+Certified Scrum Master (CSM), ISTQB Certified Tester`
+  };
+
+  const vFull = SmartHireMatchingEngine.verifyAndClassifyResume(rajithaFullResume);
+  assert.strictEqual(vFull.status, 'FULL_RESUME_EXTRACTED');
+  assert.strictEqual(vFull.isProvisional, false, 'Full resume must NOT be provisional');
+  assert.ok(vFull.extractedLength > 1500, `Extracted length (${vFull.extractedLength}) must be > 1500`);
+  assert.ok(vFull.sourceSectionsFound.includes('Summary'));
+  assert.ok(vFull.sourceSectionsFound.includes('Experience'));
+  assert.ok(vFull.sourceSectionsFound.includes('Responsibilities'));
+  assert.ok(vFull.sourceSectionsFound.includes('Education'));
+});
+
+// ---------------------------------------------------------------------
+// TEST 18: INACCESSIBLE / FAILED RESUME EXTRACTION
+// ---------------------------------------------------------------------
+runTest('Inaccessible or empty resume returns EXTRACTION_FAILED with provisional flag', () => {
+  const emptyCandidate = {
+    name: 'Unreachable Candidate',
+    resumeText: '',
+    summary: ''
+  };
+
+  const vEmpty = SmartHireMatchingEngine.verifyAndClassifyResume(emptyCandidate);
+  assert.strictEqual(vEmpty.status, 'EXTRACTION_FAILED');
+  assert.strictEqual(vEmpty.isProvisional, true);
+  assert.strictEqual(vEmpty.extractedLength, 0);
+  assert.strictEqual(vEmpty.sourceType, 'NONE');
+
+  const jd = SmartHireMatchingEngine.normalizeJobDescription({ title: 'Software Engineer', skills: ['Python'] });
+  const evalEmpty = SmartHireMatchingEngine.evaluateCandidate(emptyCandidate, jd);
+  assert.strictEqual(evalEmpty.recommendation, 'HOLD_FOR_VERIFICATION');
+  assert.ok(evalEmpty.recommendationExplanation.includes('extraction failed'));
+});
+
+// ---------------------------------------------------------------------
+// TEST 19: UNRELATED WEBPAGE NOISE & MONSTER BUTTON EXCLUSION
+// ---------------------------------------------------------------------
+runTest('Unrelated webpage text and Monster action buttons are excluded from clean resume', () => {
+  const dirtyMonsterPageText = `Select a Card Number-2
+Viewed by: Recruiter
+Favorite
+Veteran Diversity
+SMS Opt-in
+Candidate 2 of 21
+Back to search results
+Contact candidate
+Send message
+Add to Pipeline
+Export to ATS
+Print
+Share
+Need Help?
+Post a Job
+Create Campaign
+Clear All
+Undo
+Update
+Rajitha A
+Software Engineer in Test
+SUMMARY
+Over 7+ years of experience in testing a wide range of applications across various platforms.
+• Led automated testing with Selenium, Playwright, and Cucumber.
+• Managed sprint planning, scrum backlog grooming, and test plan creation in Jira.
+Education: Bachelor of Science in Computer Science.`;
+
+  const cleaned = SmartHireMatchingEngine.cleanCandidateResumeText(dirtyMonsterPageText);
+  assert.ok(!cleaned.includes('Select a Card'), 'Must exclude Select a Card');
+  assert.ok(!cleaned.includes('Contact candidate'), 'Must exclude Contact candidate');
+  assert.ok(!cleaned.includes('Add to Pipeline'), 'Must exclude Add to Pipeline');
+  assert.ok(!cleaned.includes('Export to ATS'), 'Must exclude Export to ATS');
+  assert.ok(!cleaned.includes('Need Help?'), 'Must exclude Need Help?');
+  assert.ok(cleaned.includes('Over 7+ years of experience in testing'), 'Genuine summary must be preserved');
+  assert.ok(cleaned.includes('Selenium, Playwright, and Cucumber'), 'Genuine bullet points must be preserved');
+});
+
+// ---------------------------------------------------------------------
+// TEST 20: UNIVERSAL JOB FAMILY - QA ANALYST / SDET MATCHING
+// ---------------------------------------------------------------------
+runTest('Universal Job Family: QA Analyst / SDET evaluation for Rajitha A yields Strong Fit', () => {
+  const qaJd = SmartHireMatchingEngine.normalizeJobDescription({
+    id: 'req-qa-001',
+    title: 'Senior QA Analyst / SDET',
+    location: 'Remote',
+    description: 'Looking for a Senior QA Analyst with 5+ years of experience in manual and automated testing. Mandatory skills: Selenium, Playwright, Cucumber, BDD, Test Plans, Test Scripts, Agile Scrum.',
+    skills: ['Selenium', 'Playwright', 'Cucumber', 'BDD', 'Test Plans', 'Agile Scrum']
+  });
+
+  const rajithaCandidate = {
+    name: 'Rajitha A',
+    title: 'Software Engineer in Test',
+    location: 'Noblesville, Indiana',
+    experience: '7+ Years',
+    skills: ['Selenium', 'Playwright', 'Cucumber', 'BDD', 'Java', 'Python', 'TestNG'],
+    resumeSourceType: 'RESUME_DOCUMENT',
+    resumeText: `Rajitha A - Software Engineer in Test
+SUMMARY: Over 7+ years of experience in software testing. Expertise in automated testing using Playwright, Selenium, and Cucumber BDD. Proficient in developing Test Plans, Test Cases, and Test Scripts. Attending sprint planning, scrum, backlog grooming, and defect triage.
+Experience: Walmart Global Tech - Software Engineer in Test. Designed automated test suites using Selenium WebDriver and Playwright. Facilitated sprint planning and backlog grooming in Jira.
+Education: Bachelor of Science in Computer Science.`
+  };
+
+  const evalResult = SmartHireMatchingEngine.evaluateCandidate(rajithaCandidate, qaJd);
+  assert.ok(evalResult.score >= 85, `Score for qualified QA profile must be >= 85% (actual: ${evalResult.score}%)`);
+  assert.strictEqual(evalResult.fitCategory, 'Strong Fit');
+  assert.strictEqual(evalResult.recommendation, 'SUBMIT', 'Fully qualified QA candidate with full resume must be recommended for SUBMIT');
+  assert.strictEqual(evalResult.isProvisional, false);
+});
+
+// ---------------------------------------------------------------------
+// TEST 21: DYNAMIC STATE RESIDENCY GATING
+// ---------------------------------------------------------------------
+runTest('Dynamic state residency: California or Remote role does not reject non-WI candidates', () => {
+  // Case A: Remote role without state mandate
+  const remoteJd = SmartHireMatchingEngine.normalizeJobDescription({
+    title: 'Software Engineer',
+    location: 'Remote',
+    description: '100% Remote position for full stack development. Any US location accepted.'
+  });
+
+  const indianaCandidate = {
+    name: 'Indiana Resident',
+    location: 'Noblesville, IN',
+    resumeText: 'Full stack software developer with 6 years experience in React, Node.js, and PostgreSQL.'
+  };
+
+  const eligRemote = SmartHireMatchingEngine.evaluateEligibility(indianaCandidate, remoteJd);
+  assert.strictEqual(eligRemote.eligibilityStatus, 'VERIFIED_ELIGIBLE');
+  assert.strictEqual(eligRemote.isHardFailure, false);
+
+  // Case B: Wisconsin agency role with explicit state mandate
+  const wisconsinJd = SmartHireMatchingEngine.normalizeJobDescription({
+    title: 'Agile Project Manager',
+    location: 'Madison, WI',
+    description: 'Mandatory Wisconsin residency required for State of Wisconsin project.'
+  });
+
+  const eligWiFailure = SmartHireMatchingEngine.evaluateEligibility(indianaCandidate, wisconsinJd);
+  assert.strictEqual(eligWiFailure.eligibilityStatus, 'INELIGIBLE');
+  assert.strictEqual(eligWiFailure.isHardFailure, true);
+});
+
+// ---------------------------------------------------------------------
+// TEST 22: UNIVERSAL 35/20/15/10/10/5/5 WEIGHTS & EXPERIENCE RANGES
+// ---------------------------------------------------------------------
+runTest('Universal 35/20/15/10/10/5/5 weights and experience range parsing', () => {
+  const weights = SmartHireMatchingEngine.DEFAULT_WEIGHTS;
+  assert.strictEqual(weights.MANDATORY_TECHNICAL, 0.35, 'Mandatory Technical must be 35%');
+  assert.strictEqual(weights.DOMAIN_FUNCTIONAL, 0.20, 'Domain Functional must be 20%');
+  assert.strictEqual(weights.RESPONSIBILITIES, 0.15, 'Responsibilities must be 15%');
+  assert.strictEqual(weights.EXPERIENCE_COMPLEXITY, 0.10, 'Experience Complexity must be 10%');
+  assert.strictEqual(weights.PREFERRED_SKILLS, 0.10, 'Preferred Skills must be 10%');
+  assert.strictEqual(weights.LEADERSHIP_COMM, 0.05, 'Leadership & Comm must be 5%');
+  assert.strictEqual(weights.EDUCATION_CERTS, 0.05, 'Education & Certs must be 5%');
+
+  const sum = Object.values(weights).reduce((a, b) => a + b, 0);
+  assert.ok(Math.abs(sum - 1.0) < 0.001, 'Sum of default weights must be 1.0 (100%)');
+
+  // Experience range parsing
+  const rangeJd = SmartHireMatchingEngine.normalizeJobDescription({
+    title: 'QA Automation Engineer',
+    description: 'Requires 1-3 years of experience in software test automation.'
+  });
+  assert.strictEqual(rangeJd.requiredYears, 1, 'Experience range "1-3 years" should parse minimum 1 year required');
+});
+
+// ---------------------------------------------------------------------
 // SUMMARY
 // ---------------------------------------------------------------------
 console.log('\n====================================================');
 console.log(`TEST RESULTS: ${passedTests} / ${totalTests} PASSED`);
 if (passedTests === totalTests) {
-  console.log('ALL 15 ACCEPTANCE CRITERIA & 5 MANDATORY FIXES VERIFIED SUCCESSFULLY! ✓');
+  console.log(`ALL ${totalTests} ACCEPTANCE CRITERIA & EXTRACTION TESTS VERIFIED SUCCESSFULLY! ✓`);
 } else {
   console.error(`FAILED ${totalTests - passedTests} TEST(S)!`);
   process.exit(1);

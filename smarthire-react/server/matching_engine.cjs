@@ -43,12 +43,12 @@
   };
 
   const DEFAULT_WEIGHTS = {
-    MANDATORY_TECHNICAL: 0.30,   // 30%
+    MANDATORY_TECHNICAL: 0.35,   // 35%
     DOMAIN_FUNCTIONAL: 0.20,     // 20%
     RESPONSIBILITIES: 0.15,      // 15%
     EXPERIENCE_COMPLEXITY: 0.10, // 10%
     PREFERRED_SKILLS: 0.10,      // 10%
-    LEADERSHIP_COMM: 0.10,       // 10%
+    LEADERSHIP_COMM: 0.05,       // 5%
     EDUCATION_CERTS: 0.05        // 5%
   };
 
@@ -142,22 +142,56 @@
     const combinedText = `${title} ${location} ${rawDesc} ${rawSkills.join(' ')}`.toLowerCase();
 
     // Check Residency & Location constraints
-    const isWisconsinRole = (
-      combinedText.includes('wisconsin') ||
-      combinedText.includes(', wi') ||
-      combinedText.includes(' wi ') ||
-      location.toLowerCase().includes('wi') ||
-      location.toLowerCase().includes('madison') ||
-      location.toLowerCase().includes('milwaukee') ||
-      id === '159281' ||
-      id === '159348' ||
-      title.toLowerCase().includes('data & analytics')
+    // Check dynamic state residency requirement:
+    // Only enforce state residency when the JD explicitly specifies a state mandate
+    const stateResidencyMatch = (
+      combinedText.match(/must reside in ([a-zA-Z\s]+?)(?:[.,;\n]|$)/i) ||
+      combinedText.match(/mandatory ([a-zA-Z\s]+?) residency/i) ||
+      combinedText.match(/([a-zA-Z\s]+?) residency (?:is )?required/i) ||
+      combinedText.match(/resident of ([a-zA-Z\s]+?)(?:[.,;\n]|$)/i)
     );
+
+    let requiredState = null;
+    let requiresStateResidency = false;
+
+    if (stateResidencyMatch) {
+      const stateStr = stateResidencyMatch[1].trim().toLowerCase();
+      if (stateStr.includes('wisconsin') || stateStr === 'wi') {
+        requiredState = 'WI';
+        requiresStateResidency = true;
+      } else if (stateStr.includes('california') || stateStr === 'ca') {
+        requiredState = 'CA';
+        requiresStateResidency = true;
+      } else if (stateStr.includes('texas') || stateStr === 'tx') {
+        requiredState = 'TX';
+        requiresStateResidency = true;
+      } else if (stateStr.includes('new york') || stateStr === 'ny') {
+        requiredState = 'NY';
+        requiresStateResidency = true;
+      } else if (stateStr.includes('illinois') || stateStr === 'il') {
+        requiredState = 'IL';
+        requiresStateResidency = true;
+      } else {
+        requiredState = stateResidencyMatch[1].trim().toUpperCase();
+        requiresStateResidency = true;
+      }
+    } else if (combinedText.includes('wisconsin residency required') || combinedText.includes('wisconsin resident only')) {
+      requiredState = 'WI';
+      requiresStateResidency = true;
+    } else if (
+      (location.toLowerCase().includes('wi') || location.toLowerCase().includes('wisconsin') || location.toLowerCase().includes('madison') || location.toLowerCase().includes('milwaukee') || id === '159281' || id === '159348') &&
+      !combinedText.includes('remote')
+    ) {
+      requiredState = 'WI';
+      requiresStateResidency = true;
+    }
+
+    const isWisconsinRole = requiresStateResidency && requiredState === 'WI';
 
     const isRemote = (
       combinedText.includes('remote') ||
       location.toLowerCase().includes('remote')
-    ) && !combinedText.includes('must reside in') && !combinedText.includes('wisconsin residency required');
+    ) && !requiresStateResidency;
 
     // Parse Requirements into 7 Categories
     const mandatoryTech = [];
@@ -192,7 +226,11 @@
         lower.includes('agile') || lower.includes('scrum') || lower.includes('jira') ||
         lower.includes('python') || lower.includes('java') || lower.includes('sql') ||
         lower.includes('aws') || lower.includes('snowflake') || lower.includes('cloud') ||
-        lower.includes('azure') || lower.includes('.net') || lower.includes('c#')
+        lower.includes('azure') || lower.includes('.net') || lower.includes('c#') ||
+        lower.includes('selenium') || lower.includes('cypress') || lower.includes('playwright') ||
+        lower.includes('cucumber') || lower.includes('bdd') || lower.includes('tdd') ||
+        lower.includes('javascript') || lower.includes('react') || lower.includes('node') ||
+        lower.includes('test') || lower.includes('qa')
       ) {
         mandatoryTech.push({
           name: cleanSkill,
@@ -234,9 +272,11 @@
       }
     });
 
-    // Domain / Functional check from title
+    // Domain / Functional check across Universal Job Families
     const lowerTitle = title.toLowerCase();
-    if (lowerTitle.includes('scrum master') || lowerTitle.includes('project manager') || lowerTitle.includes('program manager')) {
+
+    // 1. Scrum Master / Project Manager / Agile Delivery
+    if (lowerTitle.includes('scrum master') || lowerTitle.includes('project manager') || lowerTitle.includes('program manager') || lowerTitle.includes('agile coach')) {
       domainFunctional.push({
         name: 'Agile Project & Program Delivery Management',
         classification: 'Mandatory',
@@ -260,6 +300,57 @@
       });
     }
 
+    // 2. QA Analyst / Software Tester / SDET
+    else if (lowerTitle.includes('qa') || lowerTitle.includes('tester') || lowerTitle.includes('quality assurance') || lowerTitle.includes('test engineer') || lowerTitle.includes('sdet')) {
+      domainFunctional.push({
+        name: 'Software Quality Assurance & Test Methodologies',
+        classification: 'Mandatory',
+        importance: 'High',
+        category: 'Domain / Functional',
+        evidenceKeywords: ['qa', 'quality assurance', 'test plan', 'test cases', 'test scripts', 'manual testing', 'automation testing', 'sdlc', 'stlc']
+      });
+      responsibilities.push({
+        name: 'Test Execution, Defect Reporting & Automation Delivery',
+        classification: 'Mandatory',
+        importance: 'High',
+        category: 'Responsibilities & Delivery',
+        evidenceKeywords: ['selenium', 'playwright', 'cypress', 'cucumber', 'bdd', 'tdd', 'regression testing', 'sanity', 'smoke', 'api testing', 'postman', 'jira']
+      });
+      leadershipComm.push({
+        name: 'Cross-functional QA Collaboration & Defect Triage',
+        classification: 'Mandatory',
+        importance: 'Medium',
+        category: 'Leadership & Communication',
+        evidenceKeywords: ['defect triage', 'collaborated with developers', 'product owners', 'mentored', 'coached', 'stakeholder', 'agile sprint']
+      });
+    }
+
+    // 3. Laboratory Quality Assurance Analyst
+    else if (lowerTitle.includes('laboratory') || lowerTitle.includes('lab qa') || combinedText.includes('glp') || combinedText.includes('cgmp') || (lowerTitle.includes('quality') && (combinedText.includes('assay') || combinedText.includes('chemistry') || combinedText.includes('biological')))) {
+      domainFunctional.push({
+        name: 'Laboratory Compliance & Regulatory Quality Assurance',
+        classification: 'Mandatory',
+        importance: 'High',
+        category: 'Domain / Functional',
+        evidenceKeywords: ['glp', 'gmp', 'cgmp', 'fda', 'sop', 'iso 17025', 'iso 9001', 'regulatory compliance', 'capa']
+      });
+      responsibilities.push({
+        name: 'Sample Testing, Method Validation & Quality Control Audits',
+        classification: 'Mandatory',
+        importance: 'High',
+        category: 'Responsibilities & Delivery',
+        evidenceKeywords: ['sample testing', 'validation', 'analytical testing', 'deviation', 'investigation', 'audit', 'sop', 'quality control']
+      });
+      leadershipComm.push({
+        name: 'Regulatory Inspection Readiness & Quality Reporting',
+        classification: 'Mandatory',
+        importance: 'Medium',
+        category: 'Leadership & Communication',
+        evidenceKeywords: ['audit readiness', 'inspection', 'quality reporting', 'capa meetings', 'client audit', 'documentation review']
+      });
+    }
+
+    // 4. Data Analyst / Data Engineer / Analytics
     if (lowerTitle.includes('data') || lowerTitle.includes('analytics') || combinedText.includes('data warehouse')) {
       domainFunctional.push({
         name: 'Data & Analytics / Data Warehousing Domain Delivery',
@@ -277,9 +368,46 @@
       });
     }
 
-    // Experience requirement parsing
+    // 5. Software Engineer / Developer (Full-stack, backend, frontend)
+    else if (lowerTitle.includes('software engineer') || lowerTitle.includes('developer') || lowerTitle.includes('full stack') || lowerTitle.includes('backend') || lowerTitle.includes('frontend')) {
+      domainFunctional.push({
+        name: 'Full Lifecycle Application Development & Architecture',
+        classification: 'Mandatory',
+        importance: 'High',
+        category: 'Domain / Functional',
+        evidenceKeywords: ['software engineering', 'application development', 'architecture', 'design patterns', 'sdlc', 'microservices', 'rest api']
+      });
+      responsibilities.push({
+        name: 'Code Implementation, Automated Testing & CI/CD Delivery',
+        classification: 'Mandatory',
+        importance: 'High',
+        category: 'Responsibilities & Delivery',
+        evidenceKeywords: ['implemented', 'developed', 'unit test', 'ci/cd', 'git', 'pull requests', 'code review', 'deployment']
+      });
+      leadershipComm.push({
+        name: 'Technical Mentorship & Agile Team Collaboration',
+        classification: 'Mandatory',
+        importance: 'Medium',
+        category: 'Leadership & Communication',
+        evidenceKeywords: ['code review', 'mentored', 'agile team', 'sprint', 'collaborated with product', 'architectural discussions']
+      });
+    }
+
+    // Experience requirement parsing (supports "1-3 years", "5+ years", etc.)
+    const expRangeMatch = rawDesc.match(/(\d+)\s*(?:-|to)\s*(\d+)\+?\s*(?:years?|yrs?)/i);
     const expMatch = rawDesc.match(/(\d+)\+?\s*(?:years?|yrs?)/i);
-    const requiredYears = expMatch ? parseInt(expMatch[1], 10) : (lowerTitle.includes('senior') ? 8 : 5);
+    let requiredYears = 5;
+    if (expRangeMatch) {
+      // For ranges like "1-3 years", use minimum lower bound 1
+      requiredYears = parseInt(expRangeMatch[1], 10);
+    } else if (expMatch) {
+      requiredYears = parseInt(expMatch[1], 10);
+    } else if (lowerTitle.includes('senior') || lowerTitle.includes('lead')) {
+      requiredYears = 8;
+    } else if (lowerTitle.includes('entry') || lowerTitle.includes('junior')) {
+      requiredYears = 1;
+    }
+
     experienceComplexity.push({
       name: `${requiredYears}+ Years Relevant Professional Experience`,
       classification: 'Mandatory',
@@ -303,7 +431,7 @@
     }
 
     // Compute deterministic JD hash
-    const jdHash = simpleHash(`${id}_${title}_${rawSkills.join(',')}_${requiredYears}_${isWisconsinRole ? 'wi' : 'gen'}`);
+    const jdHash = simpleHash(`${id}_${title}_${rawSkills.join(',')}_${requiredYears}_${isWisconsinRole ? 'wi' : (requiredState || 'gen')}`);
 
     return {
       id,
@@ -315,9 +443,10 @@
       requiredYears,
       eligibilityRules: {
         requiresWisconsin: isWisconsinRole,
+        requiresStateResidency,
+        requiredState,
         requiresUsWorkAuth: true,
         workArrangement: isRemote ? 'remote' : 'hybrid_or_onsite',
-        requiredState: isWisconsinRole ? 'WI' : null,
         isRemote
       },
       categories: {
@@ -437,7 +566,7 @@
    * - missingExpectedSections
    * - extractionWarnings
    */
-  function verifyAndClassifyResume(candidate) {
+  function verifyAndClassifyResume(candidate, options = {}) {
     if (!candidate) {
       return {
         status: EXTRACTION_STATUS.EXTRACTION_FAILED,
@@ -446,7 +575,8 @@
         extractedLength: 0,
         missingExpectedSections: ['Summary', 'Experience', 'Skills', 'Education'],
         warnings: ['Candidate profile object is null or undefined.'],
-        isProvisional: true
+        isProvisional: true,
+        sourceType: 'NONE'
       };
     }
 
@@ -457,11 +587,15 @@
     const sectionsFound = [];
     const missingSections = [];
 
+    // Configurable thresholds
+    const fullResumeMinLength = options.fullResumeMinLength || 500;
+    const partialMinLength = options.partialMinLength || 100;
+
     // Section detectors
     const hasSummary = lower.includes('summary') || lower.includes('profile') || lower.includes('objective') || lower.includes('overview') || lower.includes('years of experience');
     const hasExperience = lower.includes('experience') || lower.includes('employment') || lower.includes('work history') || lower.includes('career') || lower.includes('projects');
     const hasSkills = lower.includes('skills') || lower.includes('technologies') || lower.includes('competencies') || (Array.isArray(candidate.skills) && candidate.skills.length > 0);
-    const hasResponsibilities = lower.includes('responsibilities') || lower.includes('accomplishments') || lower.includes('•') || lower.includes('*') || lower.includes('led') || lower.includes('managed') || lower.includes('delivered');
+    const hasResponsibilities = lower.includes('responsibilities') || lower.includes('accomplishments') || lower.includes('•') || lower.includes('*') || lower.includes('led') || lower.includes('managed') || lower.includes('delivered') || lower.includes('tested') || lower.includes('developed');
     const hasEducation = lower.includes('education') || lower.includes('degree') || lower.includes('bachelor') || lower.includes('master') || lower.includes('university') || lower.includes('college');
     const hasCertifications = lower.includes('certificat') || lower.includes('certified') || lower.includes('pmp') || lower.includes('csm') || lower.includes('aws certified');
 
@@ -481,20 +615,24 @@
     );
 
     const warnings = [];
-
     let status = EXTRACTION_STATUS.PROFILE_ONLY;
+    let sourceType = candidate.resumeSourceType || (length >= fullResumeMinLength ? 'RESUME_DOCUMENT' : (length >= partialMinLength ? 'SEARCH_CARD_SNIPPET' : 'NONE'));
 
     if (length === 0) {
       status = EXTRACTION_STATUS.EXTRACTION_FAILED;
+      sourceType = 'NONE';
       warnings.push('Resume text could not be extracted from candidate drawer or card.');
-    } else if (length >= 800 && hasExperience && (hasResponsibilities || hasSummary)) {
+    } else if (length >= fullResumeMinLength && (hasExperience || hasResponsibilities) && (hasSkills || hasSummary || hasEducation)) {
       status = EXTRACTION_STATUS.FULL_RESUME_EXTRACTED;
-    } else if (length >= 100 && (hasExperience || hasSkills || hasSummary)) {
+      sourceType = candidate.resumeSourceType || 'RESUME_DOCUMENT';
+    } else if (length >= partialMinLength) {
       status = EXTRACTION_STATUS.PARTIAL_RESUME_EXTRACTED;
-      warnings.push(`⚠️ PARTIAL RESUME EXTRACTED: Full resume document not extracted. Evaluated using partial profile snippet (${length} chars). Original resume may contain Scrum Master, experience depth, or stakeholder reporting not visible in partial card. Open candidate's Resume tab in Monster/Dice to extract complete document.`);
+      sourceType = candidate.resumeSourceType || (length < 250 ? 'SEARCH_CARD_SNIPPET' : 'PROFILE_SNIPPET');
+      warnings.push(`⚠️ PARTIAL RESUME EXTRACTED (${length} chars analyzed): Evaluated using partial profile snippet. Original resume document was not retrieved. Original resume may contain Scrum Master, experience depth, or stakeholder reporting not visible in partial card. Click "Re-Extract from Active Tab" after opening candidate's Resume tab in Monster/Dice.`);
     } else {
       status = EXTRACTION_STATUS.PROFILE_ONLY;
-      warnings.push('Only search card / headline text extracted. Full resume drawer could not be inspected.');
+      sourceType = 'SEARCH_CARD_SNIPPET';
+      warnings.push(`Only search card / headline text extracted (${length} chars). Full resume drawer could not be inspected.`);
     }
 
     if (isTruncated) {
@@ -508,7 +646,8 @@
       extractedLength: length,
       missingExpectedSections: missingSections,
       warnings,
-      isProvisional: status !== EXTRACTION_STATUS.FULL_RESUME_EXTRACTED
+      isProvisional: status !== EXTRACTION_STATUS.FULL_RESUME_EXTRACTED,
+      sourceType
     };
   }
 
@@ -548,14 +687,15 @@
       .replace(/\b(?:Export\s+to\s+ATS|Download\s+resume|View\s+profile|Save\s+candidate)\b/gi, '')
       .replace(/\b(?:Next\s+candidate|Previous\s+candidate)\b/gi, '')
       .replace(/\b(?:Actions|Print|Share|Report\s+profile|Skills\s+matching)\b/gi, '')
-      .replace(/\b(?:Overview\s+Profile\s+Resume\s+Activity\s+Notes)\b/gi, '');
+      .replace(/\b(?:Overview\s+Profile\s+Resume\s+Activity\s+Notes)\b/gi, '')
+      .replace(/\b(?:Need\s+Help\?|Post\s+a\s+Job|Create\s+Campaign|Clear\s+All|Undo|Update)\b/gi, '');
 
     // 3. Remove isolated noise lines
     const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
     const cleanLines = lines.filter(line => {
       const lower = line.toLowerCase();
       if (lower.length < 3) return false;
-      if (/^(?:back|contact|send|add|export|view|save|actions|next|previous|print|share|download|close|cancel|submit|edit|delete|more|filter|sort|search|login|sign in|sign out)$/i.test(lower)) return false;
+      if (/^(?:back|contact|send|add|export|view|save|actions|next|previous|print|share|download|close|cancel|submit|edit|delete|more|filter|sort|search|login|sign in|sign out|need help\?|post a job|create campaign|clear all|undo|update)$/i.test(lower)) return false;
       if (/^(?:overview|profile|resume|activity|notes|candidate details)$/i.test(lower)) return false;
       if (/^select a card/i.test(lower)) return false;
       if (/^viewed\b/i.test(lower)) return false;
@@ -871,33 +1011,40 @@
     let notes = '';
     let isHardFailure = false;
 
-    // Check Wisconsin Residency
-    if (rules.requiresWisconsin) {
+    // Check State Residency Requirement
+    if (rules.requiresStateResidency || rules.requiresWisconsin) {
+      const targetState = rules.requiredState || (rules.requiresWisconsin ? 'WI' : null);
       const locLower = candLocation.toLowerCase();
-      const hasWisconsin = (
-        locLower.includes('wi') ||
-        locLower.includes('wisconsin') ||
-        locLower.includes('madison') ||
-        locLower.includes('milwaukee') ||
-        locLower.includes('green bay') ||
-        locLower.includes('appleton') ||
-        locLower.includes('kenosha')
-      );
 
-      if (hasWisconsin) {
+      let hasState = false;
+      if (targetState === 'WI') {
+        hasState = (
+          locLower.includes('wi') ||
+          locLower.includes('wisconsin') ||
+          locLower.includes('madison') ||
+          locLower.includes('milwaukee') ||
+          locLower.includes('green bay') ||
+          locLower.includes('appleton') ||
+          locLower.includes('kenosha')
+        );
+      } else if (targetState) {
+        hasState = locLower.includes(targetState.toLowerCase()) || locLower.includes(`, ${targetState.toLowerCase()}`);
+      }
+
+      if (hasState) {
         eligibilityStatus = ELIGIBILITY_STATUS.VERIFIED_ELIGIBLE;
-        notes = `Verified Wisconsin resident (${candLocation}). Meets mandatory state residency requirement.`;
+        notes = `Verified ${targetState || 'state'} resident (${candLocation}). Meets mandatory state residency requirement.`;
       } else if (!candLocation || candLocation.toLowerCase() === 'united states' || candLocation.toLowerCase() === 'us') {
         eligibilityStatus = ELIGIBILITY_STATUS.PENDING_VERIFICATION;
-        notes = `Location stated generally as "${candLocation}". Mandatory Wisconsin residency must be verified before submission.`;
+        notes = `Location stated generally as "${candLocation}". Mandatory ${targetState || 'state'} residency must be verified before submission.`;
       } else {
         // Explicit other state (e.g. Dallas, TX or Atlanta, GA)
         eligibilityStatus = ELIGIBILITY_STATUS.INELIGIBLE;
         isHardFailure = true;
-        notes = `INELIGIBLE: Requisition strictly mandates current Wisconsin residency. Candidate location listed as "${candLocation}".`;
+        notes = `INELIGIBLE: Requisition strictly mandates current ${targetState || 'state'} residency. Candidate location listed as "${candLocation}".`;
       }
     } else {
-      // General US Role
+      // General US Role (no state residency constraint)
       if (candLocation) {
         eligibilityStatus = ELIGIBILITY_STATUS.VERIFIED_ELIGIBLE;
         notes = `Candidate location (${candLocation}) aligned with position arrangement.`;
@@ -1127,6 +1274,7 @@
       evidenceCoverage: verification.status === EXTRACTION_STATUS.FULL_RESUME_EXTRACTED ? 'High' : 'Medium',
       extractionStatus: verification.status,
       extractionVerification: verification,
+      isProvisional: verification.isProvisional,
       eligibilityStatus: eligibility.eligibilityStatus,
       eligibilityNotes: eligibility.eligibilityNotes,
       isHardFailure: eligibility.isHardFailure,
@@ -1277,6 +1425,7 @@
     normalizeJobDescription,
     generateBooleanQueries,
     verifyAndClassifyResume,
+    cleanCandidateResumeText,
     evaluateEligibility,
     calculateAuthoritativeScore,
     evaluateCandidate,

@@ -89,82 +89,326 @@
       .replace(/\b(?:Export\s+to\s+ATS|Download\s+resume|View\s+profile|Save\s+candidate)\b/gi, '')
       .replace(/\b(?:Next\s+candidate|Previous\s+candidate)\b/gi, '')
       .replace(/\b(?:Actions|Print|Share|Report\s+profile)\b/gi, '')
-      .replace(/\b(?:Overview\s+Profile\s+Resume\s+Activity\s+Notes)\b/gi, '');
+      .replace(/\b(?:Overview\s+Profile\s+Resume\s+Activity\s+Notes)\b/gi, '')
+      .replace(/\b(?:Need\s+Help\?|Post\s+a\s+Job|Create\s+Campaign)\b/gi, '');
 
-    // 3. Remove isolated noise lines
-    const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
-    const cleanLines = lines.filter(line => {
+    // 3. Normalize whitespace & remove isolated noise lines
+    const rawLines = text.split(/\r?\n/).map(line => line.replace(/[ \t]+/g, ' ').trim()).filter(Boolean);
+    const cleanLines = [];
+    const seenRecentLines = new Set();
+
+    for (let i = 0; i < rawLines.length; i++) {
+      const line = rawLines[i];
       const lower = line.toLowerCase();
-      if (lower.length < 3) return false;
-      if (/^(?:back|contact|send|add|export|view|save|actions|next|previous|print|share|download|close|cancel|submit|edit|delete|more|filter|sort|search|login|sign in|sign out)$/i.test(lower)) return false;
-      if (/^(?:overview|profile|resume|activity|notes|candidate details)$/i.test(lower)) return false;
-      if (/^select a card/i.test(lower)) return false;
-      if (/^viewed\b/i.test(lower)) return false;
-      return true;
-    });
+      if (lower.length < 2) continue;
+      // Strip action button words
+      if (/^(?:back|contact|send|add|export|view|save|actions|next|previous|print|share|download|close|cancel|submit|edit|delete|more|filter|sort|search|login|sign in|sign out)$/i.test(lower)) continue;
+      if (/^(?:overview|profile|resume|activity|notes|candidate details|matches \(\d+\)|favorites \(\d+\)|skipped \(\d+\))$/i.test(lower)) continue;
+      if (/^select a card/i.test(lower)) continue;
+      if (/^viewed\b/i.test(lower)) continue;
+      if (/^clear all|^undo|^update$/i.test(lower)) continue;
+
+      // Avoid consecutive duplicate lines
+      if (cleanLines.length > 0 && cleanLines[cleanLines.length - 1] === line) continue;
+
+      cleanLines.push(line);
+    }
 
     return cleanLines.join('\n');
   };
 
-  // Deep Resume Extractor from Active Drawer or Card
-  window.extractCleanMonsterResumeText = function(targetCard = null) {
+  // Find Monster Resume Tab
+  window.findMonsterResumeTab = function(container = document) {
+    if (!container) return null;
+    const candidates = Array.from(container.querySelectorAll(
+      'li > .tab__title > .tab__label, button[role="tab"], [role="tab"], [data-testid*="tab"], .tab__label, a[role="tab"], button'
+    ));
+    for (const el of candidates) {
+      const t = (el.innerText || el.textContent || '').trim().toLowerCase();
+      if (t === 'resume' || t.startsWith('resume') || t.includes('resume &') || t === 'cv') {
+        return el;
+      }
+    }
+    const thirdTab = container.querySelector('li:nth-of-type(3) > .tab__title > .tab__label, [role="tablist"] > *:nth-child(3)');
+    if (thirdTab) return thirdTab;
+    return null;
+  };
+
+  // Find Monster Profile Tab
+  window.findMonsterProfileTab = function(container = document) {
+    if (!container) return null;
+    const candidates = Array.from(container.querySelectorAll(
+      'li > .tab__title > .tab__label, button[role="tab"], [role="tab"], [data-testid*="tab"], .tab__label, a[role="tab"], button'
+    ));
+    for (const el of candidates) {
+      const t = (el.innerText || el.textContent || '').trim().toLowerCase();
+      if (t === 'profile' || t.startsWith('profile')) {
+        return el;
+      }
+    }
+    const secondTab = container.querySelector('li:nth-of-type(2) > .tab__title > .tab__label, [role="tablist"] > *:nth-child(2)');
+    if (secondTab) return secondTab;
+    return null;
+  };
+
+  // Locate the Monster Detail / Resume Preview Pane (handles split-view column, drawer, or dialog)
+  window.findMonsterDetailPane = function(candidateName = '') {
+    const isExcluded = (el) => {
+      if (!el) return true;
+      if (el.closest('#smarthire-copilot-drawer') || el.closest('#smarthire-copilot-trigger') || el.closest('#smarthire-dossier-overlay')) return true;
+      if (el.tagName === 'NAV' || el.tagName === 'HEADER' || el.tagName === 'FOOTER') return true;
+      return false;
+    };
+
+    const firstName = candidateName ? candidateName.trim().split(/\s+/)[0].toLowerCase() : '';
+
+    // Strategy 1: Known testid and class selectors for Monster preview pane / drawer
+    const paneSelectors = [
+      '[data-testid*="candidate-detail"]',
+      '[data-testid*="candidate-preview"]',
+      '[data-testid*="candidate-view"]',
+      '[data-testid*="profile-detail"]',
+      '[data-testid*="resume-view"]',
+      '[data-testid*="resume-content"]',
+      '[data-testid*="resume"]',
+      '[data-testid*="document-viewer"]',
+      '[class*="candidate-detail"]',
+      '[class*="candidateDetail"]',
+      '[class*="candidate-preview"]',
+      '[class*="candidatePreview"]',
+      '[class*="profile-detail"]',
+      '[class*="profileDetail"]',
+      '[class*="resume-view"]',
+      '[class*="resumeView"]',
+      '[class*="resume-container"]',
+      '[class*="resumeContainer"]',
+      '[class*="document-viewer"]',
+      '[class*="documentViewer"]',
+      '[class*="text-resume"]',
+      '[class*="detail-pane"]',
+      '[class*="detailPane"]',
+      '[class*="right-pane"]',
+      '[class*="rightPane"]',
+      '[role="dialog"]',
+      'aside'
+    ];
+
+    for (const sel of paneSelectors) {
+      const els = Array.from(document.querySelectorAll(sel)).filter(el => !isExcluded(el));
+      for (const el of els) {
+        const txt = (el.innerText || el.textContent || '').trim();
+        if (txt.length > 250) {
+          if (!firstName || txt.toLowerCase().includes(firstName) || txt.toLowerCase().includes('summary') || txt.toLowerCase().includes('experience')) {
+            return el;
+          }
+        }
+      }
+    }
+
+    // Strategy 2: Positional search for right-side preview column (Monster split view)
+    const allContainers = Array.from(document.querySelectorAll('div, section, article, main > div > div')).filter(el => {
+      if (isExcluded(el)) return false;
+      if (el.tagName.toLowerCase() === 'smui-card' || el.closest('smui-card')) return false;
+      const rect = el.getBoundingClientRect();
+      return rect.width >= 320 && rect.height >= 300 && rect.left >= window.innerWidth * 0.28;
+    });
+
+    for (const el of allContainers) {
+      const txt = (el.innerText || el.textContent || '').trim();
+      const lower = txt.toLowerCase();
+      if (txt.length > 300 && (lower.includes('summary') || lower.includes('experience') || lower.includes('education') || lower.includes('skills'))) {
+        if (!firstName || lower.includes(firstName)) {
+          return el;
+        }
+      }
+    }
+
+    // Strategy 3: Find element containing candidate's contact relay email
+    const relayEmails = Array.from(document.querySelectorAll('*')).filter(el => {
+      if (isExcluded(el) || el.children.length > 3) return false;
+      const t = el.innerText || '';
+      return t.includes('@contact.monster.com') || (t.includes('@') && !t.includes('support@') && !t.includes('info@'));
+    });
+    if (relayEmails.length > 0) {
+      const parentContainer = relayEmails[0].closest('[class*="pane"], [class*="detail"], [class*="preview"], [class*="view"], section, div') || relayEmails[0].parentElement?.parentElement;
+      if (parentContainer && (parentContainer.innerText || '').length > 200) {
+        return parentContainer;
+      }
+    }
+
+    return null;
+  };
+
+  // Extract clean text from an open Monster detail pane / resume viewer
+  window.extractTextFromMonsterPane = function(pane) {
+    if (!pane) return '';
     let fullText = '';
 
-    const drawerPanes = Array.from(document.querySelectorAll(
-      '[data-testid*="candidate-detail"], [data-testid*="profile-drawer"], aside, [role="dialog"], [class*="drawer"], [class*="Drawer"]'
-    )).filter(p => !p.closest('#smarthire-copilot-drawer') && !p.closest('#smarthire-copilot-trigger'));
-
-    if (drawerPanes.length > 0) {
-      const drawer = drawerPanes[0];
-
-      // 1. Check dedicated resume viewer element
-      const resumeViewers = drawer.querySelectorAll(
-        '[data-testid*="resume-view"], [data-testid*="resume-content"], [class*="resume-view"], [class*="resumeView"], [class*="document-viewer"], [class*="resume-body"], [class*="resumeText"], pre, [class*="text-resume"]'
-      );
-      for (const rv of resumeViewers) {
-        const txt = (rv.innerText || rv.textContent || '').trim();
-        if (txt.length > fullText.length) fullText = txt;
-      }
-
-      // 2. Check iframes (PDF / HTML document viewers)
-      const iframes = drawer.querySelectorAll('iframe');
-      for (const ifr of iframes) {
-        try {
-          const doc = ifr.contentDocument || ifr.contentWindow?.document;
-          if (doc && doc.body) {
-            const ifrText = (doc.body.innerText || doc.body.textContent || '').trim();
-            if (ifrText.length > fullText.length) fullText = ifrText;
-          }
-        } catch (e) {}
-      }
-
-      // If dedicated resume viewer text found, sanitize and return
-      if (fullText.length > 300) {
-        return window.cleanMonsterResumeText(fullText);
-      }
-
-      // 3. Check Work history & experience sections
-      const profileSections = drawer.querySelectorAll(
-        '[data-testid*="work-history"], [class*="work-history"], [data-testid*="experience"], [class*="experience"], [class*="profile-content"], [class*="candidate-experience"]'
-      );
-      let profileSectionText = '';
-      for (const ps of profileSections) {
-        profileSectionText += '\n' + (ps.innerText || ps.textContent || '');
-      }
-
-      if (profileSectionText.length > 200) {
-        return window.cleanMonsterResumeText(profileSectionText);
-      }
-
-      const rawDrawer = (drawer.innerText || drawer.textContent || '').trim();
-      if (rawDrawer.length > fullText.length) fullText = rawDrawer;
+    // 1. Dedicated resume viewers
+    const resumeViewers = pane.querySelectorAll(
+      '[data-testid*="resume-view"], [data-testid*="resume-content"], [class*="resume-view"], [class*="resumeView"], [class*="document-viewer"], [class*="resume-body"], [class*="resumeText"], pre, [class*="text-resume"]'
+    );
+    for (const rv of resumeViewers) {
+      const txt = (rv.innerText || rv.textContent || '').trim();
+      if (txt.length > fullText.length) fullText = txt;
     }
 
-    if ((!fullText || fullText.length < 150) && targetCard) {
-      fullText = (targetCard.innerText || '').trim();
+    // 2. Check iframes (PDF / HTML document viewers)
+    const iframes = pane.querySelectorAll('iframe');
+    for (const ifr of iframes) {
+      try {
+        const doc = ifr.contentDocument || ifr.contentWindow?.document;
+        if (doc && doc.body) {
+          const ifrText = (doc.body.innerText || doc.body.textContent || '').trim();
+          if (ifrText.length > fullText.length) fullText = ifrText;
+        }
+      } catch (e) {}
     }
+
+    // If dedicated resume viewer text found (length >= 350), sanitize and return
+    if (fullText.length >= 350) {
+      return window.cleanMonsterResumeText(fullText);
+    }
+
+    // 3. Work history / experience sections
+    const profileSections = pane.querySelectorAll(
+      '[data-testid*="work-history"], [class*="work-history"], [data-testid*="experience"], [class*="experience"], [class*="profile-content"], [class*="candidate-experience"], [class*="timeline"]'
+    );
+    let profileSectionText = '';
+    for (const ps of profileSections) {
+      profileSectionText += '\n' + (ps.innerText || ps.textContent || '');
+    }
+
+    if (profileSectionText.length >= 250) {
+      return window.cleanMonsterResumeText(profileSectionText);
+    }
+
+    // 4. Fallback to full pane text
+    const rawPane = (pane.innerText || pane.textContent || '').trim();
+    if (rawPane.length > fullText.length) fullText = rawPane;
 
     return window.cleanMonsterResumeText(fullText);
+  };
+
+  // Deep Resume Extractor from Active Drawer or Card (Synchronous)
+  window.extractCleanMonsterResumeText = function(targetCard = null, candidateName = '') {
+    // 1. Check right detail pane / drawer
+    const pane = window.findMonsterDetailPane(candidateName);
+    if (pane) {
+      const paneText = window.extractTextFromMonsterPane(pane);
+      if (paneText && paneText.length >= 300) {
+        return paneText;
+      }
+    }
+
+    // 2. Fallback to target card text if pane not available
+    let fallbackText = '';
+    if (targetCard) {
+      fallbackText = (targetCard.innerText || '').trim();
+    }
+    return window.cleanMonsterResumeText(fallbackText);
+  };
+
+  // Asynchronous Resume Extractor: selects card, activates Resume tab, polls for document render
+  window.extractCleanMonsterResumeTextAsync = async function(targetCard = null, candidateName = '', autoSwitchTabs = true) {
+    // 1. If target card provided and not already selected, click it to trigger right pane render
+    if (targetCard) {
+      const clickTarget = targetCard.querySelector('.smui-card-body') || 
+                          targetCard.querySelector('div') || 
+                          targetCard;
+      try {
+        clickTarget.scrollIntoView({ behavior: 'auto', block: 'nearest' });
+        clickTarget.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+        clickTarget.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true }));
+        clickTarget.click();
+      } catch (e) {}
+    }
+
+    // 2. Poll for detail pane to render (up to 1500ms)
+    let pane = null;
+    const pollStart = Date.now();
+    while (Date.now() - pollStart < 1500) {
+      pane = window.findMonsterDetailPane(candidateName);
+      if (pane) break;
+      await sleep(100);
+    }
+
+    if (pane) {
+      // 3. If autoSwitchTabs is enabled, check and activate Resume tab
+      if (autoSwitchTabs) {
+        const resumeTab = window.findMonsterResumeTab(pane) || window.findMonsterResumeTab(document);
+        if (resumeTab) {
+          const isActive = resumeTab.closest('.tab--active') || 
+                           resumeTab.classList.contains('active') || 
+                           resumeTab.getAttribute('aria-selected') === 'true';
+          if (!isActive) {
+            try { resumeTab.click(); } catch (e) {}
+            // Wait up to 1000ms for resume document/iframe to render
+            const tabPollStart = Date.now();
+            while (Date.now() - tabPollStart < 1000) {
+              const text = window.extractTextFromMonsterPane(pane);
+              if (text && text.length >= 500) break;
+              await sleep(100);
+            }
+          }
+        }
+      }
+
+      // 4. Extract text from pane
+      const extractedText = window.extractTextFromMonsterPane(pane);
+      if (extractedText && extractedText.length >= 500) {
+        return {
+          text: extractedText,
+          rawLength: extractedText.length,
+          sourceType: 'RESUME_DOCUMENT',
+          isProvisional: false,
+          error: null
+        };
+      }
+
+      // If Resume document was short or not found, try Profile tab for full work history
+      if (autoSwitchTabs) {
+        const profileTab = window.findMonsterProfileTab(pane) || window.findMonsterProfileTab(document);
+        if (profileTab) {
+          try { profileTab.click(); } catch (e) {}
+          await sleep(250);
+          const profText = window.extractTextFromMonsterPane(pane);
+          if (profText && profText.length >= 400) {
+            return {
+              text: profText,
+              rawLength: profText.length,
+              sourceType: 'PROFILE_WORK_HISTORY',
+              isProvisional: false,
+              error: null
+            };
+          }
+        }
+      }
+
+      if (extractedText && extractedText.length >= 250) {
+        return {
+          text: extractedText,
+          rawLength: extractedText.length,
+          sourceType: 'PROFILE_SNIPPET',
+          isProvisional: extractedText.length < 500,
+          error: null
+        };
+      }
+    }
+
+    // 5. Fallback: Card text only
+    let cardText = '';
+    if (targetCard) {
+      cardText = window.cleanMonsterResumeText(targetCard.innerText || '');
+    }
+
+    return {
+      text: cardText,
+      rawLength: cardText.length,
+      sourceType: cardText.length > 0 ? 'SEARCH_CARD_SNIPPET' : 'NONE',
+      isProvisional: true,
+      error: cardText.length > 0 ? 'Full resume viewer not rendered; evaluated from card snippet.' : 'Could not detect candidate resume.'
+    };
   };
 
   // Find all candidate cards on Monster+ (Browserflow selector: smui-card / result rows)
@@ -337,7 +581,7 @@
   // Deep Scraper: Click each card, reveal details with polling, extract verified contact info
   window.smartHireScrapeCandidatesAsync = async function(onProgress) {
     const cards = window.getMonsterCards();
-    console.log(`[SmartHire Copilot v3.7] Found ${cards.length} cards for deep scrape.`);
+    console.log(`[SmartHire Copilot v3.8] Found ${cards.length} cards for deep scrape.`);
 
     if (cards.length === 0) {
       if (typeof onProgress === 'function') {
@@ -466,8 +710,9 @@
 
         seenNames.add(nameKey);
 
-        // Extract authentic clean resume text strictly from resume/drawer (excluding buttons, navigation, noise)
-        let candidateFullText = window.extractCleanMonsterResumeText(card);
+        // Extract authentic clean resume text from right detail pane / Resume document
+        const extRes = await window.extractCleanMonsterResumeTextAsync(card, name, true);
+        let candidateFullText = extRes.text;
         if (!candidateFullText || candidateFullText.length < 50) {
           candidateFullText = window.cleanMonsterResumeText(cardText);
         }
@@ -486,10 +731,11 @@
           profileUrl: window.location.href,
           notes: `${recency} · Sourced via SmartHire Copilot.`,
           resumeText: candidateFullText,
-          summary: candidateFullText.slice(0, 5000)
+          summary: candidateFullText.slice(0, 5000),
+          resumeSourceType: extRes.sourceType || 'RESUME_DOCUMENT'
         };
 
-        // Complete Resume Extraction & Verification (Section 4)
+        // Complete Resume Extraction & Verification
         if (window.SmartHireMatchingEngine && typeof window.SmartHireMatchingEngine.verifyAndClassifyResume === 'function') {
           const v = window.SmartHireMatchingEngine.verifyAndClassifyResume(candidateItem);
           candidateItem.extractionStatus = v.status;
@@ -499,10 +745,11 @@
           candidateItem.missingExpectedSections = v.missingExpectedSections;
           candidateItem.extractionWarnings = v.warnings;
           candidateItem.isProvisional = v.isProvisional;
+          candidateItem.extractionVerification = v;
         } else {
-          candidateItem.extractionStatus = candidateFullText.length > 800 ? 'FULL_RESUME_EXTRACTED' : (candidateFullText.length > 250 ? 'PARTIAL_RESUME_EXTRACTED' : 'PROFILE_ONLY');
+          candidateItem.extractionStatus = candidateFullText.length >= 500 ? 'FULL_RESUME_EXTRACTED' : (candidateFullText.length >= 150 ? 'PARTIAL_RESUME_EXTRACTED' : 'PROFILE_ONLY');
           candidateItem.extractedLength = candidateFullText.length;
-          candidateItem.isProvisional = candidateFullText.length < 800;
+          candidateItem.isProvisional = candidateFullText.length < 500;
         }
 
         candidates.push(candidateItem);
