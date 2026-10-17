@@ -766,6 +766,24 @@ document.addEventListener('DOMContentLoaded', () => {
     if (popupDoLoginBtn) {
       popupDoLoginBtn.addEventListener('click', performPopupLogin);
     }
+
+    if (popupLoginPass) {
+      popupLoginPass.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') performPopupLogin();
+      });
+    }
+
+    if (popupLoginEmail) {
+      popupLoginEmail.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          if (popupLoginPass && !popupLoginPass.value) {
+            popupLoginPass.focus();
+          } else {
+            performPopupLogin();
+          }
+        }
+      });
+    }
   }
 
   function performPopupLogin() {

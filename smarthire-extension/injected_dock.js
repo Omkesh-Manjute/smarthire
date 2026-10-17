@@ -169,19 +169,6 @@ Website: http://www.coolsofttech.com`;
         <button id="smarthire-btn-auth-toggle" class="smarthire-link-btn" style="color:#38BDF8;">Sign In</button>
       </div>
 
-      <!-- Login Popover Box -->
-      <div id="smarthire-login-box" class="smarthire-login-box" style="display:none;">
-        <div style="font-weight:700; font-size:12px; color:#0F172A; margin-bottom:4px;">Recruiter Authentication</div>
-        <div style="font-size:10.5px; color:#64748B; margin-bottom:8px;">Sign in with your SmartHire ATS recruiter credentials.</div>
-        <input type="email" id="smarthire-login-email" placeholder="Work email (e.g. kamal@coolsofttech.com)" class="smarthire-input" style="font-size:11.5px; margin-bottom:6px; padding:6px 8px;" />
-        <input type="password" id="smarthire-login-pass" placeholder="Password" class="smarthire-input" style="font-size:11.5px; margin-bottom:8px; padding:6px 8px;" />
-        <div style="display:flex; gap:6px;">
-          <button id="smarthire-btn-do-login" class="smarthire-btn-primary" style="flex:1; padding:6px; font-size:11.5px;">Sign In</button>
-          <button id="smarthire-btn-login-close" class="smarthire-btn-secondary" style="font-size:10.5px; padding:6px 8px;">Cancel</button>
-        </div>
-        <div id="smarthire-login-status" style="font-size:10.5px; margin-top:6px; display:none;"></div>
-      </div>
-
       <!-- Navigation Tabs: Quick Sourcing vs Browserflow Studio -->
       <div class="smarthire-nav-tabs">
         <button class="smarthire-tab-btn active" id="tab-btn-quick">⚡ Quick Sourcing</button>
@@ -191,23 +178,34 @@ Website: http://www.coolsofttech.com`;
       <div class="smarthire-drawer-body">
         
         <!-- AUTHENTICATION REQUIRED LOCK GATE -->
-        <div id="smarthire-auth-gate" class="smarthire-auth-gate" style="display:none;">
-          <div class="smarthire-auth-gate-icon">
+        <div id="smarthire-auth-gate" class="smarthire-auth-gate" style="display:none; padding:22px 18px; background:#FFFFFF; border:1px solid #CBD5E1; border-radius:10px; box-shadow:0 6px 18px rgba(0,0,0,0.05); margin-top:8px;">
+          <div class="smarthire-auth-gate-icon" style="width:44px; height:44px; border-radius:50%; background:#EFF6FF; border:1px solid #BFDBFE; display:flex; align-items:center; justify-content:center; margin:0 auto 12px;">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2.2">
               <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
               <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
             </svg>
           </div>
-          <div style="font-weight:700; font-size:13.5px; color:#0F172A; margin-bottom:4px;">Recruiter Login Required</div>
-          <div style="font-size:11px; color:#64748B; margin-bottom:14px; line-height:1.45;">
-            Please sign in with your SmartHire ATS recruiter credentials to access live requisitions, candidate scraping, and email outreach.
+          <div style="font-weight:800; font-size:14.5px; color:#0F172A; margin-bottom:4px; text-align:center;">Recruiter Login Required</div>
+          <div style="font-size:11px; color:#64748B; margin-bottom:16px; line-height:1.45; text-align:center;">
+            Sign in with your SmartHire ATS recruiter credentials to access live requisitions, candidate scraping, and email outreach.
           </div>
-          <input type="email" id="smarthire-gate-email" placeholder="Work email (e.g. kamal@coolsofttech.com)" class="smarthire-input" style="font-size:11.5px; margin-bottom:8px; padding:7px 10px;" />
-          <input type="password" id="smarthire-gate-pass" placeholder="Password" class="smarthire-input" style="font-size:11.5px; margin-bottom:10px; padding:7px 10px;" />
-          <button id="smarthire-gate-btn-login" class="smarthire-btn-primary" style="width:100%; padding:8px; font-size:12px; font-weight:700;">
-            Sign In to SmartHire Copilot
+          
+          <div style="margin-bottom:10px; text-align:left;">
+            <label style="display:block; font-size:11px; font-weight:700; color:#334155; margin-bottom:4px;">Work Email</label>
+            <input type="email" id="smarthire-gate-email" placeholder="Enter work email" class="smarthire-input" style="width:100%; box-sizing:border-box; font-size:12px; padding:8px 10px;" />
+          </div>
+
+          <div style="margin-bottom:14px; text-align:left;">
+            <label style="display:block; font-size:11px; font-weight:700; color:#334155; margin-bottom:4px;">Password</label>
+            <input type="password" id="smarthire-gate-pass" placeholder="Enter password" class="smarthire-input" style="width:100%; box-sizing:border-box; font-size:12px; padding:8px 10px;" />
+          </div>
+
+          <button id="smarthire-gate-btn-login" class="smarthire-btn-primary" style="width:100%; height:38px; padding:0; font-size:12.5px; font-weight:700; border-radius:6px; background:#2563EB; box-shadow:0 2px 6px rgba(37,99,235,0.25); display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; margin-top:4px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+            <span>Sign In to SmartHire Copilot</span>
           </button>
-          <div id="smarthire-gate-status" style="font-size:11px; margin-top:8px; min-height:16px;"></div>
+          
+          <div id="smarthire-gate-status" style="font-size:11.5px; margin-top:10px; min-height:18px; text-align:center; font-weight:600;"></div>
         </div>
 
         <!-- VIEW 1: QUICK SOURCING TAB -->
@@ -572,7 +570,7 @@ Website: http://www.coolsofttech.com`;
       fetchLiveJobs();
     });
 
-    // Recruiter Auth Toggle (Sign Out or Open Login)
+    // Recruiter Auth Toggle (Sign Out or Focus Login)
     document.getElementById('smarthire-btn-auth-toggle')?.addEventListener('click', () => {
       if (isUserAuthenticated && currentUser) {
         if (confirm(`Sign out of SmartHire ATS (${currentUser.name})?`)) {
@@ -584,23 +582,37 @@ Website: http://www.coolsofttech.com`;
           });
         }
       } else {
-        const box = document.getElementById('smarthire-login-box');
-        if (box) box.style.display = box.style.display === 'none' ? 'block' : 'none';
+        const emailInput = document.getElementById('smarthire-gate-email');
+        if (emailInput) {
+          emailInput.focus();
+          emailInput.style.borderColor = '#3B82F6';
+          emailInput.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.25)';
+          setTimeout(() => {
+            emailInput.style.borderColor = '';
+            emailInput.style.boxShadow = '';
+          }, 1500);
+        }
       }
     });
 
-    document.getElementById('smarthire-btn-login-close')?.addEventListener('click', () => {
-      const box = document.getElementById('smarthire-login-box');
-      if (box) box.style.display = 'none';
-    });
-
-    document.getElementById('smarthire-btn-do-login')?.addEventListener('click', () => {
-      performRecruiterLogin();
-    });
-
-    // Auth Lock Gate Login Button
+    // Auth Lock Gate Login Button & Keyboard Enter Handlers
     document.getElementById('smarthire-gate-btn-login')?.addEventListener('click', () => {
       performGateLogin();
+    });
+
+    document.getElementById('smarthire-gate-pass')?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') performGateLogin();
+    });
+
+    document.getElementById('smarthire-gate-email')?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const pass = document.getElementById('smarthire-gate-pass');
+        if (pass && !pass.value) {
+          pass.focus();
+        } else {
+          performGateLogin();
+        }
+      }
     });
 
     // Mount Outreach, Bulk Composer, and AI Dossier Modal Overlays in DOM
@@ -685,7 +697,7 @@ Website: http://www.coolsofttech.com`;
     if (!email || !password) {
       if (statusEl) {
         statusEl.style.color = '#DC2626';
-        statusEl.innerText = 'Please enter both email and password';
+        statusEl.innerText = 'Please enter both your work email and password';
       }
       return;
     }
@@ -702,84 +714,29 @@ Website: http://www.coolsofttech.com`;
     chrome.runtime.sendMessage({ action: 'LOGIN_USER', email, password }, (res) => {
       if (btn) {
         btn.disabled = false;
-        btn.innerText = 'Sign In to SmartHire Copilot';
+        btn.innerHTML = `
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+          <span>Sign In to SmartHire Copilot</span>
+        `;
       }
       if (res && res.success && res.user) {
         currentUser = res.user;
         isUserAuthenticated = true;
+        if (statusEl) {
+          statusEl.style.color = '#059669';
+          statusEl.innerText = `✓ Welcome, ${currentUser.name || 'Recruiter'}!`;
+        }
         updateRecruiterBarUI();
-        checkAndApplyAuthGate();
+        setTimeout(() => {
+          checkAndApplyAuthGate();
+        }, 400);
       } else {
         if (statusEl) {
           statusEl.style.color = '#DC2626';
-          statusEl.innerText = res?.message || 'Invalid email or password';
+          statusEl.innerText = res?.message || 'Invalid email or password. Please verify credentials.';
         }
       }
     });
-  }
-
-  function performRecruiterLogin() {
-    const email = document.getElementById('smarthire-login-email')?.value.trim();
-    const password = document.getElementById('smarthire-login-pass')?.value.trim();
-    const statusEl = document.getElementById('smarthire-login-status');
-    const btn = document.getElementById('smarthire-btn-do-login');
-
-    if (!email || !password) {
-      if (statusEl) {
-        statusEl.style.display = 'block';
-        statusEl.style.color = '#DC2626';
-        statusEl.innerText = 'Please enter both email and password';
-      }
-      return;
-    }
-
-    if (btn) {
-      btn.disabled = true;
-      btn.innerText = 'Signing In...';
-    }
-    if (statusEl) {
-      statusEl.style.display = 'block';
-      statusEl.style.color = '#2563EB';
-      statusEl.innerText = 'Authenticating with SmartHire ATS...';
-    }
-
-    try {
-      chrome.runtime.sendMessage({ action: 'LOGIN_USER', email, password }, (res) => {
-        if (btn) {
-          btn.disabled = false;
-          btn.innerText = 'Sign In';
-        }
-        if (res && res.success && res.user) {
-          currentUser = res.user;
-          isUserAuthenticated = true;
-          updateRecruiterBarUI();
-          checkAndApplyAuthGate();
-          if (statusEl) {
-            statusEl.style.color = '#059669';
-            statusEl.innerText = `✓ Welcome, ${currentUser.name}!`;
-          }
-          setTimeout(() => {
-            const box = document.getElementById('smarthire-login-box');
-            if (box) box.style.display = 'none';
-            if (statusEl) statusEl.style.display = 'none';
-          }, 1200);
-        } else {
-          if (statusEl) {
-            statusEl.style.color = '#DC2626';
-            statusEl.innerText = res?.message || 'Invalid email or password';
-          }
-        }
-      });
-    } catch (e) {
-      if (btn) {
-        btn.disabled = false;
-        btn.innerText = 'Sign In';
-      }
-      if (statusEl) {
-        statusEl.style.color = '#DC2626';
-        statusEl.innerText = `Error: ${e.message}`;
-      }
-    }
   }
 
   function initOutreachComposerModal() {
