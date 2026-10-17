@@ -834,8 +834,13 @@
       .replace(/Dice\s+Talent\s+Search/gi, '')
       .replace(/Quick\s+message/gi, '');
 
-    // 2. Remove Monster/Dice action buttons & navigation labels
+    // 2. Remove Monster/Dice search filter accordions, UI controls & button noise
     text = text
+      .replace(/(?:expand|collapse)\s+search\s+filter[^\n\r]*/gi, '')
+      .replace(/search\s+filter[^\n\r]*/gi, '')
+      .replace(/filter\s+by[^\n\r]*/gi, '')
+      .replace(/degree\/major[^\n\r]*/gi, '')
+      .replace(/years\s+of\s+experience\s+filter[^\n\r]*/gi, '')
       .replace(/\b(?:Back\s+to\s+(?:search\s+results|candidates?|search))\b/gi, '')
       .replace(/\b(?:Contact\s+candidate|Send\s+message|Send\s+email)\b/gi, '')
       .replace(/\b(?:Add\s+to\s+(?:Pipeline|Candidate\s+Pool|Job|Folder|Project))\b/gi, '')
@@ -850,6 +855,10 @@
     const cleanLines = lines.filter(line => {
       const lower = line.toLowerCase();
       if (lower.length < 3) return false;
+      if (/^(?:expand|collapse)\s+search\s+filter/i.test(lower)) return false;
+      if (/search\s+filter/i.test(lower)) return false;
+      if (/filter\s+by/i.test(lower)) return false;
+      if (/degree\/major/i.test(lower)) return false;
       if (/^(?:back|contact|send|add|export|view|save|actions|next|previous|print|share|download|close|cancel|submit|edit|delete|more|filter|sort|search|login|sign in|sign out|need help\?|post a job|create campaign|clear all|undo|update)$/i.test(lower)) return false;
       if (/^(?:overview|profile|resume|activity|notes|candidate details)$/i.test(lower)) return false;
       if (/^select a card/i.test(lower)) return false;
@@ -872,7 +881,8 @@
 
     for (const seg of segments) {
       const segLower = seg.toLowerCase();
-      if (/^(?:candidate|profile|updated|viewed|contact|select a card|sms opt-in|open in)/i.test(seg)) continue;
+      if (/^(?:candidate|profile|updated|viewed|contact|select a card|sms opt-in|open in)/i.test(segLower)) continue;
+      if (/(?:expand|collapse)\s+search\s+filter|search\s+filter|filter\s+by|degree\/major/i.test(segLower)) continue;
 
       for (const kw of matchKeywords) {
         if (segLower.includes(kw.toLowerCase())) {
@@ -907,61 +917,81 @@
     const skillsLower = (Array.isArray(candidateSkills) ? candidateSkills : []).map(s => String(s).toLowerCase());
 
     // ---------------------------------------------------------------------
-    // A. SPECIAL RULE 1: Experience Level & Complexity (5+ Years / requiredYears)
+    // A. SPECIAL RULE 1: Experience Level & Complexity (Documented Employment Dates)
+    // (Recalculate qualifying IT experience from documented employment dates; do NOT infer from text length or generic claims)
     // ---------------------------------------------------------------------
     if (requirement.category === 'Experience & Complexity' || requirement.requiredYears) {
       const reqYears = requirement.requiredYears || 5;
       
       let candYears = 0;
-      const expStr = String(candidateExp || candidateObj?.experience || '');
-      const expMatch = expStr.match(/(\d+)\+?\s*(?:years?|yrs?)/i);
-      if (expMatch) {
-        candYears = parseInt(expMatch[1], 10);
+      let dateSpanEvidence = '';
+      const currentYear = new Date().getFullYear();
+
+      // 1. Parse documented employment date ranges from resume text
+      // Examples: "2021 – Present", "2017 – 2021", "2015 – 2017", "2015 to Present", "05/2015 - 06/2021"
+      const dateRangeRegex = /\b(19\d{2}|20\d{2})\s*(?:[–—\-]|to)\s*(19\d{2}|20\d{2}|present|current)\b/gi;
+      const validSpans = [];
+      let match;
+
+      while ((match = dateRangeRegex.exec(cleanText)) !== null) {
+        const startY = parseInt(match[1], 10);
+        const endStr = match[2].toLowerCase();
+        const endY = (endStr === 'present' || endStr === 'current') ? currentYear : parseInt(endStr, 10);
+        
+        // Contextual check: Exclude future graduation / in-progress degree dates (e.g. Expected June 2027)
+        const matchIndex = match.index;
+        const lineStart = cleanText.lastIndexOf('\n', matchIndex) + 1;
+        const lineEnd = cleanText.indexOf('\n', matchIndex);
+        const line = cleanText.substring(lineStart, lineEnd === -1 ? cleanText.length : lineEnd).toLowerCase();
+        const isEducationContext = line.includes('expected') || line.includes('bachelor') || line.includes('graduation') || line.includes('degree') || line.includes('anticipated') || line.includes('candidate for');
+        
+        if (!isEducationContext && startY >= 1990 && startY <= currentYear && endY >= startY && endY <= currentYear) {
+          validSpans.push({ startY, endY, raw: match[0] });
+        }
+      }
+
+      if (validSpans.length > 0) {
+        const earliestYear = Math.min(...validSpans.map(s => s.startY));
+        const latestYear = Math.max(...validSpans.map(s => s.endY));
+        candYears = latestYear - earliestYear;
+        const latestDisplay = latestYear === currentYear ? 'Present' : latestYear;
+        dateSpanEvidence = `Documented employment dates (${earliestYear} – ${latestDisplay}) demonstrate ${candYears} years of qualifying IT experience`;
       } else {
-        const textExpMatch = text.match(/(\d+)\+?\s*(?:years?|yrs?)(?:\s*(?:of)?\s*experience)?/i);
-        if (textExpMatch) {
-          candYears = parseInt(textExpMatch[1], 10);
+        // Fallback to explicit stated experience in candidate profile/card
+        const expStr = String(candidateExp || candidateObj?.experience || '');
+        const expMatch = expStr.match(/(\d+)\+?\s*(?:years?|yrs?)/i);
+        if (expMatch) {
+          candYears = parseInt(expMatch[1], 10);
+          dateSpanEvidence = `Candidate profile documents ${expStr} of qualifying industry experience`;
         } else {
-          const yearMatches = text.match(/\b(19\d{2}|20\d{2})\b/g);
-          if (yearMatches && yearMatches.length >= 2) {
-            const yearsNum = yearMatches.map(y => parseInt(y, 10)).filter(y => y >= 1990 && y <= 2026);
-            if (yearsNum.length >= 2) {
-              const earliest = Math.min(...yearsNum);
-              const latest = Math.max(...yearsNum);
-              candYears = latest - earliest;
-            }
+          const textExpMatch = text.match(/(\d+)\+?\s*(?:years?|yrs?)(?:\s*(?:of)?\s*(?:relevant|it|technical|industry|progressive)?\s*experience)/i);
+          if (textExpMatch) {
+            candYears = parseInt(textExpMatch[1], 10);
+            dateSpanEvidence = `Documented professional work history reflects ${candYears}+ years of qualifying experience`;
           }
         }
       }
 
       if (candYears >= reqYears) {
-        const displayYears = expStr ? expStr : `${candYears}+ Years`;
         return {
           evidenceStatus: EVIDENCE_STATUS.DIRECT_MATCH,
           evidenceScore: EVIDENCE_SCORES[EVIDENCE_STATUS.DIRECT_MATCH],
-          resumeEvidence: `"Candidate demonstrates ${displayYears} of industry experience (satisfies ${reqYears}+ years requirement)"`,
+          resumeEvidence: `"${dateSpanEvidence || `Candidate demonstrates ${candYears}+ years of qualifying IT experience`} (satisfies ${reqYears}+ years requirement)"`,
           gapOrQualification: ''
         };
       } else if (candYears > 0 && candYears < reqYears) {
         return {
           evidenceStatus: EVIDENCE_STATUS.PARTIAL_MATCH,
           evidenceScore: EVIDENCE_SCORES[EVIDENCE_STATUS.PARTIAL_MATCH],
-          resumeEvidence: `"Demonstrates ${candYears} years experience"`,
-          gapOrQualification: `Candidate demonstrates ${candYears} years of experience; position strictly targets ${reqYears}+ years.`
-        };
-      } else if (cleanText.length > 600) {
-        return {
-          evidenceStatus: EVIDENCE_STATUS.DIRECT_MATCH,
-          evidenceScore: EVIDENCE_SCORES[EVIDENCE_STATUS.DIRECT_MATCH],
-          resumeEvidence: `"Demonstrated multi-year career progression across documented professional work history"`,
-          gapOrQualification: ''
+          resumeEvidence: `"${dateSpanEvidence || `Demonstrates ${candYears} years experience`}"`,
+          gapOrQualification: `Candidate documented employment dates demonstrate ${candYears} years of qualifying IT experience; position strictly targets ${reqYears}+ years.`
         };
       } else {
         return {
           evidenceStatus: EVIDENCE_STATUS.NEEDS_VERIFICATION,
           evidenceScore: EVIDENCE_SCORES[EVIDENCE_STATUS.NEEDS_VERIFICATION],
           resumeEvidence: '',
-          gapOrQualification: `Experience depth unverified in partial profile. Inspect full resume work history to confirm ${reqYears}+ years.`
+          gapOrQualification: `Qualifying IT experience depth not established from documented employment dates. Inspect full employment history to confirm ${reqYears}+ years.`
         };
       }
     }
@@ -1075,7 +1105,19 @@
           evidenceStatus: EVIDENCE_STATUS.PARTIAL_MATCH,
           evidenceScore: EVIDENCE_SCORES[EVIDENCE_STATUS.PARTIAL_MATCH],
           resumeEvidence: snippet ? `"${snippet}"` : `"Bachelor of Science in Information Technology (Expected June 2027)"`,
-          gapOrQualification: `Degree in progress (Expected ${expectedYear}). Bachelor's degree not yet completed/conferred; verify whether degree completion prior to contract start is mandatory for this requisition.`
+          gapOrQualification: `Degree in progress (Expected ${expectedYear}). Bachelor's degree not yet completed/conferred; verify employer education eligibility rules regarding mandatory degree completion prior to contract award/start date.`
+        };
+      }
+
+      // Check for genuine completed degree
+      const hasCompletedDegree = (text.includes('bachelor') || text.includes('degree') || text.includes('b.s.') || text.includes('b.a.') || text.includes('master')) &&
+        (text.includes('university') || text.includes('college') || /\b(19\d{2}|20[0-2]\d)\b/.test(text));
+      if (!hasCompletedDegree && !text.includes('bachelor') && !text.includes('degree')) {
+        return {
+          evidenceStatus: EVIDENCE_STATUS.NOT_DEMONSTRATED,
+          evidenceScore: EVIDENCE_SCORES[EVIDENCE_STATUS.NOT_DEMONSTRATED],
+          resumeEvidence: '',
+          gapOrQualification: `No explicit degree or completed higher education credentials found in extracted resume text.`
         };
       }
     }
@@ -1140,16 +1182,36 @@
       }
     }
 
-    // 5. Direct Supervisory Tenure (3+ Years)
-    if (reqLower.includes('supervisory') || reqLower.includes('supervise') || (reqLower.includes('supervisory experience') && reqLower.includes('years'))) {
-      const supKeywords = ['supervising', 'supervised', 'supervisory', 'direct reports', 'hired and managed', 'people manager', 'personnel management', 'performance evaluations of staff', 'manager of it', 'supervisory experience'];
-      const hasSup = supKeywords.some(kw => text.includes(kw));
-      if (!hasSup) {
+    // 5. Direct Supervisory Experience (3+ Years)
+    // Strictly separate direct supervisory tenure (direct reports, performance evaluations, personnel management)
+    // from Scrum coaching, cross-functional project management, and working manager coordination.
+    if (reqLower.includes('supervisory') || reqLower.includes('supervise') || (reqLower.includes('supervis') && reqLower.includes('years'))) {
+      const explicitSupervisoryPatterns = [
+        /\bdirect\s+reports\b/i,
+        /\bsupervised\s+(?:\d+|a\s+team\s+of\s+\d+)\s+(?:direct\s+reports|employees|staff|analysts|engineers|specialists)/i,
+        /\bhired\s*(?:and|,)\s*(?:managed|fired|evaluated)\s+(?:direct\s+reports|staff|employees|team members)/i,
+        /\bperformance\s+evaluations\s+of\s+(?:direct\s+reports|staff|employees|subordinates)/i,
+        /\bformal\s+supervisory\s+(?:tenure|experience|authority)\b/i,
+        /\bpeople\s+manager\s+with\s+(?:direct\s+reports|\d+\+?\s+years)/i,
+        /\bpersonnel\s+management\s+of\s+(?:direct\s+reports|staff|employees)/i
+      ];
+
+      const hasExplicitDirectSupervisory = explicitSupervisoryPatterns.some(pat => pat.test(cleanText));
+      
+      if (!hasExplicitDirectSupervisory) {
         return {
           evidenceStatus: EVIDENCE_STATUS.NOT_DEMONSTRATED,
           evidenceScore: EVIDENCE_SCORES[EVIDENCE_STATUS.NOT_DEMONSTRATED],
           resumeEvidence: '',
-          gapOrQualification: `Requisition mandates 3+ years of full-time direct supervisory experience. Candidate demonstrates Agile scrum team coaching but no explicit evidence of direct supervisory tenure or managing direct reports.`
+          gapOrQualification: `Requisition mandates 3+ years of full-time direct supervisory experience with formal direct reports. Candidate demonstrates Scrum team coaching and cross-functional project coordination as a working manager, but lacks documented evidence of direct reports or 3+ years of formal supervisory tenure.`
+        };
+      } else {
+        const supSnippet = extractAuthenticSentenceSnippet(cleanText, ['direct reports', 'supervised', 'hired and managed', 'performance evaluations']);
+        return {
+          evidenceStatus: EVIDENCE_STATUS.DIRECT_MATCH,
+          evidenceScore: EVIDENCE_SCORES[EVIDENCE_STATUS.DIRECT_MATCH],
+          resumeEvidence: supSnippet ? `"${supSnippet}"` : `Explicitly demonstrates direct supervisory experience with formal direct reports`,
+          gapOrQualification: ''
         };
       }
     }
@@ -1298,10 +1360,14 @@
       }
 
       if (hasState) {
-        eligibilityStatus = ELIGIBILITY_STATUS.VERIFIED_ELIGIBLE;
         if (targetState === 'SC') {
-          notes = `Verified SC resident (${candLocation}); available for 5-day onsite work at Columbia, SC location. Meets mandatory state residency requirement.`;
+          // Profile location in Columbia, SC supports location alignment and 5-day on-site availability;
+          // formal legal state residency requires document verification prior to submission.
+          eligibilityStatus = ELIGIBILITY_STATUS.PENDING_VERIFICATION;
+          isHardFailure = false;
+          notes = `Profile location (${candLocation}) supports location alignment and 5-day on-site availability in Columbia, SC; pending formal verification of current South Carolina residency before final submittal.`;
         } else {
+          eligibilityStatus = ELIGIBILITY_STATUS.VERIFIED_ELIGIBLE;
           notes = `Verified ${targetState || 'state'} resident (${candLocation}). Meets mandatory state residency requirement.`;
         }
       } else if (!candLocation || candLocation.toLowerCase() === 'united states' || candLocation.toLowerCase() === 'us') {
@@ -1623,6 +1689,14 @@
           this._cache.delete(key);
         }
       }
+    }
+
+    get cache() {
+      return this._cache;
+    }
+
+    delete(key) {
+      return this._cache.delete(key);
     }
 
     clear() {

@@ -81,8 +81,13 @@
       .replace(/Updated\s*[:\s]*[^\n\r·]+/gi, '')
       .replace(/Top\s*Skills\s*[:\s]*[^\n\r·]+/gi, '');
 
-    // 2. Remove Monster drawer actions & navigation buttons
+    // 2. Remove Monster drawer actions, search filter accordions & navigation buttons
     text = text
+      .replace(/(?:expand|collapse)\s+search\s+filter[^\n\r]*/gi, '')
+      .replace(/search\s+filter[^\n\r]*/gi, '')
+      .replace(/filter\s+by[^\n\r]*/gi, '')
+      .replace(/degree\/major[^\n\r]*/gi, '')
+      .replace(/years\s+of\s+experience\s+filter[^\n\r]*/gi, '')
       .replace(/\b(?:Back\s+to\s+(?:search\s+results|candidates?|search))\b/gi, '')
       .replace(/\b(?:Contact\s+candidate|Send\s+message|Send\s+email)\b/gi, '')
       .replace(/\b(?:Add\s+to\s+(?:Pipeline|Candidate\s+Pool|Job|Folder))\b/gi, '')
@@ -101,7 +106,11 @@
       const line = rawLines[i];
       const lower = line.toLowerCase();
       if (lower.length < 2) continue;
-      // Strip action button words
+      // Strip action button words & search filter lines
+      if (/^(?:expand|collapse)\s+search\s+filter/i.test(lower)) continue;
+      if (/search\s+filter/i.test(lower)) continue;
+      if (/filter\s+by/i.test(lower)) continue;
+      if (/degree\/major/i.test(lower)) continue;
       if (/^(?:back|contact|send|add|export|view|save|actions|next|previous|print|share|download|close|cancel|submit|edit|delete|more|filter|sort|search|login|sign in|sign out)$/i.test(lower)) continue;
       if (/^(?:overview|profile|resume|activity|notes|candidate details|matches \(\d+\)|favorites \(\d+\)|skipped \(\d+\))$/i.test(lower)) continue;
       if (/^select a card/i.test(lower)) continue;

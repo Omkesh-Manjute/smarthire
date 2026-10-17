@@ -1004,9 +1004,9 @@ LOCATION & ELIGIBILITY
 });
 
 // ---------------------------------------------------------------------
-// TEST 27: FIX: DYNAMIC SOUTH CAROLINA RESIDENCY AND 5-DAY ONSITE VALIDATION
+// TEST 27: FIX: DYNAMIC SOUTH CAROLINA RESIDENCY AND 5-DAY ONSITE VALIDATION (PENDING_VERIFICATION)
 // ---------------------------------------------------------------------
-runTest('Fix: Dynamic South Carolina residency and 5-day onsite validation verified', () => {
+runTest('Fix: Dynamic South Carolina residency and 5-day onsite validation verified as PENDING_VERIFICATION', () => {
   const scJd = SmartHireMatchingEngine.normalizeJobDescription({
     id: '159348',
     title: 'Assistant IT Director / Enterprise Program Manager - Project Lead',
@@ -1017,17 +1017,18 @@ runTest('Fix: Dynamic South Carolina residency and 5-day onsite validation verif
   assert.strictEqual(scJd.eligibilityRules.requiresStateResidency, true);
   assert.strictEqual(scJd.eligibilityRules.requiredState, 'SC');
 
-  // Resident candidate in Columbia, SC
+  // Candidate in Columbia, SC: Location aligns with 5-day on-site work, but legal state residency is PENDING_VERIFICATION
   const columbiaCandidate = {
     name: 'Lia Smith',
     location: 'Columbia, SC',
-    resumeText: 'Experienced IT manager resident of Columbia, SC.'
+    resumeText: 'Experienced IT manager based in Columbia, SC.'
   };
 
   const eligResident = SmartHireMatchingEngine.evaluateEligibility(columbiaCandidate, scJd);
-  assert.strictEqual(eligResident.eligibilityStatus, 'VERIFIED_ELIGIBLE');
-  assert.strictEqual(eligResident.isHardFailure, false);
-  assert.ok(eligResident.eligibilityNotes.includes('Verified SC resident'));
+  assert.strictEqual(eligResident.eligibilityStatus, 'PENDING_VERIFICATION', 'Columbia, SC location must evaluate to PENDING_VERIFICATION');
+  assert.strictEqual(eligResident.isHardFailure, false, 'Location alignment must not be a hard failure');
+  assert.ok(eligResident.eligibilityNotes.includes('supports location alignment'), 'Notes must state location supports alignment');
+  assert.ok(eligResident.eligibilityNotes.includes('pending formal verification of current South Carolina residency'), 'Notes must state residency pending verification');
 
   // Non-resident candidate in Dallas, TX
   const outOfStateCandidate = {
@@ -1037,9 +1038,69 @@ runTest('Fix: Dynamic South Carolina residency and 5-day onsite validation verif
   };
 
   const eligNonResident = SmartHireMatchingEngine.evaluateEligibility(outOfStateCandidate, scJd);
-  assert.strictEqual(eligNonResident.eligibilityStatus, 'INELIGIBLE');
-  assert.strictEqual(eligNonResident.isHardFailure, true);
+  assert.strictEqual(eligNonResident.eligibilityStatus, 'INELIGIBLE', 'Out of state location must evaluate to INELIGIBLE');
+  assert.strictEqual(eligNonResident.isHardFailure, true, 'Out of state location must be a hard failure');
   assert.ok(eligNonResident.eligibilityNotes.includes('INELIGIBLE'));
+});
+
+// ---------------------------------------------------------------------
+// TEST 29: FIX: QUALIFYING IT EXPERIENCE CALCULATED FROM DOCUMENTED EMPLOYMENT DATES
+// ---------------------------------------------------------------------
+runTest('Fix: Qualifying IT experience derived from documented employment dates (not text length)', () => {
+  const jd = SmartHireMatchingEngine.normalizeJobDescription({
+    title: 'Assistant IT Director',
+    description: 'Requires 6+ years of qualifying IT experience.'
+  });
+  const expReq = jd.categories.EXPERIENCE_COMPLEXITY[0];
+  assert.ok(expReq, 'Experience requirement must be defined in JD');
+
+  // Candidate with documented employment dates: 2015 – 2017, 2017 – 2021, 2021 – Present (= 11 years)
+  // Plus graduation date 2027 which must NOT be treated as employment date
+  const resumeWithDates = `LIA SMITH
+Experience:
+Company A | 2021 – Present
+Company B | 2017 – 2021
+Company C | 2015 – 2017
+Education:
+Bachelor of Science (Expected June 2027)`;
+
+  const match = SmartHireMatchingEngine.matchRequirementEvidence(expReq, resumeWithDates, [], 'IT Lead');
+  assert.strictEqual(match.evidenceStatus, 'DIRECT_MATCH', 'Documented dates (2015-Present = 11 yrs) must DIRECT_MATCH 6+ yrs requirement');
+  assert.strictEqual(match.evidenceScore, 1.00);
+  assert.ok(match.resumeEvidence.includes('2015') && match.resumeEvidence.includes('11 years'), 'Evidence snippet must display documented employment dates and computed years');
+
+  // Candidate with short employment dates (2023 – Present = 3 years) against 6+ yrs requirement
+  const shortDateResume = `JANE DOE
+Experience:
+Tech Corp | 2023 – Present`;
+  const shortMatch = SmartHireMatchingEngine.matchRequirementEvidence(expReq, shortDateResume, [], 'Developer');
+  assert.strictEqual(shortMatch.evidenceStatus, 'PARTIAL_MATCH', 'Documented dates under requirement must PARTIAL_MATCH');
+  assert.strictEqual(shortMatch.evidenceScore, 0.50);
+  assert.ok(shortMatch.gapOrQualification.includes('3 years'), 'Gap note must reflect 3 years');
+});
+
+// ---------------------------------------------------------------------
+// TEST 30: FIX: MONSTER UI SEARCH FILTER NOISE REJECTED FROM EVIDENCE
+// ---------------------------------------------------------------------
+runTest('Fix: Monster search filter accordion noise ("Expand search filter Degree/Major") stripped and rejected', () => {
+  const noisyResume = `Lia Smith
+Expand search filter Degree/Major
+Expand search filter Company
+Collapse search filter Location
+Filter by Years of Experience
+Summary: Senior IT Program Manager with experience leading technology deliverables.`;
+
+  const jd = SmartHireMatchingEngine.normalizeJobDescription({
+    title: 'Assistant IT Director',
+    description: "Requires Bachelor's Degree in Computer Science or Related field."
+  });
+  const eduReq = jd.categories.EDUCATION_CERTS.find(r => r.name.toLowerCase().includes('bachelor'));
+  assert.ok(eduReq);
+
+  const match = SmartHireMatchingEngine.matchRequirementEvidence(eduReq, noisyResume, [], 'Program Manager');
+  assert.strictEqual(match.evidenceStatus, 'NOT_DEMONSTRATED', 'Search filter accordion must be stripped and evaluate to NOT_DEMONSTRATED');
+  assert.strictEqual(match.evidenceScore, 0.00);
+  assert.ok(!match.resumeEvidence.includes('search filter'), 'Evidence must never contain search filter text');
 });
 
 // ---------------------------------------------------------------------

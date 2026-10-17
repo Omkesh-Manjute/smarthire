@@ -1540,9 +1540,14 @@ ${(match.interviewQuestions || [
           if (targetJob) {
             const norm = window.SmartHireMatchingEngine.normalizeJobDescription(targetJob);
             if (window.SmartHireMatchingEngine.sessionCache) {
-              window.SmartHireMatchingEngine.sessionCache.cache.delete(`${cand.id}_${norm.title}`);
+              if (typeof window.SmartHireMatchingEngine.sessionCache.invalidateCandidate === 'function') {
+                window.SmartHireMatchingEngine.sessionCache.invalidateCandidate(cand.id || cand.name);
+              }
+              if (window.SmartHireMatchingEngine.sessionCache.cache && typeof window.SmartHireMatchingEngine.sessionCache.cache.delete === 'function') {
+                window.SmartHireMatchingEngine.sessionCache.cache.delete(`${cand.id}_${norm.title}`);
+              }
             }
-            const freshMatch = window.SmartHireMatchingEngine.sessionCache.getOrEvaluate(cand, norm);
+            const freshMatch = window.SmartHireMatchingEngine.sessionCache.getOrEvaluate(cand, norm, { forceRefresh: true });
             cand.aiMatch = freshMatch;
             cand.matchScore = freshMatch.score;
             cand.verdict = freshMatch.verdict;
@@ -1610,9 +1615,14 @@ ${(match.interviewQuestions || [
         candidate.resumeSourceType = v.sourceType;
         const norm = window.SmartHireMatchingEngine.normalizeJobDescription(targetJob);
         if (window.SmartHireMatchingEngine.sessionCache) {
-          window.SmartHireMatchingEngine.sessionCache.cache.delete(`${candidate.id}_${norm.title}`);
+          if (typeof window.SmartHireMatchingEngine.sessionCache.invalidateCandidate === 'function') {
+            window.SmartHireMatchingEngine.sessionCache.invalidateCandidate(candidate.id || candidate.name);
+          }
+          if (window.SmartHireMatchingEngine.sessionCache.cache && typeof window.SmartHireMatchingEngine.sessionCache.cache.delete === 'function') {
+            window.SmartHireMatchingEngine.sessionCache.cache.delete(`${candidate.id}_${norm.title}`);
+          }
         }
-        candidate.aiMatch = window.SmartHireMatchingEngine.sessionCache.getOrEvaluate(candidate, norm);
+        candidate.aiMatch = window.SmartHireMatchingEngine.sessionCache.getOrEvaluate(candidate, norm, { forceRefresh: true });
         candidate.matchScore = candidate.aiMatch.score;
         candidate.verdict = candidate.aiMatch.verdict;
         candidate.fitCategory = candidate.aiMatch.fitCategory;
