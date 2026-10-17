@@ -1429,18 +1429,18 @@ ${(match.interviewQuestions || [
       }
 
       const liveResumeText = extResult?.text || '';
-      const isGenuineFull = extResult && extResult.rawLength >= 500;
 
       if (liveResumeText && liveResumeText.length >= 150) {
         cand.resumeText = liveResumeText;
         cand.summary = liveResumeText.slice(0, 5000);
-        cand.resumeSourceType = extResult?.sourceType || (isGenuineFull ? 'RESUME_DOCUMENT' : 'SEARCH_CARD_SNIPPET');
 
         if (window.SmartHireMatchingEngine) {
           const v = window.SmartHireMatchingEngine.verifyAndClassifyResume(cand);
           cand.extractionStatus = v.status;
           cand.extractionVerification = v;
           cand.isProvisional = v.isProvisional;
+          cand.resumeSourceType = v.sourceType;
+
           const targetJob = selectedJob;
           if (targetJob) {
             const norm = window.SmartHireMatchingEngine.normalizeJobDescription(targetJob);
@@ -1460,7 +1460,9 @@ ${(match.interviewQuestions || [
           }
         }
 
-        if (isGenuineFull) {
+        const isActuallyFull = !cand.isProvisional && cand.extractionStatus === 'FULL_RESUME_EXTRACTED';
+
+        if (isActuallyFull) {
           if (reextractText) reextractText.innerText = `✓ Full Resume Extracted (${liveResumeText.length.toLocaleString()} chars)`;
         } else {
           if (reextractText) reextractText.innerText = `Partial Extracted (${liveResumeText.length} chars)`;
@@ -1510,6 +1512,7 @@ ${(match.interviewQuestions || [
         candidate.extractionStatus = v.status;
         candidate.extractionVerification = v;
         candidate.isProvisional = v.isProvisional;
+        candidate.resumeSourceType = v.sourceType;
         const norm = window.SmartHireMatchingEngine.normalizeJobDescription(targetJob);
         if (window.SmartHireMatchingEngine.sessionCache) {
           window.SmartHireMatchingEngine.sessionCache.cache.delete(`${candidate.id}_${norm.title}`);

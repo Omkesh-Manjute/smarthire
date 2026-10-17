@@ -244,7 +244,21 @@
     if (!pane) return '';
     let fullText = '';
 
-    // 1. Dedicated resume viewers
+    // 1. Scan for multi-page containers within pane (DOCX/PDF document viewers: DocViewer, PDF.js, etc.)
+    const pageElements = Array.from(pane.querySelectorAll(
+      '[data-page-number], .page, .page-view, .pdf-page, .document-page, [class*="page-container"], [class*="rendered-page"], .textLayer, [class*="page_"], section[data-page]'
+    )).filter(el => {
+      const t = (el.innerText || el.textContent || '').trim();
+      return t.length > 40 && !el.closest('#smarthire-copilot-drawer') && !el.closest('#smarthire-dossier-overlay');
+    });
+
+    if (pageElements.length > 1) {
+      // Concatenate all detected pages in sequential DOM order
+      const pageTexts = pageElements.map(p => (p.innerText || p.textContent || '').trim()).filter(Boolean);
+      fullText = pageTexts.join('\n\n');
+    }
+
+    // 2. Dedicated resume viewers (if multi-page query did not yield longer text)
     const resumeViewers = pane.querySelectorAll(
       '[data-testid*="resume-view"], [data-testid*="resume-content"], [class*="resume-view"], [class*="resumeView"], [class*="document-viewer"], [class*="resume-body"], [class*="resumeText"], pre, [class*="text-resume"]'
     );
@@ -253,37 +267,46 @@
       if (txt.length > fullText.length) fullText = txt;
     }
 
-    // 2. Check iframes (PDF / HTML document viewers)
+    // 3. Check iframes (PDF / HTML document viewers)
     const iframes = pane.querySelectorAll('iframe');
     for (const ifr of iframes) {
       try {
         const doc = ifr.contentDocument || ifr.contentWindow?.document;
         if (doc && doc.body) {
-          const ifrText = (doc.body.innerText || doc.body.textContent || '').trim();
-          if (ifrText.length > fullText.length) fullText = ifrText;
+          const iframePages = Array.from(doc.querySelectorAll(
+            '[data-page-number], .page, .page-view, .pdf-page, .document-page, [class*="page-container"], [class*="rendered-page"], .textLayer'
+          )).filter(el => (el.innerText || el.textContent || '').trim().length > 40);
+
+          if (iframePages.length > 1) {
+            const combinedIframePages = iframePages.map(p => (p.innerText || p.textContent || '').trim()).join('\n\n');
+            if (combinedIframePages.length > fullText.length) fullText = combinedIframePages;
+          } else {
+            const ifrText = (doc.body.innerText || doc.body.textContent || '').trim();
+            if (ifrText.length > fullText.length) fullText = ifrText;
+          }
         }
       } catch (e) {}
     }
 
-    // If dedicated resume viewer text found (length >= 350), sanitize and return
-    if (fullText.length >= 350) {
-      return window.cleanMonsterResumeText(fullText);
-    }
-
-    // 3. Work history / experience sections
+    // 4. Also scan work history and education sections if viewer text is short or missing sections
     const profileSections = pane.querySelectorAll(
-      '[data-testid*="work-history"], [class*="work-history"], [data-testid*="experience"], [class*="experience"], [class*="profile-content"], [class*="candidate-experience"], [class*="timeline"]'
+      '[data-testid*="work-history"], [class*="work-history"], [data-testid*="experience"], [class*="experience"], [class*="profile-content"], [class*="candidate-experience"], [class*="timeline"], [class*="education"], [data-testid*="education"]'
     );
     let profileSectionText = '';
     for (const ps of profileSections) {
       profileSectionText += '\n' + (ps.innerText || ps.textContent || '');
     }
 
-    if (profileSectionText.length >= 250) {
-      return window.cleanMonsterResumeText(profileSectionText);
+    if (fullText.length < 2000 && profileSectionText.length > 250) {
+      // Append structured work history to ensure full candidate credentials are included
+      fullText = (fullText ? fullText + '\n\n' : '') + profileSectionText;
     }
 
-    // 4. Fallback to full pane text
+    if (fullText.length >= 250) {
+      return window.cleanMonsterResumeText(fullText);
+    }
+
+    // 5. Fallback to full pane text
     const rawPane = (pane.innerText || pane.textContent || '').trim();
     if (rawPane.length > fullText.length) fullText = rawPane;
 
@@ -343,20 +366,59 @@
                            resumeTab.getAttribute('aria-selected') === 'true';
           if (!isActive) {
             try { resumeTab.click(); } catch (e) {}
-            // Wait up to 1000ms for resume document/iframe to render
-            const tabPollStart = Date.now();
-            while (Date.now() - tabPollStart < 1000) {
-              const text = window.extractTextFromMonsterPane(pane);
-              if (text && text.length >= 500) break;
-              await sleep(100);
-            }
           }
         }
       }
 
+      // Allow up to 2500ms for document viewer / multi-page DOCX iframe to finish rendering
+      let lastLen = 0;
+      let stableCount = 0;
+      const tabPollStart = Date.now();
+      while (Date.now() - tabPollStart < 2500) {
+        // Trigger scroll down in viewer container to force virtualized pages (e.g. page 2, page 3) to render
+        const scrollable = pane.querySelector('[class*="document-viewer"], [class*="resume-view"], [class*="documentViewer"], .document-viewer') || pane;
+        if (scrollable && scrollable.scrollHeight > scrollable.clientHeight + 100) {
+          scrollable.scrollTop = scrollable.scrollHeight;
+        }
+
+        const text = window.extractTextFromMonsterPane(pane);
+        if (text && text.length >= 2000) {
+          break; // Full multi-page document rendered
+        }
+        if (text && text.length === lastLen && text.length >= 1000) {
+          stableCount++;
+          if (stableCount >= 3) break; // Text stabilized
+        } else {
+          stableCount = 0;
+        }
+        lastLen = text ? text.length : 0;
+        await sleep(200);
+      }
+
+      // Reset scroll
+      const scrollable = pane.querySelector('[class*="document-viewer"], [class*="resume-view"], [class*="documentViewer"], .document-viewer') || pane;
+      if (scrollable) scrollable.scrollTop = 0;
+
       // 4. Extract text from pane
-      const extractedText = window.extractTextFromMonsterPane(pane);
-      if (extractedText && extractedText.length >= 500) {
+      let extractedText = window.extractTextFromMonsterPane(pane);
+
+      // If Resume document was short (< 1500 chars), also check Profile tab to supplement work history
+      if (autoSwitchTabs && (!extractedText || extractedText.length < 1500)) {
+        const profileTab = window.findMonsterProfileTab(pane) || window.findMonsterProfileTab(document);
+        if (profileTab) {
+          try { profileTab.click(); } catch (e) {}
+          await sleep(300);
+          const profText = window.extractTextFromMonsterPane(pane);
+          if (profText && profText.length > (extractedText ? extractedText.length : 0)) {
+            extractedText = profText;
+          }
+          // Switch back to Resume tab
+          const resumeTab = window.findMonsterResumeTab(pane) || window.findMonsterResumeTab(document);
+          if (resumeTab) { try { resumeTab.click(); } catch (e) {} }
+        }
+      }
+
+      if (extractedText && extractedText.length >= 1500) {
         return {
           text: extractedText,
           rawLength: extractedText.length,
@@ -366,32 +428,13 @@
         };
       }
 
-      // If Resume document was short or not found, try Profile tab for full work history
-      if (autoSwitchTabs) {
-        const profileTab = window.findMonsterProfileTab(pane) || window.findMonsterProfileTab(document);
-        if (profileTab) {
-          try { profileTab.click(); } catch (e) {}
-          await sleep(250);
-          const profText = window.extractTextFromMonsterPane(pane);
-          if (profText && profText.length >= 400) {
-            return {
-              text: profText,
-              rawLength: profText.length,
-              sourceType: 'PROFILE_WORK_HISTORY',
-              isProvisional: false,
-              error: null
-            };
-          }
-        }
-      }
-
       if (extractedText && extractedText.length >= 250) {
         return {
           text: extractedText,
           rawLength: extractedText.length,
-          sourceType: 'PROFILE_SNIPPET',
-          isProvisional: extractedText.length < 500,
-          error: null
+          sourceType: extractedText.length >= 1000 ? 'PROFILE_SNIPPET' : 'SEARCH_CARD_SNIPPET',
+          isProvisional: true,
+          error: `Partial profile snippet extracted (${extractedText.length} chars). Full 3-page resume document not yet fully rendered in Monster.`
         };
       }
     }

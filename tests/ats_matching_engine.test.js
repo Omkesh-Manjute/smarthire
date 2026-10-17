@@ -800,6 +800,301 @@ runTest('Universal 35/20/15/10/10/5/5 weights and experience range parsing', () 
 });
 
 // ---------------------------------------------------------------------
+// TEST 23: FIX: LIA SMITH 1,101-CHAR PARTIAL PROFILE SUMMARY CLASSIFIED AS PROVISIONAL
+// ---------------------------------------------------------------------
+runTest('Fix: Lia Smith 1,101-char partial summary classified as PARTIAL_RESUME_EXTRACTED and blocked from SUBMIT', () => {
+  const partialSummary = `Lia Smith
+Columbia, SC · lia.smith@email.com
+SUMMARY
+Experienced Enterprise Program Manager and IT professional with over 8 years of experience leading cross-functional technology initiatives and enterprise technology delivery. Skilled in Agile methodologies, technology transformations, and managing complex IT project deliverables. Proven track record in stakeholder communication and steering committee reporting across financial services and banking environments. Coordinated IT operations and strategy across multi-functional delivery teams. Adept at identifying and mitigating project risks and ensuring regulatory compliance. Experienced with budget monitoring and vendor procurement renewals. Seeking Assistant IT Director or Senior Enterprise Project Lead role in Columbia, SC.`;
+
+  assert.ok(partialSummary.length > 500 && partialSummary.length < 1500, 'Partial text must be between 500 and 1500 chars');
+
+  const classified = SmartHireMatchingEngine.verifyAndClassifyResume({
+    name: 'Lia Smith',
+    resumeText: partialSummary,
+    location: 'Columbia, SC'
+  });
+
+  assert.strictEqual(classified.status, 'PARTIAL_RESUME_EXTRACTED', 'Must be classified as PARTIAL_RESUME_EXTRACTED');
+  assert.strictEqual(classified.isProvisional, true, 'isProvisional must be true for partial profile summary');
+  assert.strictEqual(classified.sourceType, 'PROFILE_SNIPPET', 'sourceType must be PROFILE_SNIPPET');
+  assert.ok(classified.warnings.length > 0, 'Must have extraction warning');
+
+  const assistantItDirectorJd = SmartHireMatchingEngine.normalizeJobDescription({
+    id: '159348',
+    title: 'Assistant IT Director / Enterprise Program Manager - Project Lead',
+    location: 'Columbia, SC',
+    description: 'State Treasurers Office (STO). Full-time on-site in Columbia, SC 5 days a week. Mandatory SC residency. Enterprise technology delivery, Cybersecurity, Managed-Service SLA Ownership, Active Directory / Entra ID, Microsoft Intune, Financial services experience, IT Operations & Strategy Leadership, Direct supervisory experience 3+ years, Risk & Audit compliance, Incident response & after-hours support, Budget monitoring, Executive & steering committee reporting, PMP or SAFe certification, Bachelor degree required.'
+  });
+
+  const evalResult = SmartHireMatchingEngine.evaluateCandidate({
+    id: 'lia-partial',
+    name: 'Lia Smith',
+    resumeText: partialSummary,
+    location: 'Columbia, SC'
+  }, assistantItDirectorJd);
+
+  assert.strictEqual(evalResult.isProvisional, true, 'Evaluation must be flagged provisional');
+  assert.notStrictEqual(evalResult.recommendation, 'SUBMIT', 'Provisional evaluation must never be SUBMIT');
+  assert.strictEqual(evalResult.recommendation, 'HOLD_FOR_VERIFICATION', 'Provisional partial evaluation must be HOLD_FOR_VERIFICATION');
+});
+
+// ---------------------------------------------------------------------
+// TEST 24: FIX: IN-PROGRESS DEGREE (EXPECTED JUNE 2027) GATED AS PARTIAL_MATCH (0.50)
+// ---------------------------------------------------------------------
+runTest('Fix: In-progress degree (Expected June 2027) awarded PARTIAL_MATCH (0.50) with qualification note', () => {
+  const resumeWithInProgressDegree = `LIA SMITH
+Columbia, SC · lia.smith@email.com
+SUMMARY: Senior Enterprise Program Manager with 9+ years experience.
+EDUCATION:
+• Candidate for Bachelor of Science in Information Technology — University of South Carolina (Expected June 2027)
+• Project Management Professional (PMP) — PMI`;
+
+  const assistantItDirectorJd = SmartHireMatchingEngine.normalizeJobDescription({
+    title: 'Assistant IT Director',
+    description: "Requires Bachelor's Degree in Computer Science or Related field."
+  });
+
+  const eduReq = assistantItDirectorJd.categories.EDUCATION_CERTS.find(r => r.name.toLowerCase().includes('bachelor'));
+  assert.ok(eduReq, "Must have Bachelor's Degree requirement");
+
+  const match = SmartHireMatchingEngine.matchRequirementEvidence(eduReq, resumeWithInProgressDegree, ['pmp'], 'Enterprise Program Manager');
+  assert.strictEqual(match.evidenceStatus, 'PARTIAL_MATCH', 'In-progress degree must be PARTIAL_MATCH');
+  assert.strictEqual(match.evidenceScore, 0.50, 'In-progress degree score must be 0.50');
+  assert.ok(match.gapOrQualification.includes('Degree in progress') && match.gapOrQualification.includes('2027'), 'Must specify in-progress graduation year in gap note');
+});
+
+// ---------------------------------------------------------------------
+// TEST 25: FIX: STRICT NEGATIVE EVIDENCE GATING FOR SLA, AD/ENTRA, INTUNE, INCIDENT & SUPERVISORY
+// ---------------------------------------------------------------------
+runTest('Fix: Strict negative evidence gating awards NOT_DEMONSTRATED (0.00) for undocumented items', () => {
+  const assistantItDirectorJd = SmartHireMatchingEngine.normalizeJobDescription({
+    id: '159348',
+    title: 'Assistant IT Director / Enterprise Program Manager - Project Lead',
+    location: 'Columbia, SC',
+    description: 'State Treasurers Office (STO). Full-time on-site in Columbia, SC 5 days a week. Mandatory SC residency. Enterprise technology delivery, Cybersecurity, Managed-Service SLA Ownership, Active Directory / Entra ID, Microsoft Intune, Financial services experience, IT Operations & Strategy Leadership, Direct supervisory experience 3+ years, Risk & Audit compliance, Incident response & after-hours support, Budget monitoring, Executive & steering committee reporting, PMP or SAFe certification, Bachelor degree required.'
+  });
+
+  // Resume has delivery & leadership but explicitly lacks SLA, AD, Intune, Incident Response, and Direct Supervisory Tenure
+  const resumeWithoutNegativeEvidence = `Lia Smith
+Columbia, SC
+Summary: Senior Enterprise Program Manager with Agile, Scrum, and project delivery experience. Led software project milestones, coordinated meetings, and tracked financial project budgets.`;
+
+  const techReqs = assistantItDirectorJd.categories.MANDATORY_TECHNICAL;
+  const domainReqs = assistantItDirectorJd.categories.DOMAIN_FUNCTIONAL;
+  const respReqs = assistantItDirectorJd.categories.RESPONSIBILITIES;
+
+  const slaReq = techReqs.find(r => r.name.includes('SLA'));
+  const adReq = techReqs.find(r => r.name.includes('Active Directory'));
+  const intuneReq = techReqs.find(r => r.name.includes('Intune'));
+  const supReq = domainReqs.find(r => r.name.includes('Direct Supervisory'));
+  const incReq = respReqs.find(r => r.name.includes('Incident Response'));
+
+  assert.ok(slaReq && adReq && intuneReq && supReq && incReq, 'All 5 gated requirements must be present in JD');
+
+  const matchSla = SmartHireMatchingEngine.matchRequirementEvidence(slaReq, resumeWithoutNegativeEvidence, [], '');
+  const matchAd = SmartHireMatchingEngine.matchRequirementEvidence(adReq, resumeWithoutNegativeEvidence, [], '');
+  const matchIntune = SmartHireMatchingEngine.matchRequirementEvidence(intuneReq, resumeWithoutNegativeEvidence, [], '');
+  const matchSup = SmartHireMatchingEngine.matchRequirementEvidence(supReq, resumeWithoutNegativeEvidence, [], '');
+  const matchInc = SmartHireMatchingEngine.matchRequirementEvidence(incReq, resumeWithoutNegativeEvidence, [], '');
+
+  assert.strictEqual(matchSla.evidenceStatus, 'NOT_DEMONSTRATED', 'SLA ownership must be NOT_DEMONSTRATED');
+  assert.strictEqual(matchAd.evidenceStatus, 'NOT_DEMONSTRATED', 'Active Directory must be NOT_DEMONSTRATED');
+  assert.strictEqual(matchIntune.evidenceStatus, 'NOT_DEMONSTRATED', 'Intune must be NOT_DEMONSTRATED');
+  assert.strictEqual(matchSup.evidenceStatus, 'NOT_DEMONSTRATED', 'Supervisory tenure must be NOT_DEMONSTRATED');
+  assert.strictEqual(matchInc.evidenceStatus, 'NOT_DEMONSTRATED', 'Incident response must be NOT_DEMONSTRATED');
+
+  assert.strictEqual(matchSla.evidenceScore, 0.00);
+  assert.strictEqual(matchAd.evidenceScore, 0.00);
+  assert.strictEqual(matchIntune.evidenceScore, 0.00);
+  assert.strictEqual(matchSup.evidenceScore, 0.00);
+  assert.strictEqual(matchInc.evidenceScore, 0.00);
+});
+
+// ---------------------------------------------------------------------
+// TEST 26: FIX: LIA SMITH COMPLETE 3-PAGE RESUME EVALUATION ACHIEVES FULL_RESUME_EXTRACTED
+// ---------------------------------------------------------------------
+runTest('Fix: Lia Smith full 3-page resume achieves FULL_RESUME_EXTRACTED and evaluates to objective ~64% Partial Fit (BACKUP)', () => {
+  const fullResume3Page = `LIA SMITH
+Columbia, SC · (803) 555-0192 · lia.smith@email.com · linkedin.com/in/lia-smith-pm
+
+PROFESSIONAL SUMMARY
+Senior Enterprise Program Manager and IT Delivery Lead with 9+ years of progressive experience delivering complex enterprise technology delivery, infrastructure modernization, and systems integration programs across financial services and public sector institutions. Proven leader acting as trusted second-in-command working manager for executive IT leadership. Deep expertise in cybersecurity frameworks, NIST standards, IT operations coordination, risk assessment, and regulatory audit compliance. Expert in Agile/Scrum and Waterfall delivery models holding active PMP and SAFe certifications. Current South Carolina resident based in Columbia, SC with full availability for dedicated 5-day on-site engagement.
+
+PROFESSIONAL EXPERIENCE
+
+First State Financial Services / State Banking Treasury Project — Columbia, SC
+Lead Enterprise Program Manager / Senior IT Project Lead | 2021 – Present
+• Spearheaded enterprise technology delivery for multi-tier banking and treasury systems integration involving SAP environment and secure core payment operations.
+• Acted as working manager coordinating IT division leadership, managing multi-functional technical teams, and aligning IT operations with strategic institutional goals.
+• Implemented rigorous cybersecurity protocols, vulnerability management, and access control standards adhering to state financial security compliance guidelines.
+• Facilitated risk & audit compliance reviews, conducting comprehensive risk assessments and remediation workflows across internal financial applications.
+• Directed budget monitoring, procurement approvals, and vendor contract renewals totaling $4.2M annually, ensuring strict financial accountability.
+• Prepared and presented executive reporting and weekly status briefings to the executive steering committee, agency directors, and senior stakeholders.
+• Coordinated with cross-functional software engineering, database, and infrastructure teams across complex sprint cycles.
+
+Carolina Enterprise Solutions — Columbia, SC
+Senior Project Manager — IT Infrastructure & Agile Delivery | 2017 – 2021
+• Managed enterprise IT systems integration programs, coordinating data center transitions and enterprise cloud migrations for financial institutions.
+• Led sprint planning, backlog grooming, retrospectives, and cross-team Agile delivery across 4 simultaneous scrum teams.
+• Collaborated with cybersecurity engineers to enforce data governance, network segmentation, and annual audit readiness.
+• Oversaw capital IT hardware and software procurement budgets of $2.5M, negotiating vendor contracts and deliverables.
+• Provided regular executive briefings, status dashboards, and steering committee reporting for senior agency leadership.
+
+Midlands Technical Systems — Columbia, SC
+Technical Project Coordinator | 2015 – 2017
+• Supported enterprise technology delivery and system deployment lifecycles for state government clients.
+• Assisted senior project managers with schedule tracking, milestone validation, and status reporting.
+
+EDUCATION & CERTIFICATIONS
+• Bachelor of Science in Information Technology — University of South Carolina, Columbia, SC (Expected June 2027)
+• Project Management Professional (PMP) — Project Management Institute (PMI), License #2847192
+• Certified SAFe® 5 Agilist — Scaled Agile Inc.
+• Certified ScrumMaster (CSM) — Scrum Alliance
+
+LOCATION & ELIGIBILITY
+• Resident: Columbia, South Carolina (Current SC Resident)
+• Work Authorization: US Citizen
+• Work Arrangement: Full-time Onsite (Columbia, SC 5 days/week available)`;
+
+  const classification = SmartHireMatchingEngine.verifyAndClassifyResume({
+    name: 'Lia Smith',
+    resumeText: fullResume3Page,
+    location: 'Columbia, SC'
+  });
+
+  assert.strictEqual(classification.status, 'FULL_RESUME_EXTRACTED', 'Must be classified as FULL_RESUME_EXTRACTED');
+  assert.strictEqual(classification.isProvisional, false, 'isProvisional must be false for complete resume');
+  assert.strictEqual(classification.sourceType, 'RESUME_DOCUMENT', 'sourceType must be RESUME_DOCUMENT');
+  assert.ok(classification.extractedLength > 3000, 'Length must be > 3000 characters');
+  assert.ok(classification.sourceSectionsFound.includes('Summary') && classification.sourceSectionsFound.includes('Experience') && classification.sourceSectionsFound.includes('Education') && classification.sourceSectionsFound.includes('Certifications'));
+
+  const assistantItDirectorJd = SmartHireMatchingEngine.normalizeJobDescription({
+    id: '159348',
+    title: 'Assistant IT Director / Enterprise Program Manager - Project Lead',
+    location: 'Columbia, SC',
+    description: 'State Treasurers Office (STO). Full-time on-site in Columbia, SC 5 days a week. Mandatory SC residency. Enterprise technology delivery, Cybersecurity, Managed-Service SLA Ownership, Active Directory / Entra ID, Microsoft Intune, Financial services experience, IT Operations & Strategy Leadership, Direct supervisory experience 3+ years, Risk & Audit compliance, Incident response & after-hours support, Budget monitoring, Executive & steering committee reporting, PMP or SAFe certification, Bachelor degree required.'
+  });
+
+  const fullEval = SmartHireMatchingEngine.evaluateCandidate({
+    id: 'lia-full',
+    name: 'Lia Smith',
+    resumeText: fullResume3Page,
+    location: 'Columbia, SC'
+  }, assistantItDirectorJd);
+
+  assert.strictEqual(fullEval.score, 64, 'Objectively calculated score must be 64% based on 7-category weights');
+  assert.strictEqual(fullEval.fitCategory, 'Partial Fit', 'Fit category must be Partial Fit');
+  assert.strictEqual(fullEval.recommendation, 'BACKUP', 'Recommendation must be BACKUP');
+  assert.strictEqual(fullEval.isProvisional, false, 'Full evaluation must not be provisional');
+
+  // Verify documented matches
+  const techDelivery = fullEval.skillsMatchTable.find(r => r.requirement.includes('Enterprise Technology Delivery'));
+  const cyber = fullEval.skillsMatchTable.find(r => r.requirement.includes('Cybersecurity'));
+  const finServ = fullEval.skillsMatchTable.find(r => r.requirement.includes('Financial Services'));
+  const itOps = fullEval.skillsMatchTable.find(r => r.requirement.includes('IT Operations'));
+  const pmpCert = fullEval.skillsMatchTable.find(r => r.requirement.includes('PMP or SAFe'));
+
+  assert.strictEqual(techDelivery.evidenceStatus, 'DIRECT_MATCH');
+  assert.strictEqual(cyber.evidenceStatus, 'DIRECT_MATCH');
+  assert.strictEqual(finServ.evidenceStatus, 'DIRECT_MATCH');
+  assert.strictEqual(itOps.evidenceStatus, 'DIRECT_MATCH');
+  assert.strictEqual(pmpCert.evidenceStatus, 'DIRECT_MATCH');
+});
+
+// ---------------------------------------------------------------------
+// TEST 27: FIX: DYNAMIC SOUTH CAROLINA RESIDENCY AND 5-DAY ONSITE VALIDATION
+// ---------------------------------------------------------------------
+runTest('Fix: Dynamic South Carolina residency and 5-day onsite validation verified', () => {
+  const scJd = SmartHireMatchingEngine.normalizeJobDescription({
+    id: '159348',
+    title: 'Assistant IT Director / Enterprise Program Manager - Project Lead',
+    location: 'Columbia, SC',
+    description: 'State Treasurers Office (STO). Full-time on-site in Columbia, SC 5 days a week. Mandatory SC residency required.'
+  });
+
+  assert.strictEqual(scJd.eligibilityRules.requiresStateResidency, true);
+  assert.strictEqual(scJd.eligibilityRules.requiredState, 'SC');
+
+  // Resident candidate in Columbia, SC
+  const columbiaCandidate = {
+    name: 'Lia Smith',
+    location: 'Columbia, SC',
+    resumeText: 'Experienced IT manager resident of Columbia, SC.'
+  };
+
+  const eligResident = SmartHireMatchingEngine.evaluateEligibility(columbiaCandidate, scJd);
+  assert.strictEqual(eligResident.eligibilityStatus, 'VERIFIED_ELIGIBLE');
+  assert.strictEqual(eligResident.isHardFailure, false);
+  assert.ok(eligResident.eligibilityNotes.includes('Verified SC resident'));
+
+  // Non-resident candidate in Dallas, TX
+  const outOfStateCandidate = {
+    name: 'Texas Candidate',
+    location: 'Dallas, TX',
+    resumeText: 'IT Director with 10 years experience.'
+  };
+
+  const eligNonResident = SmartHireMatchingEngine.evaluateEligibility(outOfStateCandidate, scJd);
+  assert.strictEqual(eligNonResident.eligibilityStatus, 'INELIGIBLE');
+  assert.strictEqual(eligNonResident.isHardFailure, true);
+  assert.ok(eligNonResident.eligibilityNotes.includes('INELIGIBLE'));
+});
+
+// ---------------------------------------------------------------------
+// TEST 28: FIX: 100% SCORE CONSISTENCY ACROSS QUICK SOURCING AND DETAILED DOSSIER
+// ---------------------------------------------------------------------
+runTest('Fix: 100% Score consistency across Quick Sourcing and Detailed Dossier for Lia Smith', () => {
+  const fullResume = `LIA SMITH
+Columbia, SC · lia.smith@email.com
+SUMMARY: Senior Enterprise Program Manager with 9+ years experience delivering enterprise technology delivery, cybersecurity NIST frameworks, IT operations leadership, risk assessments, budget monitoring, and executive steering committee reporting.
+EXPERIENCE:
+• Enterprise technology delivery for financial services banking systems.
+• Risk & audit compliance reviews and annual audit remediations.
+• Directed budget monitoring and vendor procurement renewals.
+• Prepared and presented executive reporting to steering committee.
+EDUCATION & CERTIFICATIONS:
+• Bachelor of Science in Information Technology (Expected June 2027)
+• Project Management Professional (PMP)
+• Certified SAFe® 5 Agilist`;
+
+  const jd = SmartHireMatchingEngine.normalizeJobDescription({
+    id: '159348',
+    title: 'Assistant IT Director / Enterprise Program Manager - Project Lead',
+    location: 'Columbia, SC',
+    description: 'State Treasurers Office (STO). Full-time on-site in Columbia, SC 5 days a week. Mandatory SC residency. Enterprise technology delivery, Cybersecurity, Managed-Service SLA Ownership, Active Directory / Entra ID, Microsoft Intune, Financial services experience, IT Operations & Strategy Leadership, Direct supervisory experience 3+ years, Risk & Audit compliance, Incident response & after-hours support, Budget monitoring, Executive & steering committee reporting, PMP or SAFe certification, Bachelor degree required.'
+  });
+
+  const cand = {
+    id: 'cand-lia-consistency',
+    name: 'Lia Smith',
+    location: 'Columbia, SC',
+    resumeText: fullResume
+  };
+
+  // Quick Sourcing entry point
+  const quickResult = SmartHireMatchingEngine.evaluateCandidate(cand, jd);
+
+  // Detailed Dossier entry point (via sessionCache or direct evaluation)
+  const dossierResult = SmartHireMatchingEngine.sessionCache.getOrEvaluate(cand, jd);
+
+  assert.strictEqual(quickResult.score, dossierResult.score, 'Score must be 100% identical between Quick Sourcing and Dossier');
+  assert.strictEqual(quickResult.fitCategory, dossierResult.fitCategory, 'Fit Category must be identical');
+  assert.strictEqual(quickResult.verdict, dossierResult.verdict, 'Verdict must be identical');
+  assert.strictEqual(quickResult.recommendation, dossierResult.recommendation, 'Recommendation must be identical');
+  assert.strictEqual(quickResult.eligibilityStatus, dossierResult.eligibilityStatus, 'Eligibility must be identical');
+  assert.strictEqual(quickResult.skillsMatchTable.length, dossierResult.skillsMatchTable.length, 'Skills match matrix length must be identical');
+
+  quickResult.skillsMatchTable.forEach((row, idx) => {
+    const dosRow = dossierResult.skillsMatchTable[idx];
+    assert.strictEqual(row.requirement, dosRow.requirement);
+    assert.strictEqual(row.evidenceStatus, dosRow.evidenceStatus);
+    assert.strictEqual(row.evidenceScore, dosRow.evidenceScore);
+  });
+});
+
+// ---------------------------------------------------------------------
 // SUMMARY
 // ---------------------------------------------------------------------
 console.log('\n====================================================');
