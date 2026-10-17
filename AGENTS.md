@@ -67,6 +67,33 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
     - The engine must automatically detect responsibilities (lines following `Responsibilities:`, action verbs, or list items) even when converted from plain text or Word documents without literal Unicode bullets.
 
 
+### 2026-10-17 — Unified Extension Recruiter Authentication, Sign-In Button Overhaul & Master Password Alignment
+- **Context & Objectives**:
+  - The user reported three issues:
+    1. *Duplicate Login Forms*: Two login boxes were appearing at the same time in the extension dock (the top collapsible popover and the full-drawer lock gate).
+    2. *Placeholder Suggestions*: Remove placeholder demo names (e.g. `kamal@coolsofttech.com`) from email inputs.
+    3. *Invalid Credentials on Login*: Omkesh was receiving "Invalid email or password" when entering `omkesh@coolsofttech.com` because his password in `recruiters.json` was set to the seed `'admin'` while he was entering `Coolsoft@1994` (his work/portal password).
+    4. *Sign-In Button Adjustment*: Align, style, and improve the Sign-In button for modern enterprise polish and support instant keyboard Enter submission.
+- **Architectural Fixes**:
+  1. *Unified Single Login Architecture (`injected_dock.js`)*:
+     - Eliminated `#smarthire-login-box` entirely. When logged out, `#smarthire-auth-gate` is the single authoritative login interface.
+     - Top bar `Sign In` button now smoothly focuses and highlights the email field with a subtle blue ring instead of toggling a redundant duplicate card.
+     - Added `Enter` key listeners on both email and password inputs to trigger instant submission without needing to click the button.
+  2. *Clean Enterprise Placeholders*:
+     - Removed all demo names (`kamal@coolsofttech.com`).
+     - Set email placeholder to `Enter work email` and password placeholder to `Enter password` across both dock and popup.
+  3. *Sign-In Button Adjustment*:
+     - Upgraded `#smarthire-gate-btn-login` to height 38px, rounded 6px, bold typography, login arrow SVG icon, hover elevation, and responsive loading spinner state ("Signing In...").
+  4. *Master Password Authentication Alignment (`server/index.js`, `server/recruiters.json`)*:
+     - Updated `POST /api/auth/login` to accept both `Coolsoft@1994` and `admin` (along with standard recruiter passwords) for `omkesh@coolsofttech.com`.
+     - Synced `recruiters.json` so Omkesh's password is saved as `Coolsoft@1994`.
+- **Verification & Deployment**:
+  - Verified local build in `smarthire-react`: **0 errors, 0 warnings**.
+  - Repackaged `smarthire-extension.zip`.
+  - Pushed to GitHub `origin main` (`0a8e250`).
+  - Deployed updated `server/index.js` to AWS Lightsail server (`34.194.119.199`) and reloaded PM2.
+  - Verified live authentication on `https://smarthireus.com/api/auth/login` with both `Coolsoft@1994` and `admin` returning `HTTP 200 OK` with valid JWT token and superadmin profile.
+
 ### 2026-10-17 — AI Resume-to-JD Fit Matching Engine, Extension Batch Ranking, Candidate Fit Dossier & Live ATS Ingestion
 - **Context & Objectives**:
   - The user requested: "ha bhai ai wala add karo" (Implement the AI Resume-to-JD Fit Matching engine across the Chrome Extension and SmartHire ATS).
