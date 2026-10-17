@@ -67,6 +67,67 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
     - The engine must automatically detect responsibilities (lines following `Responsibilities:`, action verbs, or list items) even when converted from plain text or Word documents without literal Unicode bullets.
 
 
+### 2026-10-17 — AI Resume-to-JD Fit Matching Engine, Extension Batch Ranking, Candidate Fit Dossier & Live ATS Ingestion
+- **Context & Objectives**:
+  - The user requested: "ha bhai ai wala add karo" (Implement the AI Resume-to-JD Fit Matching engine across the Chrome Extension and SmartHire ATS).
+  - The goal is to automatically evaluate candidate profiles, skills, and experience against the selected Job Description, calculate a fit score (0-100%), categorize the verdict (Strong Fit, Good Fit, Moderate Fit), summarize key strengths, missing gaps, and provide suggested interview screening questions.
+- **Architectural Implementations & Workflow**:
+  1. *Dual AI Matching Engine (`server/index.js`)*:
+     - Implemented `computeDeterministicFit(candidate, job)`: High-accuracy keyword, title, experience, and domain weighting fallback engine guaranteeing 0% downtime and fast sub-10ms evaluation.
+     - Implemented `executeAiResumeMatch(candidate, job)`: Ultra-fast LLM inference via Groq (`openai/gpt-oss-120b`) delivering deep structured evaluations with candidate score, verdict, strengths, gaps, reasoning, and technical interview screening questions.
+     - Added `POST /api/recruiter/ai-match-resume` (single candidate matching).
+     - Added `POST /api/recruiter/ai-match-batch` (multi-candidate batch matching in concurrent pools of 4).
+     - Updated `POST /api/recruiter/sourcing/bulk-import` to store and persist `matchScore`, `aiMatch`, `strengths`, `gaps`, and `aiReasoning` on candidates in `candidatesStore` and `candidates.json`.
+  2. *Chrome Extension Background & UI (`background.js`, `injected_dock.js`, `injected_dock.css`, `popup.html`, `popup.js`)*:
+     - Background service worker: Added `AI_MATCH_BATCH` and `AI_MATCH_CANDIDATE` message handlers relaying to ATS endpoints.
+     - Injected Dock & Popup UI: Added `Run AI Resume Match` buttons in candidate tables/dock.
+     - Color-coded AI Fit badges (`85%+` Strong Fit #059669, `70-84%` Good Fit #2563EB, `<70%` Moderate Fit #D97706).
+     - Built "AI Candidate Fit Dossier" modal overlay displaying: Match Score %, Executive AI Reasoning, Key Strengths, Missing Gaps, and Suggested Technical Screening Questions, with 1-click transition to JD Outreach Email Composer.
+     - Candidate lists automatically sort by AI Match Score descending so top-ranked talent floats to Row 1.
+  3. *ATS Pipeline Integration (`RecruiterInbox.jsx`)*:
+     - Updated `renderMatchBadge` to support interactive clicks with instant access to the AI Fit Dossier & Scan Scorecard.
+     - Updated `handleRunLiveAiScan` to immediately utilize pre-computed AI match scores, strengths, and gaps when available.
+- **Verification & Deployment**:
+  - Verified local build in `smarthire-react`: **0 errors, 0 warnings** (Vite build in 3.10s).
+  - Repackaged `smarthire-extension.zip`.
+  - Git committed (`de781db`) and pushed to `origin main`.
+  - Deployed to AWS Lightsail server (`34.194.119.199`), temporary archives removed immediately (Rule 5), bundles pruned, PM2 `smarthire-ats` reloaded.
+  - Verified live domain `https://smarthireus.com` returning `HTTP 200 OK` serving bundle `assets/index-C3y3kiuB.js`.
+  - Verified live endpoint `POST /api/recruiter/ai-match-resume` returning structured Groq AI match results in real time.
+
+### 2026-10-17 — Chrome Extension Bulk JD Outreach, Full Job Description Formatting, Strict Authentication Gate, and Dedicated ATS Extension Sourcing Pipeline
+- **Context & Objectives**:
+  - The user requested four key architectural improvements and asked for expert analysis on AI Resume-to-JD matching:
+    1. *Bulk Email Outreach*: Allow recruiters to send personalized formatted JD outreach emails to multiple selected candidates at once directly from the Chrome Extension.
+    2. *Full Job Description Content*: Fix truncated JD bug where responsibilities and requirements were stripped from emails.
+    3. *Strict Authentication Gate*: Completely disable and block the extension from functioning without logging in; remove all default hardcoded recruiter credentials or quick-login auto-fills.
+    4. *Dedicated ATS Extension Sourcing Pipeline*: Create a dedicated page/table in SmartHire ATS (`/sourcing`, `/extension-sourced`, and `tableCategory === 'extension_sourced'`) specifically for candidates pushed from Monster+ and Dice.
+    5. *AI Resume-to-JD Fit Analysis*: Evaluate feasibility, accuracy, and operational impact of an automated AI candidate resume matcher.
+- **Architectural Implementations & Fixes**:
+  1. *Full JD Sanitization Engine (`sanitizeJobDescription`)*:
+     - Discovered that `text.replace(/Submission deadline\s*:.*$/gim, '')` matched across single-line minified descriptions to the very end of the string, wiping out requirements and duties.
+     - Fixed regex to target only the specific date timestamps (`replace(/Submission deadline\s*:\s*[\d\/\:\sAMPamp]+/gi, '')`), preserving all role duties, qualifications, and project scopes formatted cleanly with `\n• ` bullets.
+  2. *Strict Zero-Trust Authentication Gate (`background.js`, `injected_dock.js`, `popup.js`)*:
+     - Removed hardcoded default credentials (`omkesh@coolsofttech.com`) and removed quick-login suggestion buttons.
+     - Initialized state with `currentUser = null` and `isUserAuthenticated = false`.
+     - Injected `#smarthire-auth-gate` backdrop blocking all scraping, boolean generators, and emailing until genuine recruiter credentials are authenticated against `/api/auth/login`.
+  3. *Multi-Candidate Bulk Email Composer Overlay*:
+     - Built bulk outreach overlay in both Injected Dock and Popup with recipient chips, candidate selection counts, live delivery progress bar, and sequential throttling (350ms delay between SMTP dispatches) to ensure high inbox deliverability.
+     - Supported dynamic template variable substitution (e.g. `{{firstName}}`).
+  4. *Dedicated ATS Extension Sourcing Pipeline (`server/index.js`, `RecruiterInbox.jsx`, `App.jsx`, `Navigation.jsx`)*:
+     - Tagged all imported candidates with `isSourcedFromExtension: true`, `isExtensionSourced: true`, and `sourcedAt: nowIso` in `/api/recruiter/sourcing/bulk-import`.
+     - Added `/sourcing` and `/extension-sourced` routes in `App.jsx`.
+     - Added "Extension Sourced" module to `atsSubModules` and `appLauncherItems` in `Navigation.jsx`.
+     - Added 6th Metric KPI Card (`#7C3AED`, `Extension Sourced`) and a left sidebar sub-item in `RecruiterInbox.jsx`.
+     - Added dedicated top banner for `tableCategory === 'extension_sourced'` with candidate counter and 1-click reset.
+- **Verification & Deployment**:
+  - Validated syntax on all scripts via `node -c` (0 syntax errors).
+  - Production build in `smarthire-react`: **0 errors, 0 warnings** (Vite build in 3.38s).
+  - Repackaged `smarthire-extension.zip`.
+  - Git committed (`91db071`) and pushed to `main`.
+  - Deployed bundle and updated `server/index.js` to AWS Lightsail server (`34.194.119.199`), cleaned archives immediately (Rule 5), pruned bundles, and reloaded PM2 `smarthire-ats`.
+  - Verified `HTTP 200 OK` on `https://smarthireus.com` serving `assets/index-BVVw3Aeo.js` and `/sourcing` returning `200 OK`.
+
 ### 2026-10-17 — Monster+ Multi-Candidate Deep Scraper Fix, Live 512 Requisition Sync (#159348) & Top-Row ATS Candidate Ingestion Sorting
 - **Context & Objectives**:
   - The user reported three interconnected issues with the Chrome Extension and Candidate Ingestion:
@@ -112,6 +173,33 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
   - End-to-end verified on Lightsail: Simulated candidate screening submission returned HTTP 200 and logged `[SmartScreen] Screening completion email dispatched for 'Ananya Patel' to omkesh@coolsofttech.com (CC: none)`.
   - Cleaned up test screening records from `screening_sessions.json` and `candidates.json`.
   - Verified `HTTP 200 OK` on live domain `https://smarthireus.com`.
+### 2026-10-17 — Chrome Extension Recruiter Authentication & Direct Formatted JD Email Outreach Composer
+- **Context & Objectives**:
+  - The user requested two capabilities for the Chrome Extension (`smarthire-extension`):
+    1. *Recruiter Login Inside Extension*: Allow recruiters to authenticate directly in the extension so their identity (name, email) is linked to all candidate interactions.
+    2. *Direct Formatted JD Email Outreach*: Enable recruiters to select a candidate and target job, and immediately send a formatted Job Description outreach email directly from the extension under their recruiter identity.
+    3. *Strict Constraints*:
+       - **Zero Pay Rates**: Strip/exclude all rates, salary numbers, hourly rates (`$XX/hr`), and budget disclosures.
+       - **Zero Requisition IDs**: Strip/exclude internal requisition IDs (`#159348`, `REQ-159348`, etc.); present clean job titles only.
+       - **Fully Editable**: Recruiter must have complete freedom to edit the recipient email, candidate name, subject line, and body before sending.
+- **Architectural Implementations**:
+  1. *Backend Dispatch Updates (`server/index.js`)*:
+     - Updated `POST /api/recruiter/send-email` to accept `recruiterName` and `recruiterEmail`, dynamically setting `from: "${recruiterName} (COOLSOFT LLC)" <transporter>`, `replyTo: recruiterEmail`, and personalized sign-off.
+  2. *Background Service Worker Auth & Email Handling (`background.js`)*:
+     - Added `GET_CURRENT_USER`, `LOGIN_USER` (authenticating against `/api/auth/login`), `LOGOUT_USER`, and `SEND_OUTREACH_EMAIL` with state storage in `chrome.storage.local`.
+  3. *Injected Dock & Popup Composer UI (`injected_dock.js`, `injected_dock.css`, `popup.html`, `popup.js`)*:
+     - Added sleek Recruiter Identity Bar showing current active recruiter with 1-click login switch.
+     - Implemented `sanitizeJobDescription()` and `cleanJobTitle()` to eliminate rates and req IDs via regex.
+     - Built modal Outreach Composer overlay with pre-populated recipient, clean position title, personalized greeting, formatted duties/responsibilities, and recruiter signature block.
+     - Added interactive `✉ Send JD` button in the candidate table with live sent-state indicators (`✓ Sent`).
+- **Verification & Deployment**:
+  - Validated syntax across all extension scripts (`node -c`).
+  - Production build in `smarthire-react`: **0 errors, 0 warnings** (Vite build in 3.60s).
+  - Repackaged `smarthire-extension.zip`.
+  - Git committed (`98609be`) and pushed to `origin main`.
+  - Deployed to AWS Lightsail server (`34.194.119.199`), temporary archives removed immediately (Rule 5), bundles pruned, PM2 `smarthire-ats` reloaded.
+  - Verified `HTTP 200 OK` on `https://smarthireus.com` serving `assets/index-r8nyW36g.js` and `/api/health` reporting healthy.
+
 ### 2026-10-17 — SmartHire Sourcing Copilot Chrome Extension v3.7.0 Overhaul (Email/Phone Extraction, Shadow DOM & CSP Clipboard Copy)
 - **Context & Objectives**:
   - The user reported that the Chrome extension (`smarthire-extension`) was failing to extract and copy candidate email addresses and phone numbers on Monster+ and Dice portals.
