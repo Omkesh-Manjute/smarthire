@@ -1156,6 +1156,295 @@ EDUCATION & CERTIFICATIONS:
 });
 
 // ---------------------------------------------------------------------
+// TEST 31: BENCHMARK 1: PROJECT MANAGER / SCRUM MASTER (DATA & ANALYTICS) — SARAH CONNOR
+// ---------------------------------------------------------------------
+runTest('Benchmark 1: Project Manager / Scrum Master (Data & Analytics) — Sarah Connor complete alignment', () => {
+  const jd = SmartHireMatchingEngine.normalizeJobDescription({
+    id: 'req-pm-scrum',
+    title: 'Project Manager / Scrum Master — Data & Analytics',
+    location: 'Madison, WI',
+    skills: ['Scrum Master', 'Agile', 'Jira', 'Snowflake', 'Business Intelligence', 'Python (preferred)'],
+    description: 'Looking for a Senior Scrum Master with 8+ years leading Agile delivery for Data Warehousing and Snowflake analytics platforms. Wisconsin residency required.'
+  });
+
+  const sarahConnor = {
+    id: 'sarah-connor-pm',
+    name: 'Sarah Connor',
+    title: 'Senior Scrum Master / Agile Project Manager',
+    location: 'Madison, WI',
+    experience: '9+ Years',
+    skills: ['Scrum Master', 'Agile', 'Jira', 'Snowflake', 'Business Intelligence', 'Data Warehouse', 'Sprint Planning'],
+    resumeText: `SARAH CONNOR
+Madison, WI · sarah.connor@email.com · US Citizen
+SUMMARY:
+Senior Scrum Master and Agile Project Manager with 9+ years experience leading enterprise data warehousing, Snowflake migrations, and business intelligence reporting.
+EXPERIENCE:
+• Facilitated end-to-end Scrum ceremonies (daily standups, sprint planning, sprint review, retrospectives) for 3 cross-functional teams using Jira.
+• Managed enterprise cloud data warehouse delivery on Snowflake, reducing ETL pipeline latency by 45%.
+• Prepared executive steering committee reporting, milestone tracking, and stakeholder communication for senior leadership.
+EDUCATION & CERTIFICATIONS:
+• Certified ScrumMaster (CSM)
+• Project Management Professional (PMP)
+• Bachelor of Science in Management Information Systems`
+  };
+
+  const quickEval = SmartHireMatchingEngine.evaluateCandidate(sarahConnor, jd);
+  const dossierEval = SmartHireMatchingEngine.sessionCache.getOrEvaluate(sarahConnor, jd);
+
+  assert.strictEqual(quickEval.score, dossierEval.score, 'Quick Sourcing and Detailed Dossier scores must be identical');
+  assert.ok(quickEval.score >= 85, `Sarah Connor should score >= 85%, got ${quickEval.score}%`);
+  assert.strictEqual(quickEval.fitCategory, 'Strong Fit');
+  assert.strictEqual(quickEval.recommendation, 'SUBMIT');
+  assert.strictEqual(quickEval.eligibilityStatus, 'VERIFIED_ELIGIBLE');
+  assert.strictEqual(quickEval.isHardFailure, false);
+  assert.strictEqual(quickEval.mandatoryCoverage.notDemonstrated.length, 0, 'No mandatory requirements should be missing');
+});
+
+// ---------------------------------------------------------------------
+// TEST 32: BENCHMARK 2: QA ANALYST / SDET — RAJITHA A
+// ---------------------------------------------------------------------
+runTest('Benchmark 2: QA Analyst / SDET — Rajitha A full resume yields Strong Fit & SUBMIT', () => {
+  const qaJd = SmartHireMatchingEngine.normalizeJobDescription({
+    id: 'req-sdet-qa',
+    title: 'Software Quality Assurance Engineer / SDET',
+    skills: ['Selenium', 'Playwright', 'Cucumber', 'BDD', 'Test Automation', 'STLC', 'Jira'],
+    description: 'Seeking a QA Automation Engineer with 5+ years experience in automated testing, Selenium, Playwright, Cucumber BDD framework, test execution, defect triage, and SDLC.'
+  });
+
+  const rajithaCand = {
+    id: 'rajitha-bench',
+    name: 'Rajitha A',
+    title: 'Software Quality Assurance Engineer in Test (SDET)',
+    location: 'Chicago, IL',
+    experience: '7+ Years',
+    skills: ['Selenium', 'Playwright', 'Cucumber', 'BDD', 'TDD', 'Java', 'TestNG', 'Postman', 'API Testing', 'Jira'],
+    resumeText: `RAJITHA A — Lead QA Automation Engineer / SDET
+Chicago, IL · US Citizen
+SUMMARY: Over 7+ years of experience in Software Quality Assurance, automated test framework development, and end-to-end test execution.
+EXPERIENCE:
+• Designed and implemented test automation frameworks using Selenium WebDriver, Playwright, and Cucumber BDD.
+• Executed regression testing, sanity suites, and API testing using Postman and RestAssured.
+• Participated in defect triage meetings with developers and product managers in Jira.
+• Developed comprehensive Test Plans, Test Cases, and Requirement Traceability Matrices across SDLC and STLC.
+EDUCATION:
+• Bachelor of Technology in Computer Science and Engineering`
+  };
+
+  const quickEval = SmartHireMatchingEngine.evaluateCandidate(rajithaCand, qaJd);
+  const dossierEval = SmartHireMatchingEngine.sessionCache.getOrEvaluate(rajithaCand, qaJd);
+
+  assert.strictEqual(quickEval.score, dossierEval.score);
+  assert.ok(quickEval.score >= 85, `Rajitha should achieve Strong Fit score >= 85%, got ${quickEval.score}%`);
+  assert.strictEqual(quickEval.fitCategory, 'Strong Fit');
+  assert.strictEqual(quickEval.recommendation, 'SUBMIT');
+  assert.strictEqual(quickEval.isProvisional, false);
+});
+
+// ---------------------------------------------------------------------
+// TEST 33: BENCHMARK 3: LABORATORY QA ANALYST (GLP/GMP vs SOFTWARE QA GATING)
+// ---------------------------------------------------------------------
+runTest('Benchmark 3: Laboratory Quality Assurance Analyst (GLP/GMP vs software QA gating)', () => {
+  const labJd = SmartHireMatchingEngine.normalizeJobDescription({
+    id: 'req-lab-qa',
+    title: 'Laboratory Quality Assurance Analyst',
+    description: 'Requires expertise in Laboratory Compliance & Regulatory Quality Assurance, Good Laboratory Practice (GLP), cGMP, FDA regulations, sample testing, analytical method validation, and CAPA.'
+  });
+
+  const labReq = labJd.categories.DOMAIN_FUNCTIONAL.find(r => r.name.toLowerCase().includes('laboratory compliance') || r.name.toLowerCase().includes('glp'));
+  assert.ok(labReq, 'Laboratory Compliance requirement must be defined in JD');
+
+  // Candidate 1: Software QA Engineer (only software testing tools: Selenium, Playwright, Jira, SDLC)
+  const softwareQaCandidate = {
+    name: 'Software Tester',
+    title: 'QA Engineer',
+    skills: ['Selenium', 'Playwright', 'Cypress', 'Jira', 'Manual Testing'],
+    resumeText: `Software QA Engineer with 5 years experience in web application testing, Selenium, Playwright, and Jira bug tracking.`
+  };
+
+  const softMatch = SmartHireMatchingEngine.matchRequirementEvidence(labReq, softwareQaCandidate.resumeText, softwareQaCandidate.skills, softwareQaCandidate.title);
+  assert.strictEqual(softMatch.evidenceStatus, 'NOT_DEMONSTRATED', 'Software test tools must NOT count as GLP/GMP laboratory compliance');
+  assert.strictEqual(softMatch.evidenceScore, 0.00);
+  assert.ok(softMatch.gapOrQualification.includes('Laboratory Compliance'));
+
+  // Candidate 2: Genuine Laboratory QA Specialist (GLP, GMP, FDA, SOP, CAPA)
+  const labCandidate = {
+    name: 'Lab QA Specialist',
+    title: 'Quality Assurance Analyst - GLP/GMP',
+    skills: ['GLP', 'GMP', 'FDA Regulations', 'SOP', 'CAPA', 'Analytical Chemistry'],
+    resumeText: `Quality Assurance Analyst with 6+ years in regulated pharmaceutical laboratories.
+• Ensured compliance with FDA regulations, Good Laboratory Practices (GLP), and cGMP guidelines.
+• Conducted analytical method validation, sample testing reviews, and CAPA deviation investigations.`
+  };
+
+  const labMatch = SmartHireMatchingEngine.matchRequirementEvidence(labReq, labCandidate.resumeText, labCandidate.skills, labCandidate.title);
+  assert.strictEqual(labMatch.evidenceStatus, 'DIRECT_MATCH', 'Regulated laboratory experience must DIRECT_MATCH GLP/GMP requirement');
+  assert.strictEqual(labMatch.evidenceScore, 1.00);
+  assert.ok(labMatch.resumeEvidence.includes('GLP') || labMatch.resumeEvidence.includes('FDA'));
+});
+
+// ---------------------------------------------------------------------
+// TEST 34: BENCHMARK 4: ASSISTANT IT DIRECTOR — LIA SMITH FULL VS PARTIAL EVALUATION
+// ---------------------------------------------------------------------
+runTest('Benchmark 4: Assistant IT Director — Lia Smith (Full: ~64% BACKUP; Partial: HOLD_FOR_VERIFICATION)', () => {
+  const assistantItDirectorJd = SmartHireMatchingEngine.normalizeJobDescription({
+    id: '159348',
+    title: 'Assistant IT Director / Enterprise Program Manager - Project Lead',
+    location: 'Columbia, SC',
+    description: 'State Treasurers Office (STO). Full-time on-site in Columbia, SC 5 days a week. Mandatory SC residency. Enterprise technology delivery, Cybersecurity, Managed-Service SLA Ownership, Active Directory / Entra ID, Microsoft Intune, Financial services experience, IT Operations & Strategy Leadership, Direct supervisory experience 3+ years, Risk & Audit compliance, Incident response & after-hours support, Budget monitoring, Executive & steering committee reporting, PMP or SAFe certification, Bachelor degree required.'
+  });
+
+  // 1. Partial Snippet (1,101 characters)
+  const partialCand = {
+    name: 'Lia Smith',
+    location: 'Columbia, SC',
+    resumeText: `LIA SMITH\nColumbia, SC · lia.smith@email.com\nSUMMARY: Enterprise Program Manager with experience in technology delivery and steering committees.`.padEnd(1101, ' ')
+  };
+  const partEval = SmartHireMatchingEngine.evaluateCandidate(partialCand, assistantItDirectorJd);
+  assert.strictEqual(partEval.extractionStatus, 'PARTIAL_RESUME_EXTRACTED');
+  assert.strictEqual(partEval.isProvisional, true);
+  assert.strictEqual(partEval.recommendation, 'HOLD_FOR_VERIFICATION', 'Partial resume must be placed on HOLD_FOR_VERIFICATION');
+
+  // 2. Full 3-Page Resume
+  const fullCand = {
+    id: 'lia-bench-full',
+    name: 'Lia Smith',
+    location: 'Columbia, SC',
+    resumeText: `LIA SMITH
+Columbia, SC · lia.smith@email.com · Current SC Resident · US Citizen
+SUMMARY: Senior Enterprise Program Manager with 11+ years leading enterprise technology delivery, cybersecurity NIST frameworks, IT operations strategy, financial services systems, and steering committee reporting.
+EXPERIENCE:
+Bank of America | 2021 – Present
+• Directed enterprise technology delivery and banking core integrations for public finance and treasury systems.
+• Enforced cybersecurity policies, NIST security controls, and annual risk assessment audits.
+• Prepared and presented executive briefings and status reports to leadership steering committee.
+Wells Fargo | 2017 – 2021
+• Managed financial services applications, budget monitoring, and vendor contract renewals.
+SC Department of Health | 2015 – 2017
+• IT Project Lead coordinating operational service delivery across cross-functional teams.
+EDUCATION & CERTIFICATIONS:
+• Bachelor of Science in Information Technology — University of South Carolina (Expected June 2027)
+• Project Management Professional (PMP)
+• Certified SAFe® 5 Agilist`
+  };
+
+  const fullEval = SmartHireMatchingEngine.evaluateCandidate(fullCand, assistantItDirectorJd);
+  assert.strictEqual(fullEval.extractionStatus, 'FULL_RESUME_EXTRACTED');
+  assert.strictEqual(fullEval.isProvisional, false);
+  assert.strictEqual(fullEval.score, 64, 'Objectively calculated score must be 64% based on 7-category weights');
+  assert.strictEqual(fullEval.fitCategory, 'Partial Fit');
+  assert.strictEqual(fullEval.recommendation, 'BACKUP');
+  assert.strictEqual(fullEval.eligibilityStatus, 'PENDING_VERIFICATION');
+});
+
+// ---------------------------------------------------------------------
+// TEST 35: BENCHMARK 5: SOFTWARE ENGINEER / FULL STACK DEVELOPER
+// ---------------------------------------------------------------------
+runTest('Benchmark 5: Software Engineer / Full Stack Developer yields Strong Fit & SUBMIT', () => {
+  const seJd = SmartHireMatchingEngine.normalizeJobDescription({
+    id: 'req-fullstack-dev',
+    title: 'Senior Full Stack Software Engineer',
+    skills: ['React', 'Node.js', 'Python', 'PostgreSQL', 'Microservices', 'REST APIs', 'CI/CD'],
+    description: 'Seeking a Senior Full Stack Engineer with 5+ years experience building cloud applications with React, Node.js, Python, PostgreSQL, REST APIs, Microservices, and automated CI/CD pipelines.'
+  });
+
+  const fullStackCand = {
+    id: 'fs-cand-01',
+    name: 'David Chen',
+    title: 'Senior Full Stack Developer',
+    location: 'Seattle, WA',
+    experience: '8+ Years',
+    skills: ['React', 'Node.js', 'Python', 'PostgreSQL', 'Docker', 'AWS', 'REST APIs', 'CI/CD', 'Git'],
+    resumeText: `DAVID CHEN — Senior Full Stack Developer
+Seattle, WA · US Citizen
+SUMMARY: 8+ years of full lifecycle software engineering developing modern web applications, microservices, and high-performance backend systems.
+EXPERIENCE:
+• Architected scalable web interfaces using React, Redux, and modern TypeScript.
+• Developed RESTful microservices and backend services in Node.js and Python.
+• Designed relational databases and optimized queries in PostgreSQL.
+• Configured automated CI/CD pipelines using GitHub Actions and Docker deployments.
+• Participated in architectural discussions, code reviews, and Agile sprint planning.
+EDUCATION:
+• Bachelor of Science in Computer Science, University of Washington`
+  };
+
+  const quickEval = SmartHireMatchingEngine.evaluateCandidate(fullStackCand, seJd);
+  const dossierEval = SmartHireMatchingEngine.sessionCache.getOrEvaluate(fullStackCand, seJd);
+
+  assert.strictEqual(quickEval.score, dossierEval.score);
+  assert.ok(quickEval.score >= 85, `Full stack developer should score >= 85%, got ${quickEval.score}%`);
+  assert.strictEqual(quickEval.fitCategory, 'Strong Fit');
+  assert.strictEqual(quickEval.recommendation, 'SUBMIT');
+});
+
+// ---------------------------------------------------------------------
+// TEST 36: DECOUPLED HARD ELIGIBILITY: SCORE NEVER OVERRIDES HARD DISQUALIFICATION
+// ---------------------------------------------------------------------
+runTest('Decoupled Hard Eligibility: 95% skill score in Texas for mandatory WI role strictly REJECTed', () => {
+  const wiJd = SmartHireMatchingEngine.normalizeJobDescription({
+    id: 'req-wi-only',
+    title: 'Lead Software Architect',
+    location: 'Madison, WI',
+    skills: ['Java', 'Spring Boot', 'AWS', 'Microservices', 'Docker', 'Kubernetes'],
+    description: 'Mandatory Wisconsin residency required. In-state residents only.'
+  });
+
+  // Candidate with 100% technical skills match but located in Dallas, TX
+  const texasCand = {
+    id: 'texas-star-dev',
+    name: 'Texas Architect',
+    location: 'Dallas, TX',
+    experience: '12+ Years',
+    skills: ['Java', 'Spring Boot', 'AWS', 'Microservices', 'Docker', 'Kubernetes'],
+    resumeText: `Lead Software Architect based in Dallas, TX. Over 12 years building enterprise Java, Spring Boot, AWS, Docker, and Kubernetes microservices.`.repeat(4)
+  };
+
+  const evalResult = SmartHireMatchingEngine.evaluateCandidate(texasCand, wiJd);
+
+  // Technical skills score is high
+  assert.ok(evalResult.score >= 85, `Technical skills score should be >= 85%, got ${evalResult.score}%`);
+
+  // BUT Hard Eligibility Failure MUST override technical score to REJECT!
+  assert.strictEqual(evalResult.eligibilityStatus, 'INELIGIBLE');
+  assert.strictEqual(evalResult.isHardFailure, true);
+  assert.strictEqual(evalResult.recommendation, 'REJECT', 'Hard eligibility failure must strictly force recommendation to REJECT');
+  assert.ok(evalResult.recommendationExplanation.includes('disqualified due to mandatory eligibility constraints'));
+});
+
+// ---------------------------------------------------------------------
+// TEST 37: AMBIGUOUS LOCATION SAFETY: PENDING_VERIFICATION PREVENTS UNJUST DISQUALIFICATION
+// ---------------------------------------------------------------------
+runTest('Ambiguous Location Safety: General "United States" or Columbia, SC evaluates to PENDING_VERIFICATION', () => {
+  const scJd = SmartHireMatchingEngine.normalizeJobDescription({
+    id: 'req-sc-role',
+    title: 'Assistant IT Director',
+    location: 'Columbia, SC',
+    description: 'State Treasurers Office (STO). Full-time on-site in Columbia, SC 5 days a week. Mandatory SC residency.'
+  });
+
+  // Candidate with general location "United States"
+  const generalUsCand = {
+    name: 'Alex General',
+    location: 'United States',
+    resumeText: 'Experienced IT leader based in United States.'
+  };
+
+  const eligGeneral = SmartHireMatchingEngine.evaluateEligibility(generalUsCand, scJd);
+  assert.strictEqual(eligGeneral.eligibilityStatus, 'PENDING_VERIFICATION');
+  assert.strictEqual(eligGeneral.isHardFailure, false, 'Ambiguous location must NOT be a hard failure');
+
+  // Candidate in Columbia, SC
+  const columbiaCand = {
+    name: 'Lia Local',
+    location: 'Columbia, SC',
+    resumeText: 'Experienced IT leader based in Columbia, SC.'
+  };
+
+  const eligLocal = SmartHireMatchingEngine.evaluateEligibility(columbiaCand, scJd);
+  assert.strictEqual(eligLocal.eligibilityStatus, 'PENDING_VERIFICATION');
+  assert.strictEqual(eligLocal.isHardFailure, false);
+});
+
+// ---------------------------------------------------------------------
 // SUMMARY
 // ---------------------------------------------------------------------
 console.log('\n====================================================');
@@ -1167,3 +1456,4 @@ if (passedTests === totalTests) {
   process.exit(1);
 }
 console.log('====================================================\n');
+
