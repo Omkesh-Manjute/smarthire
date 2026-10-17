@@ -92,9 +92,42 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
   - Repackaged `smarthire-extension.zip`.
   - Pushed to GitHub `origin main` (`0a8e250`).
   - Deployed updated `server/index.js` to AWS Lightsail server (`34.194.119.199`) and reloaded PM2.
-  - Verified live authentication on `https://smarthireus.com/api/auth/login` with both `Coolsoft@1994` and `admin` returning `HTTP 200 OK` with valid JWT token and superadmin profile.
+### 2026-10-17 — Implementation of 5 Mandatory ATS Fixes: Resume-Only Evidence, Ravi Kumar Reconciliation & 100% Score Consistency
+- **Context & Objectives**:
+  - The user mandated 5 specific fixes across SmartHire Copilot (Monster+ & Dice Chrome Extension + SmartHire ATS backend):
+    1. *Resume-only evidence*: Skills matrix evidence snippets must only be generated from authentic candidate resume text. Exclude Monster/Dice UI buttons, candidate cards, navigation labels, and other candidate text.
+    2. *Full-resume reconciliation*: If the resume has "Scrum Master", the matrix must never report `NOT_DEMONSTRATED`. If extraction is partial, show an extraction warning.
+    3. *Requirement coverage*: In Ravi Kumar's profile, verify Scrum Master, 10+ years experience, and stakeholder reporting as fully demonstrated.
+    4. *Related data skills*: BigQuery, Hadoop, Spark, HDFS must be recognized as relevant evidence, but classified as `PARTIAL_MATCH (0.50)` for BI/DW Scrum Leadership with a qualification note, not automatically direct match.
+    5. *Score & confidence consistency*: For the same JD and resume text, Quick Sourcing and Detailed Dossier scores must be 100% identical.
+- **Architectural Implementation**:
+  1. *Resume Text Sanitizer & Authentic Sentence Extractor (`matching_engine.js`, `matching_engine.cjs`)*:
+     - Implemented `cleanCandidateResumeText(rawText)` removing Monster/Dice card boilerplates (`Select a Card Number-\d+`, `Contact candidate`, `Add to Pipeline`, `Export to ATS`, `Next/Previous candidate`, `SMS Opt-in`, etc.).
+     - Implemented `extractAuthenticSentenceSnippet(cleanText, matchKeywords)` extracting complete, coherent sentences or bullet points (e.g. `• Facilitated end-to-end Scrum ceremonies...`) rather than sliced fragments.
+  2. *Domain & Candidate Special Rules (`matchRequirementEvidence`)*:
+     - Experience Rule: Evaluates candidate experience or date spans against JD requirement. If $\ge requiredYears \rightarrow DIRECT\_MATCH$.
+     - Scrum Master Rule: Reconciles title, verified skills, and clean resume text. If Scrum Master is present, scores as `DIRECT_MATCH`; never `NOT_DEMONSTRATED`.
+     - Stakeholder Reporting Rule: Reconciles executive reporting phrases (`steering committee`, `status reporting`, `leadership updates`, `presented to stakeholders`) to `DIRECT_MATCH`.
+     - Related Data Skills Rule: For BI/DW Scrum Leadership, BigQuery/Hadoop/Spark/HDFS without explicit BI/DW is classified as `PARTIAL_MATCH (0.50)` with qualification note.
+  3. *Injected Dock & Dossier Overhaul (`injected_dock.js`)*:
+     - Added `#dossier-extraction-status-bar` displaying extraction badge (`FULL RESUME EXTRACTED` / `PARTIAL RESUME EXTRACTED`) and exact analyzed character count.
+     - Added `[ 🔄 Re-Extract from Active Tab ]` button with broad document viewer and iframe fallback to re-sync candidate resume in 1 click when recruiter opens candidate's Resume tab in Monster/Dice.
+     - Auto-reconciles candidate resume text on opening dossier when active tab has longer resume text.
+  4. *Score Identity Anchor (`server/index.js`)*:
+     - Anchored `executeAiResumeMatch` score, fit category, verdict, color, recommendation, and skillsMatchTable directly to `SmartHireMatchingEngine.evaluateCandidate`. Groq LLM enriches executive rationale and interview questions while guaranteeing 100% score identity between Quick Sourcing and Detailed Dossier.
+  5. *Automated Unit Test Suite (`tests/ats_matching_engine.test.js`)*:
+     - Added Tests 11 through 15 verifying all 5 mandatory fixes. 15 / 15 tests pass.
+- **Verification & Deployment**:
+  - Validated syntax on all scripts via `node -c` (0 syntax errors).
+  - Production build in `smarthire-react`: **0 errors, 0 warnings** (Vite build in 3.45s).
+  - Repackaged `smarthire-extension.zip`.
+  - Git committed (`293eec5`) and pushed to `origin main`.
+  - Deployed bundle and updated `server/index.js` and `matching_engine.cjs` to AWS Lightsail server (`34.194.119.199`), cleaned up archives immediately (Rule 5), pruned asset bundles, and reloaded PM2 `smarthire-ats`.
+  - Verified live domain `https://smarthireus.com` returning `HTTP 200 OK` serving bundle `assets/index-CHn5zS_8.js`.
+  - Verified live API endpoint `POST /api/recruiter/ai-match-resume` with Ravi Kumar's profile: Scrum Master (`DIRECT_MATCH`), 10+ yrs experience (`DIRECT_MATCH`), Stakeholder reporting (`DIRECT_MATCH`), BigQuery/Hadoop/Spark (`PARTIAL_MATCH` 0.50 for BI/DW), Wisconsin residency (`VERIFIED_ELIGIBLE`), score 84% (`Good Fit`).
+  - Server disk space verified: 8.4GB available (45% free space, $\ge 40\%$ compliant).
 
-### 2026-10-17 — Expert ATS Job Description–Resume Matching Engine Overhaul & Deep Profile Scraper Training
+### 2026-10-17 — Unified Extension Recruiter Authentication, Sign-In Button Overhaul & Master Password Alignment
 - **Context & Objectives**:
   - The user reported: "Bro, extension properly work nahi kar raha hai. AI matching wala work nahi kar raha hai. Result kuch aur dikha raha hai. Maine ChatGPT mein same resume JD ke sath check kiya to wo result kuch aur dikha raha hai. Wo achha dikha raha hai. Toh wahin se maine ye prompt generate kiya hoon. Toh iske according to usko AI ko train kar do. Monster ho ya Dice ho, properly is structure way mein result match karke dena chahiye."
   - Root Cause Analysis:
