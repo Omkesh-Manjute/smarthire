@@ -127,6 +127,41 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
   - Verified live API endpoint `POST /api/recruiter/ai-match-resume` with Ravi Kumar's profile: Scrum Master (`DIRECT_MATCH`), 10+ yrs experience (`DIRECT_MATCH`), Stakeholder reporting (`DIRECT_MATCH`), BigQuery/Hadoop/Spark (`PARTIAL_MATCH` 0.50 for BI/DW), Wisconsin residency (`VERIFIED_ELIGIBLE`), score 84% (`Good Fit`).
   - Server disk space verified: 8.4GB available (45% free space, $\ge 40\%$ compliant).
 
+### 2026-10-17 — Monster+ Split-View Right-Pane Full Resume Extraction, Universal Multi-Industry ATS Engine & Dynamic State Residency Gating
+- **Context & Objectives**:
+  - The user shared a Monster+ split-view screenshot showing `Rajitha A` (Software Engineer in Test):
+    - Middle column: Candidate card showing only ~172 characters (Name, Title, Location, and Top Skills chips).
+    - Right column: Full candidate resume document (`SUMMARY`, 7+ years QA experience, BDD, TDD, Cucumber, Playwright, Selenium, Test Plans, SDLC/STLC, etc. with thousands of characters).
+    - User mandate: "bhai ye card mai slect hone ke bad ye pura page extract hona cahiye copy hona cahiye resume ka then you match with jd to kam karega sahi se" (When a card is selected in Monster, the complete resume from the right preview page must be extracted and matched with the JD so results are accurate).
+  - Root Cause Analysis:
+    1. *Search Card Snippet Trap*: Monster candidate cards only render name, title, and top 2-3 skill chips (~172 characters).
+    2. *Split-View Selector Blindspot*: Monster's candidateSearch layout uses an inline split-view right pane (`main > div > div:last-child` / preview pane) rather than an `aside` or modal `[role="dialog"]`. Previous code only queried `aside` or `[role="dialog"]`, found 0 panes, and fell back to `targetCard.innerText` (172 chars).
+    3. *Flawed Threshold of 150 Chars*: In `injected_dock.js`, `dossier-btn-reextract` checked `if (length >= 150)` and treated the 172-character card text as "success".
+    4. *Single-Role Overfitting*: `normalizeJobDescription` had hardcoded Wisconsin residency checks for unrelated roles (e.g. QA or Software Engineer).
+- **Architectural Implementations & Upgrades**:
+  1. *Monster+ Split-View Right-Pane & Resume Extractor (`content_monster.js`)*:
+     - Implemented `findMonsterDetailPane(candidateName)`: Multi-strategy detector targeting Monster preview columns (`[data-testid*="candidate-preview"]`, `[data-testid*="resume-view"]`, `.document-viewer`, `.split-view`, `.right-pane`, right-side viewport positional scanning, and candidate contact relay emails `@contact.monster.com`).
+     - Implemented `findMonsterResumeTab` and `findMonsterProfileTab`: Tab navigation helpers to locate and click the "Resume" or "Profile" tabs.
+     - Implemented `extractCleanMonsterResumeTextAsync(targetCard, candidateName, autoSwitchTabs)`: Asynchronously selects card, activates Resume tab, polls for document/iframe render, extracts $\ge 2,000$ characters of authentic resume text, and marks `sourceType: 'RESUME_DOCUMENT'`.
+     - Whitespace & Boilerplate Sanitizer: Normalized whitespace, stripped Monster UI button labels (`Need Help?`, `Clear All`, `Select a Card`, `Post a Job`), and preserved all genuine bullet points (`•`), dates, and metrics.
+  2. *Re-Extraction & Dossier Reconciliation (`injected_dock.js`)*:
+     - Upgraded `#dossier-btn-reextract` to `async`: Triggers `extractCleanMonsterResumeTextAsync`, invalidates cache, recalculates score, and removes provisional warning ONLY when genuine full resume ($\ge 500$ chars) is retrieved.
+     - Auto-Reconciliation on Open: Automatically re-evaluates candidates when the active right pane on Monster displays longer authentic resume text.
+  3. *Universal Multi-Industry Matching Engine (`matching_engine.js`, `matching_engine.cjs`)*:
+     - Universal 7-Category Weights: Mandatory Tech (35%), Domain (20%), Responsibilities (15%), Experience (10%), Preferred (10%), Leadership (5%), Education/Certs (5%) with proportional redistribution.
+     - Dynamic State Residency Detection: Enforces state residency only when the JD explicitly specifies a state mandate (removes hardcoded IDs/titles demanding Wisconsin residency for unrelated roles).
+     - Experience Range Parsing: Accurately parses ranges like "1-3 years" (using minimum bound 1).
+     - Universal Job Families: Dynamic categorization for Software Engineer, QA Analyst / SDET, Laboratory QA Analyst, Data Analyst / Data Engineer, Project Manager / Scrum Master, Cloud / DevOps Engineer.
+  4. *Automated Unit Test Suite (`tests/ats_matching_engine.test.js`)*:
+     - Expanded to 22 tests (all 22 passed): Verified 172-char card snippet classification (provisional), right-pane full resume extraction ($\ge 2,000$ chars), inaccessible resumes, UI noise exclusion, QA Analyst / SDET matching (Rajitha A profile), dynamic state residency, and 35/20/15/10/10/5/5 weights.
+- **Verification & Deployment**:
+  - Local production build in `smarthire-react`: **0 errors, 0 warnings** (Vite build in 3.37s).
+  - Repackaged `smarthire-extension.zip` (clean root structure, 17 files, version 3.8.0).
+  - Pushed to GitHub `origin main` (`0bff789`, `9be895f`).
+  - Deployed `matching_engine.cjs` to AWS Lightsail server (`34.194.119.199`) and reloaded PM2 `smarthire-ats`.
+  - Verified live domain `https://smarthireus.com` returning `HTTP 200 OK` and API healthy.
+  - Server disk space verified: 8.4GB available (45% free space, $\ge 40\%$ compliant).
+
 ### 2026-10-17 — Unified Extension Recruiter Authentication, Sign-In Button Overhaul & Master Password Alignment
 - **Context & Objectives**:
   - The user reported: "Bro, extension properly work nahi kar raha hai. AI matching wala work nahi kar raha hai. Result kuch aur dikha raha hai. Maine ChatGPT mein same resume JD ke sath check kiya to wo result kuch aur dikha raha hai. Wo achha dikha raha hai. Toh wahin se maine ye prompt generate kiya hoon. Toh iske according to usko AI ko train kar do. Monster ho ya Dice ho, properly is structure way mein result match karke dena chahiye."
