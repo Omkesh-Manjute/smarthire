@@ -13039,6 +13039,15 @@ app.post('/api/recruiter/sourcing/bulk-import', express.json({ limit: '10mb' }),
         if (c.skills && Array.isArray(c.skills) && c.skills.length > (existing.skills || []).length) {
           existing.skills = c.skills;
         }
+        if (c.matchScore || c.match_score || c.aiMatch?.score) {
+          existing.matchScore = c.matchScore || c.match_score || c.aiMatch?.score;
+        }
+        if (c.aiMatch) {
+          existing.aiMatch = c.aiMatch;
+          existing.strengths = c.aiMatch.strengths || [];
+          existing.gaps = c.aiMatch.gaps || [];
+          existing.aiReasoning = c.aiMatch.reasoning || '';
+        }
         // Move existing to the very front so it appears at top of list
         const exIdx = candidatesStore.indexOf(existing);
         if (exIdx > -1) {
@@ -13080,7 +13089,11 @@ app.post('/api/recruiter/sourcing/bulk-import', express.json({ limit: '10mb' }),
         receivedAt: nowIso,
         notes: `Sourced via SmartHire Extension. ${c.notes || ''} Profile: ${c.profileUrl || c.profile_url || ''}`,
         targetReqId: targetReqId ? String(targetReqId) : null,
-        matchScore: c.matchScore || c.match_score || 88,
+        matchScore: c.matchScore || c.match_score || (c.aiMatch ? c.aiMatch.score : 88),
+        aiMatch: c.aiMatch || null,
+        strengths: c.strengths || (c.aiMatch ? c.aiMatch.strengths : []),
+        gaps: c.gaps || (c.aiMatch ? c.aiMatch.gaps : []),
+        aiReasoning: c.aiReasoning || (c.aiMatch ? c.aiMatch.reasoning : ''),
         matchedJobTitle: matchedJobTitle,
         resumeText: c.summary || c.resumeText || '',
         profileUrl: c.profileUrl || c.profile_url || '',
@@ -13119,6 +13132,246 @@ app.post('/api/recruiter/sourcing/bulk-import', express.json({ limit: '10mb' }),
     });
   } catch (err) {
     console.error('[BulkImportAPI] error:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ============================================================================
+// AI RESUME-TO-JD MATCHING ENGINE (GROQ LLM + HEURISTIC FALLBACK)
+// ============================================================================
+
+function computeDeterministicFit(candidate, job) {
+  const candName = candidate?.name || 'Candidate';
+  const candTitle = (candidate?.title || candidate?.role || '').toLowerCase();
+  const candSkills = (Array.isArray(candidate?.skills) ? candidate.skills : (candidate?.skills ? String(candidate.skills).split(',') : [])).map(s => String(s).trim().toLowerCase()).filter(Boolean);
+  const candExp = String(candidate?.experience || candidate?.years_of_experience || '5');
+  const candSummary = (candidate?.summary || candidate?.resumeText || '').toLowerCase();
+
+  const jobTitle = (job?.title || job?.positionTitle || '').toLowerCase();
+  const jobSkills = (Array.isArray(job?.skills) ? job.skills : (job?.skills ? String(job.skills).split(',') : [])).map(s => String(s).trim().toLowerCase()).filter(Boolean);
+  const jobDesc = (job?.description || job?.fullDescription || job?.rawDescription || '').toLowerCase();
+
+  const strengths = [];
+  const gaps = [];
+  let matchedSkillsCount = 0;
+
+  for (const js of jobSkills) {
+    if (candSkills.some(cs => cs.includes(js) || js.includes(cs)) || candSummary.includes(js) || candTitle.includes(js)) {
+      matchedSkillsCount++;
+      strengths.push(`Direct skill match: ${js.charAt(0).toUpperCase() + js.slice(1)}`);
+    } else {
+      gaps.push(`Missing explicit mention: ${js.charAt(0).toUpperCase() + js.slice(1)}`);
+    }
+  }
+
+  // Title similarity
+  let titleScore = 40;
+  const titleTokens = jobTitle.split(/\s+/).filter(t => t.length > 2);
+  let matchedTitleTokens = 0;
+  for (const token of titleTokens) {
+    if (candTitle.includes(token) || candSummary.includes(token)) {
+      matchedTitleTokens++;
+    }
+  }
+  if (titleTokens.length > 0) {
+    titleScore = Math.round((matchedTitleTokens / titleTokens.length) * 100);
+  }
+
+  const skillScore = jobSkills.length > 0 ? Math.round((matchedSkillsCount / jobSkills.length) * 100) : 75;
+  const rawScore = Math.round((titleScore * 0.4) + (skillScore * 0.5) + 10);
+  const score = Math.max(35, Math.min(98, rawScore));
+
+  const verdict = score >= 85 ? 'STRONG FIT' : (score >= 70 ? 'GOOD FIT' : (score >= 50 ? 'MODERATE FIT' : 'LOW FIT'));
+  const color = score >= 85 ? '#059669' : (score >= 70 ? '#2563EB' : (score >= 50 ? '#D97706' : '#DC2626'));
+
+  return {
+    candidateId: candidate?.id,
+    candidateName: candName,
+    jobId: job?.id || job?.reqId || '',
+    jobTitle: job?.title || job?.positionTitle || 'Position',
+    score,
+    verdict,
+    color,
+    strengths: strengths.slice(0, 4),
+    gaps: gaps.slice(0, 3),
+    reasoning: `${candName} demonstrates ${score}% qualification alignment with ${job?.title || 'the target role'} based on title keywords and core technical skills.`,
+    interviewQuestions: [
+      `Can you describe your hands-on experience with ${jobSkills[0] || 'core technologies'} in recent enterprise client projects?`,
+      `How do you manage project deliverables under strict deadlines in an agile environment?`
+    ],
+    source: 'ats_heuristic_engine'
+  };
+}
+
+async function executeAiResumeMatch(candidate, job) {
+  const candName = candidate?.name || 'Candidate';
+  const candTitle = candidate?.title || candidate?.role || '';
+  const candSkills = Array.isArray(candidate?.skills) ? candidate.skills.join(', ') : (candidate?.skills || '');
+  const candExp = candidate?.experience || candidate?.years_of_experience || '5+ Years';
+  const candSummary = candidate?.summary || candidate?.resumeText || candidate?.notes || '';
+  const candLocation = candidate?.location || 'United States';
+
+  const jobTitle = job?.title || job?.positionTitle || 'Technical Role';
+  const jobReqId = job?.id || job?.reqId || '';
+  const jobSkills = Array.isArray(job?.skills) ? job.skills.join(', ') : (job?.skills || '');
+  const jobDesc = job?.description || job?.fullDescription || job?.rawDescription || '';
+  const jobLocation = job?.location || 'United States';
+
+  // 1. Try Groq AI (Ultra-fast openai/gpt-oss-120b)
+  const groqApiKey = process.env.GROQ_API_KEY;
+  if (groqApiKey) {
+    try {
+      const prompt = `You are an expert technical ATS recruitment AI for SmartHire.
+Analyze how well this candidate matches the Job Description.
+
+JOB DETAILS:
+Position: ${jobTitle} ${jobReqId ? `(Req #${jobReqId})` : ''}
+Required Skills: ${jobSkills || 'See description'}
+Location: ${jobLocation}
+Description:
+${jobDesc.substring(0, 1800)}
+
+CANDIDATE PROFILE:
+Name: ${candName}
+Title / Role: ${candTitle}
+Key Skills: ${candSkills}
+Experience: ${candExp}
+Location: ${candLocation}
+Summary / Background:
+${candSummary.substring(0, 1200)}
+
+Respond with strict JSON only with this schema:
+{
+  "score": <integer between 0 and 100>,
+  "verdict": <"STRONG FIT" | "GOOD FIT" | "MODERATE FIT" | "LOW FIT">,
+  "strengths": [<2 to 4 specific bullet points citing candidate strengths relative to JD>],
+  "gaps": [<1 to 3 specific missing skills, certifications or gaps relative to JD>],
+  "reasoning": <concise 2-sentence executive summary justifying the score>,
+  "interviewQuestions": [<2 tailored technical screening questions for recruiter to ask>]
+}
+
+Rules:
+- Title & Core Skills Match: 70% weight.
+- Experience & Domain: 20% weight.
+- Wrong domain/title (e.g. Sales for Java Dev) must get score < 40.
+- Output pure JSON only.`;
+
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 9000);
+
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${groqApiKey}`
+        },
+        signal: controller.signal,
+        body: JSON.stringify({
+          model: 'openai/gpt-oss-120b',
+          messages: [
+            { role: 'system', content: 'You are an expert ATS recruitment AI. Always output valid JSON only. Never include markdown code fences.' },
+            { role: 'user', content: prompt }
+          ],
+          response_format: { type: 'json_object' },
+          temperature: 0.2
+        })
+      });
+      clearTimeout(timer);
+
+      if (response.ok) {
+        const data = await response.json();
+        const content = data.choices?.[0]?.message?.content;
+        if (content) {
+          const parsed = JSON.parse(content.trim());
+          const score = Math.max(10, Math.min(100, Math.round(Number(parsed.score) || 75)));
+          let verdict = parsed.verdict;
+          if (!verdict) {
+            verdict = score >= 85 ? 'STRONG FIT' : (score >= 70 ? 'GOOD FIT' : (score >= 50 ? 'MODERATE FIT' : 'LOW FIT'));
+          }
+          const color = score >= 85 ? '#059669' : (score >= 70 ? '#2563EB' : (score >= 50 ? '#D97706' : '#DC2626'));
+          return {
+            candidateId: candidate?.id,
+            candidateName: candName,
+            jobId: jobReqId,
+            jobTitle: jobTitle,
+            score,
+            verdict,
+            color,
+            strengths: Array.isArray(parsed.strengths) ? parsed.strengths : [],
+            gaps: Array.isArray(parsed.gaps) ? parsed.gaps : [],
+            reasoning: parsed.reasoning || `${candName} has relevant skills for ${jobTitle}.`,
+            interviewQuestions: Array.isArray(parsed.interviewQuestions) ? parsed.interviewQuestions : [],
+            source: 'ai_groq_llm'
+          };
+        }
+      }
+    } catch (llmErr) {
+      console.warn('[AiMatchAPI] Groq LLM failed or timed out, using fallback engine:', llmErr.message);
+    }
+  }
+
+  // 2. Fallback Deterministic Engine
+  return computeDeterministicFit(candidate, job);
+}
+
+// Single Candidate AI Match
+app.post('/api/recruiter/ai-match-resume', express.json(), async (req, res) => {
+  try {
+    const { candidate, job, targetReqId } = req.body || {};
+    if (!candidate) return res.status(400).json({ success: false, error: 'candidate object is required' });
+    
+    let targetJob = job;
+    if (!targetJob && targetReqId) {
+      await loadJobsFromDisk();
+      targetJob = (jobsStore || []).find(j => String(j.id || j.reqId) === String(targetReqId));
+    }
+    if (!targetJob) {
+      targetJob = { title: candidate.role || 'Technical Specialist', skills: candidate.skills || [] };
+    }
+
+    const matchResult = await executeAiResumeMatch(candidate, targetJob);
+    return res.json({ success: true, match: matchResult });
+  } catch (err) {
+    console.error('[AiMatchSingleAPI] error:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Multi-Candidate Batch AI Match
+app.post('/api/recruiter/ai-match-batch', express.json({ limit: '10mb' }), async (req, res) => {
+  try {
+    const { candidates, job, targetReqId } = req.body || {};
+    if (!Array.isArray(candidates) || candidates.length === 0) {
+      return res.status(400).json({ success: false, error: 'candidates array is required and must not be empty' });
+    }
+
+    let targetJob = job;
+    if (!targetJob && targetReqId) {
+      await loadJobsFromDisk();
+      targetJob = (jobsStore || []).find(j => String(j.id || j.reqId) === String(targetReqId));
+    }
+    if (!targetJob) {
+      targetJob = { title: 'Technical Specialist', skills: [] };
+    }
+
+    // Process in concurrent pools of 4
+    const results = [];
+    const chunkSize = 4;
+    for (let i = 0; i < candidates.length; i += chunkSize) {
+      const slice = candidates.slice(i, i + chunkSize);
+      const batchPromises = slice.map(c => executeAiResumeMatch(c, targetJob));
+      const batchResults = await Promise.all(batchPromises);
+      results.push(...batchResults);
+    }
+
+    return res.json({
+      success: true,
+      totalMatched: results.length,
+      jobTitle: targetJob.title || targetJob.positionTitle,
+      matches: results
+    });
+  } catch (err) {
+    console.error('[AiMatchBatchAPI] error:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 });

@@ -142,4 +142,34 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       });
     return true;
   }
+
+  if (request.action === 'AI_MATCH_BATCH') {
+    fetch('https://smarthireus.com/api/recruiter/ai-match-batch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(request.payload)
+    })
+      .then(res => res.json())
+      .then(data => sendResponse(data))
+      .catch(err => {
+        console.error('[Background] AI Match Batch error:', err);
+        sendResponse({ success: false, error: err.message });
+      });
+    return true;
+  }
+
+  if (request.action === 'AI_MATCH_CANDIDATE') {
+    fetch('https://smarthireus.com/api/recruiter/ai-match-resume', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(request.payload)
+    })
+      .then(res => res.json())
+      .then(data => sendResponse(data))
+      .catch(err => {
+        console.error('[Background] AI Match Candidate error:', err);
+        sendResponse({ success: false, error: err.message });
+      });
+    return true;
+  }
 });

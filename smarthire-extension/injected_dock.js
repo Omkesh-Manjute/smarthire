@@ -382,6 +382,10 @@ Website: http://www.coolsofttech.com`;
           <div id="smarthire-candidate-preview-list" style="max-height:220px; overflow-y:auto; border:1px solid #E2E8F0; border-radius:6px; background:#FFFFFF; margin-bottom:10px;">
           </div>
 
+          <button id="smarthire-btn-ai-match" class="smarthire-btn-primary" style="background:#7C3AED; margin-bottom:6px; display:flex; align-items:center; justify-content:center; gap:6px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>
+            <span id="smarthire-ai-match-btn-text">⚡ Run AI Resume Fit Match</span>
+          </button>
           <button id="smarthire-btn-copy-tsv" class="smarthire-btn-secondary" style="margin-bottom:6px;">
             📋 Copy to Clipboard (Excel TSV Format)
           </button>
@@ -558,6 +562,11 @@ Website: http://www.coolsofttech.com`;
       openBulkComposer();
     });
 
+    // AI Fit Match Button
+    document.getElementById('smarthire-btn-ai-match')?.addEventListener('click', () => {
+      runAiFitAnalysis();
+    });
+
     // Refresh Jobs Button
     document.getElementById('smarthire-refresh-jobs')?.addEventListener('click', () => {
       fetchLiveJobs();
@@ -594,9 +603,10 @@ Website: http://www.coolsofttech.com`;
       performGateLogin();
     });
 
-    // Mount Outreach & Bulk Composer Modal Overlays in DOM
+    // Mount Outreach, Bulk Composer, and AI Dossier Modal Overlays in DOM
     initOutreachComposerModal();
     initBulkComposerModal();
+    initAiDossierModal();
 
     // Auto-fetch fresh live jobs & recruiter identity on mount
     fetchCurrentUser();
@@ -1201,6 +1211,309 @@ Website: http://www.coolsofttech.com`;
     }, 2200);
   }
 
+  // ============================================================================
+  // AI CANDIDATE RESUME-TO-JD MATCHING & DOSSIER ENGINE
+  // ============================================================================
+  let activeDossierCandidate = null;
+
+  function initAiDossierModal() {
+    if (document.getElementById('smarthire-dossier-overlay')) return;
+    const overlay = document.createElement('div');
+    overlay.id = 'smarthire-dossier-overlay';
+    overlay.style.display = 'none';
+    overlay.innerHTML = `
+      <div id="smarthire-dossier-modal">
+        <div class="smarthire-composer-header" style="background:#0F172A; border-bottom:1px solid #1E293B;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A78BFA" stroke-width="2.2"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>
+            <span style="font-weight:700; font-size:13.5px; color:#FFFFFF;">AI Candidate Fit Dossier</span>
+          </div>
+          <button type="button" id="smarthire-dossier-close" class="smarthire-composer-close">&times;</button>
+        </div>
+        <div class="smarthire-composer-body" style="padding:14px; background:#F8FAFC; overflow-y:auto; max-height:calc(85vh - 110px); display:flex; flex-direction:column; gap:10px;">
+          <!-- Dossier Header Box -->
+          <div style="background:#FFFFFF; border:1px solid #E2E8F0; border-radius:8px; padding:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+            <div>
+              <div id="dossier-cand-name" style="font-size:15px; font-weight:800; color:#0F172A;">Candidate Name</div>
+              <div id="dossier-cand-role" style="font-size:11.5px; color:#64748B; margin-top:2px;">Role · Location</div>
+              <div id="dossier-job-title" style="font-size:11px; color:#4F46E5; font-weight:600; margin-top:3px;">Target: Job Title</div>
+            </div>
+            <div style="text-align:right;">
+              <div id="dossier-score-val" style="font-size:24px; font-weight:900; line-height:1; color:#059669;">--%</div>
+              <div id="dossier-verdict-tag" style="font-size:10px; font-weight:800; padding:2px 8px; border-radius:10px; display:inline-block; margin-top:4px; background:#DCFCE7; color:#15803D;">FIT</div>
+            </div>
+          </div>
+
+          <!-- AI Executive Reasoning -->
+          <div style="background:#FFFFFF; border:1px solid #E2E8F0; border-radius:8px; padding:10px 12px;">
+            <div style="font-size:10.5px; font-weight:700; color:#475569; text-transform:uppercase; letter-spacing:0.4px; margin-bottom:4px;">
+              AI Fit Assessment Summary
+            </div>
+            <div id="dossier-reasoning-text" style="font-size:11.5px; color:#1E293B; line-height:1.5;"></div>
+          </div>
+
+          <!-- Strengths -->
+          <div style="background:#F0FDF4; border:1px solid #BBF7D0; border-radius:8px; padding:10px 12px;">
+            <div style="font-size:10.5px; font-weight:700; color:#15803D; text-transform:uppercase; letter-spacing:0.4px; margin-bottom:5px; display:flex; align-items:center; gap:6px;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span>Key Strengths & Matched Qualifications</span>
+            </div>
+            <div id="dossier-strengths-box" style="display:flex; flex-direction:column; gap:4px; font-size:11px; color:#14532D;"></div>
+          </div>
+
+          <!-- Missing Gaps -->
+          <div style="background:#FFFBEB; border:1px solid #FDE68A; border-radius:8px; padding:10px 12px;">
+            <div style="font-size:10.5px; font-weight:700; color:#B45309; text-transform:uppercase; letter-spacing:0.4px; margin-bottom:5px; display:flex; align-items:center; gap:6px;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+              <span>Identified Gaps & Missing Requirements</span>
+            </div>
+            <div id="dossier-gaps-box" style="display:flex; flex-direction:column; gap:4px; font-size:11px; color:#78350F;"></div>
+          </div>
+
+          <!-- Technical Interview Questions -->
+          <div style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:8px; padding:10px 12px;">
+            <div style="font-size:10.5px; font-weight:700; color:#1D4ED8; text-transform:uppercase; letter-spacing:0.4px; margin-bottom:5px; display:flex; align-items:center; gap:6px;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+              <span>Recommended Technical Screening Questions</span>
+            </div>
+            <div id="dossier-questions-box" style="display:flex; flex-direction:column; gap:5px; font-size:11px; color:#1E3A8A;"></div>
+          </div>
+        </div>
+
+        <div class="smarthire-composer-footer" style="padding:10px 16px;">
+          <button type="button" id="dossier-footer-close" class="smarthire-btn-secondary" style="margin:0; font-size:11.5px; padding:5px 14px;">Close</button>
+          <button type="button" id="dossier-footer-email" class="smarthire-btn-primary" style="margin:0; font-size:11.5px; padding:5px 16px; background:#2563EB; display:flex; align-items:center; gap:6px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            <span>Personalized JD Outreach ➔</span>
+          </button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    document.getElementById('smarthire-dossier-close')?.addEventListener('click', closeAiDossier);
+    document.getElementById('dossier-footer-close')?.addEventListener('click', closeAiDossier);
+    document.getElementById('dossier-footer-email')?.addEventListener('click', () => {
+      const cand = activeDossierCandidate;
+      closeAiDossier();
+      if (cand) {
+        openOutreachComposer(cand, selectedJob);
+      }
+    });
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) closeAiDossier();
+    });
+  }
+
+  function openAiDossier(candidate, job) {
+    if (!candidate) return;
+    activeDossierCandidate = candidate;
+    initAiDossierModal();
+
+    const overlay = document.getElementById('smarthire-dossier-overlay');
+    if (!overlay) return;
+
+    const targetJob = job || selectedJob;
+    const match = candidate.aiMatch || {
+      score: candidate.matchScore || 75,
+      verdict: (candidate.matchScore || 75) >= 85 ? 'STRONG FIT' : ((candidate.matchScore || 75) >= 70 ? 'GOOD FIT' : 'MODERATE FIT'),
+      color: (candidate.matchScore || 75) >= 85 ? '#059669' : ((candidate.matchScore || 75) >= 70 ? '#2563EB' : '#D97706'),
+      reasoning: candidate.aiReasoning || `${candidate.name} has relevant technical skills for ${targetJob ? targetJob.title : 'the position'}.`,
+      strengths: candidate.strengths || (candidate.skills ? (Array.isArray(candidate.skills) ? candidate.skills.slice(0, 3) : String(candidate.skills).split(',').slice(0, 3)).map(s=>`Matches key skill: ${s.trim()}`) : ['Demonstrated relevant domain expertise']),
+      gaps: candidate.gaps || ['Verify deep experience with specialized toolsets during initial technical screen'],
+      interviewQuestions: candidate.aiMatch?.interviewQuestions || [
+        `Can you describe your hands-on experience with ${Array.isArray(candidate.skills) ? candidate.skills[0] || 'core technologies' : 'key technologies'} in enterprise client projects?`,
+        `How do you collaborate with distributed technical teams under tight release cycles?`
+      ]
+    };
+
+    const nameEl = document.getElementById('dossier-cand-name');
+    const roleEl = document.getElementById('dossier-cand-role');
+    const jobEl = document.getElementById('dossier-job-title');
+    const scoreVal = document.getElementById('dossier-score-val');
+    const verdictTag = document.getElementById('dossier-verdict-tag');
+    const reasoningText = document.getElementById('dossier-reasoning-text');
+    const strengthsBox = document.getElementById('dossier-strengths-box');
+    const gapsBox = document.getElementById('dossier-gaps-box');
+    const questionsBox = document.getElementById('dossier-questions-box');
+
+    if (nameEl) nameEl.innerText = candidate.name || 'Candidate';
+    if (roleEl) roleEl.innerText = `${candidate.title || 'Specialist'} · ${candidate.location || 'United States'}`;
+    if (jobEl) jobEl.innerText = `Target: ${cleanJobTitle(targetJob?.title || 'Open Position')}`;
+
+    if (scoreVal) {
+      scoreVal.innerText = `${match.score}%`;
+      scoreVal.style.color = match.color || '#059669';
+    }
+    if (verdictTag) {
+      verdictTag.innerText = match.verdict || 'FIT';
+      verdictTag.style.background = (match.color || '#059669') + '15';
+      verdictTag.style.color = match.color || '#059669';
+    }
+    if (reasoningText) reasoningText.innerText = match.reasoning || 'No reasoning available.';
+
+    if (strengthsBox) {
+      strengthsBox.innerHTML = (match.strengths && match.strengths.length > 0)
+        ? match.strengths.map(s => `<div>• ${s}</div>`).join('')
+        : '<div>• Strong foundational experience aligned with target role</div>';
+    }
+
+    if (gapsBox) {
+      gapsBox.innerHTML = (match.gaps && match.gaps.length > 0)
+        ? match.gaps.map(g => `<div>• ${g}</div>`).join('')
+        : '<div>• No critical gaps detected against job profile</div>';
+    }
+
+    if (questionsBox) {
+      questionsBox.innerHTML = (match.interviewQuestions && match.interviewQuestions.length > 0)
+        ? match.interviewQuestions.map((q, qIdx) => `<div><strong>Q${qIdx+1}:</strong> ${q}</div>`).join('')
+        : '<div>• Can you summarize your primary technical contributions in your recent project?</div>';
+    }
+
+    overlay.style.display = 'flex';
+  }
+
+  function closeAiDossier() {
+    const overlay = document.getElementById('smarthire-dossier-overlay');
+    if (overlay) overlay.style.display = 'none';
+  }
+
+  async function runAiFitAnalysis() {
+    if (!isUserAuthenticated || !currentUser) {
+      alert('Authentication Required: Please sign in with your SmartHire ATS credentials to run AI match analysis.');
+      checkAndApplyAuthGate();
+      return;
+    }
+
+    if (!selectedJob) {
+      alert('Please select a target Requisition first from the top dropdown to compare candidate profiles against.');
+      return;
+    }
+
+    if (!scrapedCandidates || scrapedCandidates.length === 0) {
+      alert('No extracted candidates found. Please scrape candidate profiles first.');
+      return;
+    }
+
+    const btn = document.getElementById('smarthire-btn-ai-match');
+    const btnText = document.getElementById('smarthire-ai-match-btn-text');
+    if (btn) {
+      btn.disabled = true;
+      btn.style.opacity = '0.7';
+    }
+    if (btnText) btnText.innerText = `Analyzing ${scrapedCandidates.length} candidate(s) with AI...`;
+
+    try {
+      const payload = {
+        candidates: scrapedCandidates.map((c, i) => ({
+          id: c.id || `scraped-${i}`,
+          name: c.name,
+          title: c.title,
+          role: c.title,
+          skills: c.skills,
+          experience: c.experience,
+          summary: c.summary,
+          location: c.location
+        })),
+        job: {
+          id: selectedJob.id || selectedJob.reqId,
+          title: selectedJob.title,
+          skills: selectedJob.skills,
+          description: selectedJob.description || selectedJob.fullDescription || '',
+          location: selectedJob.location
+        },
+        targetReqId: selectedJob.id || selectedJob.reqId
+      };
+
+      const res = await new Promise((resolve) => {
+        chrome.runtime.sendMessage({
+          action: 'AI_MATCH_BATCH',
+          payload
+        }, resolve);
+      });
+
+      if (res && res.success && Array.isArray(res.matches)) {
+        res.matches.forEach((m, idx) => {
+          if (scrapedCandidates[idx]) {
+            scrapedCandidates[idx].aiMatch = m;
+            scrapedCandidates[idx].matchScore = m.score;
+            scrapedCandidates[idx].strengths = m.strengths;
+            scrapedCandidates[idx].gaps = m.gaps;
+            scrapedCandidates[idx].aiReasoning = m.reasoning;
+          }
+        });
+
+        // Sort candidates by AI score descending
+        scrapedCandidates.sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0));
+
+        renderResults(scrapedCandidates);
+        if (btnText) btnText.innerText = `✓ AI Analysis Done (${scrapedCandidates.length} Ranked)`;
+      } else {
+        alert('AI Matching returned: ' + (res?.error || 'Fallback applied'));
+      }
+    } catch (err) {
+      console.error('[AI Match Error]', err);
+      alert('AI Match error: ' + err.message);
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+      }
+    }
+  }
+
+  async function runSingleAiMatch(candidate, job) {
+    if (!isUserAuthenticated || !currentUser) {
+      alert('Authentication required: Please sign in.');
+      checkAndApplyAuthGate();
+      return;
+    }
+    const targetJob = job || selectedJob;
+    if (!targetJob) {
+      alert('Please select a target Requisition first from the top dropdown.');
+      return;
+    }
+
+    try {
+      const payload = {
+        candidate: {
+          id: candidate.id,
+          name: candidate.name,
+          title: candidate.title,
+          role: candidate.title,
+          skills: candidate.skills,
+          experience: candidate.experience,
+          summary: candidate.summary,
+          location: candidate.location
+        },
+        job: {
+          id: targetJob.id || targetJob.reqId,
+          title: targetJob.title,
+          skills: targetJob.skills,
+          description: targetJob.description || targetJob.fullDescription || '',
+          location: targetJob.location
+        },
+        targetReqId: targetJob.id || targetJob.reqId
+      };
+
+      const res = await new Promise((resolve) => {
+        chrome.runtime.sendMessage({ action: 'AI_MATCH_CANDIDATE', payload }, resolve);
+      });
+
+      if (res && res.success && res.match) {
+        candidate.aiMatch = res.match;
+        candidate.matchScore = res.match.score;
+        candidate.strengths = res.match.strengths;
+        candidate.gaps = res.match.gaps;
+        candidate.aiReasoning = res.match.reasoning;
+        renderResults(scrapedCandidates);
+        openAiDossier(candidate, targetJob);
+      }
+    } catch (e) {
+      alert('AI Match error: ' + e.message);
+    }
+  }
+
   function fetchLiveJobs() {
     const badge = document.getElementById('smarthire-job-count-badge');
     if (badge) badge.innerText = 'Refreshing...';
@@ -1730,6 +2043,9 @@ Website: http://www.coolsofttech.com`;
         const isVerified = hasPhone || hasEmail;
         const isSent = (c.email && sentCandidateEmails.has(c.email.toLowerCase())) || (c.name && sentCandidateEmails.has(c.name.toLowerCase()));
         const isChecked = selectedCandidateIndices.has(i);
+        const aiScore = c.aiMatch ? c.aiMatch.score : (c.matchScore || null);
+        const aiVerdict = c.aiMatch ? c.aiMatch.verdict : (aiScore ? (aiScore >= 85 ? 'STRONG FIT' : (aiScore >= 70 ? 'GOOD FIT' : 'MODERATE FIT')) : null);
+        const aiColor = c.aiMatch ? c.aiMatch.color : (aiScore ? (aiScore >= 85 ? '#059669' : (aiScore >= 70 ? '#2563EB' : '#D97706')) : '#7C3AED');
 
         return `
           <div style="padding:10px 12px; border-bottom:1px solid #F1F5F9; font-size:11px; background:${isChecked ? '#FAFAFA' : '#FFFFFF'};">
@@ -1747,6 +2063,22 @@ Website: http://www.coolsofttech.com`;
               <div style="color:#2563EB;"><strong>Email:</strong> ${c.email}</div>
               <div style="color:#0F172A; font-family:monospace;"><strong>Phone:</strong> ${c.phone}</div>
             </div>
+
+            <!-- AI Resume Fit Badge -->
+            <div style="margin-top:6px; padding-left:20px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:4px;">
+              ${aiScore ? `
+                <button type="button" class="smarthire-btn-dossier" data-cidx="${i}" style="border:none; cursor:pointer; background:${aiColor}15; color:${aiColor}; border:1px solid ${aiColor}35; font-size:10px; font-weight:800; padding:2px 8px; border-radius:12px; display:inline-flex; align-items:center; gap:4px;">
+                  <span>AI Fit: ${aiScore}% (${aiVerdict})</span>
+                  <span style="font-size:9.5px; text-decoration:underline;">Dossier ➔</span>
+                </button>
+                ${c.aiMatch?.reasoning ? `<span style="font-size:10px; color:#64748B; font-style:italic; max-width:260px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${c.aiMatch.reasoning}</span>` : ''}
+              ` : `
+                <button type="button" class="smarthire-btn-run-single-ai" data-cidx="${i}" style="border:none; cursor:pointer; background:#F5F3FF; color:#7C3AED; border:1px solid #DDD6FE; font-size:10px; font-weight:700; padding:2px 7px; border-radius:10px; display:inline-flex; align-items:center; gap:4px;">
+                  <span>Run AI Fit Score ➔</span>
+                </button>
+              `}
+            </div>
+
             ${hasEmail ? `
               <div style="margin-top:6px; padding-left:20px; display:flex; justify-content:space-between; align-items:center;">
                 <button type="button" class="smarthire-btn-outreach" data-cidx="${i}">
@@ -1782,6 +2114,28 @@ Website: http://www.coolsofttech.com`;
           const cand = list[idx];
           if (cand) {
             openOutreachComposer(cand, selectedJob);
+          }
+        });
+      });
+
+      // Bind dossier click events
+      previewList.querySelectorAll('.smarthire-btn-dossier').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const idx = parseInt(e.currentTarget.getAttribute('data-cidx'), 10);
+          const cand = list[idx];
+          if (cand) {
+            openAiDossier(cand, selectedJob);
+          }
+        });
+      });
+
+      // Bind single AI match click events
+      previewList.querySelectorAll('.smarthire-btn-run-single-ai').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const idx = parseInt(e.currentTarget.getAttribute('data-cidx'), 10);
+          const cand = list[idx];
+          if (cand) {
+            runSingleAiMatch(cand, selectedJob);
           }
         });
       });

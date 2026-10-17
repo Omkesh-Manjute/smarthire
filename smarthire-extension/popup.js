@@ -80,12 +80,29 @@ document.addEventListener('DOMContentLoaded', () => {
   const selectedCountBadge = document.getElementById('selectedCountBadge');
   const importFeedback = document.getElementById('importFeedback');
 
+  const popupAiMatchBtn = document.getElementById('popupAiMatchBtn');
+  const popupAiDossierOverlay = document.getElementById('popupAiDossierOverlay');
+  const popupDossierClose = document.getElementById('popupDossierClose');
+  const popupDossierCloseBtn = document.getElementById('popupDossierCloseBtn');
+  const popupDossierOutreachBtn = document.getElementById('popupDossierOutreachBtn');
+  const popupDossierCandName = document.getElementById('popupDossierCandName');
+  const popupDossierCandRole = document.getElementById('popupDossierCandRole');
+  const popupDossierJobTitle = document.getElementById('popupDossierJobTitle');
+  const popupDossierScoreVal = document.getElementById('popupDossierScoreVal');
+  const popupDossierVerdictTag = document.getElementById('popupDossierVerdictTag');
+  const popupDossierReasoning = document.getElementById('popupDossierReasoning');
+  const popupDossierStrengths = document.getElementById('popupDossierStrengths');
+  const popupDossierGaps = document.getElementById('popupDossierGaps');
+  const popupDossierQuestions = document.getElementById('popupDossierQuestions');
+  let activeDossierCand = null;
+
   // Initialize
   checkActiveTab();
   fetchCurrentUser();
   loadRequisitions();
   setupAuthEvents();
   setupComposerEvents();
+  setupDossierEvents();
 
   // 1. Detect Active Tab
   async function checkActiveTab() {
@@ -460,6 +477,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const skillsStr = Array.isArray(c.skills) ? c.skills.join(', ') : (c.skills || '');
       const hasEmail = c.email && c.email.includes('@') && !c.email.includes('@monster.talent') && c.email !== 'Not Disclosed';
       const isSent = (c.email && sentCandidateEmails.has(c.email.toLowerCase())) || (c.name && sentCandidateEmails.has(c.name.toLowerCase()));
+      const aiScore = c.aiMatch ? c.aiMatch.score : (c.matchScore || null);
+      const aiVerdict = c.aiMatch ? c.aiMatch.verdict : (aiScore ? (aiScore >= 85 ? 'STRONG FIT' : (aiScore >= 70 ? 'GOOD FIT' : 'MODERATE FIT')) : null);
+      const aiColor = c.aiMatch ? c.aiMatch.color : (aiScore ? (aiScore >= 85 ? '#059669' : (aiScore >= 70 ? '#2563EB' : '#D97706')) : '#7C3AED');
 
       return `
         <tr data-id="${c.id}">
@@ -475,6 +495,18 @@ document.addEventListener('DOMContentLoaded', () => {
           <td>${c.experience || '—'}</td>
           <td title="${skillsStr}">${skillsStr || '—'}</td>
           <td><span style="font-size:10px; font-weight:700; color:#475569;">${c.source || detectedPortal}</span></td>
+          <td style="text-align:center;">
+            ${aiScore ? `
+              <button type="button" class="btn-popup-dossier" data-idx="${idx}" style="border:none; cursor:pointer; background:${aiColor}15; color:${aiColor}; border:1px solid ${aiColor}35; font-size:10px; font-weight:800; padding:2px 6px; border-radius:10px; display:inline-flex; align-items:center; gap:3px;">
+                <span>${aiScore}%</span>
+                <span style="font-size:8.5px; opacity:0.85;">Dossier ➔</span>
+              </button>
+            ` : `
+              <button type="button" class="btn-popup-single-ai" data-idx="${idx}" style="border:none; cursor:pointer; background:#F5F3FF; color:#7C3AED; border:1px solid #DDD6FE; font-size:9.5px; font-weight:700; padding:2px 6px; border-radius:8px;">
+                Run AI
+              </button>
+            `}
+          </td>
           <td style="text-align:center;">
             ${hasEmail ? `
               <button type="button" class="btn-popup-outreach" data-idx="${idx}" style="background:#2563EB; color:#fff; border:none; border-radius:4px; padding:3px 8px; font-size:10px; font-weight:600; cursor:pointer;">
@@ -508,6 +540,28 @@ document.addEventListener('DOMContentLoaded', () => {
         const cand = scrapedCandidates[idx];
         if (cand) {
           openPopupComposer(cand, selectedJob);
+        }
+      });
+    });
+
+    // Attach dossier button handlers
+    document.querySelectorAll('.btn-popup-dossier').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const idx = parseInt(e.currentTarget.getAttribute('data-idx'), 10);
+        const cand = scrapedCandidates[idx];
+        if (cand) {
+          openPopupAiDossier(cand, selectedJob);
+        }
+      });
+    });
+
+    // Attach single AI match handlers
+    document.querySelectorAll('.btn-popup-single-ai').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const idx = parseInt(e.currentTarget.getAttribute('data-idx'), 10);
+        const cand = scrapedCandidates[idx];
+        if (cand) {
+          runPopupSingleAiMatch(cand, selectedJob);
         }
       });
     });
@@ -1098,5 +1152,213 @@ Website: http://www.coolsofttech.com`;
     setTimeout(() => {
       closePopupBulkComposer();
     }, 2200);
+  }
+
+  // -------------------------------------------------------------
+  // AI Resume-to-JD Matching & Dossier Handlers
+  // -------------------------------------------------------------
+  function setupDossierEvents() {
+    if (popupDossierClose) popupDossierClose.addEventListener('click', closePopupAiDossier);
+    if (popupDossierCloseBtn) popupDossierCloseBtn.addEventListener('click', closePopupAiDossier);
+    if (popupDossierOutreachBtn) {
+      popupDossierOutreachBtn.addEventListener('click', () => {
+        if (activeDossierCand) {
+          closePopupAiDossier();
+          openPopupComposer(activeDossierCand, selectedJob);
+        }
+      });
+    }
+    if (popupAiMatchBtn) {
+      popupAiMatchBtn.addEventListener('click', runPopupAiFitAnalysis);
+    }
+  }
+
+  function openPopupAiDossier(cand, job) {
+    activeDossierCand = cand;
+    const targetJob = job || selectedJob;
+    const match = cand.aiMatch || {
+      score: cand.matchScore || 70,
+      verdict: cand.matchScore ? (cand.matchScore >= 85 ? 'STRONG FIT' : (cand.matchScore >= 70 ? 'GOOD FIT' : 'MODERATE FIT')) : 'EVALUATED',
+      color: cand.matchScore ? (cand.matchScore >= 85 ? '#059669' : (cand.matchScore >= 70 ? '#2563EB' : '#D97706')) : '#7C3AED',
+      reasoning: cand.aiReasoning || 'AI matching completed based on candidate role and required skills.',
+      strengths: cand.strengths || ['Demonstrated background matching target position requirements'],
+      gaps: cand.gaps || ['No critical disqualifying gaps detected'],
+      interviewQuestions: [
+        'Can you detail your hands-on experience relevant to this role?',
+        'What was your primary technical contribution in your last project?'
+      ]
+    };
+
+    if (popupDossierCandName) popupDossierCandName.innerText = cand.name || 'Candidate Profile';
+    if (popupDossierCandRole) popupDossierCandRole.innerText = `${cand.title || 'Specialist'} · ${cand.location || 'United States'}`;
+    if (popupDossierJobTitle) popupDossierJobTitle.innerText = `Target: ${targetJob ? targetJob.title : 'Selected Requisition'}`;
+    if (popupDossierScoreVal) {
+      popupDossierScoreVal.innerText = `${match.score}% Fit`;
+      popupDossierScoreVal.style.color = match.color || '#059669';
+      popupDossierScoreVal.style.borderColor = (match.color || '#059669') + '40';
+      popupDossierScoreVal.style.background = (match.color || '#059669') + '15';
+    }
+    if (popupDossierVerdictTag) {
+      popupDossierVerdictTag.innerText = match.verdict || 'EVALUATED';
+      popupDossierVerdictTag.style.color = match.color || '#059669';
+    }
+    if (popupDossierReasoning) popupDossierReasoning.innerText = match.reasoning || 'No reasoning available.';
+    if (popupDossierStrengths) {
+      popupDossierStrengths.innerHTML = (match.strengths && match.strengths.length > 0)
+        ? match.strengths.map(s => `<div>• ${s}</div>`).join('')
+        : '<div>• Strong foundational experience aligned with target role</div>';
+    }
+    if (popupDossierGaps) {
+      popupDossierGaps.innerHTML = (match.gaps && match.gaps.length > 0)
+        ? match.gaps.map(g => `<div>• ${g}</div>`).join('')
+        : '<div>• No critical gaps detected against job profile</div>';
+    }
+    if (popupDossierQuestions) {
+      popupDossierQuestions.innerHTML = (match.interviewQuestions && match.interviewQuestions.length > 0)
+        ? match.interviewQuestions.map((q, qIdx) => `<div><strong>Q${qIdx + 1}:</strong> ${q}</div>`).join('')
+        : '<div>• Can you summarize your primary technical contributions in your recent project?</div>';
+    }
+
+    if (popupAiDossierOverlay) popupAiDossierOverlay.style.display = 'flex';
+  }
+
+  function closePopupAiDossier() {
+    if (popupAiDossierOverlay) popupAiDossierOverlay.style.display = 'none';
+  }
+
+  async function runPopupAiFitAnalysis() {
+    if (!isUserAuthenticated || !currentUser) {
+      alert('Authentication Required: Please sign in with your SmartHire ATS credentials to run AI match analysis.');
+      if (popupLoginCard) popupLoginCard.style.display = 'block';
+      return;
+    }
+
+    if (!selectedJob) {
+      alert('Please select a target Requisition first from the top dropdown to compare candidate profiles against.');
+      return;
+    }
+
+    if (!scrapedCandidates || scrapedCandidates.length === 0) {
+      alert('No extracted candidates found. Please scrape candidate profiles first.');
+      return;
+    }
+
+    const origText = popupAiMatchBtn ? popupAiMatchBtn.innerText : '';
+    if (popupAiMatchBtn) {
+      popupAiMatchBtn.disabled = true;
+      popupAiMatchBtn.style.opacity = '0.7';
+      popupAiMatchBtn.innerText = `Analyzing ${scrapedCandidates.length} with AI...`;
+    }
+
+    try {
+      const payload = {
+        candidates: scrapedCandidates.map((c, i) => ({
+          id: c.id || `scraped-${i}`,
+          name: c.name,
+          title: c.title,
+          role: c.title,
+          skills: c.skills,
+          experience: c.experience,
+          summary: c.summary,
+          location: c.location
+        })),
+        job: {
+          id: selectedJob.id || selectedJob.reqId,
+          title: selectedJob.title,
+          skills: selectedJob.skills,
+          description: selectedJob.description || selectedJob.fullDescription || '',
+          location: selectedJob.location
+        },
+        targetReqId: selectedJob.id || selectedJob.reqId
+      };
+
+      const res = await new Promise((resolve) => {
+        chrome.runtime.sendMessage({
+          action: 'AI_MATCH_BATCH',
+          payload
+        }, resolve);
+      });
+
+      if (res && res.success && Array.isArray(res.matches)) {
+        res.matches.forEach((m, idx) => {
+          if (scrapedCandidates[idx]) {
+            scrapedCandidates[idx].aiMatch = m;
+            scrapedCandidates[idx].matchScore = m.score;
+            scrapedCandidates[idx].strengths = m.strengths;
+            scrapedCandidates[idx].gaps = m.gaps;
+            scrapedCandidates[idx].aiReasoning = m.reasoning;
+          }
+        });
+
+        // Sort candidates by AI matchScore descending
+        scrapedCandidates.sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0));
+
+        renderTable();
+        if (popupAiMatchBtn) popupAiMatchBtn.innerText = `✓ Ranked by AI (${scrapedCandidates.length})`;
+      } else {
+        alert('AI Matching returned: ' + (res?.error || 'Fallback applied'));
+        if (popupAiMatchBtn) popupAiMatchBtn.innerText = origText;
+      }
+    } catch (err) {
+      alert('AI Match error: ' + err.message);
+      if (popupAiMatchBtn) popupAiMatchBtn.innerText = origText;
+    } finally {
+      if (popupAiMatchBtn) {
+        popupAiMatchBtn.disabled = false;
+        popupAiMatchBtn.style.opacity = '1';
+      }
+    }
+  }
+
+  async function runPopupSingleAiMatch(candidate, job) {
+    if (!isUserAuthenticated || !currentUser) {
+      alert('Authentication required: Please sign in.');
+      if (popupLoginCard) popupLoginCard.style.display = 'block';
+      return;
+    }
+    const targetJob = job || selectedJob;
+    if (!targetJob) {
+      alert('Please select a target Requisition first from the top dropdown.');
+      return;
+    }
+
+    try {
+      const payload = {
+        candidate: {
+          id: candidate.id,
+          name: candidate.name,
+          title: candidate.title,
+          role: candidate.title,
+          skills: candidate.skills,
+          experience: candidate.experience,
+          summary: candidate.summary,
+          location: candidate.location
+        },
+        job: {
+          id: targetJob.id || targetJob.reqId,
+          title: targetJob.title,
+          skills: targetJob.skills,
+          description: targetJob.description || targetJob.fullDescription || '',
+          location: targetJob.location
+        },
+        targetReqId: targetJob.id || targetJob.reqId
+      };
+
+      const res = await new Promise((resolve) => {
+        chrome.runtime.sendMessage({ action: 'AI_MATCH_CANDIDATE', payload }, resolve);
+      });
+
+      if (res && res.success && res.match) {
+        candidate.aiMatch = res.match;
+        candidate.matchScore = res.match.score;
+        candidate.strengths = res.match.strengths;
+        candidate.gaps = res.match.gaps;
+        candidate.aiReasoning = res.match.reasoning;
+        renderTable();
+        openPopupAiDossier(candidate, targetJob);
+      }
+    } catch (e) {
+      alert('AI Match error: ' + e.message);
+    }
   }
 });
