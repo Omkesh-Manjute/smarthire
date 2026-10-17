@@ -128,6 +128,42 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
 - **Verification & Deployment**:
   - Local production build in `smarthire-react`: **0 errors, 0 warnings** (Vite build in 3.00s).
   - Repackaged `smarthire-extension.zip`.
+  - Pushed to GitHub `origin main` (`be8700c`).
+  - Deployed bundle and updated `server/index.js` to AWS Lightsail server (`34.194.119.199`), cleaned up archives immediately (Rule 5), pruned assets, and reloaded PM2.
+  - Verified live domain `https://smarthireus.com` returning `HTTP 200 OK` serving bundle `assets/index-CHn5zS_8.js`.
+  - Verified live endpoint `POST /api/recruiter/ai-match-resume` returning structured 12-section ATS report with skills match table, evidence statuses, and recommendations.
+
+### 2026-10-17 — SmartHire Copilot Authoritative ATS Matching Engine Overhaul & Hard Eligibility Gating
+- **Context & Objectives**:
+  - The user requested a complete architectural overhaul of SmartHire Copilot (Monster+ and Dice Chrome Extension + SmartHire ATS backend) into a single authoritative matching engine to eliminate score divergence, shallow scraping, unverified provisional profiles, and residency rule violations.
+  - Required implementation across 10 functional modules:
+    1. Single authoritative matching engine module (`matching_engine.js` / `matching_engine.cjs`).
+    2. Strict JD parsing and 7-category weighted score calculations with dynamic proportional redistribution when categories lack requirements.
+    3. Specialized Boolean search generation for Project Manager / Scrum Master — Data & Analytics (Primary balanced template + 4 narrower variants: BI & DW, Jira & Multi-team Scrum, Data platforms & Cloud Analytics, SAFe & Scaled Agile).
+    4. Resume extraction verification (`FULL_RESUME_EXTRACTED`, `PARTIAL_RESUME_EXTRACTED`, `PROFILE_ONLY`, `EXTRACTION_FAILED`), provisional warnings, and blocking provisional profiles from `SUBMIT` recommendation.
+    5. Hard eligibility gate enforcing mandatory requirements (e.g. Wisconsin residency; non-compliant candidates are strictly overridden to `recommendation = 'REJECT'` and blocked from top submission rank).
+    6. Ephemeral session caching and cleanup lifecycle (no persistent storage of resumes/prompts to disk or database).
+    7. Automated 10-criteria unit test suite (`tests/ats_matching_engine.test.js`).
+- **Architectural Implementation**:
+  1. *Authoritative Engine Module (`matching_engine.js` / `matching_engine.cjs`)*:
+     - Unified `normalizeJobDescription`, `generateBooleanQueries`, `verifyAndClassifyResume`, `evaluateEligibility`, `calculateAuthoritativeScore`, `evaluateCandidate`, `rankCandidates`, and `SessionEvaluationCache`.
+     - Supports both browser runtime (content scripts & popup) and CommonJS/ESM interop in Node.js server.
+  2. *Resume Scraper Verification (`content_monster.js`, `content_dice.js`)*:
+     - Enriched candidate items with extraction verification metadata (`extractionStatus`, `sourceSectionsFound`, `isTruncated`, `extractedLength`, `missingExpectedSections`, `extractionWarnings`, `isProvisional`).
+  3. *Injected Dock & Popup UI (`injected_dock.js`, `popup.html`, `popup.js`)*:
+     - Dossier overlays render prominent `PARTIAL PROFILE WARNING` banners for provisional profiles.
+     - Red `REJECT` recommendation badges with alert styling for ineligible candidates.
+     - Ephemeral session cache automatically cleared on new requisition selection.
+  4. *Server API Hard Gate (`server/index.js`)*:
+     - Express `/api/recruiter/ai-match-resume` and `/api/recruiter/ai-match-batch` enforce hard eligibility override and incorporate extraction metadata.
+  5. *Automated Unit Test Suite (`tests/ats_matching_engine.test.js`)*:
+     - 10 / 10 tests passed covering all acceptance criteria.
+- **Verification & Deployment**:
+  - Local production build in `smarthire-react`: **0 errors, 0 warnings** (Vite build in 3.12s).
+  - Repackaged `smarthire-extension.zip`.
+  - Git committed (`dd5d871`) and pushed to `origin main`.
+  - Deployed bundle and updated `server/index.js` and `matching_engine.cjs` to AWS Lightsail server (`34.194.119.199`), cleaned up archives immediately (Rule 5), pruned asset bundles, flushed logs, and reloaded PM2 `smarthire-ats`.
+  - Verified live domain `https://smarthireus.com` returning `HTTP 200 OK` and live endpoint `POST /api/recruiter/ai-match-resume` enforcing extraction verification and hard Wisconsin residency gating.
 
 ### 2026-10-17 — AI Resume-to-JD Fit Matching Engine, Extension Batch Ranking, Candidate Fit Dossier & Live ATS Ingestion
 - **Context & Objectives**:
