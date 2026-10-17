@@ -92,6 +92,45 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
   - Repackaged `smarthire-extension.zip`.
   - Pushed to GitHub `origin main` (`0a8e250`).
   - Deployed updated `server/index.js` to AWS Lightsail server (`34.194.119.199`) and reloaded PM2.
+### 2026-10-18 — Lia Smith / Assistant IT Director Evaluation Fixes: SC Location Alignment, Employment Dates Tenure & UI Filter Noise Exclusion
+- **Context & Objectives**:
+  - The user reported issues with the Lia Smith evaluation against Assistant IT Director Requisition #159348 (Columbia, SC State Treasurer's Office, 5-day on-site):
+    1. Correct eligibility logic: a Columbia, SC profile location supports location alignment (5-day on-site availability), not an explicit residency conflict. Must evaluate to `PENDING_VERIFICATION` (`isHardFailure = false`) unless reliable evidence confirms failure of SC residency.
+    2. Verify full resume extraction before scoring.uploaded resume is 3 pages long. Exclude Monster UI text, search filters, and unrelated labels.
+    3. Re-extract and map documented evidence for Financial Services, Enterprise Technology Delivery, Risk/Audit, Program Leadership, and PMP/SAFe.
+    4. Recalculate qualifying IT experience from documented employment dates (e.g. 2015 – Present = 11 years). Never infer 6+ years from text length alone.
+    5. Strictly separate direct supervisory experience from Scrum coaching and cross-functional team coordination. Require documented direct reports and supervisory duration for the 3+ years requirement (award `NOT_DEMONSTRATED (0.00)` if absent).
+    6. Treat in-progress bachelor's degree (Expected June 2027) as not yet completed (`PARTIAL_MATCH (0.50)` with qualification note verifying employer rules).
+    7. Replace invalid evidence such as "Expand search filter Degree/Major" with genuine resume text or `NOT_DEMONSTRATED`.
+    8. Invalidate stale scores, keep Quick Sourcing and Detailed Fit Dossier 100% consistent via shared scoring engine.
+- **Architectural Implementation**:
+  1. *Eligibility Alignment (`matching_engine.js`, `matching_engine.cjs`)*:
+     - Updated `evaluateEligibility` for `targetState === 'SC'`:
+       - Candidates with Columbia, SC / South Carolina location evaluate to `PENDING_VERIFICATION` with `isHardFailure = false`. Notes: `"Profile location (Columbia, SC) supports location alignment and 5-day on-site availability in Columbia, SC; pending formal verification of current South Carolina residency before final submittal."`
+       - Out-of-state candidates (e.g. Dallas, TX) evaluate to `INELIGIBLE` with `isHardFailure = true`.
+  2. *Monster Search Filter Accordion Sanitization (`matching_engine.js`, `matching_engine.cjs`, `content_monster.js`)*:
+     - Enhanced `cleanCandidateResumeText` and `cleanMonsterResumeText` to strip `/(?:expand|collapse)\s+search\s+filter[^\n\r]*/gi`, `/search\s+filter[^\n\r]*/gi`, `/filter\s+by[^\n\r]*/gi`, and `/degree\/major[^\n\r]*/gi`.
+     - In `extractAuthenticSentenceSnippet`, reject segments matching search filter accordions. If no authentic degree text is present, return `NOT_DEMONSTRATED (0.00)`.
+  3. *Documented Employment Dates Calculation (`matchRequirementEvidence`)*:
+     - Implemented date range parsing (`\b(19\d{2}|20\d{2})\s*(?:[–—\-]|to)\s*(19\d{2}|20\d{2}|present|current)\b`) with line-based education context isolation.
+     - Computes exact career tenure (earliestStartYear to latestEndYear). Lia Smith's work history (Midlands Technical Systems 2015–2017, Carolina Enterprise Solutions 2017–2021, First State Financial Services 2021–Present) computes to 11 documented years $\ge 6 \rightarrow DIRECT\_MATCH$ (1.0).
+     - Completely removed the `else if (cleanText.length > 600)` fallback.
+  4. *Direct Supervisory Tenure Gating (`matchRequirementEvidence`)*:
+     - Enforced strict requirement for explicit direct reports (`direct reports`, `supervised \d+ staff`, `hired and managed`, `performance evaluations of staff`).
+     - Scrum coaching, agile delivery coordination, and working manager responsibilities without formal direct reports evaluate to `NOT_DEMONSTRATED (0.00)` with explanatory gap note.
+  5. *Degree Status Accuracy & Employer Rules Verification (`matchRequirementEvidence`)*:
+     - Gated `(Expected June 2027)` to `PARTIAL_MATCH (0.50)` with qualification note: `"Degree in progress (Expected 2027). Bachelor's degree not yet completed/conferred; verify employer education eligibility rules regarding mandatory degree completion prior to contract award/start date."`
+  6. *Automated Unit Test Suite (`tests/ats_matching_engine.test.js`)*:
+     - Expanded test suite to 30 tests (all 30 passing). Verified PENDING_VERIFICATION for Columbia SC, documented employment dates tenure calculation, and exclusion of Monster filter accordion noise.
+- **Verification & Deployment**:
+  - Local Vite production build in `smarthire-react`: **0 errors, 0 warnings** in 3.34s.
+  - Repackaged `smarthire-extension.zip` in all root and public distribution locations.
+  - Pushed to GitHub `origin main` (`4809930`).
+  - Deployed bundle and updated `server/matching_engine.cjs` to AWS Lightsail server (`34.194.119.199`), cleaned up deployment archives immediately (Rule 5), pruned asset bundles, and reloaded PM2 `smarthire-ats`.
+  - Verified live domain `https://smarthireus.com` returning `HTTP 200 OK` serving bundle `assets/index-CHn5zS_8.js`.
+  - Verified live API endpoint `POST /api/recruiter/ai-match-resume` with Lia Smith: Score: 64% (`Partial Fit`), Recommendation: `BACKUP`, Eligibility: `PENDING_VERIFICATION` (`isHardFailure = false`), Extraction: `FULL_RESUME_EXTRACTED`.
+  - Verified server disk hygiene: 8.4GB available (45% free space, $\ge 40\%$ compliant, 0 `.tar.gz` files remaining).
+
 ### 2026-10-17 — Implementation of 5 Mandatory ATS Fixes: Resume-Only Evidence, Ravi Kumar Reconciliation & 100% Score Consistency
 - **Context & Objectives**:
   - The user mandated 5 specific fixes across SmartHire Copilot (Monster+ & Dice Chrome Extension + SmartHire ATS backend):
