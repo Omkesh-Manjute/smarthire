@@ -67,6 +67,77 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
     - The engine must automatically detect responsibilities (lines following `Responsibilities:`, action verbs, or list items) even when converted from plain text or Word documents without literal Unicode bullets.
 
 
+### 2026-10-18 — Evidence-First Matching Engine Redesign: 4-Component Architecture & Multi-Industry Benchmark Test Suite
+- **Context & Objectives**:
+  - The user mandated an architectural redesign of SmartHire Copilot's candidate evaluation engine from candidate-specific heuristic patches to a decoupled, 4-component evidence-first system:
+    1. *Resume Evidence Extractor (`ResumeEvidenceExtractor`)*: Extracts structured facts from authentic resume text; sanitizes ATS page noise, button labels, search filters; parses employment timeline into true career years; and flags partial extracts without inventing missing experience.
+    2. *JD Requirement Parser (`JdRequirementParser`)*: Universal semantic parser converting any JD into discrete structured requirements with unique IDs across 7 universal categories (Mandatory Tech 35%, Domain 20%, Responsibilities 15%, Experience 10%, Preferred 10%, Leadership 5%, Education/Certs 5%). Dynamically parses state residency without hardcoding single-role rules.
+    3. *Deterministic Matching & Scoring Engine (`DeterministicMatchingEngine`)*: 5-tier match outcomes (`DIRECT_MATCH`, `STRONG_EQUIVALENT`, `PARTIAL_MATCH`, `NOT_DEMONSTRATED`, `NEEDS_VERIFICATION`). Distinguishes lack of evidence from confirmed lack of skill, certifications from hands-on leadership, software QA from laboratory QA (GLP/GMP/FDA), and program management from direct IT ops leadership.
+    4. *Eligibility & Evidence Confidence Engine (`EligibilityConfidenceEngine`)*: Decoupled from skills match score. Separately returns skills match %, mandatory requirements coverage (met/missing/unverified), eligibility status (`VERIFIED_ELIGIBLE`, `PENDING_VERIFICATION`, `INELIGIBLE`), evidence confidence, and extraction completeness. Never converts ambiguous location into hard failure; never allows high skill score to override confirmed hard eligibility disqualification.
+    5. *Recruiter-Reviewed Calibration Dataset & Test Suite*: Multi-industry benchmark test cases (Scrum/Data PM, SDET/QA, Lab QA, Software Engineer, Assistant IT Director) validating identical scores across Quick Sourcing and Detailed Dossier, cache invalidation, and edge cases.
+- **Architectural Implementations & Upgrades**:
+  1. *4 Modular Classes (`smarthire-extension/matching_engine.js`, `smarthire-react/server/matching_engine.cjs`)*:
+     - Implemented `ResumeEvidenceExtractor`, `JdRequirementParser`, `DeterministicMatchingEngine`, and `EligibilityConfidenceEngine` while maintaining 100% backward compatibility for all existing methods (`normalizeJobDescription`, `verifyAndClassifyResume`, `cleanCandidateResumeText`, `extractAuthenticSentenceSnippet`, `matchRequirementEvidence`, `evaluateEligibility`, `calculateAuthoritativeScore`, `evaluateCandidate`, `rankCandidates`, `SessionEvaluationCache`).
+     - Refactored `requiredSkills` in `calculateScore` to track only `req.classification === 'Mandatory'`, ensuring unevidenced preferred skills (e.g. Python optional) never block strong candidates from receiving `SUBMIT`.
+     - Ordered Laboratory QA domain detection before general software QA so regulatory laboratory roles (GLP/GMP) are strictly evaluated against analytical compliance, not test automation.
+  2. *Automated Unit Test Suite (`tests/ats_matching_engine.test.js`)*:
+     - Expanded test suite to 37 comprehensive unit tests (all 37 passed cleanly):
+       - Tests 1-30: All existing acceptance criteria, Lia Smith, Ravi Kumar, Rajitha A, and extraction verification tests.
+       - Test 31: Benchmark 1: Project Manager / Scrum Master (Data & Analytics) — Sarah Connor complete alignment (>=85%, SUBMIT).
+       - Test 32: Benchmark 2: QA Analyst / SDET — Rajitha A full resume evaluation (Strong Fit, SUBMIT).
+       - Test 33: Benchmark 3: Laboratory Quality Assurance Analyst (GLP/GMP vs software QA gating: software test tools rejected from lab compliance).
+       - Test 34: Benchmark 4: Assistant IT Director — Lia Smith (Full resume: ~64% BACKUP; Partial snippet: HOLD_FOR_VERIFICATION).
+       - Test 35: Benchmark 5: Software Engineer / Full Stack Developer (React, Node, Python, Microservices -> Strong Fit >=85%, SUBMIT).
+       - Test 36: Decoupled Hard Eligibility: 95% skill score in Texas for mandatory WI role strictly REJECTed.
+       - Test 37: Ambiguous Location Safety: General "United States" or Columbia, SC evaluates to PENDING_VERIFICATION and is never hard-rejected.
+- **Verification & Deployment Protocol**:
+  - Local Vite production build in `smarthire-react`: **0 errors, 0 warnings** in 4.19s.
+  - Repackaged `smarthire-extension.zip` with new `matching_engine.js`.
+  - Git committed (`8752fa6`) and pushed to GitHub `origin main`.
+  - Deployed updated `matching_engine.cjs` and production bundle to AWS Lightsail server (`34.194.119.199`).
+  - Extracted to `/var/www/html/` and `/home/ubuntu/smarthire/dist/`.
+  - Immediate archive removal, bundle asset pruning, and journal vacuuming completed per Rule 5.
+  - Server disk space verified: 8.4GB available (45% free space, $\ge 40\%$ compliant).
+  - PM2 `smarthire-ats` reloaded and live domain verified: `https://smarthireus.com` returning HTTP 200 OK.
+  - Live AI match endpoint verified: `POST https://smarthireus.com/api/recruiter/ai-match-resume` returning verified match payloads.
+
+### 2026-10-18 — Full-Resume Extraction & Multi-Page Reconciliation for Lia Smith / Assistant IT Director Test Case
+- **Context & Objectives**:
+  - The user reported an issue with SmartHire Copilot where Lia Smith's 3-page DOCX resume previously displayed `FULL RESUME EXTRACTED (1,101 chars analyzed)` and received a 12% match score due to extraction truncated at a partial profile snippet.
+  - User mandated 10 specific fixes:
+    1. Verify extracted text matches full resume, not just a profile summary.
+    2. Never mark a resume as FULL_RESUME_EXTRACTED solely because text extraction returned a non-empty result. Validate document length, expected sections, truncation and source completeness.
+    3. Ensure extraction completes before generating dossier.
+    4. Match all documented resume evidence against Assistant IT Director JD (Enterprise tech delivery, Cybersecurity, Financial services, IT ops leadership, Budgets, Risk/audit, PMP/SAFe).
+    5. Strict negative evidence gating for SLA ownership, Active Directory, Entra ID, Intune, Incident response, Direct supervisory tenure (award NOT_DEMONSTRATED 0.00 unless documented).
+    6. Treat in-progress bachelor's degree (Expected June 2027) as not yet completed (PARTIAL_MATCH 0.50 with qualification note).
+    7. Validate South Carolina residency and 5-day onsite work mode separately from technical skills.
+    8. Recalculate score objectively using the shared scoring engine without hardcoding desired scores (~64% Partial Fit / Backup).
+    9. Include genuine resume snippets for every match, show extraction status, evidence coverage, and unresolved requirements.
+    10. Add automated regression tests confirming identical match scores across all entry points.
+- **Architectural Implementations & Upgrades**:
+  1. *Classification & Extraction Verification (`matching_engine.js`, `matching_engine.cjs`)*:
+     - Enforced `isPartialProfileSummary = (length < 1500) && (!hasEducation && !hasCertifications)`: profiles under 1,500 chars lacking Education and Certifications are classified as `PARTIAL_RESUME_EXTRACTED` (`isProvisional = true`, `sourceType = 'PROFILE_SNIPPET'`).
+     - Only multi-section documents with genuine length and core sections are marked `FULL_RESUME_EXTRACTED` (`isProvisional = false`, `sourceType = 'RESUME_DOCUMENT'`).
+  2. *Assistant IT Director Universal Job Family (`normalizeJobDescription`)*:
+     - Structured 7-category breakdown for Assistant IT Director / Enterprise Program Manager roles.
+  3. *In-Progress Degree Gating (`matchRequirementEvidence`)*:
+     - Gated prospective graduation dates (`Expected June 2027`) awarding `PARTIAL_MATCH (0.50)` with qualification note: `"Degree in progress (Expected 2027). Bachelor's degree not yet completed/conferred; verify whether degree completion prior to contract start is mandatory for this requisition."`
+  4. *Strict Negative Evidence Gating (`matchRequirementEvidence`)*:
+     - Enforced `NOT_DEMONSTRATED (0.00)` for Managed-Service SLA Ownership, Active Directory, Entra ID, Intune, Incident Response, and Direct Supervisory Tenure when absent from resume text.
+  5. *Dynamic South Carolina Residency & Onsite Gating (`evaluateEligibility`)*:
+     - Dynamically parses SC residency requirements. Validates Columbia, SC resident as `VERIFIED_ELIGIBLE`, while out-of-state candidates (e.g. Dallas, TX) are flagged `INELIGIBLE` (`isHardFailure = true`).
+  6. *Multi-Page Scraper & Injected Dock Sync (`content_monster.js`, `injected_dock.js`)*:
+     - Concatenates multi-page containers in DOM order with 2,500ms multi-page wait and virtualized scroll.
+     - Upgraded `dossier-btn-reextract` and `openAiDossier` to gate `isActuallyFull = !cand.isProvisional && cand.extractionStatus === 'FULL_RESUME_EXTRACTED'`.
+  7. *Automated Unit Test Suite (`tests/ats_matching_engine.test.js`)*:
+     - Added Tests 23 through 28 covering all Lia Smith test cases. All 28 / 28 unit tests pass cleanly.
+- **Verification & Deployment**:
+  - Local Vite production build in `smarthire-react`: **0 errors, 0 warnings** in 3.25s.
+  - Repackaged `smarthire-extension.zip` (version 3.9.0).
+  - Pushed to GitHub `origin main`.
+  - Synced bundle and `matching_engine.cjs` to AWS Lightsail server (`34.194.119.199`), cleaned up deployment archives immediately (Rule 5), and reloaded PM2.
+
 ### 2026-10-17 — Unified Extension Recruiter Authentication, Sign-In Button Overhaul & Master Password Alignment
 - **Context & Objectives**:
   - The user reported three issues:
@@ -92,45 +163,6 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
   - Repackaged `smarthire-extension.zip`.
   - Pushed to GitHub `origin main` (`0a8e250`).
   - Deployed updated `server/index.js` to AWS Lightsail server (`34.194.119.199`) and reloaded PM2.
-### 2026-10-18 — Lia Smith / Assistant IT Director Evaluation Fixes: SC Location Alignment, Employment Dates Tenure & UI Filter Noise Exclusion
-- **Context & Objectives**:
-  - The user reported issues with the Lia Smith evaluation against Assistant IT Director Requisition #159348 (Columbia, SC State Treasurer's Office, 5-day on-site):
-    1. Correct eligibility logic: a Columbia, SC profile location supports location alignment (5-day on-site availability), not an explicit residency conflict. Must evaluate to `PENDING_VERIFICATION` (`isHardFailure = false`) unless reliable evidence confirms failure of SC residency.
-    2. Verify full resume extraction before scoring.uploaded resume is 3 pages long. Exclude Monster UI text, search filters, and unrelated labels.
-    3. Re-extract and map documented evidence for Financial Services, Enterprise Technology Delivery, Risk/Audit, Program Leadership, and PMP/SAFe.
-    4. Recalculate qualifying IT experience from documented employment dates (e.g. 2015 – Present = 11 years). Never infer 6+ years from text length alone.
-    5. Strictly separate direct supervisory experience from Scrum coaching and cross-functional team coordination. Require documented direct reports and supervisory duration for the 3+ years requirement (award `NOT_DEMONSTRATED (0.00)` if absent).
-    6. Treat in-progress bachelor's degree (Expected June 2027) as not yet completed (`PARTIAL_MATCH (0.50)` with qualification note verifying employer rules).
-    7. Replace invalid evidence such as "Expand search filter Degree/Major" with genuine resume text or `NOT_DEMONSTRATED`.
-    8. Invalidate stale scores, keep Quick Sourcing and Detailed Fit Dossier 100% consistent via shared scoring engine.
-- **Architectural Implementation**:
-  1. *Eligibility Alignment (`matching_engine.js`, `matching_engine.cjs`)*:
-     - Updated `evaluateEligibility` for `targetState === 'SC'`:
-       - Candidates with Columbia, SC / South Carolina location evaluate to `PENDING_VERIFICATION` with `isHardFailure = false`. Notes: `"Profile location (Columbia, SC) supports location alignment and 5-day on-site availability in Columbia, SC; pending formal verification of current South Carolina residency before final submittal."`
-       - Out-of-state candidates (e.g. Dallas, TX) evaluate to `INELIGIBLE` with `isHardFailure = true`.
-  2. *Monster Search Filter Accordion Sanitization (`matching_engine.js`, `matching_engine.cjs`, `content_monster.js`)*:
-     - Enhanced `cleanCandidateResumeText` and `cleanMonsterResumeText` to strip `/(?:expand|collapse)\s+search\s+filter[^\n\r]*/gi`, `/search\s+filter[^\n\r]*/gi`, `/filter\s+by[^\n\r]*/gi`, and `/degree\/major[^\n\r]*/gi`.
-     - In `extractAuthenticSentenceSnippet`, reject segments matching search filter accordions. If no authentic degree text is present, return `NOT_DEMONSTRATED (0.00)`.
-  3. *Documented Employment Dates Calculation (`matchRequirementEvidence`)*:
-     - Implemented date range parsing (`\b(19\d{2}|20\d{2})\s*(?:[–—\-]|to)\s*(19\d{2}|20\d{2}|present|current)\b`) with line-based education context isolation.
-     - Computes exact career tenure (earliestStartYear to latestEndYear). Lia Smith's work history (Midlands Technical Systems 2015–2017, Carolina Enterprise Solutions 2017–2021, First State Financial Services 2021–Present) computes to 11 documented years $\ge 6 \rightarrow DIRECT\_MATCH$ (1.0).
-     - Completely removed the `else if (cleanText.length > 600)` fallback.
-  4. *Direct Supervisory Tenure Gating (`matchRequirementEvidence`)*:
-     - Enforced strict requirement for explicit direct reports (`direct reports`, `supervised \d+ staff`, `hired and managed`, `performance evaluations of staff`).
-     - Scrum coaching, agile delivery coordination, and working manager responsibilities without formal direct reports evaluate to `NOT_DEMONSTRATED (0.00)` with explanatory gap note.
-  5. *Degree Status Accuracy & Employer Rules Verification (`matchRequirementEvidence`)*:
-     - Gated `(Expected June 2027)` to `PARTIAL_MATCH (0.50)` with qualification note: `"Degree in progress (Expected 2027). Bachelor's degree not yet completed/conferred; verify employer education eligibility rules regarding mandatory degree completion prior to contract award/start date."`
-  6. *Automated Unit Test Suite (`tests/ats_matching_engine.test.js`)*:
-     - Expanded test suite to 30 tests (all 30 passing). Verified PENDING_VERIFICATION for Columbia SC, documented employment dates tenure calculation, and exclusion of Monster filter accordion noise.
-- **Verification & Deployment**:
-  - Local Vite production build in `smarthire-react`: **0 errors, 0 warnings** in 3.34s.
-  - Repackaged `smarthire-extension.zip` in all root and public distribution locations.
-  - Pushed to GitHub `origin main` (`4809930`).
-  - Deployed bundle and updated `server/matching_engine.cjs` to AWS Lightsail server (`34.194.119.199`), cleaned up deployment archives immediately (Rule 5), pruned asset bundles, and reloaded PM2 `smarthire-ats`.
-  - Verified live domain `https://smarthireus.com` returning `HTTP 200 OK` serving bundle `assets/index-CHn5zS_8.js`.
-  - Verified live API endpoint `POST /api/recruiter/ai-match-resume` with Lia Smith: Score: 64% (`Partial Fit`), Recommendation: `BACKUP`, Eligibility: `PENDING_VERIFICATION` (`isHardFailure = false`), Extraction: `FULL_RESUME_EXTRACTED`.
-  - Verified server disk hygiene: 8.4GB available (45% free space, $\ge 40\%$ compliant, 0 `.tar.gz` files remaining).
-
 ### 2026-10-17 — Implementation of 5 Mandatory ATS Fixes: Resume-Only Evidence, Ravi Kumar Reconciliation & 100% Score Consistency
 - **Context & Objectives**:
   - The user mandated 5 specific fixes across SmartHire Copilot (Monster+ & Dice Chrome Extension + SmartHire ATS backend):
