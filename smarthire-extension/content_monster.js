@@ -361,6 +361,24 @@
 
         seenNames.add(nameKey);
 
+        // Extract full resume/drawer profile text if open
+        let drawerResumeText = '';
+        const drawerPanes = (utils.queryDeepAll 
+          ? utils.queryDeepAll('[class*="resume"], [class*="detail"], [class*="profile"], [class*="drawer"], [class*="Drawer"], aside, [role="dialog"]')
+          : Array.from(document.querySelectorAll('[class*="resume"], [class*="detail"], [class*="profile"], [class*="drawer"], [class*="Drawer"], aside, [role="dialog"]'))
+        ).filter(p => !p.closest('#smarthire-copilot-drawer'));
+
+        for (const p of drawerPanes) {
+          const txt = utils.getTextDeep ? utils.getTextDeep(p) : (p.innerText || p.textContent || '');
+          if (txt.length > drawerResumeText.length && txt.length > 80) {
+            drawerResumeText = txt.trim();
+          }
+        }
+
+        const candidateFullText = (drawerResumeText && drawerResumeText.length > 120)
+          ? drawerResumeText
+          : cardText;
+
         const candidateItem = {
           id: `mon-${i}-${Date.now().toString().slice(-4)}`,
           name,
@@ -369,11 +387,13 @@
           phone: phone || '',
           location,
           experience,
-          skills: skills.slice(0, 10),
+          skills: skills.slice(0, 15),
           source: 'Monster+',
           recency,
           profileUrl: window.location.href,
-          notes: `${recency} · Sourced via SmartHire Copilot.`
+          notes: `${recency} · Sourced via SmartHire Copilot.`,
+          resumeText: candidateFullText,
+          summary: candidateFullText.slice(0, 5000)
         };
 
         candidates.push(candidateItem);
@@ -418,7 +438,9 @@
         experience: utils.extractExperience(cardText) || '5+ Years',
         skills: [],
         source: 'Monster+',
-        profileUrl: window.location.href
+        profileUrl: window.location.href,
+        resumeText: cardText,
+        summary: cardText.slice(0, 4000)
       });
     });
 

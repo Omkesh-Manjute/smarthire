@@ -118,7 +118,13 @@
         // Recency
         let updated = 'Active on Dice';
         const updatedMatch = cardText.match(/(?:Updated|Active|Last active)\s+[^·\n\r|]+/i);
-        if (updatedMatch) updated = updatedMatch[0];
+        // Check for open candidate drawer or detail pane in Dice
+        let diceDetailText = '';
+        const diceDrawer = document.querySelector('[data-cy*="candidate-detail"], [class*="candidate-detail"], [class*="profile-drawer"], aside, [role="dialog"]');
+        if (diceDrawer && !diceDrawer.closest('#smarthire-copilot-drawer')) {
+          diceDetailText = (diceDrawer.innerText || diceDrawer.textContent || '').trim();
+        }
+        const candidateFullText = (diceDetailText && diceDetailText.length > 120) ? diceDetailText : cardText;
 
         candidates.push({
           id: `dice-${index}-${Date.now().toString().slice(-4)}`,
@@ -128,12 +134,14 @@
           phone: phone || '',
           location: location || 'United States',
           experience,
-          skills: skills.slice(0, 10),
+          skills: skills.slice(0, 15),
           source: 'Dice',
           visaStatus,
           recency: updated,
           profileUrl,
-          notes: `${updated} · Work Auth: ${visaStatus}. Sourced from Dice Talent Search.`
+          notes: `${updated} · Work Auth: ${visaStatus}. Sourced from Dice Talent Search.`,
+          resumeText: candidateFullText,
+          summary: candidateFullText.slice(0, 5000)
         });
       } catch (err) {
         console.warn('[SmartHire Copilot] Error parsing Dice candidate card:', err);

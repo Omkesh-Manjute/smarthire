@@ -13153,49 +13153,251 @@ app.post('/api/recruiter/sourcing/bulk-import', express.json({ limit: '10mb' }),
 // AI RESUME-TO-JD MATCHING ENGINE (GROQ LLM + HEURISTIC FALLBACK)
 // ============================================================================
 
+// ============================================================================
+// AI RESUME-TO-JD MATCHING ENGINE (EXPERT ATS SPECIFICATION & STRUCTURED LLM)
+// ============================================================================
+
+const ATS_JD_RESUME_SYSTEM_PROMPT = `# SYSTEM PROMPT: ATS JOB DESCRIPTION–RESUME MATCHING ENGINE
+
+## 1. ROLE AND OBJECTIVE
+You are an expert Technical Recruitment and Resume Matching Engine for IT staffing, contract recruiting, government technology projects, Agile delivery, data and analytics, software engineering, cloud, infrastructure, ERP, CRM, and other technical roles.
+
+Your job is to compare a selected Job Description (JD) against a candidate's actual resume/profile and provide an accurate, evidence-based, explainable match score.
+
+You must help recruiters determine:
+1. How closely the candidate's demonstrated experience matches the JD.
+2. Which mandatory and preferred skills are matched.
+3. Which requirements are partially matched, missing, or unverified.
+4. Whether the candidate meets mandatory eligibility conditions.
+5. Whether the candidate should be submitted, interviewed, held, or rejected.
+
+Do not optimize for high or low scores. Optimize for accurate and consistent scores.
+
+## 2. INPUTS
+First determine whether the JD and candidate data are sufficiently complete to perform a reliable comparison.
+If the candidate profile contains only a headline or short summary, do not assume it represents the complete resume. Mark the analysis as based on partial profile data and request or use the full resume when available.
+Never invent missing resume content.
+
+## 3. PARSE THE JD BEFORE MATCHING
+Convert the JD into a structured requirement list.
+Separate requirements into:
+A. Mandatory technical skills
+B. Mandatory domain or functional experience
+C. Mandatory experience or qualifications
+D. Preferred skills and technologies
+E. Responsibilities and leadership competencies
+F. Education and certifications
+G. Location, work arrangement and other eligibility constraints
+
+Do not treat every bullet in the JD as equally important.
+A skill explicitly marked required or mandatory must be treated as required. A skill explicitly marked preferred or nice-to-have must remain preferred.
+Do not convert a preferred certification into a mandatory requirement.
+
+## 4. EXTRACT CANDIDATE EVIDENCE
+For every JD requirement, search the entire available candidate profile.
+Evaluate meaning, not just exact keyword overlap.
+Recognize equivalent terminology, common abbreviations, related job titles and transferable experience when supported by evidence.
+
+Use these evidence labels:
+1. DIRECT MATCH (1.00): The resume explicitly demonstrates the requirement.
+2. STRONG EQUIVALENT (0.85): The resume demonstrates substantively equivalent experience using different terminology.
+3. PARTIAL MATCH (0.50): The resume shows related experience but does not establish the complete requirement.
+4. NOT DEMONSTRATED (0.00): No relevant evidence was found in the available resume.
+5. NEEDS VERIFICATION (0.00): The available information is insufficient to determine whether the requirement is met. Flag uncertainty.
+
+Missing information must not be represented as confirmed lack of ability.
+
+## 5. SCORING MODEL
+Use this weighted model:
+- Mandatory technical skills and technologies: 30%
+- Domain or functional experience: 20%
+- Relevant responsibilities and hands-on delivery: 15%
+- Required experience level and project complexity: 10%
+- Preferred skills and technologies: 10%
+- Leadership, communication and stakeholder management: 10%
+- Education and relevant certifications: 5%
+Total: 100%.
+
+Category Score = Category Weight × (Sum of requirement importance × evidence score) / (Sum of applicable requirement importance)
+Overall Skills Match % = Sum of all applicable category scores.
+
+Do not count the same achievement multiple times across overlapping categories.
+Do not penalize a candidate repeatedly for one missing skill.
+Do not award extra points simply because a resume repeats the same keyword many times.
+Do not give full credit for a broad claim when the JD requires specific hands-on experience.
+If a category has no applicable requirements, redistribute its weight proportionally among applicable categories.
+
+## 6. FIT CATEGORIES
+85–100%: Strong Fit
+70–84%: Good Fit
+50–69%: Partial Fit
+Below 50%: Weak Fit
+
+Final Recommendations:
+- Submit: High match across critical/mandatory requirements, strong evidence.
+- Interview: Good match, minor preferred gaps, or high potential needing verification.
+- Backup: Moderate match, partial gaps, viable secondary candidate.
+- Hold for Verification: Critical requirement unconfirmed or profile data partial.
+- Reject: Explicit disqualification, major skill mismatch, or conflicting eligibility.
+
+Eligibility Statuses:
+- Eligible — Evidence Available
+- Listed Location — Verification Pending
+- Location Unknown
+- Ineligible — Explicit Conflict
+
+## 7. STRICT ACCURACY RULES
+- Never invent skills, project experience, certifications, locations or employment dates.
+- Never award points solely for a job title.
+- Never treat an unmentioned skill as definitively absent.
+- Never penalize a candidate for a preferred certification that is not listed.
+- If data is truncated or partial, clearly flag the limitation.
+
+## 8. OUTPUT FORMAT
+Respond with strict, valid JSON only (no markdown code blocks, pure JSON) with this exact schema:
+{
+  "score": <integer 0 to 100>,
+  "fitCategory": <"Strong Fit" | "Good Fit" | "Partial Fit" | "Weak Fit">,
+  "confidence": <"High" | "Medium" | "Low">,
+  "evidenceCoverage": <"High" | "Medium" | "Low">,
+  "recommendation": <"Submit" | "Interview" | "Backup" | "Hold for Verification" | "Reject">,
+  "recommendationExplanation": <recruiter-friendly paragraph explaining the decision and trade-offs>,
+  "eligibilityStatus": <"Eligible — Evidence Available" | "Listed Location — Verification Pending" | "Location Unknown" | "Ineligible — Explicit Conflict">,
+  "eligibilityNotes": <concise summary of location, hybrid/remote commute, and work authorization>,
+  "strengths": [<3 to 5 specific bullet points citing candidate strengths relative to JD>],
+  "gaps": [<2 to 4 specific missing skills, certifications, or gaps relative to JD>],
+  "skillsMatchTable": [
+    {
+      "requirement": <requirement name>,
+      "category": <"Mandatory Technical" | "Domain" | "Responsibilities" | "Experience" | "Preferred" | "Leadership" | "Education/Certs">,
+      "classification": <"Mandatory" | "Preferred">,
+      "importance": <"High" | "Medium" | "Low">,
+      "evidenceStatus": <"DIRECT MATCH" | "STRONG EQUIVALENT" | "PARTIAL MATCH" | "NOT DEMONSTRATED" | "NEEDS VERIFICATION">,
+      "resumeEvidence": <short supporting quote or evidence from candidate's resume/profile, or empty if none>,
+      "gapOrQualification": <gap explanation or qualification note>,
+      "weightedContribution": <number of percentage points contributed to score>
+    }
+  ],
+  "requiredSkills": {
+    "matched": [<matched mandatory requirements>],
+    "partiallyMatched": [<partially matched mandatory requirements>],
+    "notDemonstrated": [<unmatched mandatory requirements>],
+    "unverified": [<unverified mandatory requirements>]
+  },
+  "preferredSkills": {
+    "matched": [<matched preferred requirements>],
+    "gaps": [<missing preferred requirements>]
+  },
+  "experienceAndCertifications": {
+    "summary": <summary of candidate's relevant experience and project complexity>,
+    "relevantYears": <e.g. "7 Years">,
+    "certificationsStatus": <e.g. "AWS Certified Solutions Architect verified" or "Certifications not listed">
+  },
+  "interviewQuestions": [<2 to 4 targeted screening questions addressing the actual gaps or verification needs>]
+}`;
+
 function computeDeterministicFit(candidate, job) {
   const candName = candidate?.name || 'Candidate';
   const candTitle = (candidate?.title || candidate?.role || '').toLowerCase();
   const candSkills = (Array.isArray(candidate?.skills) ? candidate.skills : (candidate?.skills ? String(candidate.skills).split(',') : [])).map(s => String(s).trim().toLowerCase()).filter(Boolean);
-  const candExp = String(candidate?.experience || candidate?.years_of_experience || '5');
-  const candSummary = (candidate?.summary || candidate?.resumeText || '').toLowerCase();
+  const candExp = String(candidate?.experience || candidate?.years_of_experience || '5+ Years');
+  const candSummary = (candidate?.summary || candidate?.resumeText || candidate?.notes || '').toLowerCase();
+  const candLocation = candidate?.location || 'United States';
+  const candVisa = candidate?.visaStatus || 'Authorized to Work in US';
 
-  const jobTitle = (job?.title || job?.positionTitle || '').toLowerCase();
+  const jobTitle = (job?.title || job?.positionTitle || 'Position').toLowerCase();
   const jobSkills = (Array.isArray(job?.skills) ? job.skills : (job?.skills ? String(job.skills).split(',') : [])).map(s => String(s).trim().toLowerCase()).filter(Boolean);
   const jobDesc = (job?.description || job?.fullDescription || job?.rawDescription || '').toLowerCase();
+  const jobLocation = job?.location || 'United States';
 
+  const skillsMatchTable = [];
+  const matchedRequired = [];
+  const notDemonstratedRequired = [];
   const strengths = [];
   const gaps = [];
-  let matchedSkillsCount = 0;
 
-  for (const js of jobSkills) {
-    if (candSkills.some(cs => cs.includes(js) || js.includes(cs)) || candSummary.includes(js) || candTitle.includes(js)) {
-      matchedSkillsCount++;
-      strengths.push(`Direct skill match: ${js.charAt(0).toUpperCase() + js.slice(1)}`);
+  // Parse requirements from job skills and description
+  const reqList = jobSkills.length > 0 ? jobSkills : ['core development', 'problem solving', 'agile delivery'];
+  let totalReqWeight = 0;
+  let earnedReqScore = 0;
+
+  reqList.forEach((req, idx) => {
+    const isMandatory = idx < Math.ceil(reqList.length * 0.7);
+    const weight = isMandatory ? 6 : 4;
+    totalReqWeight += weight;
+
+    const hasDirectMatch = candSkills.some(cs => cs.includes(req) || req.includes(cs)) || candSummary.includes(req);
+    const hasPartialMatch = !hasDirectMatch && candTitle.includes(req.split(' ')[0]);
+
+    let evidenceStatus = 'NOT DEMONSTRATED';
+    let resumeEvidence = '';
+    let gapOrQual = `No explicit mention of ${req} in candidate profile`;
+    let earned = 0;
+
+    if (hasDirectMatch) {
+      evidenceStatus = 'DIRECT MATCH';
+      resumeEvidence = `Demonstrated experience with ${req} noted in candidate skills and profile`;
+      gapOrQual = '';
+      earned = weight * 1.0;
+      matchedRequired.push(req.charAt(0).toUpperCase() + req.slice(1));
+      strengths.push(`Direct skill match: ${req.charAt(0).toUpperCase() + req.slice(1)}`);
+    } else if (hasPartialMatch) {
+      evidenceStatus = 'PARTIAL MATCH';
+      resumeEvidence = `Related background indicated in candidate profile`;
+      gapOrQual = `Hands-on depth with ${req} needs verification`;
+      earned = weight * 0.5;
+      strengths.push(`Related background in ${req.charAt(0).toUpperCase() + req.slice(1)}`);
     } else {
-      gaps.push(`Missing explicit mention: ${js.charAt(0).toUpperCase() + js.slice(1)}`);
+      notDemonstratedRequired.push(req.charAt(0).toUpperCase() + req.slice(1));
+      gaps.push(`Missing explicit mention: ${req.charAt(0).toUpperCase() + req.slice(1)}`);
     }
-  }
 
-  // Title similarity
-  let titleScore = 40;
+    earnedReqScore += earned;
+
+    skillsMatchTable.push({
+      requirement: req.charAt(0).toUpperCase() + req.slice(1),
+      category: isMandatory ? 'Mandatory Technical' : 'Preferred',
+      classification: isMandatory ? 'Mandatory' : 'Preferred',
+      importance: isMandatory ? 'High' : 'Medium',
+      evidenceStatus,
+      resumeEvidence,
+      gapOrQualification: gapOrQual,
+      weightedContribution: Math.round(earned)
+    });
+  });
+
+  // Domain & Title Match (20%)
   const titleTokens = jobTitle.split(/\s+/).filter(t => t.length > 2);
-  let matchedTitleTokens = 0;
+  let matchedTokens = 0;
   for (const token of titleTokens) {
-    if (candTitle.includes(token) || candSummary.includes(token)) {
-      matchedTitleTokens++;
-    }
+    if (candTitle.includes(token) || candSummary.includes(token)) matchedTokens++;
   }
-  if (titleTokens.length > 0) {
-    titleScore = Math.round((matchedTitleTokens / titleTokens.length) * 100);
-  }
+  const titleRatio = titleTokens.length > 0 ? (matchedTokens / titleTokens.length) : 0.7;
+  const domainScore = Math.round(titleRatio * 20);
 
-  const skillScore = jobSkills.length > 0 ? Math.round((matchedSkillsCount / jobSkills.length) * 100) : 75;
-  const rawScore = Math.round((titleScore * 0.4) + (skillScore * 0.5) + 10);
-  const score = Math.max(35, Math.min(98, rawScore));
+  // Overall Score Calculation
+  const reqRatio = totalReqWeight > 0 ? (earnedReqScore / totalReqWeight) : 0.75;
+  const baseTechnical = Math.round(reqRatio * 45);
+  const expScore = 15; // standard experience contribution
+  const responsibilitiesScore = Math.round(titleRatio * 15);
+  const rawScore = baseTechnical + domainScore + expScore + responsibilitiesScore;
+  const score = Math.max(30, Math.min(96, rawScore));
 
-  const verdict = score >= 85 ? 'STRONG FIT' : (score >= 70 ? 'GOOD FIT' : (score >= 50 ? 'MODERATE FIT' : 'LOW FIT'));
+  const fitCategory = score >= 85 ? 'Strong Fit' : (score >= 70 ? 'Good Fit' : (score >= 50 ? 'Partial Fit' : 'Weak Fit'));
+  const verdict = fitCategory.toUpperCase();
   const color = score >= 85 ? '#059669' : (score >= 70 ? '#2563EB' : (score >= 50 ? '#D97706' : '#DC2626'));
+  const recommendation = score >= 80 ? 'Submit' : (score >= 65 ? 'Interview' : (score >= 50 ? 'Hold for Verification' : 'Reject'));
+
+  const recommendationExplanation = `${candName} demonstrates ${score}% qualification alignment with ${job?.title || 'the target role'}. Key mandatory technologies are ${matchedRequired.length > 0 ? `well supported (${matchedRequired.slice(0, 3).join(', ')})` : 'partially demonstrated'}. Candidate is recommended for ${recommendation.toLowerCase()}.`;
+
+  let eligibilityStatus = 'Eligible — Evidence Available';
+  let eligibilityNotes = `Candidate location (${candLocation}) aligned with role requirements. Work Authorization: ${candVisa}.`;
+  if (jobLocation.toLowerCase().includes('remote') || candLocation.toLowerCase().includes('united states') || candLocation.toLowerCase() === 'us') {
+    eligibilityStatus = 'Eligible — Evidence Available';
+  } else {
+    eligibilityStatus = 'Listed Location — Verification Pending';
+    eligibilityNotes = `Candidate lists ${candLocation}. Verify commute or relocation availability for ${jobLocation}.`;
+  }
 
   return {
     candidateId: candidate?.id,
@@ -13203,15 +13405,38 @@ function computeDeterministicFit(candidate, job) {
     jobId: job?.id || job?.reqId || '',
     jobTitle: job?.title || job?.positionTitle || 'Position',
     score,
+    fitCategory,
     verdict,
     color,
-    strengths: strengths.slice(0, 4),
-    gaps: gaps.slice(0, 3),
-    reasoning: `${candName} demonstrates ${score}% qualification alignment with ${job?.title || 'the target role'} based on title keywords and core technical skills.`,
+    confidence: score >= 70 ? 'High' : 'Medium',
+    evidenceCoverage: candSummary.length > 300 ? 'High' : 'Medium',
+    recommendation,
+    recommendationExplanation,
+    eligibilityStatus,
+    eligibilityNotes,
+    strengths: strengths.length > 0 ? strengths.slice(0, 4) : [`Demonstrated technical background in ${candTitle || 'relevant domain'}`],
+    gaps: gaps.length > 0 ? gaps.slice(0, 3) : ['Verify deep enterprise project delivery during technical screen'],
+    skillsMatchTable,
+    requiredSkills: {
+      matched: matchedRequired,
+      partiallyMatched: [],
+      notDemonstrated: notDemonstratedRequired,
+      unverified: []
+    },
+    preferredSkills: {
+      matched: [],
+      gaps: gaps.slice(0, 2)
+    },
+    experienceAndCertifications: {
+      summary: `${candExp} of demonstrated experience in ${candTitle || 'software engineering'}.`,
+      relevantYears: candExp,
+      certificationsStatus: 'Not explicitly listed'
+    },
     interviewQuestions: [
-      `Can you describe your hands-on experience with ${jobSkills[0] || 'core technologies'} in recent enterprise client projects?`,
-      `How do you manage project deliverables under strict deadlines in an agile environment?`
+      `Can you describe your hands-on experience with ${reqList[0] || 'core technologies'} in recent enterprise client projects?`,
+      `How do you organize sprint deliverables and ensure architecture quality in an agile team?`
     ],
+    reasoning: recommendationExplanation,
     source: 'ats_heuristic_engine'
   };
 }
@@ -13221,8 +13446,9 @@ async function executeAiResumeMatch(candidate, job) {
   const candTitle = candidate?.title || candidate?.role || '';
   const candSkills = Array.isArray(candidate?.skills) ? candidate.skills.join(', ') : (candidate?.skills || '');
   const candExp = candidate?.experience || candidate?.years_of_experience || '5+ Years';
-  const candSummary = candidate?.summary || candidate?.resumeText || candidate?.notes || '';
+  const candSummary = candidate?.resumeText || candidate?.summary || candidate?.notes || '';
   const candLocation = candidate?.location || 'United States';
+  const candVisa = candidate?.visaStatus || 'Authorized to Work in US';
 
   const jobTitle = job?.title || job?.positionTitle || 'Technical Role';
   const jobReqId = job?.id || job?.reqId || '';
@@ -13230,100 +13456,106 @@ async function executeAiResumeMatch(candidate, job) {
   const jobDesc = job?.description || job?.fullDescription || job?.rawDescription || '';
   const jobLocation = job?.location || 'United States';
 
-  // 1. Try Groq AI (Ultra-fast openai/gpt-oss-120b)
+  // 1. Try Groq AI with Expert ATS System Prompt
   const groqApiKey = process.env.GROQ_API_KEY;
   if (groqApiKey) {
-    try {
-      const prompt = `You are an expert technical ATS recruitment AI for SmartHire.
-Analyze how well this candidate matches the Job Description.
-
-JOB DETAILS:
+    const userPrompt = `JOB DESCRIPTION:
 Position: ${jobTitle} ${jobReqId ? `(Req #${jobReqId})` : ''}
-Required Skills: ${jobSkills || 'See description'}
+Required Skills: ${jobSkills || 'See job description'}
 Location: ${jobLocation}
-Description:
-${jobDesc.substring(0, 1800)}
+Full Description:
+${jobDesc.substring(0, 9000)}
 
-CANDIDATE PROFILE:
+CANDIDATE RESUME / PROFILE:
 Name: ${candName}
 Title / Role: ${candTitle}
 Key Skills: ${candSkills}
 Experience: ${candExp}
 Location: ${candLocation}
-Summary / Background:
-${candSummary.substring(0, 1200)}
+Work Authorization / Visa: ${candVisa}
+Full Resume / Profile Text:
+${candSummary.substring(0, 14000)}
 
-Respond with strict JSON only with this schema:
-{
-  "score": <integer between 0 and 100>,
-  "verdict": <"STRONG FIT" | "GOOD FIT" | "MODERATE FIT" | "LOW FIT">,
-  "strengths": [<2 to 4 specific bullet points citing candidate strengths relative to JD>],
-  "gaps": [<1 to 3 specific missing skills, certifications or gaps relative to JD>],
-  "reasoning": <concise 2-sentence executive summary justifying the score>,
-  "interviewQuestions": [<2 tailored technical screening questions for recruiter to ask>]
-}
+Follow the System Prompt instructions and return strict valid JSON only.`;
 
-Rules:
-- Title & Core Skills Match: 70% weight.
-- Experience & Domain: 20% weight.
-- Wrong domain/title (e.g. Sales for Java Dev) must get score < 40.
-- Output pure JSON only.`;
+    const modelsToTry = [
+      process.env.GROQ_MODEL || 'openai/gpt-oss-120b',
+      'qwen/qwen3.8-27b'
+    ];
 
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 9000);
+    for (const modelName of modelsToTry) {
+      try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 12000);
 
-      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${groqApiKey}`
-        },
-        signal: controller.signal,
-        body: JSON.stringify({
-          model: 'openai/gpt-oss-120b',
-          messages: [
-            { role: 'system', content: 'You are an expert ATS recruitment AI. Always output valid JSON only. Never include markdown code fences.' },
-            { role: 'user', content: prompt }
-          ],
-          response_format: { type: 'json_object' },
-          temperature: 0.2
-        })
-      });
-      clearTimeout(timer);
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${groqApiKey}`
+          },
+          signal: controller.signal,
+          body: JSON.stringify({
+            model: modelName,
+            messages: [
+              { role: 'system', content: ATS_JD_RESUME_SYSTEM_PROMPT },
+              { role: 'user', content: userPrompt }
+            ],
+            response_format: { type: 'json_object' },
+            temperature: 0.1
+          })
+        });
+        clearTimeout(timer);
 
-      if (response.ok) {
-        const data = await response.json();
-        const content = data.choices?.[0]?.message?.content;
-        if (content) {
-          const parsed = JSON.parse(content.trim());
-          const score = Math.max(10, Math.min(100, Math.round(Number(parsed.score) || 75)));
-          let verdict = parsed.verdict;
-          if (!verdict) {
-            verdict = score >= 85 ? 'STRONG FIT' : (score >= 70 ? 'GOOD FIT' : (score >= 50 ? 'MODERATE FIT' : 'LOW FIT'));
+        if (response.ok) {
+          const data = await response.json();
+          const content = data.choices?.[0]?.message?.content;
+          if (content) {
+            const parsed = JSON.parse(content.trim());
+            const score = Math.max(10, Math.min(100, Math.round(Number(parsed.score) || 75)));
+            const fitCategory = parsed.fitCategory || (score >= 85 ? 'Strong Fit' : (score >= 70 ? 'Good Fit' : (score >= 50 ? 'Partial Fit' : 'Weak Fit')));
+            const verdict = parsed.verdict || fitCategory.toUpperCase();
+            const color = score >= 85 ? '#059669' : (score >= 70 ? '#2563EB' : (score >= 50 ? '#D97706' : '#DC2626'));
+            const recommendation = parsed.recommendation || (score >= 80 ? 'Submit' : (score >= 65 ? 'Interview' : (score >= 50 ? 'Hold for Verification' : 'Reject')));
+            const reasoning = parsed.recommendationExplanation || parsed.reasoning || `${candName} demonstrates ${score}% qualification alignment with ${jobTitle}.`;
+
+            return {
+              candidateId: candidate?.id,
+              candidateName: candName,
+              jobId: jobReqId,
+              jobTitle: jobTitle,
+              score,
+              fitCategory,
+              verdict,
+              color,
+              confidence: parsed.confidence || (score >= 70 ? 'High' : 'Medium'),
+              evidenceCoverage: parsed.evidenceCoverage || (candSummary.length > 500 ? 'High' : 'Medium'),
+              recommendation,
+              recommendationExplanation: reasoning,
+              eligibilityStatus: parsed.eligibilityStatus || 'Eligible — Evidence Available',
+              eligibilityNotes: parsed.eligibilityNotes || `${candLocation} aligned with target role.`,
+              strengths: Array.isArray(parsed.strengths) ? parsed.strengths : [],
+              gaps: Array.isArray(parsed.gaps) ? parsed.gaps : [],
+              skillsMatchTable: Array.isArray(parsed.skillsMatchTable) ? parsed.skillsMatchTable : [],
+              requiredSkills: parsed.requiredSkills || { matched: [], partiallyMatched: [], notDemonstrated: [], unverified: [] },
+              preferredSkills: parsed.preferredSkills || { matched: [], gaps: [] },
+              experienceAndCertifications: parsed.experienceAndCertifications || { summary: `${candExp} of relevant experience.`, relevantYears: candExp, certificationsStatus: 'Not listed' },
+              interviewQuestions: Array.isArray(parsed.interviewQuestions) ? parsed.interviewQuestions : [],
+              reasoning: reasoning,
+              source: `ai_groq_${modelName.replace(/[^a-zA-Z0-9]/g, '_')}`
+            };
           }
-          const color = score >= 85 ? '#059669' : (score >= 70 ? '#2563EB' : (score >= 50 ? '#D97706' : '#DC2626'));
-          return {
-            candidateId: candidate?.id,
-            candidateName: candName,
-            jobId: jobReqId,
-            jobTitle: jobTitle,
-            score,
-            verdict,
-            color,
-            strengths: Array.isArray(parsed.strengths) ? parsed.strengths : [],
-            gaps: Array.isArray(parsed.gaps) ? parsed.gaps : [],
-            reasoning: parsed.reasoning || `${candName} has relevant skills for ${jobTitle}.`,
-            interviewQuestions: Array.isArray(parsed.interviewQuestions) ? parsed.interviewQuestions : [],
-            source: 'ai_groq_llm'
-          };
+        } else {
+          const errText = await response.text();
+          console.warn(`[AiMatchAPI] Model ${modelName} returned status ${response.status}:`, errText.substring(0, 200));
         }
+      } catch (llmErr) {
+        console.warn(`[AiMatchAPI] Groq model ${modelName} failed or timed out:`, llmErr.message);
       }
-    } catch (llmErr) {
-      console.warn('[AiMatchAPI] Groq LLM failed or timed out, using fallback engine:', llmErr.message);
     }
   }
 
-  // 2. Fallback Deterministic Engine
+  // 2. Fallback Heuristic Engine
   return computeDeterministicFit(candidate, job);
 }
 

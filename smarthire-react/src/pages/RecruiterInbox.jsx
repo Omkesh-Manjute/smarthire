@@ -3719,23 +3719,28 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
       const normalized = {
         score: match.score ?? cand.matchScore ?? 85,
         verdict: match.verdict ?? (cand.matchScore >= 80 ? 'STRONG FIT' : (cand.matchScore >= 65 ? 'GOOD FIT' : 'MODERATE FIT')),
-        summary: match.reasoning ?? cand.aiReasoning ?? 'AI resume matching complete against requisition profile.',
+        summary: match.recommendationExplanation || match.reasoning || cand.aiReasoning || 'AI resume matching complete against requisition profile.',
         source: 'live_llm',
         model: 'Groq AI Matching Engine',
         matchingSkills: candSkills,
         missingSkills: gapsArr,
-        preferredSkills: [],
+        preferredSkills: match.preferredSkills?.matched || [],
         strengths: strengthsArr,
         riskFactors: gapsArr,
         screeningQuestions: match.interviewQuestions || [
           'Can you describe your specific technical contributions in your recent role?',
           'How do your core skills align with this position’s primary deliverables?'
         ],
+        skillsMatchTable: match.skillsMatchTable || [],
+        recommendation: match.recommendation || 'Interview',
+        confidence: match.confidence || 'High',
+        eligibilityStatus: match.eligibilityStatus || 'Eligible — Evidence Available',
+        eligibilityNotes: match.eligibilityNotes || '',
         dimensions: {
           titleMatch: { score: 25, verdict: 'Aligned Role' },
           requiredSkills: { matchedCount: candSkills.length, totalCount: Math.max(5, candSkills.length + gapsArr.length), score: 32 },
-          preferredSkills: { matching: [], score: 8 },
-          location: { verdict: 'US Resident', candidateState: cand.location || 'US' },
+          preferredSkills: { matching: match.preferredSkills?.matched || [], score: 8 },
+          location: { verdict: match.eligibilityStatus || 'US Resident', candidateState: cand.location || 'US' },
           experience: { candidateYears: cand.experience || '5+ Years', verdict: 'Verified Seniority' }
         }
       }

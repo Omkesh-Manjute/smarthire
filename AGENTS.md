@@ -94,6 +94,41 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
   - Deployed updated `server/index.js` to AWS Lightsail server (`34.194.119.199`) and reloaded PM2.
   - Verified live authentication on `https://smarthireus.com/api/auth/login` with both `Coolsoft@1994` and `admin` returning `HTTP 200 OK` with valid JWT token and superadmin profile.
 
+### 2026-10-17 — Expert ATS Job Description–Resume Matching Engine Overhaul & Deep Profile Scraper Training
+- **Context & Objectives**:
+  - The user reported: "Bro, extension properly work nahi kar raha hai. AI matching wala work nahi kar raha hai. Result kuch aur dikha raha hai. Maine ChatGPT mein same resume JD ke sath check kiya to wo result kuch aur dikha raha hai. Wo achha dikha raha hai. Toh wahin se maine ye prompt generate kiya hoon. Toh iske according to usko AI ko train kar do. Monster ho ya Dice ho, properly is structure way mein result match karke dena chahiye."
+  - Root Cause Analysis:
+    1. *Missing Resume Data*: Monster+ and Dice scraper scripts extracted basic candidate cards without saving the full resume text or drawer profile content into `summary` or `resumeText`. The backend received an almost empty profile (`summary: undefined`), causing arbitrary scores and mismatched results.
+    2. *Shallow Prompt*: The LLM prompt was only asking for generic 5-line responses with arbitrary keyword weights, missing structured category breakdowns, evidence statuses, and recommendations.
+    3. *Truncated Text Limits*: Resume text was restricted to only 1200 chars and JD to 1800 chars.
+- **Architectural Implementations & Upgrades**:
+  1. *Deep Candidate Profile & Resume Text Scraper (`content_monster.js`, `content_dice.js`)*:
+     - Monster+: Extracts the full profile and resume text directly from the open drawer, resume pane, and detail panels (`[class*="resume"], [class*="detail"], aside, [role="dialog"]`) or comprehensive card text, storing up to 5,000 characters in `candidate.resumeText` and `candidate.summary`.
+     - Dice: Sniffs expanded candidate profile drawers and multi-job work histories, passing complete candidate credentials into `candidate.resumeText` and `candidate.summary`.
+  2. *Expert ATS Job Description–Resume Matching Engine (`server/index.js`)*:
+     - Trained the engine using the user's structured 12-section ATS specification with exact 7-category weighting:
+       - Mandatory technical skills (30%)
+       - Domain / functional experience (20%)
+       - Relevant responsibilities & hands-on delivery (15%)
+       - Required experience level & complexity (10%)
+       - Preferred skills & technologies (10%)
+       - Leadership, communication & stakeholder management (10%)
+       - Education & relevant certifications (5%)
+     - Evidence Labels & Scoring: `DIRECT MATCH (1.00)`, `STRONG EQUIVALENT (0.85)`, `PARTIAL MATCH (0.50)`, `NOT DEMONSTRATED (0.00)`, `NEEDS VERIFICATION (0.00)`.
+     - Fit Categories: `Strong Fit (85-100%)`, `Good Fit (70-84%)`, `Partial Fit (50-69%)`, `Weak Fit (<50%)`.
+     - Decision Recommendations: `Submit`, `Interview`, `Backup`, `Hold for Verification`, `Reject`.
+     - Location & Work Arrangement: Explicit commute, hybrid onsite, and work authorization verification.
+     - Multi-Model Resilience: Primary Groq `openai/gpt-oss-120b` (sub-second response) with automatic failover to `qwen/qwen3.8-27b` and an upgraded 7-category deterministic engine.
+  3. *Enterprise Dossier Modal & Skills Match Matrix (`injected_dock.js`, `popup.html`, `popup.js`)*:
+     - Rendered authentic Excel-style spreadsheet grid (Rule 9) displaying Requirement, Category, Classification (Mandatory/Preferred), Evidence Status, and Supporting Resume Evidence.
+     - Added Recommendation badges, Confidence & Coverage indicators, and Location Eligibility notes.
+     - Built "📋 Copy Full AI Report" button generating the complete Markdown ATS report for instant sharing with account managers.
+  4. *ATS Pipeline Sync (`RecruiterInbox.jsx`)*:
+     - Enriched `handleRunLiveAiScan` to pass the structured skills match matrix, recommendations, and eligibility notes directly into the ATS scorecard view.
+- **Verification & Deployment**:
+  - Local production build in `smarthire-react`: **0 errors, 0 warnings** (Vite build in 3.00s).
+  - Repackaged `smarthire-extension.zip`.
+
 ### 2026-10-17 — AI Resume-to-JD Fit Matching Engine, Extension Batch Ranking, Candidate Fit Dossier & Live ATS Ingestion
 - **Context & Objectives**:
   - The user requested: "ha bhai ai wala add karo" (Implement the AI Resume-to-JD Fit Matching engine across the Chrome Extension and SmartHire ATS).
