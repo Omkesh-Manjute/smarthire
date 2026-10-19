@@ -1037,45 +1037,65 @@ Website: http://www.coolsofttech.com`;
     sendBtn.innerText = 'Sending Email...';
     if (statusEl) statusEl.innerHTML = `<span style="color:#2563EB;">Delivering email to ${to} via SMTP...</span>`;
 
-    try {
-      chrome.runtime.sendMessage({
-        action: 'SEND_OUTREACH_EMAIL',
-        payload: {
-          recruiterEmail: currentUser.email,
-          recruiterName: currentUser.name,
-          to,
-          subject,
-          body,
-          html: body.replace(/\n/g, '<br>')
+    const emailPayload = {
+      recruiterEmail: currentUser.email,
+      recruiterName: currentUser.name,
+      to,
+      subject,
+      body,
+      html: body.replace(/\n/g, '<br>')
+    };
+
+    const handleSendResult = (res) => {
+      if (res && res.success) {
+        if (statusEl) statusEl.innerHTML = `<span style="color:#059669; font-weight:700;">✓ Email delivered successfully from ${currentUser.email}!</span>`;
+        sentCandidateEmails.add(to.toLowerCase());
+        if (activeOutreachCandidate) {
+          sentCandidateEmails.add((activeOutreachCandidate.name || '').toLowerCase());
         }
-      }, (res) => {
-        if (chrome.runtime.lastError) {
+        renderResults(scrapedCandidates);
+        setTimeout(() => {
+          closeOutreachComposer();
+        }, 1800);
+      } else {
+        sendBtn.disabled = false;
+        sendBtn.innerText = 'Retry Send';
+        if (statusEl) statusEl.innerHTML = `<span style="color:#DC2626; font-weight:600;">Failed: ${res?.message || 'SMTP delivery rejected'}</span>`;
+      }
+    };
+
+    function tryDirectSend() {
+      fetch('https://smarthireus.com/api/recruiter/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(emailPayload)
+      })
+        .then(r => r.json())
+        .then(handleSendResult)
+        .catch(err => {
           sendBtn.disabled = false;
           sendBtn.innerText = 'Send Outreach Email';
-          if (statusEl) statusEl.innerHTML = `<span style="color:#DC2626;">Error: ${chrome.runtime.lastError.message}</span>`;
-          return;
-        }
+          if (statusEl) statusEl.innerHTML = `<span style="color:#DC2626;">Error: ${err.message}</span>`;
+        });
+    }
 
-        if (res && res.success) {
-          if (statusEl) statusEl.innerHTML = `<span style="color:#059669; font-weight:700;">✓ Email delivered successfully from ${currentUser.email}!</span>`;
-          sentCandidateEmails.add(to.toLowerCase());
-          if (activeOutreachCandidate) {
-            sentCandidateEmails.add((activeOutreachCandidate.name || '').toLowerCase());
+    if (typeof chrome !== 'undefined' && chrome?.runtime?.id) {
+      try {
+        chrome.runtime.sendMessage({
+          action: 'SEND_OUTREACH_EMAIL',
+          payload: emailPayload
+        }, (res) => {
+          if (chrome.runtime.lastError) {
+            tryDirectSend();
+            return;
           }
-          renderResults(scrapedCandidates);
-          setTimeout(() => {
-            closeOutreachComposer();
-          }, 1800);
-        } else {
-          sendBtn.disabled = false;
-          sendBtn.innerText = 'Retry Send';
-          if (statusEl) statusEl.innerHTML = `<span style="color:#DC2626; font-weight:600;">Failed: ${res?.message || 'SMTP delivery rejected'}</span>`;
-        }
-      });
-    } catch (e) {
-      sendBtn.disabled = false;
-      sendBtn.innerText = 'Send Outreach Email';
-      if (statusEl) statusEl.innerHTML = `<span style="color:#DC2626;">Error: ${e.message}</span>`;
+          handleSendResult(res);
+        });
+      } catch (_) {
+        tryDirectSend();
+      }
+    } else {
+      tryDirectSend();
     }
   }
 
@@ -1281,20 +1301,41 @@ Website: http://www.coolsofttech.com`;
       const pct = Math.round(((i + 1) / validCandidates.length) * 100);
       if (progBar) progBar.style.width = `${pct}%`;
 
+      const itemEmailPayload = {
+        recruiterEmail: currentUser.email,
+        recruiterName: currentUser.name,
+        to: cand.email,
+        subject: subjectTemplate,
+        body: personalizedBody,
+        html: personalizedBody.replace(/\n/g, '<br>')
+      };
+
       try {
-        const res = await new Promise((resolve) => {
-          chrome.runtime.sendMessage({
-            action: 'SEND_OUTREACH_EMAIL',
-            payload: {
-              recruiterEmail: currentUser.email,
-              recruiterName: currentUser.name,
-              to: cand.email,
-              subject: subjectTemplate,
-              body: personalizedBody,
-              html: personalizedBody.replace(/\n/g, '<br>')
-            }
-          }, resolve);
-        });
+        let res = null;
+        if (typeof chrome !== 'undefined' && chrome?.runtime?.id) {
+          try {
+            res = await new Promise((resolve, reject) => {
+              chrome.runtime.sendMessage({
+                action: 'SEND_OUTREACH_EMAIL',
+                payload: itemEmailPayload
+              }, (response) => {
+                if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
+                else resolve(response);
+              });
+            });
+          } catch (_) {}
+        }
+
+        if (!res) {
+          try {
+            const fetchRes = await fetch('https://smarthireus.com/api/recruiter/send-email', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(itemEmailPayload)
+            });
+            res = await fetchRes.json();
+          } catch (_) {}
+        }
 
         if (res && res.success) {
           successCount++;
@@ -1943,15 +1984,68 @@ ${(match.interviewQuestions || [
         targetReqId: selectedJob.id || selectedJob.reqId
       };
 
-      const res = await new Promise((resolve) => {
-        chrome.runtime.sendMessage({
-          action: 'AI_MATCH_BATCH',
-          payload
-        }, resolve);
-      });
+      let matches = null;
 
-      if (res && res.success && Array.isArray(res.matches)) {
-        res.matches.forEach((m, idx) => {
+      // Strategy 1: Extension background service worker (if extension context is connected)
+      if (typeof chrome !== 'undefined' && chrome?.runtime?.id) {
+        try {
+          const res = await new Promise((resolve, reject) => {
+            try {
+              chrome.runtime.sendMessage({
+                action: 'AI_MATCH_BATCH',
+                payload
+              }, (response) => {
+                if (chrome.runtime.lastError) {
+                  reject(new Error(chrome.runtime.lastError.message));
+                } else {
+                  resolve(response);
+                }
+              });
+            } catch (sendErr) {
+              reject(sendErr);
+            }
+          });
+          if (res && res.success && Array.isArray(res.matches)) {
+            matches = res.matches;
+          }
+        } catch (bgErr) {
+          console.warn('[SmartHire Dock] Background AI match error, falling back:', bgErr.message);
+        }
+      }
+
+      // Strategy 2: Direct fetch to ATS server (bypasses service worker)
+      if (!matches) {
+        try {
+          const fetchRes = await fetch('https://smarthireus.com/api/recruiter/ai-match-batch', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          if (fetchRes.ok) {
+            const data = await fetchRes.json();
+            if (data && data.success && Array.isArray(data.matches)) {
+              matches = data.matches;
+            }
+          }
+        } catch (fetchErr) {
+          console.warn('[SmartHire Dock] Direct fetch error, falling back to local engine:', fetchErr.message);
+        }
+      }
+
+      // Strategy 3: Authoritative in-browser SmartHireMatchingEngine (Zero external dependency fallback)
+      if (!matches && window.SmartHireMatchingEngine) {
+        try {
+          console.log('[SmartHire Dock] Running in-tab authoritative SmartHireMatchingEngine...');
+          matches = payload.candidates.map(cand => {
+            return window.SmartHireMatchingEngine.evaluateCandidate(cand, payload.job);
+          });
+        } catch (engineErr) {
+          console.error('[SmartHire Dock] Local engine evaluation error:', engineErr);
+        }
+      }
+
+      if (matches && Array.isArray(matches) && matches.length > 0) {
+        matches.forEach((m, idx) => {
           if (scrapedCandidates[idx]) {
             scrapedCandidates[idx].aiMatch = m;
             scrapedCandidates[idx].matchScore = m.score;
@@ -1980,11 +2074,45 @@ ${(match.interviewQuestions || [
         renderResults(scrapedCandidates);
         if (btnText) btnText.innerText = `✓ AI Analysis Done (${scrapedCandidates.length} Ranked)`;
       } else {
-        alert('AI Matching returned: ' + (res?.error || 'Fallback applied'));
+        alert('Could not complete AI matching. Please refresh the page (Cmd+R or F5) and try again.');
       }
     } catch (err) {
       console.error('[AI Match Error]', err);
-      alert('AI Match error: ' + err.message);
+      // Fallback to local engine immediately so candidate analysis is not lost
+      if (window.SmartHireMatchingEngine && selectedJob) {
+        try {
+          scrapedCandidates.forEach(cand => {
+            const m = window.SmartHireMatchingEngine.evaluateCandidate(cand, selectedJob);
+            cand.aiMatch = m;
+            cand.matchScore = m.score;
+            cand.verdict = m.verdict;
+            cand.fitCategory = m.fitCategory || m.verdict;
+            cand.confidence = m.confidence;
+            cand.evidenceCoverage = m.evidenceCoverage;
+            cand.recommendation = m.recommendation;
+            cand.recommendationExplanation = m.recommendationExplanation || m.reasoning;
+            cand.eligibilityStatus = m.eligibilityStatus;
+            cand.eligibilityNotes = m.eligibilityNotes;
+            cand.strengths = m.strengths;
+            cand.gaps = m.gaps;
+            cand.skillsMatchTable = m.skillsMatchTable;
+            cand.requiredSkills = m.requiredSkills;
+            cand.preferredSkills = m.preferredSkills;
+            cand.experienceAndCertifications = m.experienceAndCertifications;
+            cand.interviewQuestions = m.interviewQuestions;
+            cand.aiReasoning = m.recommendationExplanation || m.reasoning;
+          });
+          scrapedCandidates.sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0));
+          renderResults(scrapedCandidates);
+          if (btnText) btnText.innerText = `✓ AI Analysis Done (${scrapedCandidates.length} Ranked)`;
+          return;
+        } catch (_) {}
+      }
+      if (err.message && err.message.includes('Extension context invalidated')) {
+        alert('The extension was recently reloaded in Chrome. Please refresh this page (Cmd+R or F5) to reconnect.');
+      } else {
+        alert('AI Match error: ' + err.message);
+      }
     } finally {
       if (btn) {
         btn.disabled = false;
@@ -2029,12 +2157,53 @@ ${(match.interviewQuestions || [
         targetReqId: targetJob.id || targetJob.reqId
       };
 
-      const res = await new Promise((resolve) => {
-        chrome.runtime.sendMessage({ action: 'AI_MATCH_CANDIDATE', payload }, resolve);
-      });
+      let m = null;
 
-      if (res && res.success && res.match) {
-        const m = res.match;
+      // Strategy 1: Background service worker
+      if (typeof chrome !== 'undefined' && chrome?.runtime?.id) {
+        try {
+          const res = await new Promise((resolve, reject) => {
+            try {
+              chrome.runtime.sendMessage({ action: 'AI_MATCH_CANDIDATE', payload }, (response) => {
+                if (chrome.runtime.lastError) {
+                  reject(new Error(chrome.runtime.lastError.message));
+                } else {
+                  resolve(response);
+                }
+              });
+            } catch (sendErr) {
+              reject(sendErr);
+            }
+          });
+          if (res && res.success && res.match) {
+            m = res.match;
+          }
+        } catch (_) {}
+      }
+
+      // Strategy 2: Direct fetch to ATS server
+      if (!m) {
+        try {
+          const fetchRes = await fetch('https://smarthireus.com/api/recruiter/ai-match-resume', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          if (fetchRes.ok) {
+            const data = await fetchRes.json();
+            if (data && data.success && data.match) {
+              m = data.match;
+            }
+          }
+        } catch (_) {}
+      }
+
+      // Strategy 3: Authoritative local matching engine fallback
+      if (!m && window.SmartHireMatchingEngine) {
+        m = window.SmartHireMatchingEngine.evaluateCandidate(payload.candidate, payload.job);
+      }
+
+      if (m) {
         candidate.aiMatch = m;
         candidate.matchScore = m.score;
         candidate.verdict = m.verdict;
@@ -2058,6 +2227,33 @@ ${(match.interviewQuestions || [
         openAiDossier(candidate, targetJob);
       }
     } catch (e) {
+      if (window.SmartHireMatchingEngine && targetJob) {
+        try {
+          const m = window.SmartHireMatchingEngine.evaluateCandidate(candidate, targetJob);
+          candidate.aiMatch = m;
+          candidate.matchScore = m.score;
+          candidate.verdict = m.verdict;
+          candidate.fitCategory = m.fitCategory || m.verdict;
+          candidate.confidence = m.confidence;
+          candidate.evidenceCoverage = m.evidenceCoverage;
+          candidate.recommendation = m.recommendation;
+          candidate.recommendationExplanation = m.recommendationExplanation || m.reasoning;
+          candidate.eligibilityStatus = m.eligibilityStatus;
+          candidate.eligibilityNotes = m.eligibilityNotes;
+          candidate.strengths = m.strengths;
+          candidate.gaps = m.gaps;
+          candidate.skillsMatchTable = m.skillsMatchTable;
+          candidate.requiredSkills = m.requiredSkills;
+          candidate.preferredSkills = m.preferredSkills;
+          candidate.experienceAndCertifications = m.experienceAndCertifications;
+          candidate.interviewQuestions = m.interviewQuestions;
+          candidate.aiReasoning = m.recommendationExplanation || m.reasoning;
+
+          renderResults(scrapedCandidates);
+          openAiDossier(candidate, targetJob);
+          return;
+        } catch (_) {}
+      }
       alert('AI Match error: ' + e.message);
     }
   }
@@ -2065,18 +2261,51 @@ ${(match.interviewQuestions || [
   function fetchLiveJobs() {
     const badge = document.getElementById('smarthire-job-count-badge');
     if (badge) badge.innerText = 'Refreshing...';
-    try {
-      chrome.runtime.sendMessage({ action: 'FETCH_JOBS' }, (response) => {
-        if (response && response.success && Array.isArray(response.jobs) && response.jobs.length > 0) {
-          allJobs = response.jobs;
-          filteredJobs = [...allJobs];
-          renderJobsSelect(true);
-        } else if (badge) {
-          badge.innerText = `${allJobs.length} Jobs`;
-        }
-      });
-    } catch (e) {
-      if (badge) badge.innerText = `${allJobs.length} Jobs`;
+
+    const handleJobsData = (jobsList) => {
+      if (Array.isArray(jobsList) && jobsList.length > 0) {
+        allJobs = jobsList;
+        filteredJobs = [...allJobs];
+        renderJobsSelect(true);
+      } else if (badge) {
+        badge.innerText = `${allJobs.length} Jobs`;
+      }
+    };
+
+    function tryDirectFetch() {
+      fetch('https://smarthireus.com/api/jobs')
+        .then(res => res.json())
+        .then(data => {
+          const list = Array.isArray(data) ? data : (Array.isArray(data?.jobs) ? data.jobs : []);
+          if (list.length > 0) {
+            handleJobsData(list);
+          } else if (window.BUNDLED_JOBS && window.BUNDLED_JOBS.length > 0) {
+            handleJobsData(window.BUNDLED_JOBS);
+          }
+        })
+        .catch(() => {
+          if (window.BUNDLED_JOBS && window.BUNDLED_JOBS.length > 0) {
+            handleJobsData(window.BUNDLED_JOBS);
+          } else if (badge) {
+            badge.innerText = `${allJobs.length} Jobs`;
+          }
+        });
+    }
+
+    if (typeof chrome !== 'undefined' && chrome?.runtime?.id) {
+      try {
+        chrome.runtime.sendMessage({ action: 'FETCH_JOBS' }, (response) => {
+          if (!chrome.runtime.lastError && response && response.success && Array.isArray(response.jobs) && response.jobs.length > 0) {
+            handleJobsData(response.jobs);
+          } else {
+            tryDirectFetch();
+          }
+        });
+      } catch (_) {
+        tryDirectFetch();
+      }
+    } else {
+      tryDirectFetch();
     }
   }
 
