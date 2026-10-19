@@ -577,6 +577,10 @@ Website: http://www.coolsofttech.com`;
           chrome.runtime.sendMessage({ action: 'LOGOUT_USER' }, () => {
             currentUser = null;
             isUserAuthenticated = false;
+            try {
+              localStorage.removeItem('smarthire_user_cached');
+              localStorage.removeItem('smarthire_token_cached');
+            } catch (_) {}
             updateRecruiterBarUI();
             checkAndApplyAuthGate();
           });
@@ -668,7 +672,26 @@ Website: http://www.coolsofttech.com`;
   }
 
   function fetchCurrentUser() {
-    // Check localStorage fallback in case background service worker disconnected
+    // 1. Direct check of chrome.storage.local (shared across Monster, Dice, and Popup)
+    try {
+      if (chrome?.storage?.local) {
+        chrome.storage.local.get(['smarthire_user', 'smarthire_token'], (stored) => {
+          if (stored && stored.smarthire_user && stored.smarthire_user.email) {
+            currentUser = stored.smarthire_user;
+            isUserAuthenticated = true;
+            try {
+              localStorage.setItem('smarthire_user_cached', JSON.stringify(currentUser));
+              localStorage.setItem('smarthire_token_cached', stored.smarthire_token || '');
+            } catch (_) {}
+            updateRecruiterBarUI();
+            checkAndApplyAuthGate();
+            return;
+          }
+        });
+      }
+    } catch (_) {}
+
+    // 2. Check localStorage fallback (origin-local) & sync to shared chrome.storage.local
     try {
       const cached = localStorage.getItem('smarthire_user_cached');
       if (cached) {
@@ -676,19 +699,43 @@ Website: http://www.coolsofttech.com`;
         if (u && u.email) {
           currentUser = u;
           isUserAuthenticated = true;
+          try {
+            if (chrome?.storage?.local) {
+              chrome.storage.local.set({
+                smarthire_user: u,
+                smarthire_token: localStorage.getItem('smarthire_token_cached') || '',
+                recruiter_email: u.email,
+                recruiter_name: u.name
+              });
+            }
+          } catch (_) {}
           updateRecruiterBarUI();
           checkAndApplyAuthGate();
         }
       }
     } catch (_) {}
 
+    // 3. Fallback via background service worker relay
     try {
       chrome.runtime.sendMessage({ action: 'GET_CURRENT_USER' }, (res) => {
         if (chrome.runtime.lastError) return;
-        if (res && res.success && res.user && res.isLoggedIn) {
+        if (res && res.success && res.user && res.user.email) {
           currentUser = res.user;
           isUserAuthenticated = true;
-          try { localStorage.setItem('smarthire_user_cached', JSON.stringify(currentUser)); } catch (_) {}
+          try {
+            localStorage.setItem('smarthire_user_cached', JSON.stringify(currentUser));
+            localStorage.setItem('smarthire_token_cached', res.token || '');
+          } catch (_) {}
+          try {
+            if (chrome?.storage?.local) {
+              chrome.storage.local.set({
+                smarthire_user: currentUser,
+                smarthire_token: res.token || '',
+                recruiter_email: currentUser.email,
+                recruiter_name: currentUser.name
+              });
+            }
+          } catch (_) {}
         } else if (!currentUser) {
           currentUser = null;
           isUserAuthenticated = false;
@@ -705,6 +752,27 @@ Website: http://www.coolsofttech.com`;
       }
     }
   }
+
+  // Real-time synchronization across all tabs (Monster <-> Dice <-> Popup)
+  try {
+    if (chrome?.storage?.onChanged) {
+      chrome.storage.onChanged.addListener((changes, area) => {
+        if (area === 'local' && changes.smarthire_user) {
+          if (changes.smarthire_user.newValue && changes.smarthire_user.newValue.email) {
+            currentUser = changes.smarthire_user.newValue;
+            isUserAuthenticated = true;
+            try { localStorage.setItem('smarthire_user_cached', JSON.stringify(currentUser)); } catch (_) {}
+          } else {
+            currentUser = null;
+            isUserAuthenticated = false;
+            try { localStorage.removeItem('smarthire_user_cached'); } catch (_) {}
+          }
+          updateRecruiterBarUI();
+          checkAndApplyAuthGate();
+        }
+      });
+    }
+  } catch (_) {}
 
   function performGateLogin() {
     const email = document.getElementById('smarthire-gate-email')?.value.trim();
@@ -755,7 +823,7 @@ Website: http://www.coolsofttech.com`;
         if (chrome?.storage?.local) {
           chrome.storage.local.set({
             smarthire_user: user,
-            smarthire_token: token,
+            smarthire_token: token || '',
             recruiter_email: user.email,
             recruiter_name: user.name
           });
@@ -783,55 +851,60 @@ Website: http://www.coolsofttech.com`;
       }
     };
 
-    // Strategy 1: Direct fetch to ATS server (bypasses any background service worker issues)
-    fetch('https://smarthireus.com/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (data && data.success && data.user) {
-          handleSuccess(data.user, data.token);
-        } else {
-          handleFailure(data?.message || 'Invalid email or password');
-        }
-      })
-      .catch(err => {
-        console.warn('[SmartHire Dock] Direct fetch error:', err);
-        // Fallback to background relay if direct fetch failed
-        try {
-          chrome.runtime.sendMessage({ action: 'LOGIN_USER', email, password }, (res) => {
-            if (chrome.runtime.lastError) {
-              handleFailure('Unable to connect to SmartHire ATS. Please check network or refresh page.');
-              return;
-            }
-            if (res && res.success && res.user) {
-              handleSuccess(res.user, res.token);
-            } else {
-              handleFailure(res?.message || 'Invalid email or password');
-            }
-          });
-        } catch (e) {
-          handleFailure('Extension context disconnected. Please refresh this page (Cmd+R or F5).');
-        }
-      });
-
-    // Strategy 2: Parallel background relay to keep chrome.storage synced
+    // Strategy 1 (Primary): Extension Service Worker Relay (Bypasses Dice/Monster CSP, CORS & page interceptors)
     try {
       chrome.runtime.sendMessage({ action: 'LOGIN_USER', email, password }, (res) => {
-        if (!chrome.runtime.lastError && res && res.success && res.user) {
+        if (chrome.runtime.lastError) {
+          console.warn('[SmartHire Dock] Background login lastError:', chrome.runtime.lastError.message);
+          tryDirectFetch();
+          return;
+        }
+        if (res && res.success && res.user) {
           handleSuccess(res.user, res.token);
+        } else {
+          handleFailure(res?.message || 'Invalid email or password. Please check your credentials.');
         }
       });
-    } catch (_) {}
+    } catch (e) {
+      console.warn('[SmartHire Dock] Background sendMessage exception:', e);
+      tryDirectFetch();
+    }
 
-    // Safety timeout: Re-enable the button if no network response within 7 seconds
+    // Strategy 2 (Secondary Fallback): Direct fetch to ATS server with timeout controller
+    function tryDirectFetch() {
+      if (responded) return;
+      const controller = new AbortController();
+      const abortTimer = setTimeout(() => controller.abort(), 18000);
+
+      fetch('https://smarthireus.com/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+        signal: controller.signal
+      })
+        .then(res => res.json())
+        .then(data => {
+          clearTimeout(abortTimer);
+          if (data && data.success && data.user) {
+            handleSuccess(data.user, data.token);
+          } else {
+            handleFailure(data?.message || 'Invalid email or password');
+          }
+        })
+        .catch(err => {
+          clearTimeout(abortTimer);
+          if (!responded) {
+            handleFailure(err.name === 'AbortError' ? 'Server connection timed out. Please check network.' : 'Unable to connect to SmartHire ATS. Please refresh the page.');
+          }
+        });
+    }
+
+    // Safety timeout: 22 seconds (allows for server cron spikes or high network latency)
     setTimeout(() => {
       if (!responded) {
         handleFailure('Authentication timed out. Please check your connection or refresh the page.');
       }
-    }, 7000);
+    }, 22000);
   }
 
   function initOutreachComposerModal() {

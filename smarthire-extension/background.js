@@ -56,8 +56,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   if (request.action === 'GET_CURRENT_USER') {
     chrome.storage.local.get(['smarthire_user', 'smarthire_token'], (res) => {
-      if (res && res.smarthire_user && res.smarthire_token) {
-        sendResponse({ success: true, user: res.smarthire_user, token: res.smarthire_token, isLoggedIn: true });
+      if (res && res.smarthire_user && res.smarthire_user.email) {
+        sendResponse({ success: true, user: res.smarthire_user, token: res.smarthire_token || '', isLoggedIn: true });
       } else {
         // Strict security: Never default to any user without valid authentication
         sendResponse({ success: false, user: null, token: null, isLoggedIn: false });
