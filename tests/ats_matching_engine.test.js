@@ -1649,6 +1649,95 @@ runTest('Outreach JD Formatter: Strip internal rates, client codes, and structur
 });
 
 // ---------------------------------------------------------------------
+// TEST 41: CANDIDATE CONTACT EXTRACTION (PERSONAL EMAIL CAPTURED, RECRUITER DOMAINS BLACKLISTED)
+// ---------------------------------------------------------------------
+runTest('Candidate Contact Extraction: Personal email captured, recruiter domains strictly blacklisted', () => {
+  // Scenario 1: Resume document containing candidate's personal email alongside page noise with recruiter email
+  const resumeWithNoise = `
+    Omkesh Manjute (omkesh@coolsofttech.com) - SmartHire ATS Copilot
+    Dice Talent Search - Candidate Details
+    Support: support@dice.com, help@monster.com, admin@smarthireus.com
+
+    Tarun Bolisetty
+    Software Engineer / Full Stack Developer
+    Phone: (414) 892-1249 | Email: saivenkataboli1992@gmail.com
+    Milwaukee, WI 53202
+
+    Professional Summary:
+    Experienced Software Engineer with 7+ years developing distributed cloud applications.
+  `;
+
+  const extractedEmail = SmartHireMatchingEngine.extractCandidateEmail(resumeWithNoise);
+  assert.strictEqual(
+    extractedEmail,
+    'saivenkataboli1992@gmail.com',
+    `Should extract personal candidate email, got: ${extractedEmail}`
+  );
+
+  const extractedPhone = SmartHireMatchingEngine.extractCandidatePhone(resumeWithNoise);
+  assert.strictEqual(
+    extractedPhone,
+    '(414) 892-1249',
+    `Should extract authentic phone number, got: ${extractedPhone}`
+  );
+
+  // Scenario 2: Candidate with Dice relay email
+  const resumeWithRelay = `
+    Candidate: Jane Doe
+    Relay Contact: jane.doe.892@mail.dice.com
+    Office Contact: recruiter@coolsoft.com
+    Location: Dallas, TX
+  `;
+  const extractedRelay = SmartHireMatchingEngine.extractCandidateEmail(resumeWithRelay);
+  assert.strictEqual(
+    extractedRelay,
+    'jane.doe.892@mail.dice.com',
+    `Should extract candidate relay email and ignore coolsoft.com, got: ${extractedRelay}`
+  );
+
+  // Scenario 3: Only recruiter email present -> MUST return empty string, NEVER recruiter email
+  const recruiterOnly = `
+    Logged in as: recruiter@coolsofttech.com
+    Candidate has not disclosed their email.
+  `;
+  assert.strictEqual(
+    SmartHireMatchingEngine.extractCandidateEmail(recruiterOnly),
+    '',
+    'Recruiter email must NEVER be returned as candidate email'
+  );
+});
+
+// ---------------------------------------------------------------------
+// TEST 42: LOCATION EXTRACTION (AUTHENTIC CITY, STATE PARSED, SYSTEM NOISE AVOIDED)
+// ---------------------------------------------------------------------
+runTest('Location Extraction: Authentic City, State parsed, Monster/Dice noise avoided', () => {
+  // Scenario 1: Monster search card with screen-reader text on first line
+  const monsterCardText = `
+    Select a Card Number-1, Open In New Tab
+    Pontiac, Michigan
+    Candidate 1 of 25
+    Updated: 2 days ago
+    Top Skills: Python, SQL, Tableau
+  `;
+  const loc1 = SmartHireMatchingEngine.extractLocation(monsterCardText);
+  assert.strictEqual(loc1, 'Pontiac, Michigan', `Expected 'Pontiac, Michigan', got: '${loc1}'`);
+
+  // Scenario 2: Resume header with City, 2-letter State and ZIP
+  const resumeHeaderText = `
+    Christopher K
+    Milwaukee, WI 53202
+    ck-networks@gmail.com | (414) 555-4921
+    Summary: 8+ years Senior Network Engineer
+  `;
+  const loc2 = SmartHireMatchingEngine.extractLocation(resumeHeaderText);
+  assert.strictEqual(loc2, 'Milwaukee, WI', `Expected 'Milwaukee, WI', got: '${loc2}'`);
+
+  // Scenario 3: Single line City, State Code
+  const loc3 = SmartHireMatchingEngine.extractLocation('Columbia, SC');
+  assert.strictEqual(loc3, 'Columbia, SC', `Expected 'Columbia, SC', got: '${loc3}'`);
+});
+
+// ---------------------------------------------------------------------
 // SUMMARY
 // ---------------------------------------------------------------------
 console.log('\n====================================================');

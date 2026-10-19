@@ -76,22 +76,122 @@
       if (!text) return [];
       const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
       const matches = [];
-      // Block known system/junk senders — candidate relay emails like @contact.monster.com are KEPT!
       const ignoreExactDomains = [
         '@monster.com', '@info.monster.com', '@reply.monster.com', '@noreply.monster.com',
         '@bounce.monster.com', '@email.monster.com',
         '@dice.com', '@noreply.dice.com',
+        '@coolsofttech.com', '@coolsoft.com', '@smarthireus.com',
         '@sentry.io', '@google.com', '@cloudflare.com', '@w3.org', '@example.com'
       ];
       let m;
       while ((m = emailRegex.exec(text)) !== null) {
         const email = m[0].trim().toLowerCase();
         if (email.endsWith('.png') || email.endsWith('.jpg') || email.endsWith('.svg') || email.endsWith('.js')) continue;
+        if (email.includes('coolsofttech') || email.includes('smarthireus')) continue;
+        if (email.startsWith('support@') || email.startsWith('info@') || email.startsWith('sales@') ||
+            email.startsWith('careers@') || email.startsWith('jobs@') || email.startsWith('privacy@') ||
+            email.startsWith('help@') || email.startsWith('donotreply@') || email.startsWith('noreply@') ||
+            email.startsWith('service@') || email.startsWith('admin@')) {
+          continue;
+        }
         if (!ignoreExactDomains.some(d => email.endsWith(d)) && !matches.includes(email)) {
           matches.push(email);
         }
       }
       return matches;
+    },
+
+    // Extract personal candidate email from authentic resume or text, strictly excluding recruiter/system domains
+    extractCandidateEmail(text) {
+      if (!text || text.length < 8) return '';
+      const headerSlice = text.slice(0, 3000);
+      let fEmails = this.extractEmails(headerSlice);
+      if (!fEmails || fEmails.length === 0) {
+        fEmails = this.extractEmails(text);
+      }
+      if (!fEmails || fEmails.length === 0) return '';
+
+      // Strict blacklisting of recruiter/corporate domains
+      const clean = fEmails.filter(e => {
+        const l = e.toLowerCase();
+        if (l.includes('coolsofttech') || l.includes('coolsoft') || l.includes('smarthireus')) return false;
+        if (l.includes('monster.com') && !l.endsWith('@contact.monster.com')) return false;
+        if (l.includes('dice.com') && !l.endsWith('@mail.dice.com')) return false;
+        return true;
+      });
+
+      if (clean.length === 0) return '';
+
+      // Prefer consumer domains or candidate relay emails
+      const preferred = clean.find(e => {
+        const l = e.toLowerCase();
+        return l.endsWith('@gmail.com') || l.endsWith('@yahoo.com') || l.endsWith('@hotmail.com') ||
+               l.endsWith('@outlook.com') || l.endsWith('@icloud.com') || l.endsWith('@aol.com') ||
+               l.endsWith('@contact.monster.com') || l.endsWith('@mail.dice.com');
+      });
+
+      return preferred || clean[0];
+    },
+
+    // Extract candidate phone from authentic resume or text
+    extractCandidatePhone(text) {
+      if (!text || text.length < 8) return '';
+      const headerSlice = text.slice(0, 3000);
+      let fPhones = this.extractPhones(headerSlice);
+      if (!fPhones || fPhones.length === 0) {
+        fPhones = this.extractPhones(text);
+      }
+      return (fPhones && fPhones.length > 0) ? fPhones[0] : '';
+    },
+
+    // Extract City, State or Location cleanly from candidate text/card, avoiding system noise
+    extractLocation(text) {
+      if (!text) return '';
+      const US_STATES = [
+        'alabama', 'alaska', 'arizona', 'arkansas', 'california', 'colorado', 'connecticut', 'delaware',
+        'florida', 'georgia', 'hawaii', 'idaho', 'illinois', 'indiana', 'iowa', 'kansas', 'kentucky',
+        'louisiana', 'maine', 'maryland', 'massachusetts', 'michigan', 'minnesota', 'mississippi', 'missouri',
+        'montana', 'nebraska', 'nevada', 'new hampshire', 'new jersey', 'new mexico', 'new york',
+        'north carolina', 'north dakota', 'ohio', 'oklahoma', 'oregon', 'pennsylvania', 'rhode island',
+        'south carolina', 'south dakota', 'tennessee', 'texas', 'utah', 'vermont', 'virginia', 'washington',
+        'west virginia', 'wisconsin', 'wyoming', 'district of columbia', 'puerto rico'
+      ];
+      const US_STATE_CODES = [
+        'al', 'ak', 'az', 'ar', 'ca', 'co', 'ct', 'de', 'fl', 'ga', 'hi', 'id', 'il', 'in', 'ia', 'ks',
+        'ky', 'la', 'me', 'md', 'ma', 'mi', 'mn', 'ms', 'mo', 'mt', 'ne', 'nv', 'nh', 'nj', 'nm', 'ny',
+        'nc', 'nd', 'oh', 'ok', 'or', 'pa', 'ri', 'sc', 'sd', 'tn', 'tx', 'ut', 'vt', 'va', 'wa', 'wv',
+        'wi', 'wy', 'dc', 'pr'
+      ];
+
+      const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+      for (const line of lines) {
+        if (line.length < 4 || line.length > 50) continue;
+        if (/select a card|open in|updated:|current:|previous:|top skills:|viewed|candidate|opt-in|experience|history|education|degree|major|school|skill|search/i.test(line)) continue;
+        
+        // Match City, State or City, State ZIP on a single line
+        const m = line.match(/^([A-Za-z\s.-]{2,35}),\s*([A-Za-z\s]{2,25}?)(?:\s+\d{5}(?:-\d{4})?)?$/);
+        if (m) {
+          const city = m[1].trim();
+          const stateRaw = m[2].trim();
+          const stateLower = stateRaw.toLowerCase();
+          if (US_STATES.includes(stateLower) || US_STATE_CODES.includes(stateLower)) {
+            return `${city}, ${stateRaw}`;
+          }
+        }
+      }
+
+      for (const line of lines) {
+        if (line.length < 4 || line.length > 60) continue;
+        if (/select a card|open in|updated:|current:|previous:|top skills:|viewed/i.test(line)) continue;
+        const m = line.match(/\b([A-Z][a-zA-Z\s.-]{1,30}),\s*([A-Z]{2})\b/);
+        if (m) {
+          const stateCode = m[2].toLowerCase();
+          if (US_STATE_CODES.includes(stateCode)) {
+            return `${m[1].trim()}, ${m[2].trim()}`;
+          }
+        }
+      }
+      return '';
     },
 
     // CSP-safe clipboard copy with automatic fallback

@@ -1725,6 +1725,27 @@ ${(match.interviewQuestions || [
         cand.summary = liveResumeText.slice(0, 5000);
         cand.resumeSourceType = extResult?.sourceType || (liveResumeText.length >= 1200 ? 'RESUME_DOCUMENT' : (liveResumeText.length >= 250 ? 'PROFILE_SNIPPET' : 'SEARCH_CARD_SNIPPET'));
 
+        // Auto-backfill verified contact info and location from full resume
+        if (!cand.email || cand.email === 'Not Disclosed' || cand.email.includes('coolsofttech') || cand.email.includes('smarthireus')) {
+          const freshEmail = (window.SmartHireUtils && typeof window.SmartHireUtils.extractCandidateEmail === 'function')
+            ? window.SmartHireUtils.extractCandidateEmail(liveResumeText)
+            : '';
+          if (freshEmail && !freshEmail.includes('coolsofttech') && !freshEmail.includes('smarthireus')) {
+            cand.email = freshEmail;
+          }
+        }
+        if (!cand.phone || cand.phone === 'Not Disclosed' || cand.phone.length < 7) {
+          const freshPhone = (window.SmartHireUtils && typeof window.SmartHireUtils.extractCandidatePhone === 'function')
+            ? window.SmartHireUtils.extractCandidatePhone(liveResumeText)
+            : '';
+          if (freshPhone) cand.phone = freshPhone;
+        }
+        if (!cand.location || cand.location === 'United States') {
+          const freshLoc = (typeof window.extractCleanMonsterLocation === 'function' ? window.extractCleanMonsterLocation(liveResumeText.slice(0, 2500)) : '') ||
+                           (window.SmartHireUtils && typeof window.SmartHireUtils.extractLocation === 'function' ? window.SmartHireUtils.extractLocation(liveResumeText.slice(0, 2500)) : '');
+          if (freshLoc) cand.location = freshLoc;
+        }
+
         if (window.SmartHireMatchingEngine) {
           const v = window.SmartHireMatchingEngine.verifyAndClassifyResume(cand);
           cand.extractionStatus = v.status;
@@ -1804,6 +1825,28 @@ ${(match.interviewQuestions || [
       candidate.resumeText = liveResumeText;
       candidate.summary = liveResumeText.slice(0, 5000);
       candidate.resumeSourceType = liveResumeText.length >= 1200 ? 'RESUME_DOCUMENT' : (liveResumeText.length >= 250 ? 'PROFILE_SNIPPET' : 'SEARCH_CARD_SNIPPET');
+
+      // Backfill contact details and location
+      if (!candidate.email || candidate.email === 'Not Disclosed' || candidate.email.includes('coolsofttech') || candidate.email.includes('smarthireus')) {
+        const freshEmail = (window.SmartHireUtils && typeof window.SmartHireUtils.extractCandidateEmail === 'function')
+          ? window.SmartHireUtils.extractCandidateEmail(liveResumeText)
+          : '';
+        if (freshEmail && !freshEmail.includes('coolsofttech') && !freshEmail.includes('smarthireus')) {
+          candidate.email = freshEmail;
+        }
+      }
+      if (!candidate.phone || candidate.phone === 'Not Disclosed' || candidate.phone.length < 7) {
+        const freshPhone = (window.SmartHireUtils && typeof window.SmartHireUtils.extractCandidatePhone === 'function')
+          ? window.SmartHireUtils.extractCandidatePhone(liveResumeText)
+          : '';
+        if (freshPhone) candidate.phone = freshPhone;
+      }
+      if (!candidate.location || candidate.location === 'United States') {
+        const freshLoc = (typeof window.extractCleanMonsterLocation === 'function' ? window.extractCleanMonsterLocation(liveResumeText.slice(0, 2500)) : '') ||
+                         (window.SmartHireUtils && typeof window.SmartHireUtils.extractLocation === 'function' ? window.SmartHireUtils.extractLocation(liveResumeText.slice(0, 2500)) : '');
+        if (freshLoc) candidate.location = freshLoc;
+      }
+
       if (window.SmartHireMatchingEngine && targetJob) {
         const v = window.SmartHireMatchingEngine.verifyAndClassifyResume(candidate);
         candidate.extractionStatus = v.status;
@@ -2848,11 +2891,9 @@ ${(match.interviewQuestions || [
           }
         }
 
-        let location = 'United States';
-        const locMatch = (container.innerText || '').match(/\b([A-Z][a-zA-Z\s.-]+),\s*([A-Z]{2}|[A-Za-z\s]+)\b/);
-        if (locMatch && !locMatch[0].includes('Select a Card') && !locMatch[0].includes('Open In')) {
-          location = locMatch[0].trim();
-        }
+        let location = (typeof window.extractCleanMonsterLocation === 'function' ? window.extractCleanMonsterLocation(container.innerText || '') : '') ||
+                       (window.SmartHireUtils && typeof window.SmartHireUtils.extractLocation === 'function' ? window.SmartHireUtils.extractLocation(container.innerText || '') : '') ||
+                       'United States';
 
         container.style.outline = oldOutline;
 
@@ -2923,6 +2964,29 @@ ${(match.interviewQuestions || [
       resultsCard.style.display = 'block';
       countEl.innerText = list.length;
 
+      // Auto-backfill missing contact details or generic location from authentic resume text
+      list.forEach(c => {
+        if (c.resumeText && c.resumeText.length > 50) {
+          if (!c.email || c.email === 'Not Disclosed' || c.email.includes('coolsofttech') || c.email.includes('smarthireus')) {
+            const e = (window.SmartHireUtils && typeof window.SmartHireUtils.extractCandidateEmail === 'function')
+              ? window.SmartHireUtils.extractCandidateEmail(c.resumeText)
+              : '';
+            if (e && !e.includes('coolsofttech') && !e.includes('smarthireus')) c.email = e;
+          }
+          if (!c.phone || c.phone === 'Not Disclosed' || c.phone.length < 7) {
+            const p = (window.SmartHireUtils && typeof window.SmartHireUtils.extractCandidatePhone === 'function')
+              ? window.SmartHireUtils.extractCandidatePhone(c.resumeText)
+              : '';
+            if (p) c.phone = p;
+          }
+          if (!c.location || c.location === 'United States') {
+            const loc = (typeof window.extractCleanMonsterLocation === 'function' ? window.extractCleanMonsterLocation(c.resumeText.slice(0, 2500)) : '') ||
+                        (window.SmartHireUtils && typeof window.SmartHireUtils.extractLocation === 'function' ? window.SmartHireUtils.extractLocation(c.resumeText.slice(0, 2500)) : '');
+            if (loc) c.location = loc;
+          }
+        }
+      });
+
       // Select all by default if set is empty
       if (selectedCandidateIndices.size === 0) {
         list.forEach((_, i) => selectedCandidateIndices.add(i));
@@ -2930,7 +2994,7 @@ ${(match.interviewQuestions || [
 
       previewList.innerHTML = list.map((c, i) => {
         const hasPhone = c.phone && c.phone.length >= 7 && !c.phone.includes('555-0199') && c.phone !== 'Not Disclosed';
-        const hasEmail = c.email && c.email.includes('@') && !c.email.includes('@monster.talent') && c.email !== 'Not Disclosed';
+        const hasEmail = c.email && c.email.includes('@') && !c.email.includes('@monster.talent') && !c.email.includes('coolsofttech') && !c.email.includes('smarthireus') && c.email !== 'Not Disclosed';
         const isVerified = hasPhone || hasEmail;
         const isSent = (c.email && sentCandidateEmails.has(c.email.toLowerCase())) || (c.name && sentCandidateEmails.has(c.name.toLowerCase()));
         const isChecked = selectedCandidateIndices.has(i);
@@ -2980,8 +3044,8 @@ ${(match.interviewQuestions || [
             </div>
             <div style="color:#475569; font-size:11px; margin-top:2px; padding-left:20px;">${c.title} · ${c.location}</div>
             <div style="margin-top:4px; font-size:11px; display:flex; flex-direction:column; gap:2px; padding-left:20px;">
-              <div style="color:#2563EB;"><strong>Email:</strong> ${c.email}</div>
-              <div style="color:#0F172A; font-family:monospace;"><strong>Phone:</strong> ${c.phone}</div>
+              <div style="color:#2563EB;"><strong>Email:</strong> ${c.email ? c.email : '<span style="color:#94A3B8; font-weight:normal;">Not Disclosed</span>'}</div>
+              <div style="color:#0F172A; font-family:monospace;"><strong>Phone:</strong> ${c.phone ? c.phone : '<span style="color:#94A3B8; font-weight:normal;">Not Disclosed</span>'}</div>
             </div>
 
             <!-- AI Resume Fit Badge -->

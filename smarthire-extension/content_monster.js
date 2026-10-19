@@ -35,6 +35,109 @@
 
   const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
+  // Extract clean City, State location from Monster candidate card or resume text
+  window.extractCleanMonsterLocation = function(text) {
+    if (!text) return '';
+    if (window.SmartHireUtils && typeof window.SmartHireUtils.extractLocation === 'function') {
+      const loc = window.SmartHireUtils.extractLocation(text);
+      if (loc) return loc;
+    }
+
+    const US_STATES = [
+      'alabama', 'alaska', 'arizona', 'arkansas', 'california', 'colorado', 'connecticut', 'delaware',
+      'florida', 'georgia', 'hawaii', 'idaho', 'illinois', 'indiana', 'iowa', 'kansas', 'kentucky',
+      'louisiana', 'maine', 'maryland', 'massachusetts', 'michigan', 'minnesota', 'mississippi', 'missouri',
+      'montana', 'nebraska', 'nevada', 'new hampshire', 'new jersey', 'new mexico', 'new york',
+      'north carolina', 'north dakota', 'ohio', 'oklahoma', 'oregon', 'pennsylvania', 'rhode island',
+      'south carolina', 'south dakota', 'tennessee', 'texas', 'utah', 'vermont', 'virginia', 'washington',
+      'west virginia', 'wisconsin', 'wyoming', 'district of columbia', 'puerto rico'
+    ];
+    const US_STATE_CODES = [
+      'al', 'ak', 'az', 'ar', 'ca', 'co', 'ct', 'de', 'fl', 'ga', 'hi', 'id', 'il', 'in', 'ia', 'ks',
+      'ky', 'la', 'me', 'md', 'ma', 'mi', 'mn', 'ms', 'mo', 'mt', 'ne', 'nv', 'nh', 'nj', 'nm', 'ny',
+      'nc', 'nd', 'oh', 'ok', 'or', 'pa', 'ri', 'sc', 'sd', 'tn', 'tx', 'ut', 'vt', 'va', 'wa', 'wv',
+      'wi', 'wy', 'dc', 'pr'
+    ];
+
+    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    for (const line of lines) {
+      if (line.length < 4 || line.length > 50) continue;
+      if (/select a card|open in|updated:|current:|previous:|top skills:|viewed|candidate|opt-in|experience|history|education|degree|major|school|skill|search/i.test(line)) continue;
+      
+      const m = line.match(/^([A-Za-z\s.-]{2,35}),\s*([A-Za-z\s]{2,25}?)(?:\s+\d{5}(?:-\d{4})?)?$/);
+      if (m) {
+        const city = m[1].trim();
+        const stateRaw = m[2].trim();
+        const stateLower = stateRaw.toLowerCase();
+        if (US_STATES.includes(stateLower) || US_STATE_CODES.includes(stateLower)) {
+          return `${city}, ${stateRaw}`;
+        }
+      }
+    }
+
+    for (const line of lines) {
+      if (line.length < 4 || line.length > 60) continue;
+      if (/select a card|open in|updated:|current:|previous:|top skills:|viewed/i.test(line)) continue;
+      const m = line.match(/\b([A-Z][a-zA-Z\s.-]{1,30}),\s*([A-Z]{2})\b/);
+      if (m) {
+        const stateCode = m[2].toLowerCase();
+        if (US_STATE_CODES.includes(stateCode)) {
+          return `${m[1].trim()}, ${m[2].trim()}`;
+        }
+      }
+    }
+    return '';
+  };
+
+  // Extract verified personal email from resume text or container
+  window.extractCandidateEmailFromText = function(text) {
+    if (!text || text.length < 10) return '';
+    const headerSlice = text.slice(0, 3000);
+    let fEmails = (window.SmartHireUtils?.extractEmails || utils.extractEmails)(headerSlice);
+    if (!fEmails || fEmails.length === 0) {
+      fEmails = (window.SmartHireUtils?.extractEmails || utils.extractEmails)(text);
+    }
+    if (!fEmails || fEmails.length === 0) return '';
+
+    const cleanEmails = fEmails.filter(e => {
+      const l = e.toLowerCase();
+      if (l.startsWith('support@') || l.startsWith('info@') || l.startsWith('sales@') ||
+          l.startsWith('careers@') || l.startsWith('jobs@') || l.startsWith('privacy@') ||
+          l.startsWith('help@') || l.startsWith('donotreply@') || l.startsWith('noreply@') ||
+          l.startsWith('service@') || (l.startsWith('contact@') && !l.endsWith('@contact.monster.com')) ||
+          l.includes('coolsofttech')) {
+        return false;
+      }
+      if (l.includes('monster.com') && !l.endsWith('@contact.monster.com')) {
+        return false;
+      }
+      return true;
+    });
+
+    if (cleanEmails.length === 0) return '';
+
+    // Prefer consumer domains or candidate relay emails
+    const preferred = cleanEmails.find(e => {
+      const l = e.toLowerCase();
+      return l.endsWith('@gmail.com') || l.endsWith('@yahoo.com') || l.endsWith('@hotmail.com') ||
+             l.endsWith('@outlook.com') || l.endsWith('@icloud.com') || l.endsWith('@aol.com') ||
+             l.endsWith('@contact.monster.com');
+    });
+
+    return preferred || cleanEmails[0];
+  };
+
+  // Extract candidate phone strictly from text
+  window.extractCandidatePhoneFromText = function(text) {
+    if (!text || text.length < 10) return '';
+    const headerSlice = text.slice(0, 3000);
+    let fPhones = (window.SmartHireUtils?.extractPhones || utils.extractPhones)(headerSlice);
+    if (!fPhones || fPhones.length === 0) {
+      fPhones = (window.SmartHireUtils?.extractPhones || utils.extractPhones)(text);
+    }
+    return (fPhones && fPhones.length > 0) ? fPhones[0] : '';
+  };
+
   // Clean candidate name (strip Monster accessible screen-reader noise)
   window.extractCleanMonsterName = function(raw) {
     if (!raw) return '';
@@ -130,26 +233,34 @@
   window.findMonsterResumeTab = function(container = document) {
     const roots = [container, document].filter(Boolean);
 
-    // 1. Direct targeted selectors for Monster+ SMUI tabs
+    // 1. Direct targeted selectors for Monster+ SMUI tabs (both 2-tab and 3-tab layouts)
     const directSelectors = [
+      'li:nth-of-type(2) > .tab__title > .tab__label',
       'li:nth-of-type(3) > .tab__title > .tab__label',
+      'li:nth-of-type(2) .tab__label',
       'li:nth-of-type(3) .tab__label',
+      'li:nth-of-type(2) [role="tab"]',
       'li:nth-of-type(3) [role="tab"]',
+      'li:nth-of-type(2)',
       'li:nth-of-type(3)',
       '[data-testid*="resume-tab"]',
       '[data-testid*="tab-resume"]',
       '[id*="tab-resume"]',
-      '[aria-controls*="resume"]'
+      '[aria-controls*="resume"]',
+      '[aria-label*="resume" i]',
+      '[aria-label*="cv" i]'
     ];
 
     for (const root of roots) {
       for (const sel of directSelectors) {
         try {
-          const el = root.querySelector(sel);
-          if (el && !el.closest('#smarthire-copilot-drawer') && !el.closest('#smarthire-dossier-overlay')) {
-            const t = (el.innerText || el.textContent || '').trim().toLowerCase();
-            if (t.includes('resume') || t.includes('cv') || sel.includes('resume') || sel.includes('nth-of-type(3)')) {
-              return el;
+          const els = root.querySelectorAll(sel);
+          for (const el of els) {
+            if (el && !el.closest('#smarthire-copilot-drawer') && !el.closest('#smarthire-dossier-overlay')) {
+              const t = (el.innerText || el.textContent || '').trim().toLowerCase();
+              if (t.includes('resume') || t.includes('cv') || sel.includes('resume')) {
+                return el;
+              }
             }
           }
         } catch (e) {}
@@ -313,6 +424,14 @@
     };
 
     const firstName = candidateName ? candidateName.trim().split(/\s+/)[0].toLowerCase() : '';
+    const lastWord = candidateName ? candidateName.trim().split(/\s+/).slice(-1)[0].toLowerCase() : '';
+    const nameMatches = (text) => {
+      if (!candidateName) return true;
+      const lower = (text || '').toLowerCase();
+      if (firstName.length >= 3 && lower.includes(firstName)) return true;
+      if (lastWord.length >= 3 && lower.includes(lastWord)) return true;
+      return false;
+    };
 
     // Strategy 1: Known testid and class selectors for Monster preview pane / drawer
     const paneSelectors = [
@@ -349,8 +468,8 @@
       const els = Array.from(document.querySelectorAll(sel)).filter(el => !isExcluded(el));
       for (const el of els) {
         const txt = (el.innerText || el.textContent || '').trim();
-        if (txt.length > 250) {
-          if (!firstName || txt.toLowerCase().includes(firstName) || txt.toLowerCase().includes('summary') || txt.toLowerCase().includes('experience')) {
+        if (txt.length > 200) {
+          if (nameMatches(txt) || (!candidateName && (txt.toLowerCase().includes('summary') || txt.toLowerCase().includes('experience')))) {
             return el;
           }
         }
@@ -362,14 +481,14 @@
       if (isExcluded(el)) return false;
       if (el.tagName.toLowerCase() === 'smui-card' || el.closest('smui-card')) return false;
       const rect = el.getBoundingClientRect();
-      return rect.width >= 320 && rect.height >= 300 && rect.left >= window.innerWidth * 0.28;
+      return rect.width >= 300 && rect.height >= 250 && rect.left >= window.innerWidth * 0.25;
     });
 
     for (const el of allContainers) {
       const txt = (el.innerText || el.textContent || '').trim();
       const lower = txt.toLowerCase();
-      if (txt.length > 300 && (lower.includes('summary') || lower.includes('experience') || lower.includes('education') || lower.includes('skills'))) {
-        if (!firstName || lower.includes(firstName)) {
+      if (txt.length > 250 && (lower.includes('summary') || lower.includes('experience') || lower.includes('education') || lower.includes('skills') || lower.includes('resume'))) {
+        if (nameMatches(txt) || !candidateName) {
           return el;
         }
       }
@@ -475,7 +594,29 @@
       return false;
     };
 
+    const firstName = candidateName ? candidateName.trim().split(/\s+/)[0].toLowerCase() : '';
+    const lastWord = candidateName ? candidateName.trim().split(/\s+/).slice(-1)[0].toLowerCase() : '';
+    const nameMatches = (text) => {
+      if (!candidateName) return true;
+      const lower = (text || '').toLowerCase();
+      if (firstName.length >= 3 && lower.includes(firstName)) return true;
+      if (lastWord.length >= 3 && lower.includes(lastWord)) return true;
+      return false;
+    };
+
     let bestCandidateText = '';
+    let longestFallbackText = '';
+
+    const considerText = (raw) => {
+      if (!raw) return;
+      const cleaned = window.cleanMonsterResumeText(raw);
+      if (cleaned.length > longestFallbackText.length) {
+        longestFallbackText = cleaned;
+      }
+      if (nameMatches(cleaned) && cleaned.length > bestCandidateText.length) {
+        bestCandidateText = cleaned;
+      }
+    };
 
     // 1. Scan for rendered document pages (PDF.js / WebViewer textLayer / DOCX pages) anywhere on page
     const pageElements = Array.from(document.querySelectorAll(
@@ -488,10 +629,7 @@
 
     if (pageElements.length > 0) {
       const pageTexts = pageElements.map(p => (p.innerText || p.textContent || '').trim()).filter(Boolean);
-      const combined = window.cleanMonsterResumeText(pageTexts.join('\n\n'));
-      if (combined.length > bestCandidateText.length) {
-        bestCandidateText = combined;
-      }
+      considerText(pageTexts.join('\n\n'));
     }
 
     // 2. Scan dedicated resume viewer elements anywhere on the page
@@ -521,10 +659,7 @@
         return true;
       });
       for (const el of els) {
-        const cleaned = window.cleanMonsterResumeText(el.innerText || el.textContent || '');
-        if (cleaned.length > bestCandidateText.length) {
-          bestCandidateText = cleaned;
-        }
+        considerText(el.innerText || el.textContent || '');
       }
     }
 
@@ -539,11 +674,9 @@
           )).filter(el => (el.innerText || el.textContent || '').trim().length > 30);
 
           if (ifrPages.length > 0) {
-            const combinedPages = window.cleanMonsterResumeText(ifrPages.map(p => (p.innerText || p.textContent || '').trim()).join('\n\n'));
-            if (combinedPages.length > bestCandidateText.length) bestCandidateText = combinedPages;
+            considerText(ifrPages.map(p => (p.innerText || p.textContent || '').trim()).join('\n\n'));
           } else {
-            const ifrText = window.cleanMonsterResumeText(doc.body.innerText || doc.body.textContent || '');
-            if (ifrText.length > bestCandidateText.length) bestCandidateText = ifrText;
+            considerText(doc.body.innerText || doc.body.textContent || '');
           }
         }
       } catch (e) {}
@@ -554,7 +687,7 @@
       if (isExcluded(el)) return false;
       if (el.tagName.toLowerCase() === 'smui-card' || el.closest('smui-card')) return false;
       const rect = el.getBoundingClientRect();
-      return rect.width >= 320 && rect.height >= 300 && rect.left >= window.innerWidth * 0.25;
+      return rect.width >= 300 && rect.height >= 250 && rect.left >= window.innerWidth * 0.25;
     });
 
     for (const container of rightSideContainers) {
@@ -566,20 +699,14 @@
         for (const s of sections) {
           secText += '\n' + (s.innerText || s.textContent || '');
         }
-        const cleanedSec = window.cleanMonsterResumeText(secText);
-        if (cleanedSec.length > bestCandidateText.length) {
-          bestCandidateText = cleanedSec;
-        }
+        considerText(secText);
       }
 
-      const rawCleaned = window.cleanMonsterResumeText(container.innerText || container.textContent || '');
-      if (rawCleaned.length > bestCandidateText.length) {
-        bestCandidateText = rawCleaned;
-      }
+      considerText(container.innerText || container.textContent || '');
     }
 
     // 5. Fallback: If still under 800 chars, scan any container with career keywords
-    if (bestCandidateText.length < 800) {
+    if (bestCandidateText.length < 800 && (!candidateName || longestFallbackText.length < 800)) {
       const candidates = Array.from(document.querySelectorAll('section, article, main, aside, [role="main"], [role="dialog"]')).filter(el => {
         if (isExcluded(el)) return false;
         if (el.closest('smui-card')) return false;
@@ -588,14 +715,20 @@
       });
 
       for (const c of candidates) {
-        const cleaned = window.cleanMonsterResumeText(c.innerText || '');
-        if (cleaned.length > bestCandidateText.length) {
-          bestCandidateText = cleaned;
-        }
+        considerText(c.innerText || '');
       }
     }
 
-    return bestCandidateText;
+    if (bestCandidateText && bestCandidateText.length > 0) {
+      return bestCandidateText;
+    }
+
+    // If candidateName was given, only return fallback if it matches candidateName
+    if (candidateName) {
+      return nameMatches(longestFallbackText) ? longestFallbackText : '';
+    }
+
+    return longestFallbackText;
   };
 
   // Deep Resume Extractor from Active Drawer or Card (Synchronous)
@@ -625,9 +758,19 @@
 
   // Asynchronous Resume Extractor: selects card, activates Resume tab, polls for document render
   window.extractCleanMonsterResumeTextAsync = async function(targetCard = null, candidateName = '', autoSwitchTabs = true) {
-    // 1. Check if full resume is ALREADY rendered on screen (e.g. recruiter already opened candidate Resume tab)
+    const firstName = candidateName ? candidateName.trim().split(/\s+/)[0].toLowerCase() : '';
+    const lastWord = candidateName ? candidateName.trim().split(/\s+/).slice(-1)[0].toLowerCase() : '';
+    const nameMatches = (text) => {
+      if (!candidateName) return true;
+      const lower = (text || '').toLowerCase();
+      if (firstName.length >= 3 && lower.includes(firstName)) return true;
+      if (lastWord.length >= 3 && lower.includes(lastWord)) return true;
+      return false;
+    };
+
+    // 1. Check if full resume for THIS candidate is ALREADY rendered on screen
     const immediateText = window.extractDeepMonsterResumeText(candidateName);
-    if (immediateText && immediateText.length >= 1200) {
+    if (immediateText && immediateText.length >= 1200 && nameMatches(immediateText)) {
       return {
         text: immediateText,
         rawLength: immediateText.length,
@@ -640,9 +783,8 @@
     // 2. Check if a detail pane is already open
     let pane = window.findMonsterDetailPane(candidateName);
 
-    // Only click the candidate card if NO detail pane is currently open!
-    // NEVER click card if pane is already visible (clicking card resets Monster split-view to Profile tab)
-    if (!pane) {
+    // If no matching pane is open or pane belongs to another candidate, select card
+    if (!pane || !nameMatches(pane.innerText || '')) {
       if (targetCard) {
         window.selectMonsterCandidateCard(targetCard);
       } else if (candidateName) {
@@ -656,7 +798,7 @@
       const pollStart = Date.now();
       while (Date.now() - pollStart < 2000) {
         pane = window.findMonsterDetailPane(candidateName);
-        if (pane) break;
+        if (pane && nameMatches(pane.innerText || '')) break;
         await sleep(100);
       }
     }
@@ -673,7 +815,7 @@
     let lastLen = 0;
     let stableCount = 0;
     const tabPollStart = Date.now();
-    let bestText = immediateText || '';
+    let bestText = (nameMatches(immediateText) ? immediateText : '') || '';
 
     while (Date.now() - tabPollStart < 3500) {
       // Trigger scroll down in viewer container to force virtualized pages (e.g. page 2, page 3) to render
@@ -685,7 +827,7 @@
       }
 
       const text = window.extractDeepMonsterResumeText(candidateName);
-      if (text && text.length > bestText.length) {
+      if (text && text.length > bestText.length && nameMatches(text)) {
         bestText = text;
       }
 
@@ -698,8 +840,6 @@
       } else {
         stableCount = 0;
       }
-      lastLen = bestText ? bestText.length : 0;
-      await sleep(250);
     }
 
     // Reset scroll
@@ -843,22 +983,33 @@
       if (email && phone) return { phone, email };
     }
 
-    // 2. Search detail pane / drawer ONLY IF its header/text confirms it belongs to expectedCandidateName!
-    const detailPane = window.findMonsterDetailPane(expectedCandidateName);
-    if (detailPane) {
-      const paneText = detailPane.innerText || detailPane.textContent || '';
-      const paneLower = paneText.toLowerCase();
+    // 2. Search detail pane / right-side split view container
+    const isExcluded = (el) => {
+      if (!el) return true;
+      if (el.closest('#smarthire-copilot-drawer') || el.closest('#smarthire-copilot-trigger') || el.closest('#smarthire-dossier-overlay')) return true;
+      if (el.tagName.toLowerCase() === 'smui-card' || el.closest('smui-card')) return true;
+      return false;
+    };
 
-      // STRICT VALIDATION: Detail pane MUST verify the candidate's name to avoid stale pane contamination
-      const matchesCandidate = (!expectedCandidateName) || 
-                               (firstWord && paneLower.includes(firstWord)) ||
-                               (lastWord && paneLower.includes(lastWord));
+    const rightContainers = Array.from(document.querySelectorAll('div, section, article, aside, [role="dialog"], [class*="detail"], [class*="preview"], [class*="pane"]')).filter(el => {
+      if (isExcluded(el)) return false;
+      const rect = el.getBoundingClientRect();
+      return rect.width >= 300 && rect.height >= 250 && rect.left >= window.innerWidth * 0.25;
+    });
 
-      if (matchesCandidate) {
-        // Sniff mailto links INSIDE this confirmed detail pane only (never global document)
-        const mailLinks = detailPane.querySelectorAll('a[href^="mailto:"]');
+    for (const container of rightContainers) {
+      const containerText = container.innerText || container.textContent || '';
+      const containerLower = containerText.toLowerCase();
+
+      // Check if container matches the candidate name (to avoid stale pane contamination)
+      const matches = (!expectedCandidateName) || 
+                      (firstWord && containerLower.includes(firstWord)) || 
+                      (lastWord && containerLower.includes(lastWord));
+
+      if (matches) {
+        // Sniff mailto links inside this confirmed container
+        const mailLinks = container.querySelectorAll('a[href^="mailto:"]');
         for (const a of mailLinks) {
-          if (a.closest('#smarthire-copilot-drawer')) continue;
           const clean = a.href.replace(/^mailto:/i, '').split('?')[0].trim().toLowerCase();
           if (clean && !clean.startsWith('support@') && !clean.startsWith('info@') && !clean.startsWith('privacy@')) {
             email = clean;
@@ -866,16 +1017,15 @@
           }
         }
 
-        // Sniff tel links INSIDE this confirmed detail pane only
-        const telLinks = detailPane.querySelectorAll('a[href^="tel:"]');
+        // Sniff tel links inside this confirmed container
+        const telLinks = container.querySelectorAll('a[href^="tel:"]');
         for (const a of telLinks) {
-          if (a.closest('#smarthire-copilot-drawer')) continue;
           const clean = a.href.replace(/^tel:/i, '').trim();
           const extracted = utils.extractPhones(clean);
           if (extracted.length > 0) { phone = extracted[0]; break; }
         }
 
-        // Search dedicated contact containers INSIDE this detail pane
+        // Search dedicated contact containers inside this confirmed container
         const contactBoxSelectors = [
           '#contact-legend-detail',
           '[id*="contact-legend"]',
@@ -889,7 +1039,7 @@
         ];
 
         for (const sel of contactBoxSelectors) {
-          const contactBox = detailPane.querySelector(sel);
+          const contactBox = container.querySelector(sel);
           if (contactBox) {
             const boxText = contactBox.innerText || contactBox.textContent || '';
             if (!email) {
@@ -904,15 +1054,25 @@
           }
         }
 
-        // Fallback: extract email from detail pane text
+        // Fallback: extract email from confirmed container text
         if (!email) {
-          const foundEmails = utils.extractEmails(paneText);
-          if (foundEmails.length > 0) email = foundEmails[0];
+          const foundEmails = utils.extractEmails(containerText);
+          const cleanEmails = foundEmails.filter(e => 
+            !e.startsWith('support@') && 
+            !e.startsWith('info@') && 
+            !e.startsWith('privacy@') && 
+            !e.startsWith('contact@') &&
+            !e.startsWith('jobs@') &&
+            !e.startsWith('careers@')
+          );
+          if (cleanEmails.length > 0) email = cleanEmails[0];
         }
         if (!phone) {
-          const foundPhones = utils.extractPhones(paneText);
+          const foundPhones = utils.extractPhones(containerText);
           if (foundPhones.length > 0) phone = foundPhones[0];
         }
+
+        if (email || phone) break;
       }
     }
 
@@ -951,64 +1111,7 @@
         }
         name = name.replace(/sms\s*opt-in/gi, '').replace(/viewed/gi, '').replace(/·/g, '').trim();
 
-        if (typeof onProgress === 'function') {
-          onProgress(`Processing candidate ${i + 1} of ${cards.length} (${name})...`);
-        }
-
-        // Immediate check: does this card itself have contact info?
-        let phone = '';
-        let email = '';
-        const cardContact = window.extractMonsterContact(card, name);
-        if (cardContact.email) email = cardContact.email;
-        if (cardContact.phone) phone = cardContact.phone;
-
-        // Click .smui-card-body or card to open details
-        const clickTarget = card.querySelector('.smui-card-body') || 
-                            card.querySelector('div') || 
-                            card;
-
-        clickTarget.scrollIntoView({ behavior: 'auto', block: 'nearest' });
-        clickTarget.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
-        clickTarget.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true }));
-        clickTarget.click();
-
-        // Dynamic Polling: Wait up to 2000ms for detail pane to reflect THIS candidate's name
-        const pollStart = Date.now();
-        const firstName = name ? name.split(/\s+/)[0].toLowerCase() : '';
-
-        while (Date.now() - pollStart < 2000) {
-          const detailPane = window.findMonsterDetailPane(name);
-          const paneText = detailPane ? (detailPane.innerText || '') : '';
-          const paneMatchesCandidate = detailPane && firstName && paneText.toLowerCase().includes(firstName);
-
-          if (paneMatchesCandidate) {
-            // Click Profile tab if present and not yet active
-            const profileTab = detailPane.querySelector('li:nth-of-type(2) > .tab__title > .tab__label') ||
-                               Array.from(detailPane.querySelectorAll('.tab__label, button, [role="tab"]')).find(t => 
-                                 t.innerText && t.innerText.trim().toLowerCase() === 'profile'
-                               );
-            if (profileTab && !profileTab.closest('.tab--active') && !profileTab.classList.contains('active')) {
-              profileTab.click();
-            }
-
-            const contact = window.extractMonsterContact(null, name);
-            if (contact.email) email = contact.email;
-            if (contact.phone) phone = contact.phone;
-
-            if (email) break;
-          }
-          await sleep(150);
-        }
-
-        // If contact not found in verified drawer, check card text as fallback
-        if (!email || !phone) {
-          const cardEmails = utils.extractEmails(cardText);
-          const cardPhones = utils.extractPhones(cardText);
-          if (!email && cardEmails.length > 0) email = cardEmails[0];
-          if (!phone && cardPhones.length > 0) phone = cardPhones[0];
-        }
-
-        // Check deduplication per candidate name on card
+        // Check deduplication per candidate name on card BEFORE doing costly operations
         const nameKey = name.toLowerCase().replace(/[^a-z0-9]/g, '');
         if (seenNames.has(nameKey)) {
           console.log(`[SmartHire Copilot] Skipping already seen candidate: ${name}`);
@@ -1075,11 +1178,13 @@
           title = 'Candidate Profile';
         }
 
-        // Location
-        let location = 'United States';
-        const locMatch = cardText.match(/\b([A-Z][a-zA-Z\s.-]+),\s*([A-Z]{2}|[A-Za-z\s]+)\b/);
-        if (locMatch && !locMatch[0].includes('Select a Card') && !locMatch[0].includes('Open In')) {
-          location = locMatch[0].trim();
+        // Location Extraction (Clean City, State; avoids multiline noise)
+        let location = window.extractCleanMonsterLocation(cardText);
+        if (!location) {
+          const locEl = card.querySelector('[data-testid*="location"], [class*="location"]');
+          if (locEl) {
+            location = window.extractCleanMonsterLocation(locEl.innerText || locEl.textContent || '');
+          }
         }
 
         // Experience & Recency
@@ -1107,6 +1212,42 @@
         if (!candidateFullText || candidateFullText.length < 50) {
           candidateFullText = window.cleanMonsterResumeText(cardText);
         }
+
+        // Reconcile Location if not found on card
+        if (!location || location === 'United States') {
+          const pane = window.findMonsterDetailPane(name);
+          if (pane) {
+            const paneLoc = window.extractCleanMonsterLocation(pane.innerText || '');
+            if (paneLoc) location = paneLoc;
+          }
+        }
+        if (!location || location === 'United States') {
+          const resumeLoc = window.extractCleanMonsterLocation(candidateFullText.slice(0, 2500));
+          if (resumeLoc) location = resumeLoc;
+        }
+        if (!location) location = 'United States';
+
+        // Verified Contact Extraction (Scanned from Candidate's Authentic Resume Document First)
+        let email = window.extractCandidateEmailFromText(candidateFullText);
+        let phone = window.extractCandidatePhoneFromText(candidateFullText);
+
+        // Fallback A: Right-side confirmed detail pane
+        if (!email || !phone) {
+          const paneContact = window.extractMonsterContact(null, name);
+          if (!email && paneContact.email) email = paneContact.email;
+          if (!phone && paneContact.phone) phone = paneContact.phone;
+        }
+
+        // Fallback B: Candidate card
+        if (!email || !phone) {
+          const cardContact = window.extractMonsterContact(card, name);
+          if (!email && cardContact.email) email = cardContact.email;
+          if (!phone && cardContact.phone) phone = cardContact.phone;
+        }
+
+        // Fallback C: Raw card text
+        if (!email) email = window.extractCandidateEmailFromText(cardText);
+        if (!phone) phone = window.extractCandidatePhoneFromText(cardText);
 
         const candidateItem = {
           id: `mon-${i}-${Date.now().toString().slice(-4)}`,
@@ -1164,14 +1305,16 @@
   // Quick fallback
   window.smartHireScrapeCandidates = function() {
     const cards = window.getMonsterCards();
+    const candidates = [];
     cards.forEach((card, i) => {
       const cardText = card.innerText || '';
       const name = window.extractCleanMonsterName(cardText) || `Candidate ${i + 1}`;
       if (name.toLowerCase().includes('monster')) return;
 
       const contact = window.extractMonsterContact(card, name);
-      const email = contact.email || '';
-      const phone = contact.phone || '';
+      const email = contact.email || window.extractCandidateEmailFromText(cardText) || '';
+      const phone = contact.phone || window.extractCandidatePhoneFromText(cardText) || '';
+      const location = window.extractCleanMonsterLocation(cardText) || 'United States';
 
       candidates.push({
         id: `mon-sync-${i}-${Date.now().toString().slice(-4)}`,
@@ -1179,7 +1322,7 @@
         title: 'Candidate Profile',
         email,
         phone,
-        location: 'United States',
+        location,
         experience: utils.extractExperience(cardText) || '5+ Years',
         skills: [],
         source: 'Monster+',

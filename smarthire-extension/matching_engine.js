@@ -193,6 +193,135 @@
     }
 
     /**
+     * Robust candidate email extractor: Scans authentic resume text (prioritizing header slice),
+     * strictly excluding recruiter domains (coolsofttech, smarthireus, monster/dice support),
+     * and preferring personal consumer domains (@gmail.com, @yahoo.com, etc.).
+     */
+    static extractCandidateEmail(text) {
+      if (!text || text.length < 8) return '';
+      const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+      const ignoreExactDomains = [
+        '@monster.com', '@info.monster.com', '@reply.monster.com', '@noreply.monster.com',
+        '@bounce.monster.com', '@email.monster.com',
+        '@dice.com', '@noreply.dice.com',
+        '@coolsofttech.com', '@coolsoft.com', '@smarthireus.com',
+        '@sentry.io', '@google.com', '@cloudflare.com', '@w3.org', '@example.com'
+      ];
+
+      const scanSlice = (slice) => {
+        const matches = [];
+        let m;
+        const re = new RegExp(emailRegex.source, 'g');
+        while ((m = re.exec(slice)) !== null) {
+          const email = m[0].trim().toLowerCase();
+          if (email.endsWith('.png') || email.endsWith('.jpg') || email.endsWith('.svg') || email.endsWith('.js')) continue;
+          if (email.includes('coolsofttech') || email.includes('coolsoft') || email.includes('smarthireus')) continue;
+          if (email.startsWith('support@') || email.startsWith('info@') || email.startsWith('sales@') ||
+              email.startsWith('careers@') || email.startsWith('jobs@') || email.startsWith('privacy@') ||
+              email.startsWith('help@') || email.startsWith('donotreply@') || email.startsWith('noreply@') ||
+              email.startsWith('service@') || email.startsWith('admin@')) {
+            continue;
+          }
+          if (email.includes('monster.com') && !email.endsWith('@contact.monster.com')) continue;
+          if (email.includes('dice.com') && !email.endsWith('@mail.dice.com')) continue;
+          if (!ignoreExactDomains.some(d => email.endsWith(d)) && !matches.includes(email)) {
+            matches.push(email);
+          }
+        }
+        return matches;
+      };
+
+      const headerEmails = scanSlice(text.slice(0, 3000));
+      const candidates = headerEmails.length > 0 ? headerEmails : scanSlice(text);
+      if (candidates.length === 0) return '';
+
+      // Prefer consumer domains or candidate relay emails
+      const preferred = candidates.find(e => {
+        const l = e.toLowerCase();
+        return l.endsWith('@gmail.com') || l.endsWith('@yahoo.com') || l.endsWith('@hotmail.com') ||
+               l.endsWith('@outlook.com') || l.endsWith('@icloud.com') || l.endsWith('@aol.com') ||
+               l.endsWith('@contact.monster.com') || l.endsWith('@mail.dice.com');
+      });
+
+      return preferred || candidates[0];
+    }
+
+    /**
+     * Robust candidate phone extractor: Scans authentic resume text for valid US/standard phone numbers,
+     * skipping dummy 555-01xx numbers.
+     */
+    static extractCandidatePhone(text) {
+      if (!text || text.length < 8) return '';
+      const phoneRegex = /(?:\+?1[-.\s]?)?(?:\(?([2-9]\d{2})\)?[-.\s]?([0-9]{3})[-.\s]?([0-9]{4}))\b/g;
+      const scanSlice = (slice) => {
+        const matches = [];
+        let m;
+        const re = new RegExp(phoneRegex.source, 'g');
+        while ((m = re.exec(slice)) !== null) {
+          const cleaned = `(${m[1]}) ${m[2]}-${m[3]}`;
+          if (!cleaned.includes('555-01') && !matches.includes(cleaned)) {
+            matches.push(cleaned);
+          }
+        }
+        return matches;
+      };
+
+      const headerPhones = scanSlice(text.slice(0, 3000));
+      return headerPhones.length > 0 ? headerPhones[0] : (scanSlice(text)[0] || '');
+    }
+
+    /**
+     * Extract City, State or Location cleanly from candidate text/card, avoiding system/button noise.
+     */
+    static extractLocation(text) {
+      if (!text) return '';
+      const US_STATES = [
+        'alabama', 'alaska', 'arizona', 'arkansas', 'california', 'colorado', 'connecticut', 'delaware',
+        'florida', 'georgia', 'hawaii', 'idaho', 'illinois', 'indiana', 'iowa', 'kansas', 'kentucky',
+        'louisiana', 'maine', 'maryland', 'massachusetts', 'michigan', 'minnesota', 'mississippi', 'missouri',
+        'montana', 'nebraska', 'nevada', 'new hampshire', 'new jersey', 'new mexico', 'new york',
+        'north carolina', 'north dakota', 'ohio', 'oklahoma', 'oregon', 'pennsylvania', 'rhode island',
+        'south carolina', 'south dakota', 'tennessee', 'texas', 'utah', 'vermont', 'virginia', 'washington',
+        'west virginia', 'wisconsin', 'wyoming', 'district of columbia', 'puerto rico'
+      ];
+      const US_STATE_CODES = [
+        'al', 'ak', 'az', 'ar', 'ca', 'co', 'ct', 'de', 'fl', 'ga', 'hi', 'id', 'il', 'in', 'ia', 'ks',
+        'ky', 'la', 'me', 'md', 'ma', 'mi', 'mn', 'ms', 'mo', 'mt', 'ne', 'nv', 'nh', 'nj', 'nm', 'ny',
+        'nc', 'nd', 'oh', 'ok', 'or', 'pa', 'ri', 'sc', 'sd', 'tn', 'tx', 'ut', 'vt', 'va', 'wa', 'wv',
+        'wi', 'wy', 'dc', 'pr'
+      ];
+
+      const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+      for (const line of lines) {
+        if (line.length < 4 || line.length > 50) continue;
+        if (/select a card|open in|updated:|current:|previous:|top skills:|viewed|candidate|opt-in|experience|history|education|degree|major|school|skill|search/i.test(line)) continue;
+        
+        const m = line.match(/^([A-Za-z\s.-]{2,35}),\s*([A-Za-z\s]{2,25}?)(?:\s+\d{5}(?:-\d{4})?)?$/);
+        if (m) {
+          const city = m[1].trim();
+          const stateRaw = m[2].trim();
+          const stateLower = stateRaw.toLowerCase();
+          if (US_STATES.includes(stateLower) || US_STATE_CODES.includes(stateLower)) {
+            return `${city}, ${stateRaw}`;
+          }
+        }
+      }
+
+      for (const line of lines) {
+        if (line.length < 4 || line.length > 60) continue;
+        if (/select a card|open in|updated:|current:|previous:|top skills:|viewed/i.test(line)) continue;
+        const m = line.match(/\b([A-Z][a-zA-Z\s.-]{1,30}),\s*([A-Z]{2})\b/);
+        if (m) {
+          const stateCode = m[2].toLowerCase();
+          if (US_STATE_CODES.includes(stateCode)) {
+            return `${m[1].trim()}, ${m[2].trim()}`;
+          }
+        }
+      }
+      return '';
+    }
+
+    /**
      * Parses documented employment date ranges from clean resume text.
      */
     static parseEmploymentTimeline(cleanText, currentYear = new Date().getFullYear()) {
@@ -2246,6 +2375,10 @@ Website: http://www.coolsofttech.com`;
     verifyAndClassifyResume: ResumeEvidenceExtractor.verifyAndClassify.bind(ResumeEvidenceExtractor),
     cleanCandidateResumeText: ResumeEvidenceExtractor.cleanResumeText.bind(ResumeEvidenceExtractor),
     extractAuthenticSentenceSnippet: ResumeEvidenceExtractor.extractAuthenticSentenceSnippet.bind(ResumeEvidenceExtractor),
+    extractCandidateEmail: ResumeEvidenceExtractor.extractCandidateEmail.bind(ResumeEvidenceExtractor),
+    extractCandidatePhone: ResumeEvidenceExtractor.extractCandidatePhone.bind(ResumeEvidenceExtractor),
+    extractLocation: ResumeEvidenceExtractor.extractLocation.bind(ResumeEvidenceExtractor),
+    extractCandidateLocation: ResumeEvidenceExtractor.extractLocation.bind(ResumeEvidenceExtractor),
     matchRequirementEvidence: DeterministicMatchingEngine.matchRequirement.bind(DeterministicMatchingEngine),
     evaluateEligibility: EligibilityConfidenceEngine.evaluateEligibility.bind(EligibilityConfidenceEngine),
     calculateAuthoritativeScore: DeterministicMatchingEngine.calculateScore.bind(DeterministicMatchingEngine),
