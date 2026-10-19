@@ -67,7 +67,78 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
     - The engine must automatically detect responsibilities (lines following `Responsibilities:`, action verbs, or list items) even when converted from plain text or Word documents without literal Unicode bullets.
 
 
-### 2026-10-18 — Evidence-First Matching Engine Redesign: 4-Component Architecture & Multi-Industry Benchmark Test Suite
+### 2026-10-20 — Full Resume Document Extraction & Split-View Tab Reconciliation for Monster
+- **Context & Objectives**:
+  - The user reported that while Dice extraction was working and producing `FULL RESUME EXTRACTED (7,004 chars analyzed)`, Monster (`manage.monster.com`) was failing to extract the full resume document, repeatedly extracting only a 607-character profile snippet and triggering a blocking browser alert: `"Captured partial profile snippet (607 chars). Full resume document was not loaded. Please ensure the candidate's Resume tab in Monster/Dice is open and fully loaded, then click Re-Extract."`
+  - Root causes identified:
+    1. During Re-Extract, `selectMonsterCandidateCard` was being called even when the candidate's Resume tab was already open in the right pane. Clicking the card in Monster's middle column resets the split-view back to the default `Profile` tab.
+    2. `findMonsterResumeTab` had an arbitrary `el.children.length > 2` check that skipped Monster+ SMUI tabs (which include icons, badges, wrappers, and labels) and required exact lowercase string equality, failing on tabs like `Resume (1)` or `Original Resume`.
+    3. `activateMonsterResumeTab` only dispatched click on the inner span, which failed to bubble to the parent `li` or `button[role="tab"]`.
+    4. `findMonsterDetailPane` was matching the first sub-element (`profile-detail`) with 607 characters and extracting only within that sub-element, ignoring the entire document viewer and right split-view column.
+    5. `isExplicitSnippet` in `verifyAndClassifyResume` was keeping candidates classified as provisional if `candidate.resumeSourceType` wasn't updated before classification, even when length was 7,000+ characters.
+    6. `injected_dock.js` had blocking `alert(...)` dialogs popping up.
+- **Architectural Implementation**:
+  1. *Deep Page-Wide Resume Extractor (`extractDeepMonsterResumeText` in `content_monster.js`)*:
+     - Scans all page elements (`.textLayer`, `.page`, `[data-page-number]`, `.pdf-page`, `.document-page`, `[class*="page-container"]`, `[class*="rendered-page"]`, `section[data-page]`).
+     - Scans dedicated viewer containers (`[data-testid*="resume-view"]`, `[data-testid*="resume-content"]`, `[data-testid*="document-viewer"]`, `[data-testid*="resume"]`, `[class*="document-viewer"]`, `[class*="resume-viewer"]`, `[class*="resume-view"]`, `pre`, etc.).
+     - Scans all iframes on the page.
+     - Scans right-side preview pane / drawer containers (`rect.left >= window.innerWidth * 0.25` and `rect.width >= 320`) and selects the container with the longest authentic cleaned text.
+  2. *Immediate Check & Non-Destructive Tab Activation (`extractCleanMonsterResumeTextAsync`)*:
+     - Performs an immediate deep check first. If $\ge 1200$ characters are already rendered on the page, returns immediately (0ms) without clicking cards or resetting DOM.
+     - Only clicks candidate card if NO detail pane is currently open.
+     - Upgraded `findMonsterResumeTab` to target `li:nth-of-type(3)`, `[data-testid*="resume-tab"]`, and regex `/^resume\b/i`.
+     - Upgraded `activateMonsterResumeTab` to dispatch events across `li`, `button`, `role="tab"`, and `a`.
+  3. *Zero Blocking Alerts & Clean In-Dock Feedback (`injected_dock.js`)*:
+     - Completely removed native `alert(...)` dialogs.
+     - Status is updated directly in `#dossier-reextract-text` and `#dossier-extraction-status-bar`.
+     - Explicitly sets `cand.resumeSourceType = 'RESUME_DOCUMENT'` for $\ge 1200$ chars prior to classification.
+  4. *Snippet Gating Safeguard (`matching_engine.js`, `matching_engine.cjs`)*:
+     - Scoped `isExplicitSnippet` to `(length < 1500)` so authentic 1,500+ char documents (e.g. 7,004 chars) are never treated as snippets due to stale variables.
+  5. *Test Suite Expansion (`tests/ats_matching_engine.test.js`)*:
+     - Added Test 38 verifying 7,004-character Monster/Dice full resume document classification (`FULL_RESUME_EXTRACTED`) and complete requirement matching. All 38 / 38 unit tests pass cleanly.
+- **Verification & Deployment**:
+  - `node -c` verified syntax for all extension and server files (0 syntax errors).
+  - All 38 unit tests pass (`node tests/ats_matching_engine.test.js`).
+  - Production build in `smarthire-react`: **0 errors, 0 warnings** in 3.25s.
+  - Repackaged `smarthire-extension.zip`.
+  - Git committed (`3412701`) and pushed to `origin main`.
+  - Deployed `matching_engine.cjs` and `smarthire-extension.zip` to AWS Lightsail server (`34.194.119.199`).
+### 2026-10-20 — Monster Contact Scoping, Transparent Bulk Outreach Deduplication & JD Outreach Formatter
+- **Context & Objectives**:
+  - The user reported two critical issues in SmartHire Copilot (Monster+ & Dice Chrome Extension + ATS backend):
+    1. *Bulk Email Delivery Discrepancy*: Sending 20 emails in bulk from Monster resulted in only 3 appearing in the recruiter's Gmail/Yahoo "Sent" folder, despite the extension UI reporting 20 successful deliveries.
+    2. *JD Outreach Formatting*: Job descriptions inserted into candidate outreach emails had unformatted text walls with internal rates (`$75/hr`), client codes (`DHHS`), submission deadlines, internal vendor screening rules, and trailing numbers (`System Analyst 6`).
+    3. *Boolean Title Sanitization*: Clean search queries to strictly remove digits (`1, 2, 3`), Roman numerals (`III, IV`), and seniority qualifiers (`Senior`, `Advance`, etc.).
+    4. *RecruiterInbox Hotlist Polishing*: Excel-style compact table grid, single-number experience column, auto-hiding overflow, and removing redundant chat button.
+- **Root Cause & Architectural Implementations**:
+  1. *Monster Contact Scoping & Anti-Bleed Gating (`content_monster.js`)*:
+     - Root cause: `extractMonsterContact` previously queried `document.querySelectorAll('a[href^="mailto:"]')` across the entire page without candidate scoping. When Candidate 2 (Pooja Shinde) was clicked, her email `shindepooja2094@gmail.com` rendered in the detail pane. Subsequent candidate cards (3 through 20) grabbed Candidate 2's email from the DOM at 0ms.
+     - Fix: Strictly scoped contact extraction. Scans the candidate card first. Detail pane is only queried if the header explicitly matches the target candidate's first and last name. Contact fields (`email`, `phone`) are reset on each scrape loop iteration.
+  2. *Transparent Bulk Send Deduplication (`injected_dock.js`, `popup.js`)*:
+     - Root cause: The server at `/api/recruiter/send-email` has an in-memory 60-second duplicate suppression cache. Since 17 candidates were erroneously tagged with the same email, the server sent the first one and suppressed the remaining 17 with `{ success: true, deduplicated: true }`. The extension counted all 20 as `✓ Delivered`.
+     - Fix: Deduplicated recipients in the bulk composer by email. In `sendBulkOutreachEmails`, tracked `res.deduplicated` distinctly as `duplicateCount` and displayed `⚠ Skipped duplicate email for [email] (sent within 60s)` instead of false success.
+  3. *Enterprise Job Description Outreach Formatter (`formatJobDescriptionForOutreach` in `matching_engine.js`, `matching_engine.cjs`)*:
+     - Strips internal rates, client codes (`DHHS`), requisition numbers, and vendor rules (`vendor present at beginning of virtual interview`, `screenshot photo`).
+     - Pre-scans all blocks for degrees/education before responsibility truncation so qualifications are never omitted.
+     - Structures clean enterprise sections: `POSITION OVERVIEW`, `WORK SCHEDULE & INTERVIEW DETAILS`, `KEY QUALIFICATIONS & SKILLS`, and `JOB RESPONSIBILITIES & SCOPE`.
+  4. *Enterprise Title Sanitizer & Boolean Search (`cleanJobTitleForSearch`, `generateBooleanQueries`)*:
+     - Strips requisition numbers, digits, Roman numerals, seniority qualifiers (`Senior`, `Advance`, `Lead`, `Jr.`), and punctuation.
+     - Provides standard `monster` and `dice` boolean queries.
+  5. *Test Suite & Verification (`tests/ats_matching_engine.test.js`)*:
+     - Added Tests 39 and 40 validating title sanitization and JD outreach formatting. All 40 / 40 unit tests pass.
+- **Verification & Deployment Protocol**:
+  - `node -c` verified syntax for all extension and server files (0 syntax errors).
+  - All 40 unit tests pass (`node tests/ats_matching_engine.test.js`).
+  - Production build in `smarthire-react`: **0 errors, 0 warnings** in 3.26s.
+  - Repackaged `smarthire-extension.zip`.
+  - Git committed (`1f47cb2`) and pushed to GitHub `origin main`.
+  - Deployed updated `matching_engine.cjs` and production bundle to AWS Lightsail server (`34.194.119.199`).
+  - Extracted to `/var/www/html/`, `/home/ubuntu/smarthire/dist/`, and `/home/ubuntu/smarthire/smarthire-react/dist/`.
+  - Immediate archive removal, bundle asset pruning, and journal vacuuming completed per Rule 5.
+  - Server disk space verified: 8.3GB available (45% free space, $\ge 40\%$ compliant).
+  - PM2 `smarthire-ats` reloaded and live domain verified: `https://smarthireus.com` returning HTTP 200 OK (`index-DtBUrYK3.js`).
+
+### 2026-10-20 — Full Resume Document Extraction & Split-View Tab Reconciliation for Monster
 - **Context & Objectives**:
   - The user mandated an architectural redesign of SmartHire Copilot's candidate evaluation engine from candidate-specific heuristic patches to a decoupled, 4-component evidence-first system:
     1. *Resume Evidence Extractor (`ResumeEvidenceExtractor`)*: Extracts structured facts from authentic resume text; sanitizes ATS page noise, button labels, search filters; parses employment timeline into true career years; and flags partial extracts without inventing missing experience.
