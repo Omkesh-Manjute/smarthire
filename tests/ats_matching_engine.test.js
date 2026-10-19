@@ -1445,6 +1445,107 @@ runTest('Ambiguous Location Safety: General "United States" or Columbia, SC eval
 });
 
 // ---------------------------------------------------------------------
+// TEST 38: MONSTER / DICE 7,000+ CHAR FULL RESUME EXTRACTION & RECONCILIATION
+// ---------------------------------------------------------------------
+runTest('Fix: 7,004-char Monster/Dice full resume document achieves FULL_RESUME_EXTRACTED and is never blocked by stale snippet flag', () => {
+  const infraJd = SmartHireMatchingEngine.normalizeJobDescription({
+    id: 'req-infra-01',
+    title: 'Infrastructure Engineer / Senior Cloud Security Engineer',
+    location: 'United States',
+    skills: ['Cisco', 'Fortinet', 'Azure', 'Cloud Security', 'SIEM', 'Splunk'],
+    description: 'Looking for an Infrastructure & Cloud Security Engineer with deep hands-on expertise in Cisco networking, Fortinet firewalls, Azure cloud security, and Splunk SIEM.'
+  });
+
+  // Candidate initially had only a 607-char card snippet
+  const candidate = {
+    id: 'cand-christopher-k',
+    name: 'Christopher K',
+    title: 'Infrastructure Engineer',
+    location: 'United States',
+    visaStatus: 'US Citizen',
+    resumeSourceType: 'SEARCH_CARD_SNIPPET',
+    resumeText: 'Infrastructure Engineer. Cisco, Fortinet, Azure experience. United States.' // 75 chars
+  };
+
+  const initialClass = SmartHireMatchingEngine.verifyAndClassifyResume(candidate);
+  assert.strictEqual(initialClass.status, 'PROFILE_ONLY');
+  assert.strictEqual(initialClass.isProvisional, true);
+
+  // Now simulated full resume extraction occurs (e.g. 7,004 chars analyzed from Monster/Dice active tab)
+  const fullDocumentText = `Christopher K — Senior Infrastructure & Cloud Security Engineer
+Location: Richmond, VA · United States · US Citizen
+
+PROFESSIONAL SUMMARY
+Senior Infrastructure & Cloud Security Engineer with 10+ years of enterprise experience designing, deploying, and managing mission-critical IT infrastructure, Cisco networking, Fortinet firewall appliances, Azure cloud environments, and SIEM security monitoring platforms. Proven expertise in zero-trust architecture, hybrid cloud connectivity, automated threat detection with Splunk, and regulatory compliance.
+
+TECHNICAL EXPERTISE
+• Networking & Firewalls: Cisco Catalyst switches, Cisco Nexus, Cisco ISR/ASR routers, Fortinet FortiGate firewalls, FortiManager, VPN, BGP, OSPF, VLANs, QoS
+• Cloud Platforms & Security: Microsoft Azure (Azure Security Center, Microsoft Defender for Cloud, Azure Sentinel, NSGs, VNets, Azure AD, Entra ID, ExpressRoute), AWS (EC2, VPC, IAM)
+• SIEM & Security Operations: Splunk Enterprise Security (ES), Log analysis, incident response, SOC tier 3 engineering, threat hunting, vulnerability scanning
+• Systems & Virtualization: VMware ESXi, Windows Server 2019/2022, Red Hat Enterprise Linux, Active Directory, DNS, DHCP, GPO
+
+PROFESSIONAL EXPERIENCE
+
+Senior Infrastructure & Cloud Security Engineer | Apex Financial Solutions (2020 – Present)
+• Architected and managed enterprise hybrid cloud networking connecting on-premises data centers to Microsoft Azure via redundant ExpressRoute and IPsec VPN tunnels.
+• Configured, clustered, and maintained Fortinet FortiGate enterprise firewalls (FortiGate 600E and 100F series), establishing strict zone-based microsegmentation, SSL inspection, and intrusion prevention policies (IPS).
+• Deployed and managed Cisco Nexus 9000 series core switches and Cisco Catalyst access switches across four enterprise data centers, maintaining 99.999% network uptime.
+• Led cloud security hardening across multi-tenant Azure infrastructure, implementing Azure Security Center policies, RBAC, Conditional Access, and Private Endpoints.
+• Spearheaded enterprise SIEM deployment utilizing Splunk, creating automated dashboards, alert correlation rules, and incident triage workflows that reduced mean-time-to-detect (MTTD) by 45%.
+• Conducted regular disaster recovery exercises, security audit remediation, and third-party penetration test gap closures.
+
+Network & Systems Security Engineer | Global Tech Services (2016 – 2020)
+• Administered global corporate network consisting of over 80 Cisco routers, switches, and wireless LAN controllers.
+• Migrated legacy perimeter firewalls to next-generation Fortinet FortiGate firewalls, reducing licensing costs by 30% while dramatically improving malware filtering throughput.
+• Monitored security event logs across Windows and Linux environments using Splunk and centralized syslog servers, escalating high-severity intrusion attempts to executive leadership.
+• Automated recurring system provisioning and network configuration backups using PowerShell, Python, and Ansible scripts.
+• Managed enterprise Active Directory domain services, group policies, and PKI digital certificate lifecycle.
+
+Infrastructure Specialist | Commonwealth Data Systems (2013 – 2016)
+• Provided level 3 engineering support for enterprise LAN/WAN environments, Cisco routers, and perimeter security appliances.
+• Assisted in migrating on-premises workloads to virtualized VMware vSphere clusters, optimizing server density and hardware utilization.
+• Implemented network access control (NAC) policies, 802.1X port authentication, and secure remote access VPNs for 2,500+ distributed employees.
+
+EDUCATION & CERTIFICATIONS
+• Bachelor of Science in Computer Science & Information Networks — University of Virginia
+• Cisco Certified Network Professional (CCNP Enterprise)
+• Fortinet Certified Professional (FCP - Network Security)
+• Microsoft Certified: Azure Security Engineer Associate (AZ-500)
+• Splunk Enterprise Certified Admin`;
+
+  // Update candidate with full extracted resume document
+  candidate.resumeText = fullDocumentText;
+  candidate.resumeSourceType = 'RESUME_DOCUMENT';
+
+  const fullClass = SmartHireMatchingEngine.verifyAndClassifyResume(candidate);
+  assert.strictEqual(fullClass.status, 'FULL_RESUME_EXTRACTED', '7,000+ char document must be classified as FULL_RESUME_EXTRACTED');
+  assert.strictEqual(fullClass.isProvisional, false, 'Full resume document must not be provisional');
+  assert.strictEqual(fullClass.sourceType, 'RESUME_DOCUMENT');
+
+  // Authoritative match evaluation
+  const matchResult = SmartHireMatchingEngine.evaluateCandidate(candidate, infraJd);
+
+  assert.strictEqual(matchResult.extractionStatus, 'FULL_RESUME_EXTRACTED');
+  assert.strictEqual(matchResult.isProvisional, false);
+
+  // Check that Cisco, Fortinet, Azure, SIEM, Splunk are fully matched
+  const ciscoRow = matchResult.skillsMatchTable.find(r => r.requirement.toLowerCase().includes('cisco'));
+  assert.ok(ciscoRow && ciscoRow.evidenceStatus === 'DIRECT_MATCH', 'Cisco must be DIRECT_MATCH');
+
+  const fortinetRow = matchResult.skillsMatchTable.find(r => r.requirement.toLowerCase().includes('fortinet'));
+  assert.ok(fortinetRow && fortinetRow.evidenceStatus === 'DIRECT_MATCH', 'Fortinet must be DIRECT_MATCH');
+
+  const azureRow = matchResult.skillsMatchTable.find(r => r.requirement.toLowerCase().includes('azure'));
+  assert.ok(azureRow && (azureRow.evidenceStatus === 'DIRECT_MATCH' || azureRow.evidenceStatus === 'STRONG_EQUIVALENT'), 'Azure must be DIRECT_MATCH or STRONG_EQUIVALENT');
+
+  const siemRow = matchResult.skillsMatchTable.find(r => r.requirement.toLowerCase().includes('siem'));
+  assert.ok(siemRow && (siemRow.evidenceStatus === 'DIRECT_MATCH' || siemRow.evidenceStatus === 'STRONG_EQUIVALENT'), 'SIEM must be matched');
+
+  assert.ok(matchResult.score >= 85, `Christopher K should achieve score >= 85%, got ${matchResult.score}%`);
+  assert.strictEqual(matchResult.recommendation, 'SUBMIT');
+});
+
+// ---------------------------------------------------------------------
 // SUMMARY
 // ---------------------------------------------------------------------
 console.log('\n====================================================');

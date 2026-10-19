@@ -1634,7 +1634,7 @@ ${(match.interviewQuestions || [
       if (reextractText) reextractText.innerText = 'Extracting full resume...';
 
       let extResult = null;
-      if (typeof window.extractCleanMonsterResumeTextAsync === 'function') {
+      if (typeof window.extractCleanMonsterResumeTextAsync === 'function' && window.location.hostname.includes('monster.com')) {
         let targetCard = null;
         if (typeof window.findMonsterCardByName === 'function') {
           targetCard = window.findMonsterCardByName(cand.name);
@@ -1655,11 +1655,7 @@ ${(match.interviewQuestions || [
           isProvisional: text.length < 800
         };
       } else if (typeof window.extractCleanMonsterResumeText === 'function') {
-        let targetCard = null;
-        if (typeof window.findMonsterCardByName === 'function') {
-          targetCard = window.findMonsterCardByName(cand.name);
-        }
-        const text = window.extractCleanMonsterResumeText(targetCard, cand.name);
+        const text = window.extractCleanMonsterResumeText(null, cand.name);
         extResult = {
           text,
           rawLength: text.length,
@@ -1673,6 +1669,7 @@ ${(match.interviewQuestions || [
       if (liveResumeText && liveResumeText.length >= 150) {
         cand.resumeText = liveResumeText;
         cand.summary = liveResumeText.slice(0, 5000);
+        cand.resumeSourceType = extResult?.sourceType || (liveResumeText.length >= 1200 ? 'RESUME_DOCUMENT' : (liveResumeText.length >= 250 ? 'PROFILE_SNIPPET' : 'SEARCH_CARD_SNIPPET'));
 
         if (window.SmartHireMatchingEngine) {
           const v = window.SmartHireMatchingEngine.verifyAndClassifyResume(cand);
@@ -1710,8 +1707,7 @@ ${(match.interviewQuestions || [
         if (isActuallyFull) {
           if (reextractText) reextractText.innerText = `✓ Full Resume Extracted (${liveResumeText.length.toLocaleString()} chars)`;
         } else {
-          if (reextractText) reextractText.innerText = `Partial Extracted (${liveResumeText.length} chars)`;
-          alert(`Captured partial profile snippet (${liveResumeText.length} chars). Full resume document was not loaded. Please ensure the candidate's Resume tab in Monster/Dice is open and fully loaded, then click Re-Extract.`);
+          if (reextractText) reextractText.innerText = `Partial Extracted (${liveResumeText.length} chars) - Open Resume Tab`;
         }
 
         setTimeout(() => {
@@ -1719,9 +1715,11 @@ ${(match.interviewQuestions || [
           if (reextractBtn) reextractBtn.disabled = false;
         }, 3000);
       } else {
-        alert('Could not detect an open resume viewer on the current page. Please click on candidate\'s card or Resume tab in Monster/Dice first, then click Re-Extract.');
-        if (reextractText) reextractText.innerText = 'Re-Extract from Active Tab';
-        if (reextractBtn) reextractBtn.disabled = false;
+        if (reextractText) reextractText.innerText = 'No resume viewer detected. Open Resume tab';
+        setTimeout(() => {
+          if (reextractText) reextractText.innerText = 'Re-Extract from Active Tab';
+          if (reextractBtn) reextractBtn.disabled = false;
+        }, 3000);
       }
     });
 
@@ -1751,7 +1749,7 @@ ${(match.interviewQuestions || [
     if (liveResumeText && (liveResumeText.length > currentLen + 200 || (currentLen < 500 && liveResumeText.length >= 500))) {
       candidate.resumeText = liveResumeText;
       candidate.summary = liveResumeText.slice(0, 5000);
-      candidate.resumeSourceType = liveResumeText.length >= 500 ? 'RESUME_DOCUMENT' : 'PROFILE_SNIPPET';
+      candidate.resumeSourceType = liveResumeText.length >= 1200 ? 'RESUME_DOCUMENT' : (liveResumeText.length >= 250 ? 'PROFILE_SNIPPET' : 'SEARCH_CARD_SNIPPET');
       if (window.SmartHireMatchingEngine && targetJob) {
         const v = window.SmartHireMatchingEngine.verifyAndClassifyResume(candidate);
         candidate.extractionStatus = v.status;
