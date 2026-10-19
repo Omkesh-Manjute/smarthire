@@ -399,16 +399,28 @@
   window.selectMonsterCandidateCard = function(card) {
     if (!card) return false;
     try {
-      const clickTarget = card.querySelector('.smui-card-body') || 
-                          card.querySelector('[class*="card-body"]') || 
-                          card.querySelector('a, button, h2, h3, div') || 
-                          card;
-      clickTarget.scrollIntoView({ behavior: 'auto', block: 'nearest' });
-      clickTarget.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
-      clickTarget.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true }));
-      clickTarget.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
-      clickTarget.click();
-      return true;
+      const clickTargets = [
+        card.querySelector('.smui-card-body'),
+        card.querySelector('[class*="card-body"]'),
+        card.querySelector('a[href*="/candidate/"]'),
+        card.querySelector('[data-testid*="candidate-name"]'),
+        card.querySelector('h2, h3, h4'),
+        card.querySelector('.smui-card-header'),
+        card
+      ].filter(Boolean);
+
+      for (const clickTarget of clickTargets) {
+        if (clickTarget.type === 'checkbox' || clickTarget.closest('[role="checkbox"]') || clickTarget.closest('[class*="checkbox"]') || clickTarget.closest('[data-testid*="favorite"]')) {
+          continue;
+        }
+        clickTarget.scrollIntoView({ behavior: 'auto', block: 'nearest' });
+        clickTarget.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+        clickTarget.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true }));
+        clickTarget.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+        if (typeof clickTarget.click === 'function') clickTarget.click();
+        return true;
+      }
+      return false;
     } catch (e) {
       return false;
     }
@@ -591,6 +603,11 @@
       if (!el) return true;
       if (el.closest('#smarthire-copilot-drawer') || el.closest('#smarthire-copilot-trigger') || el.closest('#smarthire-dossier-overlay')) return true;
       if (el.tagName === 'NAV' || el.tagName === 'HEADER' || el.tagName === 'FOOTER') return true;
+      if (el.tagName.toLowerCase() === 'smui-card' || el.closest('smui-card')) return true;
+      // Strictly exclude any container with multiple candidate cards (e.g. search results list, main)
+      if (el.querySelectorAll('smui-card, [data-testid*="candidate-card"], [class*="CandidateCard"]').length > 1) return true;
+      const t = el.innerText || '';
+      if (t.includes('No candidate selected') || t.includes('Select a candidate from the results')) return true;
       return false;
     };
 
@@ -609,6 +626,7 @@
 
     const considerText = (raw) => {
       if (!raw) return;
+      if (raw.includes('No candidate selected') || raw.includes('Select a candidate from the results')) return;
       const cleaned = window.cleanMonsterResumeText(raw);
       if (cleaned.length > longestFallbackText.length) {
         longestFallbackText = cleaned;
@@ -768,20 +786,22 @@
       return false;
     };
 
-    // 1. Check if full resume for THIS candidate is ALREADY rendered on screen
-    const immediateText = window.extractDeepMonsterResumeText(candidateName);
-    if (immediateText && immediateText.length >= 1200 && nameMatches(immediateText)) {
-      return {
-        text: immediateText,
-        rawLength: immediateText.length,
-        sourceType: 'RESUME_DOCUMENT',
-        isProvisional: false,
-        error: null
-      };
-    }
-
-    // 2. Check if a detail pane is already open
+    // 1. Check if a matching detail pane is already open for THIS candidate
     let pane = window.findMonsterDetailPane(candidateName);
+
+    // If matching pane is open and full resume document is ALREADY rendered in viewer, return immediately
+    if (pane && nameMatches(pane.innerText || '')) {
+      const immediateText = window.extractDeepMonsterResumeText(candidateName);
+      if (immediateText && immediateText.length >= 1200 && nameMatches(immediateText)) {
+        return {
+          text: immediateText,
+          rawLength: immediateText.length,
+          sourceType: 'RESUME_DOCUMENT',
+          isProvisional: false,
+          error: null
+        };
+      }
+    }
 
     // If no matching pane is open or pane belongs to another candidate, select card
     if (!pane || !nameMatches(pane.innerText || '')) {
@@ -1206,18 +1226,69 @@
 
         seenNames.add(nameKey);
 
-        // Extract authentic clean resume text from right detail pane / Resume document
+        if (typeof onProgress === 'function') {
+          onProgress(`Processing candidate ${i + 1} of ${cards.length} (${name})...`);
+        }
+
+        // 1. Check card contact directly
+        let email = '';
+        let phone = '';
+        const cardContact = window.extractMonsterContact(card, name);
+        if (cardContact.email) email = cardContact.email;
+        if (cardContact.phone) phone = cardContact.phone;
+
+        // 2. Select card to open detail pane in Monster's split view
+        window.selectMonsterCandidateCard(card);
+
+        // 3. Dynamic Polling: Wait up to 2000ms for detail pane to reflect THIS candidate's name
+        const pollStart = Date.now();
+        const firstName = name ? name.split(/\s+/)[0].toLowerCase() : '';
+        let detailPane = null;
+
+        while (Date.now() - pollStart < 2000) {
+          detailPane = window.findMonsterDetailPane(name);
+          const paneText = detailPane ? (detailPane.innerText || '') : '';
+          const paneMatchesCandidate = detailPane && firstName && paneText.toLowerCase().includes(firstName);
+
+          if (paneMatchesCandidate) {
+            // Check contact directly in detail pane
+            const contact = window.extractMonsterContact(null, name);
+            if (contact.email) email = contact.email;
+            if (contact.phone) phone = contact.phone;
+
+            // If contact not found yet, click Profile tab where Monster renders contact legend
+            if (!email || !phone) {
+              const profileTab = detailPane.querySelector('li:nth-of-type(2) > .tab__title > .tab__label') ||
+                                 detailPane.querySelector('li:nth-of-type(2)') ||
+                                 Array.from(detailPane.querySelectorAll('.tab__label, button, [role="tab"], li')).find(t => 
+                                   (t.innerText || '').trim().toLowerCase() === 'profile'
+                                 );
+              if (profileTab && !profileTab.closest('.tab--active') && !profileTab.classList.contains('active') && profileTab.getAttribute('aria-selected') !== 'true') {
+                try {
+                  profileTab.click();
+                  await sleep(250);
+                  const profContact = window.extractMonsterContact(null, name);
+                  if (profContact.email) email = profContact.email;
+                  if (profContact.phone) phone = profContact.phone;
+                } catch (e) {}
+              }
+            }
+            break;
+          }
+          await sleep(120);
+        }
+
+        // 4. Extract authentic clean resume text from right detail pane / Resume document
         const extRes = await window.extractCleanMonsterResumeTextAsync(card, name, true);
         let candidateFullText = extRes.text;
         if (!candidateFullText || candidateFullText.length < 50) {
           candidateFullText = window.cleanMonsterResumeText(cardText);
         }
 
-        // Reconcile Location if not found on card
+        // 5. Reconcile Location if not found on card
         if (!location || location === 'United States') {
-          const pane = window.findMonsterDetailPane(name);
-          if (pane) {
-            const paneLoc = window.extractCleanMonsterLocation(pane.innerText || '');
+          if (detailPane) {
+            const paneLoc = window.extractCleanMonsterLocation(detailPane.innerText || '');
             if (paneLoc) location = paneLoc;
           }
         }
@@ -1227,25 +1298,21 @@
         }
         if (!location) location = 'United States';
 
-        // Verified Contact Extraction (Scanned from Candidate's Authentic Resume Document First)
-        let email = window.extractCandidateEmailFromText(candidateFullText);
-        let phone = window.extractCandidatePhoneFromText(candidateFullText);
+        // 6. Verified Contact Extraction: Scan resume text, then confirmed detail pane, then card
+        if (!email) email = window.extractCandidateEmailFromText(candidateFullText);
+        if (!phone) phone = window.extractCandidatePhoneFromText(candidateFullText);
 
-        // Fallback A: Right-side confirmed detail pane
         if (!email || !phone) {
           const paneContact = window.extractMonsterContact(null, name);
           if (!email && paneContact.email) email = paneContact.email;
           if (!phone && paneContact.phone) phone = paneContact.phone;
         }
 
-        // Fallback B: Candidate card
         if (!email || !phone) {
-          const cardContact = window.extractMonsterContact(card, name);
           if (!email && cardContact.email) email = cardContact.email;
           if (!phone && cardContact.phone) phone = cardContact.phone;
         }
 
-        // Fallback C: Raw card text
         if (!email) email = window.extractCandidateEmailFromText(cardText);
         if (!phone) phone = window.extractCandidatePhoneFromText(cardText);
 
