@@ -687,68 +687,85 @@ Website: http://www.coolsofttech.com`;
             checkAndApplyAuthGate();
             return;
           }
+
+          // Fallback only if chrome.storage.local did NOT contain active user
+          fallbackUserCheck();
         });
+        return;
       }
     } catch (_) {}
 
-    // 2. Check localStorage fallback (origin-local) & sync to shared chrome.storage.local
-    try {
-      const cached = localStorage.getItem('smarthire_user_cached');
-      if (cached) {
-        const u = JSON.parse(cached);
-        if (u && u.email) {
-          currentUser = u;
-          isUserAuthenticated = true;
-          try {
-            if (chrome?.storage?.local) {
-              chrome.storage.local.set({
-                smarthire_user: u,
-                smarthire_token: localStorage.getItem('smarthire_token_cached') || '',
-                recruiter_email: u.email,
-                recruiter_name: u.name
-              });
+    fallbackUserCheck();
+
+    function fallbackUserCheck() {
+      // 2. Check localStorage fallback (origin-local)
+      try {
+        const cached = localStorage.getItem('smarthire_user_cached');
+        if (cached) {
+          const u = JSON.parse(cached);
+          if (u && u.email) {
+            currentUser = u;
+            isUserAuthenticated = true;
+            try {
+              if (chrome?.storage?.local) {
+                chrome.storage.local.set({
+                  smarthire_user: u,
+                  smarthire_token: localStorage.getItem('smarthire_token_cached') || '',
+                  recruiter_email: u.email,
+                  recruiter_name: u.name
+                });
+              }
+            } catch (_) {}
+            updateRecruiterBarUI();
+            checkAndApplyAuthGate();
+            return;
+          }
+        }
+      } catch (_) {}
+
+      // 3. Fallback via background service worker relay
+      try {
+        chrome.runtime.sendMessage({ action: 'GET_CURRENT_USER' }, (res) => {
+          if (chrome.runtime.lastError) {
+            if (!currentUser) {
+              currentUser = null;
+              isUserAuthenticated = false;
+              updateRecruiterBarUI();
+              checkAndApplyAuthGate();
             }
-          } catch (_) {}
+            return;
+          }
+          if (res && res.success && res.user && res.user.email) {
+            currentUser = res.user;
+            isUserAuthenticated = true;
+            try {
+              localStorage.setItem('smarthire_user_cached', JSON.stringify(currentUser));
+              localStorage.setItem('smarthire_token_cached', res.token || '');
+            } catch (_) {}
+            try {
+              if (chrome?.storage?.local) {
+                chrome.storage.local.set({
+                  smarthire_user: currentUser,
+                  smarthire_token: res.token || '',
+                  recruiter_email: currentUser.email,
+                  recruiter_name: currentUser.name
+                });
+              }
+            } catch (_) {}
+          } else if (!currentUser) {
+            currentUser = null;
+            isUserAuthenticated = false;
+          }
+          updateRecruiterBarUI();
+          checkAndApplyAuthGate();
+        });
+      } catch (e) {
+        if (!currentUser) {
+          currentUser = null;
+          isUserAuthenticated = false;
           updateRecruiterBarUI();
           checkAndApplyAuthGate();
         }
-      }
-    } catch (_) {}
-
-    // 3. Fallback via background service worker relay
-    try {
-      chrome.runtime.sendMessage({ action: 'GET_CURRENT_USER' }, (res) => {
-        if (chrome.runtime.lastError) return;
-        if (res && res.success && res.user && res.user.email) {
-          currentUser = res.user;
-          isUserAuthenticated = true;
-          try {
-            localStorage.setItem('smarthire_user_cached', JSON.stringify(currentUser));
-            localStorage.setItem('smarthire_token_cached', res.token || '');
-          } catch (_) {}
-          try {
-            if (chrome?.storage?.local) {
-              chrome.storage.local.set({
-                smarthire_user: currentUser,
-                smarthire_token: res.token || '',
-                recruiter_email: currentUser.email,
-                recruiter_name: currentUser.name
-              });
-            }
-          } catch (_) {}
-        } else if (!currentUser) {
-          currentUser = null;
-          isUserAuthenticated = false;
-        }
-        updateRecruiterBarUI();
-        checkAndApplyAuthGate();
-      });
-    } catch (e) {
-      if (!currentUser) {
-        currentUser = null;
-        isUserAuthenticated = false;
-        updateRecruiterBarUI();
-        checkAndApplyAuthGate();
       }
     }
   }
@@ -1618,22 +1635,36 @@ ${(match.interviewQuestions || [
 
       let extResult = null;
       if (typeof window.extractCleanMonsterResumeTextAsync === 'function') {
-        extResult = await window.extractCleanMonsterResumeTextAsync(null, cand.name, true);
+        let targetCard = null;
+        if (typeof window.findMonsterCardByName === 'function') {
+          targetCard = window.findMonsterCardByName(cand.name);
+        }
+        extResult = await window.extractCleanMonsterResumeTextAsync(targetCard, cand.name, true);
       } else if (typeof window.extractCleanDiceResumeText === 'function') {
+        if (typeof window.extractDiceCandidateEmailAsync === 'function' && (!cand.email || !cand.email.includes('@'))) {
+          const diceEmail = await window.extractDiceCandidateEmailAsync();
+          if (diceEmail) {
+            cand.email = diceEmail;
+          }
+        }
         const text = window.extractCleanDiceResumeText();
         extResult = {
           text,
           rawLength: text.length,
-          sourceType: text.length >= 500 ? 'RESUME_DOCUMENT' : (text.length >= 150 ? 'PROFILE_SNIPPET' : 'NONE'),
-          isProvisional: text.length < 500
+          sourceType: text.length >= 800 ? 'RESUME_DOCUMENT' : (text.length >= 150 ? 'PROFILE_SNIPPET' : 'NONE'),
+          isProvisional: text.length < 800
         };
       } else if (typeof window.extractCleanMonsterResumeText === 'function') {
-        const text = window.extractCleanMonsterResumeText(null, cand.name);
+        let targetCard = null;
+        if (typeof window.findMonsterCardByName === 'function') {
+          targetCard = window.findMonsterCardByName(cand.name);
+        }
+        const text = window.extractCleanMonsterResumeText(targetCard, cand.name);
         extResult = {
           text,
           rawLength: text.length,
-          sourceType: text.length >= 500 ? 'RESUME_DOCUMENT' : (text.length >= 150 ? 'SEARCH_CARD_SNIPPET' : 'NONE'),
-          isProvisional: text.length < 500
+          sourceType: text.length >= 800 ? 'RESUME_DOCUMENT' : (text.length >= 150 ? 'SEARCH_CARD_SNIPPET' : 'NONE'),
+          isProvisional: text.length < 800
         };
       }
 
@@ -2815,7 +2846,9 @@ ${(match.interviewQuestions || [
           status.innerText = msg;
         });
       } else if (typeof window.smartHireScrapeCandidates === 'function') {
-        list = window.smartHireScrapeCandidates();
+        list = await window.smartHireScrapeCandidates((msg) => {
+          status.innerText = msg;
+        });
       }
 
       scrapedCandidates = list;

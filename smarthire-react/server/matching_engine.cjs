@@ -283,8 +283,10 @@
       let status = EXTRACTION_STATUS.PROFILE_ONLY;
       let sourceType = candidate.resumeSourceType || (length >= fullResumeMinLength ? 'RESUME_DOCUMENT' : (length >= partialMinLength ? 'SEARCH_CARD_SNIPPET' : 'NONE'));
 
-      // A profile under 1,500 chars that lacks Education AND lacks Certifications is only a partial profile summary (e.g. Lia Smith 1,101 chars)
-      const isPartialProfileSummary = (length < 1500) && (!hasEducation && !hasCertifications);
+      // A profile under 1,500 chars that lacks Education AND lacks Certifications is only a partial profile summary (e.g. Lia Smith 1,101 chars).
+      // Also, if candidate.resumeSourceType is explicitly PROFILE_SNIPPET or SEARCH_CARD_SNIPPET, it must be treated as partial.
+      const isExplicitSnippet = candidate.resumeSourceType === 'PROFILE_SNIPPET' || candidate.resumeSourceType === 'SEARCH_CARD_SNIPPET';
+      const isPartialProfileSummary = isExplicitSnippet || ((length < 1500) && (!hasEducation && !hasCertifications));
 
       if (length === 0) {
         status = EXTRACTION_STATUS.EXTRACTION_FAILED;
