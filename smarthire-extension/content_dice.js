@@ -495,8 +495,24 @@
   };
 
   // 1-Click Search Auto-Fill for Dice
-  window.smartHireAutoFillSearch = function(query, location) {
+  window.smartHireAutoFillSearch = function(param1, param2) {
     const utils = window.SmartHireUtils;
+    let query = '';
+    let location = '';
+
+    if (param1 && typeof param1 === 'object') {
+      let rawTitle = param1.title || '';
+      let cleanTitle = rawTitle;
+      if (window.SmartHireMatchingEngine && typeof window.SmartHireMatchingEngine.cleanJobTitleForSearch === 'function') {
+        cleanTitle = window.SmartHireMatchingEngine.cleanJobTitleForSearch(rawTitle);
+      }
+      query = param1.skillsQuery || param1.query || cleanTitle || '';
+      location = param1.location || '';
+    } else {
+      query = param1 || '';
+      location = param2 || '';
+    }
+
     console.log('[SmartHire Copilot] Auto-filling Dice search:', { query, location });
 
     // 1. Locate Query Input

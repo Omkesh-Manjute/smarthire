@@ -952,25 +952,47 @@ document.addEventListener('DOMContentLoaded', () => {
     return text;
   }
 
-  function cleanJobTitle(title) {
-    if (!title) return 'Technical Specialist';
-    return String(title)
-      .replace(/#\d+/g, '')
-      .replace(/REQ-\d+/gi, '')
-      .replace(/\b159\d{3}\b/g, '')
-      .replace(/\(\s*#?\d+\s*\)/g, '')
-      .trim();
+  function cleanJobTitle(rawTitle) {
+    if (!rawTitle) return 'Technical Specialist';
+    if (window.SmartHireMatchingEngine && typeof window.SmartHireMatchingEngine.cleanJobTitleForSearch === 'function') {
+      return window.SmartHireMatchingEngine.cleanJobTitleForSearch(rawTitle) || 'Technical Specialist';
+    }
+    let str = String(rawTitle);
+    str = str.replace(/#\d+/g, ' ');
+    str = str.replace(/\bREQ[-_]?\d+\b/gi, ' ');
+    str = str.replace(/\b159\d{3}\b/g, ' ');
+    str = str.replace(/\([^)]*\)/g, ' ');
+    str = str.replace(/\[[^\]]*\]/g, ' ');
+    str = str.replace(/[-—–|/\\:_;~]+/g, ' ');
+    str = str.replace(/\b(?:level|lvl|tier|grade|step)\s*(?:[0-9]+|[ivx]+)?\b/gi, ' ');
+    str = str.replace(/\b[lt][0-9]+\b/gi, ' ');
+    str = str.replace(/\b(?:I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII|XIII|XIV|XV)\b/gi, ' ');
+    str = str.replace(/\b\d+\b/g, ' ');
+    str = str.replace(/\d+/g, ' ');
+    str = str.replace(/\b(?:senior|sr\.?|advance|advanced|junior|jr\.?|principal|lead|staff|associate|entry(?:\s+level)?)\b/gi, ' ');
+    str = str.replace(/\s+/g, ' ').trim();
+    return str || 'Technical Specialist';
   }
 
   function generateOutreachDraft(candidate, job) {
     const rawName = (candidate.name || 'Candidate').replace(/\(.*\)/g, '').trim();
-    const firstName = rawName.split(' ')[0] || 'there';
     const cleanTitle = cleanJobTitle(job ? job.title : 'Technical Specialist');
-    const location = job?.location || 'United States (Remote / Onsite as required)';
-    const skills = Array.isArray(job?.skills) ? job.skills.slice(0, 5).join(', ') : '';
-    const cleanDesc = sanitizeJobDescription(job?.description || job?.fullDescription || job?.rawDescription || '');
 
-    const subject = `Career Opportunity: ${cleanTitle} — COOLSOFT LLC`;
+    if (window.SmartHireMatchingEngine && typeof window.SmartHireMatchingEngine.formatJobDescriptionForOutreach === 'function') {
+      const formatted = window.SmartHireMatchingEngine.formatJobDescriptionForOutreach(job, rawName, currentUser || {});
+      return {
+        to: candidate.email || '',
+        candidateName: rawName,
+        subject: formatted.subject,
+        body: formatted.body,
+        cleanTitle: formatted.cleanTitle
+      };
+    }
+
+    const firstName = rawName.split(' ')[0] || 'there';
+    const location = job?.location || 'United States (Remote / Onsite as required)';
+    const cleanDesc = sanitizeJobDescription(job?.description || job?.fullDescription || job?.rawDescription || '');
+    const subject = `Direct Client: ${cleanTitle} — COOLSOFT LLC`;
 
     const recruiterDisplayName = currentUser ? currentUser.name : 'Technical Recruiter';
     const recruiterWorkEmail = currentUser ? currentUser.email : 'recruiting@coolsofttech.com';
@@ -979,12 +1001,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
 I hope this email finds you well.
 
-I came across your profile and was very impressed by your background${skills ? ` in ${skills}` : ''}. We currently have an immediate opening for a ${cleanTitle} role that aligns closely with your expertise.
+COOLSOFT LLC has an immediate opening for a ${cleanTitle} role that aligns closely with your expertise. Below is the position summary for your review:
 
---- Position Details ---
-Role: ${cleanTitle}
-Location: ${location}
-Work Authorization: US Citizen / Green Card / Authorized to Work in US
+==================================================
+POSITION OVERVIEW
+==================================================
+• Role: ${cleanTitle}
+• Location: ${location}
+• Work Authorization: US Citizen / Green Card / Authorized to Work in US
 
 ${cleanDesc}
 
@@ -1116,9 +1140,17 @@ Website: http://www.coolsofttech.com`;
       return;
     }
 
-    const validCandidates = scrapedCandidates.filter(c => 
-      selectedCandidateIds.has(c.id) && c.email && c.email.includes('@') && !c.email.includes('@monster.talent') && c.email !== 'Not Disclosed'
-    );
+    const emailMap = new Map();
+    scrapedCandidates.forEach(c => {
+      if (!selectedCandidateIds.has(c.id)) return;
+      const em = (c.email || '').trim().toLowerCase();
+      if (!em || !em.includes('@') || em.includes('@monster.talent') || em === 'not disclosed') return;
+      if (!emailMap.has(em)) {
+        emailMap.set(em, c);
+      }
+    });
+
+    const validCandidates = Array.from(emailMap.values());
 
     if (validCandidates.length === 0) {
       alert('Please select at least one candidate with a valid email address.');
@@ -1126,7 +1158,7 @@ Website: http://www.coolsofttech.com`;
     }
 
     if (popupBulkSender) popupBulkSender.innerText = `${currentUser.name} <${currentUser.email}>`;
-    if (popupBulkRecipientsCount) popupBulkRecipientsCount.innerText = validCandidates.length;
+    if (popupBulkRecipientsCount) popupBulkRecipientsCount.innerText = `${validCandidates.length} Unique Verified`;
 
     if (popupBulkRecipientsChips) {
       popupBulkRecipientsChips.innerHTML = validCandidates.map(c => `
@@ -1137,25 +1169,27 @@ Website: http://www.coolsofttech.com`;
     }
 
     const cleanTitle = cleanJobTitle(selectedJob ? selectedJob.title : 'Technical Specialist');
-    const location = selectedJob?.location || 'United States (Remote / Onsite as required)';
-    const cleanDesc = sanitizeJobDescription(selectedJob?.description || selectedJob?.fullDescription || selectedJob?.rawDescription || '');
+    let outreachData = null;
+    if (window.SmartHireMatchingEngine && typeof window.SmartHireMatchingEngine.formatJobDescriptionForOutreach === 'function') {
+      outreachData = window.SmartHireMatchingEngine.formatJobDescriptionForOutreach(selectedJob, '{{firstName}}', currentUser || {});
+    }
 
     if (popupBulkTitle) popupBulkTitle.value = cleanTitle;
-    if (popupBulkSubject) popupBulkSubject.value = `Career Opportunity: ${cleanTitle} — COOLSOFT LLC`;
+    if (popupBulkSubject) popupBulkSubject.value = outreachData?.subject || `Direct Client: ${cleanTitle} — COOLSOFT LLC`;
 
     if (popupBulkBody) {
-      popupBulkBody.value = `Hi {{firstName}},
+      popupBulkBody.value = outreachData?.body || `Hi {{firstName}},
 
 I hope this email finds you well.
 
-I came across your profile and was very impressed by your background. We currently have an immediate opening for a ${cleanTitle} role that aligns closely with your expertise.
+COOLSOFT LLC has an immediate opening for a ${cleanTitle} role that aligns closely with your expertise. Below is the position summary for your review:
 
---- Position Details ---
-Role: ${cleanTitle}
-Location: ${location}
-Work Authorization: US Citizen / Green Card / Authorized to Work in US
-
-${cleanDesc}
+==================================================
+POSITION OVERVIEW
+==================================================
+• Role: ${cleanTitle}
+• Location: ${selectedJob?.location || 'United States'}
+• Work Authorization: US Citizen / Green Card / Authorized to Work in US
 
 If you are open to exploring this opportunity, please reply to this email with your updated resume, or let me know a convenient time for a brief introductory call.
 
@@ -1188,9 +1222,17 @@ Website: http://www.coolsofttech.com`;
       return;
     }
 
-    const validCandidates = scrapedCandidates.filter(c => 
-      selectedCandidateIds.has(c.id) && c.email && c.email.includes('@') && !c.email.includes('@monster.talent') && c.email !== 'Not Disclosed'
-    );
+    const emailMap = new Map();
+    scrapedCandidates.forEach(c => {
+      if (!selectedCandidateIds.has(c.id)) return;
+      const em = (c.email || '').trim().toLowerCase();
+      if (!em || !em.includes('@') || em.includes('@monster.talent') || em === 'not disclosed') return;
+      if (!emailMap.has(em)) {
+        emailMap.set(em, c);
+      }
+    });
+
+    const validCandidates = Array.from(emailMap.values());
 
     if (validCandidates.length === 0) return;
 
@@ -1206,6 +1248,7 @@ Website: http://www.coolsofttech.com`;
     if (popupBulkProgressContainer) popupBulkProgressContainer.style.display = 'block';
 
     let successCount = 0;
+    let duplicateCount = 0;
     let failCount = 0;
 
     for (let i = 0; i < validCandidates.length; i++) {
@@ -1233,15 +1276,26 @@ Website: http://www.coolsofttech.com`;
         });
 
         if (res && res.success) {
-          successCount++;
-          sentCandidateEmails.add(cand.email.toLowerCase());
-          sentCandidateEmails.add((cand.name || '').toLowerCase());
-          if (popupBulkLiveLog) {
-            const row = document.createElement('div');
-            row.style.color = '#059669';
-            row.innerText = `✓ [${i+1}/${validCandidates.length}] Delivered to ${cand.name} (${cand.email})`;
-            popupBulkLiveLog.appendChild(row);
-            popupBulkLiveLog.scrollTop = popupBulkLiveLog.scrollHeight;
+          if (res.deduplicated) {
+            duplicateCount++;
+            if (popupBulkLiveLog) {
+              const row = document.createElement('div');
+              row.style.color = '#F59E0B';
+              row.innerText = `⚠ [${i+1}/${validCandidates.length}] Skipped duplicate email for ${cand.name} (${cand.email}) within 60s`;
+              popupBulkLiveLog.appendChild(row);
+              popupBulkLiveLog.scrollTop = popupBulkLiveLog.scrollHeight;
+            }
+          } else {
+            successCount++;
+            sentCandidateEmails.add(cand.email.toLowerCase());
+            sentCandidateEmails.add((cand.name || '').toLowerCase());
+            if (popupBulkLiveLog) {
+              const row = document.createElement('div');
+              row.style.color = '#059669';
+              row.innerText = `✓ [${i+1}/${validCandidates.length}] Delivered to ${cand.name} (${cand.email})`;
+              popupBulkLiveLog.appendChild(row);
+              popupBulkLiveLog.scrollTop = popupBulkLiveLog.scrollHeight;
+            }
           }
         } else {
           failCount++;
@@ -1261,7 +1315,7 @@ Website: http://www.coolsofttech.com`;
     }
 
     if (popupBulkStatus) {
-      popupBulkStatus.innerHTML = `<span style="color:#059669; font-weight:700;">✓ Dispatched: ${successCount} sent, ${failCount} failed</span>`;
+      popupBulkStatus.innerHTML = `<span style="color:#059669; font-weight:700;">✓ Dispatched: ${successCount} sent${duplicateCount > 0 ? `, ${duplicateCount} duplicate skipped` : ''}${failCount > 0 ? `, ${failCount} failed` : ''}</span>`;
     }
     popupBulkSend.innerText = 'Completed!';
     renderTable();

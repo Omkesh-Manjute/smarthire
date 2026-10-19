@@ -51,51 +51,74 @@
 
   function sanitizeJobDescription(desc) {
     if (!desc) return '';
+    if (window.SmartHireMatchingEngine && typeof window.SmartHireMatchingEngine.formatJobDescriptionForOutreach === 'function') {
+      const res = window.SmartHireMatchingEngine.formatJobDescriptionForOutreach(desc);
+      return res?.body || String(desc);
+    }
     let text = String(desc);
-    // 1. Strip rates and pay numbers per user requirement
+    // Strip rates, compensation, requisition numbers, and deadlines
     text = text.replace(/(bill\s*rate|pay\s*rate|hourly\s*rate|rate|salary|budget|compensation)\s*[:=-]?\s*\$?\s*\d+(\.\d+)?(\s*[\/\-]\s*(hr|hour|yr|year|annum))?/gi, '');
     text = text.replace(/\$\d+(\.\d+)?\s*[\/\-]\s*(hr|hour|yr|year|annum)/gi, '');
     text = text.replace(/\$\d{2,3}(,\d{3})*(\s*[\/\-]\s*(hr|hour|yr|year|annum))?/gi, '');
     text = text.replace(/\b\d{2,3}\s*[\/\-]\s*hr\b/gi, '');
-    text = text.replace(/\b\d{2,3}\s*-\s*\d{2,3}\s*[\/\-]\s*hr\b/gi, '');
-    // 2. Strip requisition numbers per user requirement
     text = text.replace(/\b(req|requisition|job\s*id|req\s*#|req\s*id)\s*[:#=-]?\s*#?\d+/gi, '');
     text = text.replace(/#\d{5,8}\b/g, '');
     text = text.replace(/\b159\d{3}\b/g, '');
-    // 3. Strip internal submission deadlines (do NOT use .*$ as that wipes all remaining text on single-line strings)
     text = text.replace(/Submission deadline\s*:\s*[\d\/\:\sAMPamp]+/gi, '');
-    text = text.replace(/Start date\s*:\s*\d{1,2}\/\d{1,2}\/\d{2,4}/gi, '');
-    text = text.replace(/End Date\s*:\s*\d{1,2}\/\d{1,2}\/\d{2,4}/gi, '');
-    // 4. Structure sections and bullet points cleanly
-    text = text.replace(/\s*Description:\s*/gi, '\n\nJob Responsibilities & Scope:\n');
-    text = text.replace(/\s*Note:\s*/gi, '\n\nKey Position Notes:\n');
-    text = text.replace(/([.?!])\s*•\s*/g, '$1\n\n• ');
+    text = text.replace(/Start date\s*:\s*[\d\/\:\sAMPamp]+/gi, '');
+    text = text.replace(/End Date\s*:\s*[\d\/\:\sAMPamp]+/gi, '');
+    text = text.replace(/Client\s*Info\s*:\s*[^:\n\r*]+(?=(?:\bNote\b|\bStart\b|\bEnd\b|\bDescription\b|\bSubmission\b|\*)|$)/gi, '');
+    text = text.replace(/^[A-Za-z\s]+:\s*(?:Bachelors Degree|Computer Science|IT Experience|Information Technology|Master|Degree)[^:\n]*[,;\-]\s*/gi, '');
+    text = text.replace(/as well as a vendor present at beginning of virtual interview to validate candidate[.]?/gi, '');
+    text = text.replace(/-Candidates must meet all these requirements from the beginning \(non negotiable\)/gi, '');
+    text = text.replace(/This requirement is non-negotiable/gi, '');
+    text = text.replace(/([.?!])\s*•\s*/g, '$1\n• ');
     text = text.replace(/\s*•\s*/g, '\n• ');
-    text = text.replace(/([.?!])\s*\*\s*/g, '$1\n\n* ');
-    text = text.replace(/[ \t]+/g, ' ');
     text = text.replace(/\n{3,}/g, '\n\n').trim();
     return text;
   }
 
-  function cleanJobTitle(title) {
-    if (!title) return 'Technical Specialist';
-    return String(title)
-      .replace(/#\d+/g, '')
-      .replace(/REQ-\d+/gi, '')
-      .replace(/\b159\d{3}\b/g, '')
-      .replace(/\(\s*#?\d+\s*\)/g, '')
-      .trim();
+  function cleanJobTitle(rawTitle) {
+    if (!rawTitle) return 'Technical Specialist';
+    if (window.SmartHireMatchingEngine && typeof window.SmartHireMatchingEngine.cleanJobTitleForSearch === 'function') {
+      return window.SmartHireMatchingEngine.cleanJobTitleForSearch(rawTitle) || 'Technical Specialist';
+    }
+    let str = String(rawTitle);
+    str = str.replace(/#\d+/g, ' ');
+    str = str.replace(/\bREQ[-_]?\d+\b/gi, ' ');
+    str = str.replace(/\b159\d{3}\b/g, ' ');
+    str = str.replace(/\([^)]*\)/g, ' ');
+    str = str.replace(/\[[^\]]*\]/g, ' ');
+    str = str.replace(/[-—–|/\\:_;~]+/g, ' ');
+    str = str.replace(/\b(?:level|lvl|tier|grade|step)\s*(?:[0-9]+|[ivx]+)?\b/gi, ' ');
+    str = str.replace(/\b[lt][0-9]+\b/gi, ' ');
+    str = str.replace(/\b(?:I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII|XIII|XIV|XV)\b/gi, ' ');
+    str = str.replace(/\b\d+\b/g, ' ');
+    str = str.replace(/\d+/g, ' ');
+    str = str.replace(/\b(?:senior|sr\.?|advance|advanced|junior|jr\.?|principal|lead|staff|associate|entry(?:\s+level)?)\b/gi, ' ');
+    str = str.replace(/\s+/g, ' ').trim();
+    return str || 'Technical Specialist';
   }
 
   function generateOutreachDraft(candidate, job) {
     const rawName = (candidate.name || 'Candidate').replace(/\(.*\)/g, '').trim();
-    const firstName = rawName.split(' ')[0] || 'there';
     const cleanTitle = cleanJobTitle(job ? job.title : 'Technical Specialist');
-    const location = job?.location || 'United States (Remote / Onsite as required)';
-    const skills = Array.isArray(job?.skills) ? job.skills.slice(0, 5).join(', ') : '';
-    const cleanDesc = sanitizeJobDescription(job?.description || job?.fullDescription || job?.rawDescription || '');
 
-    const subject = `Career Opportunity: ${cleanTitle} — COOLSOFT LLC`;
+    if (window.SmartHireMatchingEngine && typeof window.SmartHireMatchingEngine.formatJobDescriptionForOutreach === 'function') {
+      const formatted = window.SmartHireMatchingEngine.formatJobDescriptionForOutreach(job, rawName, currentUser || {});
+      return {
+        to: candidate.email || '',
+        candidateName: rawName,
+        subject: formatted.subject,
+        body: formatted.body,
+        cleanTitle: formatted.cleanTitle
+      };
+    }
+
+    const firstName = rawName.split(' ')[0] || 'there';
+    const location = job?.location || 'United States (Remote / Onsite as required)';
+    const cleanDesc = sanitizeJobDescription(job?.description || job?.fullDescription || job?.rawDescription || '');
+    const subject = `Direct Client: ${cleanTitle} — COOLSOFT LLC`;
 
     const recruiterDisplayName = currentUser ? currentUser.name : 'Technical Recruiter';
     const recruiterWorkEmail = currentUser ? currentUser.email : 'recruiting@coolsofttech.com';
@@ -104,12 +127,14 @@
 
 I hope this email finds you well.
 
-I came across your profile and was very impressed by your background${skills ? ` in ${skills}` : ''}. We currently have an immediate opening for a ${cleanTitle} role that aligns closely with your expertise.
+COOLSOFT LLC has an immediate opening for a ${cleanTitle} role that aligns closely with your expertise. Below is the position summary for your review:
 
---- Position Details ---
-Role: ${cleanTitle}
-Location: ${location}
-Work Authorization: US Citizen / Green Card / Authorized to Work in US
+==================================================
+POSITION OVERVIEW
+==================================================
+• Role: ${cleanTitle}
+• Location: ${location}
+• Work Authorization: US Citizen / Green Card / Authorized to Work in US
 
 ${cleanDesc}
 
@@ -1190,10 +1215,18 @@ Website: http://www.coolsofttech.com`;
       return;
     }
 
-    const validCandidates = scrapedCandidates.filter((c, i) => 
-      (selectedCandidateIndices.size === 0 || selectedCandidateIndices.has(i)) && 
-      c.email && c.email.includes('@') && !c.email.includes('@monster.talent') && c.email !== 'Not Disclosed'
-    );
+    // Deduplicate valid candidates by email address so the recruiter never sends duplicates to the same address
+    const emailMap = new Map();
+    scrapedCandidates.forEach((c, i) => {
+      if (selectedCandidateIndices.size > 0 && !selectedCandidateIndices.has(i)) return;
+      const em = (c.email || '').trim().toLowerCase();
+      if (!em || !em.includes('@') || em.includes('@monster.talent') || em === 'not disclosed') return;
+      if (!emailMap.has(em)) {
+        emailMap.set(em, c);
+      }
+    });
+
+    const validCandidates = Array.from(emailMap.values());
 
     if (validCandidates.length === 0) {
       alert('Please select at least one candidate with a valid email address.');
@@ -1208,7 +1241,7 @@ Website: http://www.coolsofttech.com`;
     if (senderEl) senderEl.innerText = `${currentUser.name} <${currentUser.email}>`;
 
     const countEl = document.getElementById('smarthire-bulk-recipients-count');
-    if (countEl) countEl.innerText = validCandidates.length;
+    if (countEl) countEl.innerText = `${validCandidates.length} Unique Verified`;
 
     const chipsContainer = document.getElementById('smarthire-bulk-recipients-chips');
     if (chipsContainer) {
@@ -1220,29 +1253,31 @@ Website: http://www.coolsofttech.com`;
     }
 
     const cleanTitle = cleanJobTitle(selectedJob ? selectedJob.title : 'Technical Specialist');
-    const location = selectedJob?.location || 'United States (Remote / Onsite as required)';
-    const cleanDesc = sanitizeJobDescription(selectedJob?.description || selectedJob?.fullDescription || selectedJob?.rawDescription || '');
+    let outreachData = null;
+    if (window.SmartHireMatchingEngine && typeof window.SmartHireMatchingEngine.formatJobDescriptionForOutreach === 'function') {
+      outreachData = window.SmartHireMatchingEngine.formatJobDescriptionForOutreach(selectedJob, '{{firstName}}', currentUser || {});
+    }
 
     const titleInput = document.getElementById('smarthire-bulk-job-title');
     if (titleInput) titleInput.value = cleanTitle;
 
     const subjInput = document.getElementById('smarthire-bulk-subject');
-    if (subjInput) subjInput.value = `Career Opportunity: ${cleanTitle} — COOLSOFT LLC`;
+    if (subjInput) subjInput.value = outreachData?.subject || `Direct Client: ${cleanTitle} — COOLSOFT LLC`;
 
     const bodyInput = document.getElementById('smarthire-bulk-body');
     if (bodyInput) {
-      bodyInput.value = `Hi {{firstName}},
+      bodyInput.value = outreachData?.body || `Hi {{firstName}},
 
 I hope this email finds you well.
 
-I came across your profile and was very impressed by your background. We currently have an immediate opening for a ${cleanTitle} role that aligns closely with your expertise.
+COOLSOFT LLC has an immediate opening for a ${cleanTitle} role that aligns closely with your expertise. Below is the position summary for your review:
 
---- Position Details ---
-Role: ${cleanTitle}
-Location: ${location}
-Work Authorization: US Citizen / Green Card / Authorized to Work in US
-
-${cleanDesc}
+==================================================
+POSITION OVERVIEW
+==================================================
+• Role: ${cleanTitle}
+• Location: ${selectedJob?.location || 'United States'}
+• Work Authorization: US Citizen / Green Card / Authorized to Work in US
 
 If you are open to exploring this opportunity, please reply to this email with your updated resume, or let me know a convenient time for a brief introductory call.
 
@@ -1283,10 +1318,17 @@ Website: http://www.coolsofttech.com`;
       return;
     }
 
-    const validCandidates = scrapedCandidates.filter((c, i) => 
-      (selectedCandidateIndices.size === 0 || selectedCandidateIndices.has(i)) && 
-      c.email && c.email.includes('@') && !c.email.includes('@monster.talent') && c.email !== 'Not Disclosed'
-    );
+    const emailMap = new Map();
+    scrapedCandidates.forEach((c, i) => {
+      if (selectedCandidateIndices.size > 0 && !selectedCandidateIndices.has(i)) return;
+      const em = (c.email || '').trim().toLowerCase();
+      if (!em || !em.includes('@') || em.includes('@monster.talent') || em === 'not disclosed') return;
+      if (!emailMap.has(em)) {
+        emailMap.set(em, c);
+      }
+    });
+
+    const validCandidates = Array.from(emailMap.values());
 
     if (validCandidates.length === 0) return;
 
@@ -1307,6 +1349,7 @@ Website: http://www.coolsofttech.com`;
     if (progContainer) progContainer.style.display = 'block';
 
     let successCount = 0;
+    let duplicateCount = 0;
     let failCount = 0;
 
     for (let i = 0; i < validCandidates.length; i++) {
@@ -1355,15 +1398,26 @@ Website: http://www.coolsofttech.com`;
         }
 
         if (res && res.success) {
-          successCount++;
-          sentCandidateEmails.add(cand.email.toLowerCase());
-          sentCandidateEmails.add((cand.name || '').toLowerCase());
-          if (liveLog) {
-            const row = document.createElement('div');
-            row.style.color = '#059669';
-            row.innerText = `✓ [${i+1}/${validCandidates.length}] Delivered to ${cand.name} (${cand.email})`;
-            liveLog.appendChild(row);
-            liveLog.scrollTop = liveLog.scrollHeight;
+          if (res.deduplicated) {
+            duplicateCount++;
+            if (liveLog) {
+              const row = document.createElement('div');
+              row.style.color = '#F59E0B';
+              row.innerText = `⚠ [${i+1}/${validCandidates.length}] Skipped duplicate email for ${cand.name} (${cand.email}) within 60s`;
+              liveLog.appendChild(row);
+              liveLog.scrollTop = liveLog.scrollHeight;
+            }
+          } else {
+            successCount++;
+            sentCandidateEmails.add(cand.email.toLowerCase());
+            sentCandidateEmails.add((cand.name || '').toLowerCase());
+            if (liveLog) {
+              const row = document.createElement('div');
+              row.style.color = '#059669';
+              row.innerText = `✓ [${i+1}/${validCandidates.length}] Delivered to ${cand.name} (${cand.email})`;
+              liveLog.appendChild(row);
+              liveLog.scrollTop = liveLog.scrollHeight;
+            }
           }
         } else {
           failCount++;
@@ -1384,14 +1438,14 @@ Website: http://www.coolsofttech.com`;
     }
 
     if (statusEl) {
-      statusEl.innerHTML = `<span style="color:#059669; font-weight:700;">✓ Dispatched: ${successCount} sent, ${failCount} failed</span>`;
+      statusEl.innerHTML = `<span style="color:#059669; font-weight:700;">✓ Dispatched: ${successCount} sent${duplicateCount > 0 ? `, ${duplicateCount} duplicate skipped` : ''}${failCount > 0 ? `, ${failCount} failed` : ''}</span>`;
     }
     sendBtn.innerText = 'Completed!';
     renderResults(scrapedCandidates);
 
     setTimeout(() => {
       closeBulkComposer();
-    }, 2200);
+    }, 2500);
   }
 
   // ============================================================================

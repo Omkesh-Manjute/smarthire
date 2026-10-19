@@ -1662,26 +1662,287 @@
   // 5. BOOLEAN SEARCH QUERY GENERATION
   // ==========================================
 
+  /**
+   * Enterprise Job Title Sanitizer for Sourcing & Boolean Queries:
+   * Strips numbers (1, 2, 3), Roman numerals (I, II, III, IV, etc.),
+   * dashes/slashes/lines (-, —, –, |, /, \), and level indicators (Level, Tier).
+   */
+  function cleanJobTitleForSearch(rawTitle) {
+    if (!rawTitle) return '';
+    let str = String(rawTitle);
+
+    // 1. Remove requisition IDs (#159339, REQ-1234, 159339, etc.)
+    str = str.replace(/#\d+/g, ' ');
+    str = str.replace(/\bREQ[-_]?\d+\b/gi, ' ');
+    str = str.replace(/\b159\d{3}\b/g, ' ');
+
+    // 2. Remove parenthesized or bracketed content: (Madison, WI), (1234), [Contract], etc.
+    str = str.replace(/\([^)]*\)/g, ' ');
+    str = str.replace(/\[[^\]]*\]/g, ' ');
+
+    // 3. Remove Seniority & Level words with optional trailing dot/colon
+    str = str.replace(/\b(?:senior|sr\.?|advance|advanced|junior|jr\.?|principal|lead|staff|associate|entry(?:\s+level)?)\b\.?/gi, ' ');
+
+    // 4. Remove lines, dashes, pipes, slashes, punctuation: -, —, –, |, /, \, _, :, ;, ~, .
+    str = str.replace(/[-—–|/\\:_;~.]+/g, ' ');
+
+    // 5. Remove Level / Tier / Grade indicators: Level 3, Lvl II, Tier 1, L3, T2, etc.
+    str = str.replace(/\b(?:level|lvl|tier|grade|step)\s*(?:[0-9]+|[ivx]+)?\b/gi, ' ');
+    str = str.replace(/\b[lt][0-9]+\b/gi, ' ');
+
+    // 6. Remove Roman numerals ("roman letter word bhi nahi": I, II, III, IV, V, VI, VII, VIII, IX, X, etc.)
+    str = str.replace(/\b(?:I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII|XIII|XIV|XV)\b/gi, ' ');
+
+    // 7. Remove all standalone numbers / digits ("kabhi number add mat karo 3, 2 , 1 kuch bhi ho")
+    str = str.replace(/\b\d+\b/g, ' ');
+    str = str.replace(/\d+/g, ' ');
+
+    // 8. Normalize whitespace & trim non-alphanumeric leading/trailing
+    str = str.replace(/\s+/g, ' ').replace(/^[^a-zA-Z0-9]+|[^a-zA-Z0-9]+$/g, '').trim();
+
+    return str;
+  }
+
+  /**
+   * Enterprise Job Description Formatter for Candidate Outreach Emails:
+   * Strips internal rates, requisition numbers, client info codes, internal deadlines,
+   * and formats the JD into clean, professional enterprise sections with bullet points.
+   */
+  function formatJobDescriptionForOutreach(jobInput, candidateName = 'there', recruiter = {}) {
+    let job = jobInput;
+    if (typeof job === 'string') {
+      job = { description: job };
+    }
+    const rawTitle = (job?.title || 'Technical Specialist').trim();
+    const cleanTitle = cleanJobTitleForSearch(rawTitle) || 'Technical Specialist';
+    const location = job?.location || 'United States (Remote / Onsite as required)';
+    const workMode = job?.workMode || job?.type || 'Contract';
+    const rawDesc = String(job?.description || job?.fullDescription || job?.rawDescription || '');
+
+    // 1. Sanitize raw text: strip internal rates, requisitions, deadlines, and internal vendor notes
+    let sanitized = rawDesc
+      // Rates & compensation ($75/hr, $159.00/hour, etc.)
+      .replace(/(?:bill\s*rate|pay\s*rate|hourly\s*rate|rate|salary|budget|compensation)\s*[:=-]?\s*\$?\s*\d+(\.\d+)?(?:\s*[\/\-]\s*(?:hr|hour|yr|year|annum))?/gi, '')
+      .replace(/\$\d+(\.\d+)?\s*[\/\-]\s*(?:hr|hour|yr|year|annum)/gi, '')
+      .replace(/\$\d{2,3}(?:,\d{3})*(?:\s*[\/\-]\s*(?:hr|hour|yr|year|annum))?/gi, '')
+      .replace(/\b\d{2,3}\s*[\/\-]\s*hr\b/gi, '')
+      .replace(/\b\d{2,3}\s*-\s*\d{2,3}\s*[\/\-]\s*hr\b/gi, '')
+      // Requisitions & IDs (#159331, REQ-1234, etc.)
+      .replace(/\b(?:req|requisition|job\s*id|req\s*#|req\s*id)\s*[:#=-]?\s*#?\d+/gi, '')
+      .replace(/#\d{5,8}\b/g, '')
+      .replace(/\b159\d{3}\b/g, '')
+      // Internal submission deadlines & internal start/end dates
+      .replace(/Submission deadline\s*:\s*[\d\/\:\sAMPamp]+/gi, '')
+      .replace(/Start date\s*:\s*[\d\/\:\sAMPamp]+/gi, '')
+      .replace(/End Date\s*:\s*[\d\/\:\sAMPamp]+/gi, '')
+      .replace(/Client\s*Info\s*:\s*[^:\n\r*]+(?=(?:\bNote\b|\bStart\b|\bEnd\b|\bDescription\b|\bSubmission\b|\*)|$)/gi, '')
+      // Scraped breadcrumb / categorization prefixes at beginning of description
+      .replace(/^[A-Za-z\s]+:\s*(?:Bachelors Degree|Computer Science|IT Experience|Information Technology|Master|Degree)[^:\n]*[,;\-]\s*/gi, '')
+      // Internal vendor instructions & recruiter questionnaires
+      .replace(/as well as a vendor present at beginning of virtual interview to validate candidate[.]?/gi, '')
+      .replace(/A screenshot photo of candidate will be required for any interviews/gi, '')
+      .replace(/-Candidates must meet all these requirements from the beginning \(non negotiable\)/gi, '')
+      .replace(/This requirement is non-negotiable/gi, '')
+      .replace(/Why is this position open\s*\([^)]*\)\?\s*[^\n\r]+/gi, '');
+
+    // 2. Extract Key Sections: Notes/Schedule, Description/Responsibilities, Qualifications
+    let noteText = '';
+    let descText = '';
+    let qualText = '';
+
+    const noteMatch = sanitized.match(/(?:Note|Key Notes|Important Notes)\s*:\s*([\s\S]*?)(?=(?:Description|Job Responsibilities|Daily Duties|Responsibilities|Required Skills|Required Qualifications):|$)/i);
+    if (noteMatch) {
+      noteText = noteMatch[1].trim();
+    }
+
+    const descMatch = sanitized.match(/(?:Description|Job Responsibilities|Daily Duties|Responsibilities|Position Summary|Scope of the project)\s*:\s*([\s\S]*?)(?=(?:Required Skills|Required Qualifications|Qualifications|Preferred Qualifications|Work Mode):|$)/i);
+    if (descMatch) {
+      descText = descMatch[1].trim();
+    } else if (!noteMatch) {
+      descText = sanitized.trim();
+    }
+
+    const qualMatch = sanitized.match(/(?:Required Skills|Required Qualifications|Qualifications|Minimum Qualifications)\s*(?:\([^)]*\))?\s*:\s*([\s\S]*?)(?=(?:Preferred Qualifications|Work Mode):|$)/i);
+    if (qualMatch) {
+      qualText = qualMatch[1].trim();
+    }
+
+    // Helper: extracts concise, sentence-level bullets
+    function extractConciseBullets(text, maxCount = 8) {
+      if (!text) return [];
+      let cleaned = text
+        .replace(/[\r\n]+/g, ' ')
+        .replace(/\s*•\s*/g, '\n• ')
+        .replace(/\s*\*\s*/g, '\n• ')
+        .replace(/\s*-\s*(?=[A-Z])/g, '\n• ')
+        .replace(/\s*\b\d+\.\s*/g, '\n• ');
+
+      let rawBlocks = cleaned.split('\n')
+        .map(l => l.replace(/^[•\s\d.-]+/, '').trim())
+        .filter(l => l.length >= 15);
+
+      const conciseList = [];
+
+      for (const block of rawBlocks) {
+        if (block.length > 160 && /[.?!]\s+[A-Z]/.test(block)) {
+          const sentences = block.split(/(?<=[.?!])\s+(?=[A-Z])/)
+            .map(s => s.trim())
+            .filter(s => s.length >= 25);
+          for (const s of sentences) {
+            conciseList.push(s);
+            if (conciseList.length >= maxCount) break;
+          }
+        } else {
+          conciseList.push(block);
+        }
+        if (conciseList.length >= maxCount) break;
+      }
+
+      return conciseList
+        .map(line => {
+          return line
+            .replace(/\s+/g, ' ')
+            .replace(/\s*\(non-negotiable\)/gi, '')
+            .replace(/\s*\(video required\)/gi, ' (Video required)')
+            .replace(/[.,;:\s]+$/, '.')
+            .trim();
+        })
+        .filter(l => {
+          const lower = l.toLowerCase();
+          if (lower.length < 15) return false;
+          if (lower.includes('submission deadline')) return false;
+          if (lower.includes('vendor present at beginning')) return false;
+          if (lower.includes('screenshot photo of candidate')) return false;
+          return true;
+        })
+        .slice(0, maxCount);
+    }
+
+    const scheduleBullets = [];
+    if (noteText) {
+      const rawNoteBullets = extractConciseBullets(noteText, 5);
+      for (const b of rawNoteBullets) {
+        if (/interview/i.test(b)) {
+          scheduleBullets.push(`Interview Process: ${b.replace(/^interview process:\s*/i, '')}`);
+        } else if (/hybrid|onsite|remote|schedule/i.test(b)) {
+          scheduleBullets.push(`Work Schedule: ${b.replace(/^(?:hybrid work schedule|work schedule):\s*/i, '')}`);
+        } else if (/duration|contract/i.test(b)) {
+          scheduleBullets.push(`Assignment Duration: ${b.replace(/^assignment duration:\s*/i, '')}`);
+        } else if (/location|local/i.test(b)) {
+          scheduleBullets.push(`Location Requirement: ${b.replace(/^(?:candidate location|location requirement):\s*/i, '')}`);
+        }
+      }
+    }
+
+    // First, scan all blocks in descText for education / degrees so they are never truncated
+    const eduBullets = [];
+    const allDescBlocks = descText
+      .replace(/[\r\n]+/g, ' ')
+      .replace(/\s*•\s*/g, '\n• ')
+      .replace(/\s*\*\s*/g, '\n• ')
+      .split('\n')
+      .map(l => l.replace(/^[•\s\d.-]+/, '').trim())
+      .filter(l => l.length >= 15);
+
+    const nonEduBlocks = [];
+    for (const block of allDescBlocks) {
+      if (/(?:bachelor|master|phd|degree|graduation|course work|diploma|college or university)\b/i.test(block)) {
+        eduBullets.push(block.replace(/\s+/g, ' ').replace(/[.,;:\s]+$/, '.').trim());
+      } else {
+        nonEduBlocks.push(block);
+      }
+    }
+
+    let respBullets = extractConciseBullets(nonEduBlocks.join('\n• '), 8);
+
+    let qualBullets = [];
+    if (qualText) {
+      qualBullets = extractConciseBullets(qualText, 6);
+    } else if (Array.isArray(job?.skills) && job.skills.length > 0) {
+      qualBullets = job.skills.map(s => `Strong professional experience in ${s}.`);
+    }
+    if (eduBullets.length > 0) {
+      qualBullets.push(...eduBullets);
+    }
+
+    const rawCandidateName = (candidateName || 'there').replace(/\(.*\)/g, '').trim();
+    const firstName = rawCandidateName.split(' ')[0] || 'there';
+    const recruiterName = recruiter.name || 'Technical Recruiter';
+    const recruiterEmail = recruiter.email || 'recruiting@coolsofttech.com';
+
+    let body = `Hi ${firstName},
+
+I hope this email finds you well.
+
+COOLSOFT LLC has an immediate opening for a ${cleanTitle} role that strongly aligns with your background and expertise. Below is the position summary and details for your review:
+
+==================================================
+POSITION OVERVIEW
+==================================================
+• Role: ${cleanTitle}
+• Location: ${location}
+• Employment Type: ${workMode}
+• Work Authorization: US Citizen / Green Card / Authorized to Work in US`;
+
+    if (scheduleBullets.length > 0) {
+      body += '\n\n==================================================\nWORK SCHEDULE & INTERVIEW DETAILS\n==================================================\n' +
+        scheduleBullets.map(b => `• ${b}`).join('\n');
+    }
+
+    if (qualBullets.length > 0) {
+      body += '\n\n==================================================\nKEY QUALIFICATIONS & SKILLS\n==================================================\n' +
+        qualBullets.map(b => `• ${b}`).join('\n');
+    }
+
+    if (respBullets.length > 0) {
+      body += '\n\n==================================================\nJOB RESPONSIBILITIES & SCOPE\n==================================================\n' +
+        respBullets.map(b => `• ${b}`).join('\n');
+    }
+
+    body += `\n\nIf you are open to exploring this opportunity, please reply to this email with your updated resume, or let me know a convenient time for a brief introductory call.
+
+Best regards,
+
+${recruiterName}
+Technical Recruiter | COOLSOFT LLC
+Email: ${recruiterEmail}
+Website: http://www.coolsofttech.com`;
+
+    const cleanWorkMode = workMode.includes('Hybrid') ? 'Hybrid' : (workMode.includes('Remote') ? 'Remote' : 'Onsite');
+    const subject = `Direct Client: ${cleanTitle} (${cleanWorkMode}) — COOLSOFT LLC`;
+
+    return {
+      cleanTitle,
+      subject,
+      body
+    };
+  }
+
   function generateBooleanQueries(job, options = {}) {
-    const title = (job?.title || '').trim();
+    const rawTitle = (job?.title || '').trim();
+    const cleanTitle = cleanJobTitleForSearch(rawTitle) || 'Technical Specialist';
+
     const isDataAnalyticsPM = (
-      title.toLowerCase().includes('scrum') ||
-      title.toLowerCase().includes('project manager') ||
-      title.toLowerCase().includes('data & analytics') ||
+      rawTitle.toLowerCase().includes('scrum') ||
+      rawTitle.toLowerCase().includes('project manager') ||
+      (rawTitle.toLowerCase().includes('data') && rawTitle.toLowerCase().includes('analytics')) ||
       (job?.id === '159348' || job?.reqId === '159348')
     );
 
     if (isDataAnalyticsPM) {
+      const pmTemplate = `("Scrum Master" OR "Agile Project Manager" OR "Technical Project Manager" OR "Project Manager" OR "Agile Delivery Manager") AND (Scrum OR Agile OR Jira) AND ("business intelligence" OR "data warehouse" OR "data warehousing" OR analytics OR "data management")`;
       return {
         requisitionId: job?.id || job?.reqId || '159348',
-        roleTitle: title || 'Project Manager / Scrum Master — Data & Analytics',
+        roleTitle: cleanTitle,
         mandatoryResidency: 'Wisconsin (WI)',
-        primaryTemplate: `("Scrum Master" OR "Agile Project Manager" OR "Technical Project Manager" OR "Project Manager" OR "Agile Delivery Manager") AND (Scrum OR Agile OR Jira) AND ("business intelligence" OR "data warehouse" OR "data warehousing" OR analytics OR "data management")`,
+        primaryTemplate: pmTemplate,
+        monster: pmTemplate,
+        dice: pmTemplate,
         variants: [
           {
             name: 'Primary Template (Balanced)',
             description: 'Core Agile delivery roles combined with Scrum/Jira and Data & Analytics terms',
-            query: `("Scrum Master" OR "Agile Project Manager" OR "Technical Project Manager" OR "Project Manager" OR "Agile Delivery Manager") AND (Scrum OR Agile OR Jira) AND ("business intelligence" OR "data warehouse" OR "data warehousing" OR analytics OR "data management")`
+            query: pmTemplate
           },
           {
             name: 'BI & Data Warehousing (Narrow)',
@@ -1709,23 +1970,41 @@
     }
 
     // Generic Requisition Generator
-    const cleanTitle = title.replace(/\(.*?\)/g, '').replace(/\[.*?\]/g, '').trim();
-    const skills = Array.isArray(job?.skills) ? job.skills : (job?.skills ? String(job.skills).split(',') : []);
-    const cleanSkills = skills.map(s => s.trim()).filter(Boolean);
+    // Sub-role extraction if title originally had compound roles separated by slash or pipe (e.g. "QA Analyst / SDET")
+    const subRoles = (rawTitle || '')
+      .replace(/\(.*?\)/g, '')
+      .replace(/\[.*?\]/g, '')
+      .split(/[/|]/)
+      .map(p => cleanJobTitleForSearch(p))
+      .filter(p => p.length >= 3);
 
-    const titleTokens = cleanTitle.split(/\s+/).filter(t => t.length > 2);
-    const titleClause = titleTokens.length > 0 ? `("${cleanTitle}" OR "${titleTokens.join(' ')}")` : `"${cleanTitle}"`;
+    const uniqueRoles = Array.from(new Set(subRoles));
+    let titleClause = '';
+    if (uniqueRoles.length > 1) {
+      titleClause = '(' + uniqueRoles.map(r => `"${r}"`).join(' OR ') + ')';
+    } else {
+      titleClause = `"${cleanTitle}"`;
+    }
+
+    const skills = Array.isArray(job?.skills) ? job.skills : (job?.skills ? String(job.skills).split(',') : []);
+    const cleanSkills = skills
+      .map(s => String(s).trim().replace(/^["']|["']$/g, ''))
+      .filter(Boolean);
+
     const skillClause = cleanSkills.slice(0, 4).map(s => `"${s}"`).join(' OR ');
+    const genTemplate = skillClause ? `${titleClause} AND (${skillClause})` : titleClause;
 
     return {
       requisitionId: job?.id || job?.reqId || 'custom',
       roleTitle: cleanTitle,
       mandatoryResidency: job?.location || 'United States',
-      primaryTemplate: skillClause ? `${titleClause} AND (${skillClause})` : titleClause,
+      primaryTemplate: genTemplate,
+      monster: genTemplate,
+      dice: genTemplate,
       variants: [
         {
           name: 'Standard Search',
-          description: 'Title matched with top core technical skills',
+          description: 'Title matched with top core technical skills (Clean, No Numbers/Senior/Advance)',
           query: skillClause ? `${titleClause} AND (${skillClause})` : titleClause
         },
         {
@@ -1734,9 +2013,9 @@
           query: cleanSkills.length > 0 ? `(${cleanSkills.map(s => `"${s}"`).join(' OR ')})` : titleClause
         },
         {
-          name: 'Precision / Senior Focus',
-          description: 'Combines title with mandatory technologies and senior experience qualifiers',
-          query: `${titleClause} AND (${cleanSkills.slice(0, 2).map(s => `"${s}"`).join(' AND ') || 'Lead OR Senior'})`
+          name: 'Core Skills Precision Focus',
+          description: 'Combines clean title with mandatory technologies and core deliverables',
+          query: `${titleClause} AND (${cleanSkills.slice(0, 2).map(s => `"${s}"`).join(' AND ') || (cleanSkills[0] ? `"${cleanSkills[0]}"` : titleClause)})`
         }
       ],
       locationFilterNotice: `Location constraint: ${job?.location || 'Remote / Onsite as stated in requisition'}`
@@ -1959,6 +2238,9 @@
     DeterministicMatchingEngine,
     EligibilityConfidenceEngine,
     // Aliases for 100% backward compatibility
+    cleanJobTitleForSearch,
+    cleanJobTitle: cleanJobTitleForSearch,
+    formatJobDescriptionForOutreach,
     normalizeJobDescription: JdRequirementParser.parseJobDescription.bind(JdRequirementParser),
     generateBooleanQueries,
     verifyAndClassifyResume: ResumeEvidenceExtractor.verifyAndClassify.bind(ResumeEvidenceExtractor),

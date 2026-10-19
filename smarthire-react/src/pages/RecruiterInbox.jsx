@@ -4857,7 +4857,6 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
   }, [streamCandidates, isSuperAdmin, isManager, currentUser?.name, currentUser?.email, openJobsList, teamUsersList])
 
   const mobileAppCount = useMemo(() => (roleScopedCandidates || []).filter(c => (c.sourceCategory === 'mobile_app') || (c.source || '').toLowerCase().includes('mobile')).length, [roleScopedCandidates])
-  const jobSitesCount = useMemo(() => (roleScopedCandidates || []).filter(c => (c.sourceCategory === 'careers_portal' || c.sourceCategory === 'monster_plus' || c.sourceCategory === 'dice') || (c.source || '').toLowerCase().includes('career') || (c.source || '').toLowerCase().includes('job site') || (c.source || '').toLowerCase().includes('monster') || (c.source || '').toLowerCase().includes('dice')).length, [roleScopedCandidates])
   const extensionSourcedCount = useMemo(() => (roleScopedCandidates || []).filter(c => 
     c.isSourcedFromExtension || 
     c.isExtensionSourced || 
@@ -4865,6 +4864,13 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
     c.sourceCategory === 'dice' || 
     (c.source && (c.source.toLowerCase().includes('monster') || c.source.toLowerCase().includes('dice') || c.source.toLowerCase().includes('extension')))
   ).length, [roleScopedCandidates])
+  const jobSitesCount = useMemo(() => (roleScopedCandidates || []).filter(c => {
+    const isExt = c.isSourcedFromExtension || c.isExtensionSourced || c.sourceCategory === 'monster_plus' || c.sourceCategory === 'dice' || (c.source && (c.source.toLowerCase().includes('monster') || c.source.toLowerCase().includes('dice') || c.source.toLowerCase().includes('extension')));
+    if (isExt) return false;
+    const cat = (c.sourceCategory || '').toLowerCase();
+    const src = (c.source || '').toLowerCase();
+    return cat === 'careers_portal' || cat === 'job_site' || src.includes('career') || src.includes('job site') || src.includes('indeed') || src.includes('linkedin') || src.includes('/jobs');
+  }).length, [roleScopedCandidates])
 
   const filteredCandidates = useMemo(() => {
     const rawFiltered = roleScopedCandidates.filter(c => {
@@ -4877,7 +4883,11 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
       else if (tableCategory === 'review' && c.status !== 'In Review' && c.status !== 'Review') return false
       else if (tableCategory === 'inbox' && c.sourceCategory !== 'email_inbox' && c.sourceCategory !== 'monster_plus' && c.sourceCategory !== 'dice' && !c.isNew) return false
       else if (tableCategory === 'spam' && c.sourceCategory !== 'email_spam' && !c.isSpamRecovery) return false
-      else if (tableCategory === 'careers' && c.sourceCategory !== 'careers_portal' && c.sourceCategory !== 'monster_plus' && c.sourceCategory !== 'dice') return false
+      else if (tableCategory === 'careers') {
+        const isExt = c.isSourcedFromExtension || c.isExtensionSourced || c.sourceCategory === 'monster_plus' || c.sourceCategory === 'dice' || (c.source && (c.source.toLowerCase().includes('monster') || c.source.toLowerCase().includes('dice') || c.source.toLowerCase().includes('extension')));
+        if (isExt) return false;
+        if (c.sourceCategory !== 'careers_portal' && c.sourceCategory !== 'job_site' && !(c.source && (c.source.toLowerCase().includes('career') || c.source.toLowerCase().includes('job site') || c.source.toLowerCase().includes('indeed') || c.source.toLowerCase().includes('linkedin') || c.source.toLowerCase().includes('/jobs')))) return false;
+      }
       else if (tableCategory === 'vendor' && c.sourceCategory !== 'vendor_bench') return false
       else if (tableCategory === 'extension_sourced' && !c.isSourcedFromExtension && !c.isExtensionSourced && c.sourceCategory !== 'monster_plus' && c.sourceCategory !== 'dice' && !(c.source && (c.source.toLowerCase().includes('monster') || c.source.toLowerCase().includes('dice') || c.source.toLowerCase().includes('extension')))) return false
       if (tableCategory === 'favorites') {
@@ -4937,9 +4947,12 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
       // Source channel filter
       if (filterSource !== 'all') {
         const src = (c.source || '').toLowerCase()
-        const cat = (c.sourceCategory || '').toLowerCase()
         if (filterSource === 'mobile' && cat !== 'mobile_app' && !src.includes('mobile') && !src.includes('app')) return false
-        if (filterSource === 'careers' && cat !== 'careers_portal' && cat !== 'monster_plus' && cat !== 'dice' && !src.includes('career') && !src.includes('job site') && !src.includes('monster') && !src.includes('dice') && !src.includes('indeed') && !src.includes('linkedin') && !src.includes('/jobs')) return false
+        if (filterSource === 'careers') {
+          const isExt = c.isSourcedFromExtension || c.isExtensionSourced || c.sourceCategory === 'monster_plus' || c.sourceCategory === 'dice' || (src.includes('monster') || src.includes('dice') || src.includes('extension'));
+          if (isExt) return false;
+          if (cat !== 'careers_portal' && cat !== 'job_site' && !src.includes('career') && !src.includes('job site') && !src.includes('indeed') && !src.includes('linkedin') && !src.includes('/jobs')) return false;
+        }
         if (filterSource === 'email' && cat !== 'email_inbox' && cat !== 'monster_plus' && cat !== 'dice' && !src.includes('inbox') && !src.includes('monster') && !src.includes('dice')) return false
         if (filterSource === 'spam' && cat !== 'email_spam' && !c.isSpamRecovery && !src.includes('spam')) return false
         if (filterSource === 'manual' && cat !== 'manual_entry' && !src.includes('manual') && !src.includes('direct')) return false
@@ -7574,8 +7587,18 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
               type="button"
               title={`Job Sites / Careers Portal (${jobSitesCount})`}
               onMouseEnter={() => setHoveredNav('job_sites')}
-              onMouseLeave={() => setHoveredNav(null)}
-              onClick={() => { setInboxViewMode('stream'); setInboxSubMode('table'); setFilterSource('careers'); setTablePage(1); }}
+              onClick={() => { 
+                setInboxViewMode('stream'); 
+                setInboxSubMode('table'); 
+                setFilterSource('careers'); 
+                setTableCategory('all');
+                setTablePage(1); 
+                try {
+                  const url = new URL(window.location.href);
+                  url.searchParams.delete('category');
+                  window.history.replaceState({}, '', url.toString());
+                } catch (_) {}
+              }}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -7622,6 +7645,7 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                 setInboxViewMode('stream')
                 setInboxSubMode('table')
                 setTableCategory('extension_sourced')
+                setFilterSource('all')
                 setTablePage(1)
                 try {
                   const url = new URL(window.location.href)
@@ -12457,12 +12481,12 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                       background: ${isLight ? '#64748B' : '#64748B'};
                     }
                   `}</style>
-                  <table style={{ width: '100%', minWidth: 1040, borderCollapse: 'collapse', textAlign: 'left', fontSize: 12.5 }}>
+                  <table style={{ width: '100%', minWidth: 1060, borderCollapse: 'collapse', textAlign: 'left', fontSize: 12 }}>
                     <thead>
                       <tr style={{
-                        backgroundColor: isLight ? '#F8FAFC' : '#111827',
-                        borderBottom: `1px solid ${C.border}`,
-                        color: isLight ? '#475569' : '#94A3B8',
+                        backgroundColor: isLight ? '#F1F5F9' : '#1E293B',
+                        borderBottom: `1px solid ${isLight ? '#CBD5E1' : '#334155'}`,
+                        color: isLight ? '#334155' : '#CBD5E1',
                         fontSize: 11,
                         fontWeight: 700,
                         textTransform: 'uppercase',
@@ -12471,7 +12495,7 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                         top: 0,
                         zIndex: 10
                       }}>
-                        <th style={{ padding: '9px 10px', width: 36, minWidth: 36, maxWidth: 36, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#111827', borderBottom: `1px solid ${C.border}` }}>
+                        <th style={{ padding: '8px 8px', width: 36, minWidth: 36, maxWidth: 36, textAlign: 'center', position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F1F5F9' : '#1E293B', border: `1px solid ${isLight ? '#CBD5E1' : '#334155'}` }}>
                           <input
                             type="checkbox"
                             style={{ cursor: 'pointer', accentColor: '#4A154B' }}
@@ -12485,21 +12509,22 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                             }}
                           />
                         </th>
-                        <th style={{ padding: '9px 12px', width: 210, minWidth: 190, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#111827', borderBottom: `1px solid ${C.border}` }}>Candidate</th>
-                        <th style={{ padding: '9px 12px', width: 180, minWidth: 160, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#111827', borderBottom: `1px solid ${C.border}` }}>Current Role & Exp</th>
-                        <th style={{ padding: '9px 12px', width: 220, minWidth: 200, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#111827', borderBottom: `1px solid ${C.border}` }}>AI Requirement Match</th>
-                        <th style={{ padding: '9px 8px', width: 90, minWidth: 80, textAlign: 'center', position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#111827', borderBottom: `1px solid ${C.border}` }}>Match %</th>
-                        <th style={{ padding: '9px 12px', width: 140, minWidth: 120, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#111827', borderBottom: `1px solid ${C.border}` }}>Key Skills</th>
-                        <th style={{ padding: '9px 12px', width: 120, minWidth: 100, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#111827', borderBottom: `1px solid ${C.border}` }}>Location</th>
-                        <th style={{ padding: '9px 10px', width: 85, minWidth: 75, textAlign: 'center', position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#111827', borderBottom: `1px solid ${C.border}` }}>Relocate</th>
-                        <th style={{ padding: '9px 8px', width: 80, minWidth: 70, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#111827', borderBottom: `1px solid ${C.border}` }}>Received</th>
-                        <th style={{ padding: '9px 12px', width: 190, minWidth: 170, textAlign: 'right', position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F8FAFC' : '#111827', borderBottom: `1px solid ${C.border}` }}>Actions</th>
+                        <th style={{ padding: '8px 10px', width: 175, minWidth: 150, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F1F5F9' : '#1E293B', border: `1px solid ${isLight ? '#CBD5E1' : '#334155'}` }}>Candidate</th>
+                        <th style={{ padding: '8px 10px', width: 165, minWidth: 140, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F1F5F9' : '#1E293B', border: `1px solid ${isLight ? '#CBD5E1' : '#334155'}` }}>Role</th>
+                        <th style={{ padding: '8px 6px', width: 75, minWidth: 70, textAlign: 'center', position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F1F5F9' : '#1E293B', border: `1px solid ${isLight ? '#CBD5E1' : '#334155'}` }}>Exp</th>
+                        <th style={{ padding: '8px 10px', width: 210, minWidth: 190, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F1F5F9' : '#1E293B', border: `1px solid ${isLight ? '#CBD5E1' : '#334155'}` }}>AI Requirement Match</th>
+                        <th style={{ padding: '8px 6px', width: 85, minWidth: 75, textAlign: 'center', position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F1F5F9' : '#1E293B', border: `1px solid ${isLight ? '#CBD5E1' : '#334155'}` }}>Match %</th>
+                        <th style={{ padding: '8px 10px', width: 140, minWidth: 120, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F1F5F9' : '#1E293B', border: `1px solid ${isLight ? '#CBD5E1' : '#334155'}` }}>Key Skills</th>
+                        <th style={{ padding: '8px 10px', width: 110, minWidth: 95, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F1F5F9' : '#1E293B', border: `1px solid ${isLight ? '#CBD5E1' : '#334155'}` }}>Location</th>
+                        <th style={{ padding: '8px 6px', width: 75, minWidth: 65, textAlign: 'center', position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F1F5F9' : '#1E293B', border: `1px solid ${isLight ? '#CBD5E1' : '#334155'}` }}>Relocate</th>
+                        <th style={{ padding: '8px 6px', width: 75, minWidth: 65, textAlign: 'center', position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F1F5F9' : '#1E293B', border: `1px solid ${isLight ? '#CBD5E1' : '#334155'}` }}>Received</th>
+                        <th style={{ padding: '8px 10px', width: 110, minWidth: 95, textAlign: 'center', position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F1F5F9' : '#1E293B', border: `1px solid ${isLight ? '#CBD5E1' : '#334155'}` }}>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {filteredCandidates.length === 0 ? (
                         <tr>
-                          <td colSpan={11} style={{ padding: 40, textAlign: 'center', color: C.textSecondary }}>
+                          <td colSpan={11} style={{ padding: 40, textAlign: 'center', color: C.textSecondary, border: `1px solid ${isLight ? '#CBD5E1' : '#334155'}` }}>
                             No candidates found matching your filters.
                           </td>
                         </tr>
@@ -12527,16 +12552,15 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                                   setActiveTobuTab('resume')
                                 }}
                                 style={{
-                                  borderBottom: `1px solid ${isLight ? '#F1F5F9' : '#1E293B'}`,
                                   backgroundColor: isSelected
                                     ? (isLight ? '#FDF4FF' : 'rgba(74, 21, 75, 0.16)')
-                                    : (isHovered ? (isLight ? '#F8FAFC' : '#1E293B') : 'transparent'),
+                                    : (isHovered ? (isLight ? '#EFF6FF' : '#1E293B') : (idx % 2 === 1 ? (isLight ? '#F8FAFC' : '#111827') : (isLight ? '#FFFFFF' : '#0F172A'))),
                                   cursor: 'pointer',
                                   transition: 'background-color 0.12s ease'
                                 }}
                               >
                                 {/* 1. Checkbox — stopPropagation so row click doesn't trigger */}
-                                <td style={{ padding: '8px 10px' }} onClick={e => e.stopPropagation()}>
+                                <td style={{ padding: '6px 8px', textAlign: 'center', border: `1px solid ${isLight ? '#CBD5E1' : '#334155'}` }} onClick={e => e.stopPropagation()}>
                                   <input
                                     type="checkbox"
                                     style={{ cursor: 'pointer', accentColor: '#4A154B' }}
@@ -12545,8 +12569,8 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                                   />
                                 </td>
 
-                                {/* 2. Candidate: Clean Name + Email (No initials or dots) */}
-                                <td style={{ padding: '8px 12px' }}>
+                                {/* 2. Candidate: Clean Name + Truncated Auto-Hide Email */}
+                                <td style={{ padding: '6px 10px', border: `1px solid ${isLight ? '#CBD5E1' : '#334155'}`, maxWidth: 175 }}>
                                   <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
                                     <span
                                       onClick={() => {
@@ -12554,7 +12578,7 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                                         setInboxSubMode('card')
                                       }}
                                       style={{
-                                        fontSize: 13,
+                                        fontSize: 12.5,
                                         fontWeight: 700,
                                         color: isLight ? '#0F172A' : '#F8FAFC',
                                         cursor: 'pointer',
@@ -12567,39 +12591,98 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                                       {candName}
                                     </span>
                                     {c.email && (
-                                      <div style={{ fontSize: 11, color: '#64748B', marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={c.email}>
+                                      <div
+                                        style={{
+                                          fontSize: 11,
+                                          color: '#64748B',
+                                          marginTop: 1,
+                                          whiteSpace: 'nowrap',
+                                          overflow: 'hidden',
+                                          textOverflow: 'ellipsis',
+                                          maxWidth: 160
+                                        }}
+                                        title={c.email}
+                                      >
                                         {c.email}
                                       </div>
                                     )}
                                   </div>
                                 </td>
 
-                                {/* 3. Role & Experience */}
-                                <td style={{ padding: '8px 10px', maxWidth: 190, minWidth: 160 }}>
-                                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0, overflow: 'hidden' }}>
-                                    <div style={{
-                                      fontSize: 12.5,
-                                      fontWeight: 700,
-                                      color: '#1E293B',
-                                      whiteSpace: 'nowrap',
-                                      overflow: 'hidden',
-                                      textOverflow: 'ellipsis',
-                                      minWidth: 0
-                                    }} title={safeString(c.role && c.role !== 'Senior Specialist' ? c.role : (skillsArr.length > 0 ? `${skillsArr[0]} Developer` : 'Full Stack Developer'))}>
-                                      {safeString(c.role && c.role !== 'Senior Specialist' ? c.role : (skillsArr.length > 0 ? `${skillsArr[0]} Developer` : 'Full Stack Developer'))}
-                                    </div>
-                                    <div style={{ fontSize: 11, fontWeight: 700, color: '#2563EB', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>
-                                      {(() => {
-                                        return (c.experience && c.experience !== '5+ Years')
-                                          ? c.experience
-                                          : extractCandidateExperience(c.resumeText, c.summary, c.extracted_profile, c.role)
-                                      })()}
-                                    </div>
-                                  </div>
+                                {/* 3. Role (Cleaned, No 'Date:', No numbers) */}
+                                <td style={{ padding: '6px 10px', border: `1px solid ${isLight ? '#CBD5E1' : '#334155'}`, maxWidth: 165, minWidth: 140 }}>
+                                  {(() => {
+                                    let cleanRole = String(c.role || c.title || '').trim();
+                                    const lower = cleanRole.toLowerCase();
+                                    if (
+                                      !cleanRole ||
+                                      lower.startsWith('date') ||
+                                      lower === 'candidate profile' ||
+                                      lower === 'senior specialist' ||
+                                      /^\d+$/.test(cleanRole) ||
+                                      /^\d+[\s+]*years?/i.test(cleanRole) ||
+                                      lower.startsWith('select a card') ||
+                                      lower.startsWith('updated') ||
+                                      lower.startsWith('active')
+                                    ) {
+                                      if (c.targetReqTitle) cleanRole = c.targetReqTitle;
+                                      else if (skillsArr.length > 0) cleanRole = `${skillsArr[0]} Developer`;
+                                      else cleanRole = 'Software Engineer';
+                                    } else {
+                                      cleanRole = cleanRole
+                                        .replace(/^Current:\s*/i, '')
+                                        .replace(/^Previous:\s*/i, '')
+                                        .replace(/^Date:\s*/i, '')
+                                        .replace(/#\d+/g, '')
+                                        .trim() || (skillsArr.length > 0 ? `${skillsArr[0]} Developer` : 'Software Engineer');
+                                    }
+                                    return (
+                                      <div style={{
+                                        fontSize: 12,
+                                        fontWeight: 600,
+                                        color: isLight ? '#1E293B' : '#F1F5F9',
+                                        whiteSpace: 'nowrap',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis'
+                                      }} title={cleanRole}>
+                                        {cleanRole}
+                                      </div>
+                                    );
+                                  })()}
                                 </td>
 
-                                {/* 4. AI Matched Requirement */}
-                                <td style={{ padding: '8px 10px', maxWidth: 220, minWidth: 190 }}>
+                                {/* 4. Experience (Clean number/yrs badge) */}
+                                <td style={{ padding: '6px 6px', textAlign: 'center', border: `1px solid ${isLight ? '#CBD5E1' : '#334155'}`, width: 75, minWidth: 70 }}>
+                                  {(() => {
+                                    let rawExp = String(c.experience || '').trim();
+                                    if (!rawExp || rawExp === '5+ Years' || rawExp.toLowerCase() === 'null') {
+                                      rawExp = extractCandidateExperience(c.resumeText, c.summary, c.extracted_profile, c.role) || '5+ Years';
+                                    }
+                                    if (/^\d+$/.test(rawExp)) {
+                                      rawExp = `${rawExp} Yrs`;
+                                    } else {
+                                      rawExp = rawExp.replace(/\s*years?/i, ' Yrs').replace(/\s*yrs?/i, ' Yrs');
+                                    }
+                                    return (
+                                      <span style={{
+                                        fontSize: 11,
+                                        fontWeight: 700,
+                                        color: '#2563EB',
+                                        backgroundColor: '#EFF6FF',
+                                        border: '1px solid #BFDBFE',
+                                        padding: '1.5px 6px',
+                                        borderRadius: 4,
+                                        whiteSpace: 'nowrap',
+                                        display: 'inline-block'
+                                      }}>
+                                        {rawExp}
+                                      </span>
+                                    );
+                                  })()}
+                                </td>
+
+                                {/* 5. AI Matched Requirement */}
+                                <td style={{ padding: '6px 10px', border: `1px solid ${isLight ? '#CBD5E1' : '#334155'}`, maxWidth: 210, minWidth: 190 }}>
                                   {(() => {
                                     let matchedJob = c.targetReqId 
                                       ? openJobsList.find(j => String(j.id || '').replace(/^J-/, '') === String(c.targetReqId).replace(/^J-/, ''))
@@ -12673,7 +12756,7 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                                         <div style={{
                                           fontSize: 12,
                                           fontWeight: 700,
-                                          color: '#0F172A',
+                                          color: isLight ? '#0F172A' : '#F8FAFC',
                                           whiteSpace: 'nowrap',
                                           overflow: 'hidden',
                                           textOverflow: 'ellipsis',
@@ -12686,8 +12769,8 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                                   })()}
                                 </td>
 
-                                {/* 5. Match % */}
-                                <td style={{ padding: '8px 8px', textAlign: 'center' }}>
+                                {/* 6. Match % */}
+                                <td style={{ padding: '6px 6px', textAlign: 'center', border: `1px solid ${isLight ? '#CBD5E1' : '#334155'}`, width: 85 }}>
                                   {(() => {
                                     let matchedJob = c.targetReqId 
                                       ? openJobsList.find(j => String(j.id || '').replace(/^J-/, '') === String(c.targetReqId).replace(/^J-/, ''))
@@ -12720,47 +12803,53 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                                   })()}
                                 </td>
 
-                                {/* 6. Key Skills */}
-                                <td style={{ padding: '8px 10px' }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap', maxWidth: 150 }}>
-                                    {skillsArr.slice(0, 3).map((sk, sIdx) => (
+                                {/* 7. Key Skills */}
+                                <td style={{ padding: '6px 10px', border: `1px solid ${isLight ? '#CBD5E1' : '#334155'}`, maxWidth: 140 }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 3, whiteSpace: 'nowrap', overflow: 'hidden' }}>
+                                    {skillsArr.slice(0, 2).map((sk, sIdx) => (
                                       <span
                                         key={sIdx}
                                         style={{
-                                          fontSize: 10,
+                                          fontSize: 9.5,
                                           fontWeight: 600,
-                                          backgroundColor: '#F8FAFC',
-                                          border: '1px solid #E2E8F0',
-                                          color: '#334155',
-                                          padding: '2px 6px',
-                                          borderRadius: 4
+                                          backgroundColor: isLight ? '#F1F5F9' : '#1E293B',
+                                          border: `1px solid ${isLight ? '#CBD5E1' : '#334155'}`,
+                                          color: isLight ? '#334155' : '#94A3B8',
+                                          padding: '1px 5px',
+                                          borderRadius: 3,
+                                          maxWidth: 60,
+                                          overflow: 'hidden',
+                                          textOverflow: 'ellipsis',
+                                          whiteSpace: 'nowrap'
                                         }}
+                                        title={sk}
                                       >
                                         {sk}
                                       </span>
                                     ))}
-                                    {skillsArr.length > 3 && (
+                                    {skillsArr.length > 2 && (
                                       <span style={{
-                                        fontSize: 10,
+                                        fontSize: 9.5,
                                         fontWeight: 700,
                                         color: '#2563EB',
                                         backgroundColor: '#EFF6FF',
-                                        padding: '2px 5px',
-                                        borderRadius: 4
-                                      }}>
-                                        +{skillsArr.length - 3}
+                                        border: '1px solid #BFDBFE',
+                                        padding: '1px 4px',
+                                        borderRadius: 3
+                                      }} title={skillsArr.slice(2).join(', ')}>
+                                        +{skillsArr.length - 2}
                                       </span>
                                     )}
                                   </div>
                                 </td>
 
-                                {/* 7. Location (NEW Column) */}
-                                <td style={{ padding: '8px 10px', fontSize: 11.5, color: '#334155', fontWeight: 600, maxWidth: 130, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={c.location || 'Remote / US'}>
+                                {/* 8. Location */}
+                                <td style={{ padding: '6px 10px', fontSize: 11.5, color: isLight ? '#334155' : '#CBD5E1', fontWeight: 600, border: `1px solid ${isLight ? '#CBD5E1' : '#334155'}`, maxWidth: 110, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={c.location || 'Remote / US'}>
                                   {c.location || 'Remote / US'}
                                 </td>
 
-                                {/* 8. Relocation */}
-                                <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                                {/* 9. Relocation */}
+                                <td style={{ padding: '6px 6px', textAlign: 'center', border: `1px solid ${isLight ? '#CBD5E1' : '#334155'}`, width: 75 }}>
                                   {(() => {
                                     const rel = String(c.relocation || 'Open').trim();
                                     const isOpen = rel.toLowerCase().includes('open') || rel.toLowerCase().includes('yes') || rel.toLowerCase().includes('anywhere');
@@ -12770,7 +12859,7 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                                         fontWeight: 600,
                                         backgroundColor: isOpen ? '#F0FDF4' : '#F1F5F9',
                                         color: isOpen ? '#15803D' : '#64748B',
-                                        border: `1px solid ${isOpen ? '#BBF7D0' : '#E2E8F0'}`,
+                                        border: `1px solid ${isOpen ? '#BBF7D0' : (isLight ? '#CBD5E1' : '#334155')}`,
                                         padding: '2px 8px',
                                         borderRadius: 6
                                       }}>
@@ -12780,8 +12869,8 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                                   })()}
                                 </td>
 
-                                {/* 9. Received Date */}
-                                <td style={{ padding: '8px 8px', fontSize: 11, color: '#64748B', whiteSpace: 'nowrap' }}>
+                                {/* 10. Received Date */}
+                                <td style={{ padding: '6px 6px', textAlign: 'center', fontSize: 11, color: '#64748B', whiteSpace: 'nowrap', border: `1px solid ${isLight ? '#CBD5E1' : '#334155'}`, width: 75 }}>
                                   {(() => {
                                     const raw = c.createdAt || c.resumeUploadDate || c.timestamp
                                     if (raw) {
@@ -12794,37 +12883,9 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                                   })()}
                                 </td>
 
-                                {/* 10. Actions: Clean Slack-style minimal action buttons */}
-                                <td style={{ padding: '8px 12px', textAlign: 'right', position: 'relative' }} onClick={e => e.stopPropagation()}>
+                                {/* 11. Actions: Resume button + More Actions (Chat removed per user mandate) */}
+                                <td style={{ padding: '5px 8px', textAlign: 'center', position: 'relative', border: `1px solid ${isLight ? '#CBD5E1' : '#334155'}`, width: 110 }} onClick={e => e.stopPropagation()}>
                                   <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleOpenCandidateChat(c)}
-                                      style={{
-                                        backgroundColor: 'transparent',
-                                        color: '#0F172A',
-                                        border: '1px solid #E2E8F0',
-                                        borderRadius: 6,
-                                        padding: '4px 8px',
-                                        fontSize: 11,
-                                        fontWeight: 600,
-                                        cursor: 'pointer',
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        gap: 4,
-                                        whiteSpace: 'nowrap',
-                                        transition: 'all 0.15s ease'
-                                      }}
-                                      onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#F8FAFC'; e.currentTarget.style.borderColor = '#CBD5E1' }}
-                                      onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.borderColor = '#E2E8F0' }}
-                                      title="Message Candidate"
-                                    >
-                                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                                      </svg>
-                                      <span>Chat</span>
-                                    </button>
-
                                     <button
                                       type="button"
                                       onClick={() => {
@@ -12836,7 +12897,7 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                                         backgroundColor: '#4A154B',
                                         color: '#FFFFFF',
                                         border: 'none',
-                                        borderRadius: 6,
+                                        borderRadius: 5,
                                         padding: '4px 9px',
                                         fontSize: 11,
                                         fontWeight: 600,

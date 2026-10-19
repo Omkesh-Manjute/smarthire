@@ -1546,6 +1546,109 @@ EDUCATION & CERTIFICATIONS
 });
 
 // ---------------------------------------------------------------------
+// TEST 39: TITLE SANITIZER & BOOLEAN SEARCH SANITIZATION (ZERO NUMBERS, ZERO SENIORITY)
+// ---------------------------------------------------------------------
+runTest('Title Sanitizer & Boolean Search: Strip numbers, Roman numerals, and seniority words', () => {
+  // 1. Single role sanitization
+  assert.strictEqual(
+    SmartHireMatchingEngine.cleanJobTitleForSearch('#159339 - Data Warehouse Developer III (Madison, WI)'),
+    'Data Warehouse Developer'
+  );
+  assert.strictEqual(
+    SmartHireMatchingEngine.cleanJobTitleForSearch('Business Analyst Advance'),
+    'Business Analyst'
+  );
+  assert.strictEqual(
+    SmartHireMatchingEngine.cleanJobTitleForSearch('Senior Project Manager'),
+    'Project Manager'
+  );
+  assert.strictEqual(
+    SmartHireMatchingEngine.cleanJobTitleForSearch('System Analyst 6'),
+    'System Analyst'
+  );
+  assert.strictEqual(
+    SmartHireMatchingEngine.cleanJobTitleForSearch('Technical Specialist 4 / TS4'),
+    'Technical Specialist TS'
+  );
+  assert.strictEqual(
+    SmartHireMatchingEngine.cleanJobTitleForSearch('Sr. Java Developer'),
+    'Java Developer'
+  );
+
+  // 2. Boolean Query generator verification
+  const testJob = {
+    id: '159339',
+    title: '#159339 - Data Warehouse Developer III (Madison, WI)',
+    skills: ['ETL', 'SQL', 'Informatica', 'Snowflake'],
+    location: 'Madison, WI'
+  };
+
+  const queries = SmartHireMatchingEngine.generateBooleanQueries(testJob);
+  assert.ok(queries.monster, 'Monster query must exist');
+  assert.ok(queries.dice, 'Dice query must exist');
+
+  // Verify that Boolean queries NEVER contain numbers, Roman numerals, or Senior/Advance
+  const monsterLower = queries.monster.toLowerCase();
+  assert.ok(!monsterLower.includes('159339'), 'Req number must NOT appear in query');
+  assert.ok(!monsterLower.includes(' iii '), 'Roman numerals must NOT appear in query');
+  assert.ok(!monsterLower.includes('advance'), '"Advance" must NOT appear in query');
+  assert.ok(!monsterLower.includes('senior'), '"Senior" must NOT appear in query');
+  assert.ok(queries.monster.includes('"Data Warehouse Developer"'), 'Clean title must appear in quotes');
+});
+
+// ---------------------------------------------------------------------
+// TEST 40: OUTREACH JD FORMATTER (CLEAN SECTIONS, CONCISE BULLETS, ZERO RATES/CODES)
+// ---------------------------------------------------------------------
+runTest('Outreach JD Formatter: Strip internal rates, client codes, and structure clean sections', () => {
+  const rawJobDesc = `Analyst: Bachelors Degree, System Analysis, -, Start date :11/11/2026 End Date :09/30/2027 Submission deadline : 10/20/2026 10:00:00 AM Client Info : DHHS Note: * Interview Process: 1 round Virtual Interview via MS Teams (video required). Candidates should join from a laptop and be prepared to share their screen if requested. A screenshot photo of candidate will be required for any interviews as well as a vendor present at beginning of virtual interview to validate candidate. * Assignment duration: Ongoing contract, projected until 9/30/27 but ultimately will be dependent on business need * Hybrid work schedule (non-negotiable): Position will be hybrid, in office 2 days a week upon start. Wednesdays and Thursdays are required on-site days and cannot be altered. * Candidates MUST be local to Lansing, Michigan area (within 90 miles) at time of submission. This requirement is non-negotiable -Candidates must meet all these requirements from the beginning (non negotiable) Description: • Understands business objectives and problems, identifies alternative solutions, performs studies and cost/benefit analysis of alternatives. Analyzes user requirements, procedures, and problems to automate processing or to improve existing computer system: Confers with personnel of organizational units involved to analyze current operational procedures, identify problems, and learn specific input and output requirements, such as forms of data input, how data is to be summarized, and formats for reports. Writes detailed description of user needs, program functions, and steps required to develop or modify computer program. Reviews computer system capabilities, specifications, and scheduling limitations to determine if requested program or program change is possible within existing system. • Studies existing information processing systems to evaluate effectiveness and develops new systems to improve production or specifications as required. Prepares specifications to detail operations to be performed by equipment and computer programs and operations to be performed by personnel in system. Conducts studies pertaining to development of new information systems to meet current and projected needs. Plans and prepares technical reports, memoranda, and instructional manuals as documentation of program development. Upgrades system and corrects errors to maintain system after implementation. May assist computer programmer in resolution of work problems related to project specifications, or programming. May direct and coordinate work of others to develop, test, install, and modify programs. • Provides technical assistance and support for applications and hardware problems and for information sharing with external entities in a customer service environment. Provides field coordination and planning for the effective use of management information systems. Determines operational, technical, and support requirements for the location, installation, operation, and maintenance of various office equipment and systems. Prepares charts, diagrams, tables, and flowcharts. Details input and output record formats for computer programs. Assists in formulating logical descriptions of problems and devising optimum solutions. Assists in the design, development, and maintenance of various computer applications. May provide support and make recommendations for information technology systems processes associated with software technology planning, development, implementation, system security, and interfaces. • Graduation from an accredited four-year college or university with major course work in computer science, computer information systems, or management information systems is generally preferred. Knowledge of the limitations and capabilities of computer systems and of the techniques used in the design of non-automated systems, of information technology equipment, of applicable progr`;
+
+  const sampleJob = {
+    id: '159331',
+    title: 'System Analyst 6',
+    location: 'Lansing, MI',
+    workMode: 'Hybrid',
+    skills: ['System Analysis', 'Business Analysis', 'Technical Documentation'],
+    description: rawJobDesc
+  };
+
+  const recruiter = {
+    name: 'Omkesh Manjute',
+    email: 'omkesh@coolsofttech.com'
+  };
+
+  const formatted = SmartHireMatchingEngine.formatJobDescriptionForOutreach(sampleJob, 'Pooja Shinde', recruiter);
+
+  // Subject line checks
+  assert.strictEqual(formatted.cleanTitle, 'System Analyst');
+  assert.strictEqual(formatted.subject, 'Direct Client: System Analyst (Hybrid) — COOLSOFT LLC');
+
+  // Body content checks
+  const body = formatted.body;
+  assert.ok(body.includes('Hi Pooja,'), 'Greeting must address candidate by first name');
+  assert.ok(!body.includes('System Analyst 6'), 'Body must NOT contain trailing number 6');
+  assert.ok(!body.includes('DHHS'), 'Internal client code DHHS must be stripped');
+  assert.ok(!body.includes('159331'), 'Req number must be stripped');
+  assert.ok(!body.includes('Submission deadline'), 'Submission deadline must be stripped');
+  assert.ok(!body.includes('vendor present at beginning'), 'Internal vendor instruction must be stripped');
+  assert.ok(!body.includes('screenshot photo of candidate'), 'Internal vendor policy must be stripped');
+  assert.ok(!body.includes('Analyst: Bachelors Degree'), 'Scraped category line must be stripped');
+
+  // Verify Structured Sections
+  assert.ok(body.includes('POSITION OVERVIEW'), 'Must have POSITION OVERVIEW section');
+  assert.ok(body.includes('WORK SCHEDULE & INTERVIEW DETAILS'), 'Must have WORK SCHEDULE section');
+  assert.ok(body.includes('KEY QUALIFICATIONS & SKILLS'), 'Must have KEY QUALIFICATIONS section');
+  assert.ok(body.includes('JOB RESPONSIBILITIES & SCOPE'), 'Must have JOB RESPONSIBILITIES section');
+
+  // Verify education moved to qualifications
+  assert.ok(body.includes('Graduation from an accredited four-year college'), 'Education must be in qualifications');
+
+  // Verify bullet integrity
+  const lines = body.split('\n');
+  const bulletLines = lines.filter(l => l.startsWith('• '));
+  assert.ok(bulletLines.length >= 8, `Should have at least 8 structured bullet lines, found ${bulletLines.length}`);
+});
+
+// ---------------------------------------------------------------------
 // SUMMARY
 // ---------------------------------------------------------------------
 console.log('\n====================================================');
