@@ -1748,6 +1748,15 @@ ${(match.interviewQuestions || [
             : '';
           if (freshPhone) cand.phone = freshPhone;
         }
+
+        // Live Monster contact fallback
+        if ((!cand.email || cand.email === 'Not Disclosed' || !cand.phone || cand.phone === 'Not Disclosed') && typeof window.extractMonsterContact === 'function') {
+          try {
+            const fresh = window.extractMonsterContact(null, cand.name);
+            if ((!cand.email || cand.email === 'Not Disclosed') && fresh && fresh.email) cand.email = fresh.email;
+            if ((!cand.phone || cand.phone === 'Not Disclosed') && fresh && fresh.phone) cand.phone = fresh.phone;
+          } catch (e) {}
+        }
         if (!cand.location || cand.location === 'United States') {
           const freshLoc = (typeof window.extractCleanMonsterLocation === 'function' ? window.extractCleanMonsterLocation(liveResumeText.slice(0, 2500)) : '') ||
                            (window.SmartHireUtils && typeof window.SmartHireUtils.extractLocation === 'function' ? window.SmartHireUtils.extractLocation(liveResumeText.slice(0, 2500)) : '');
@@ -1848,6 +1857,15 @@ ${(match.interviewQuestions || [
           ? window.SmartHireUtils.extractCandidatePhone(liveResumeText)
           : '';
         if (freshPhone) candidate.phone = freshPhone;
+      }
+
+      // Live Monster contact fallback
+      if ((!candidate.email || candidate.email === 'Not Disclosed' || !candidate.phone || candidate.phone === 'Not Disclosed') && typeof window.extractMonsterContact === 'function') {
+        try {
+          const fresh = window.extractMonsterContact(null, candidate.name);
+          if ((!candidate.email || candidate.email === 'Not Disclosed') && fresh && fresh.email) candidate.email = fresh.email;
+          if ((!candidate.phone || candidate.phone === 'Not Disclosed') && fresh && fresh.phone) candidate.phone = fresh.phone;
+        } catch (e) {}
       }
       if (!candidate.location || candidate.location === 'United States') {
         const freshLoc = (typeof window.extractCleanMonsterLocation === 'function' ? window.extractCleanMonsterLocation(liveResumeText.slice(0, 2500)) : '') ||

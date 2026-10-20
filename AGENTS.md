@@ -66,6 +66,35 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
     - In resume views, every responsibility, project accomplishment, and contribution line must be formatted with an explicit bullet point (`•`) and proper indentation.
     - The engine must automatically detect responsibilities (lines following `Responsibilities:`, action verbs, or list items) even when converted from plain text or Word documents without literal Unicode bullets.
 
+### 2026-10-21 — Monster Omnichannel Contact Extraction, Active Pane Verification & Card Selection Gating
+- **Context & Objectives**:
+  - The user reported: `bhai same issu a raha hai kuch ka le raha hai kuch ka nahi pure ka nahi a raha hai fix karo` (Email/phone extraction was working for some candidates, but failing / returning "Not Disclosed" for other candidates).
+- **Root Cause & Architectural Implementations**:
+  1. *Label-less Contact & Varied Format Omission*:
+     - Previously, contact extraction relied strictly on `(?:Email|E-mail|Mail):` and `(?:Phone|Cell|Mobile|Tel|Home):` label prefixes. Candidates whose Monster profiles display phone or email next to icons without text labels, or with newline breaks (e.g. `Phone:\n+14049267436`), were completely missed.
+     - Fix: Built multi-tier omnichannel extraction in `window.extractMonsterContact`:
+       - Tier 1: Flexible prefix matching with optional whitespace and newlines (`[\s\S]{0,15}[:\s]`).
+       - Tier 2: Dedicated contact container scanning (`[data-testid*="contact"], [class*="contact"], [class*="legend"], [class*="header"]`) for raw emails and formatted phones.
+       - Tier 3: Scan all `mailto:` and `tel:` links in the right split-view column.
+       - Tier 4: Page-wide right column text scan with recruiter blacklisting (`@coolsofttech.com`, `@smarthireus.com`) and candidate relay preservation (`@contact.monster.com`).
+  2. *Card Selection Target Scoping & Navigation Shielding (`selectMonsterCandidateCard`)*:
+     - Root cause: Over-restrictive button/target filtering previously prevented component click events from bubbling up to Svelte card containers on virtualized/scrolled cards.
+     - Fix: Smoothly scrolls target cards to `block: 'center'`. Registers a one-shot capturing `click` event listener on `window` to prevent accidental anchor navigation while allowing full pointer and mouse event dispatching across title, header, body, and card root.
+  3. *Active Pane Verification (`window.isMonsterCandidateActive`)*:
+     - Built `isMonsterCandidateActive(candidateName)`: Validates that the right split-view column is actively displaying the candidate's name (matching first name, last name, or full name) before extracting from the right pane, preventing cross-candidate data contamination.
+  4. *Profile Tab Auto-Activation & Re-extract Fallback*:
+     - In `smartHireScrapeCandidatesAsync`, increased right-pane polling to 3000ms with a 1200ms click retry.
+     - If email or phone is missing, automatically locates and clicks the "Profile" tab across the entire right pane, waits 250ms, and re-scans for contact info.
+     - In `injected_dock.js`, added live Monster contact fallback to `openAiDossier` and dossier re-extract handler.
+- **Verification & Deployment Protocol**:
+  - `node -c` verified syntax for all extension and server files (0 syntax errors).
+  - All 42 unit tests pass (`node smarthire-main/tests/ats_matching_engine.test.js`).
+  - Production build in `smarthire-react`: 0 errors, 0 warnings.
+  - Repackaged `smarthire-extension.zip`.
+  - Git committed and pushed to GitHub `origin main`.
+  - Deployed updated `smarthire-extension.zip` to AWS Lightsail server (`34.194.119.199`) at `/var/www/html/smarthire-extension.zip`.
+  - Verified live download URL: `https://smarthireus.com/smarthire-extension.zip` returns HTTP 200 OK.
+
 ### 2026-10-20 — Monster Detail Pane Contact Header Extraction & Auto-Select Top Requisition
 - **Context & Objectives**:
   - The user reported: `bhai ab bahut logo ki email and number nahi aye hai jab ki avible hai sab not discloed a rahahai and req jo a ati hai to top wali mai hona cahiye set so update this also`

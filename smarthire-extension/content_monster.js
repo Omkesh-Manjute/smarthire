@@ -397,48 +397,107 @@
     return null;
   };
 
+  // Check whether the currently displayed right-hand split-view column matches target candidate
+  window.isMonsterCandidateActive = function(candidateName = '') {
+    if (!candidateName) return false;
+    const isExcluded = (el) => {
+      if (!el) return true;
+      if (el.closest('#smarthire-copilot-drawer') || el.closest('#smarthire-copilot-trigger') || el.closest('#smarthire-dossier-overlay')) return true;
+      if (el.tagName === 'NAV' || el.tagName === 'HEADER' || el.tagName === 'FOOTER') return true;
+      return false;
+    };
+
+    const clean = candidateName.trim().toLowerCase();
+    const parts = clean.split(/\s+/).filter(p => p.length >= 2);
+    const firstName = parts[0] || '';
+    const lastName = parts.slice(-1)[0] || '';
+
+    // 1. Check headings/titles in the right split-view column (>= 20% window width)
+    const rightElements = Array.from(document.querySelectorAll('h1, h2, h3, h4, [class*="header"], [class*="title"], [class*="name"], [data-testid*="name"], [data-testid*="candidate"]')).filter(el => {
+      if (isExcluded(el)) return false;
+      const rect = el.getBoundingClientRect();
+      return rect.left >= window.innerWidth * 0.20 && rect.width >= 30;
+    });
+
+    for (const el of rightElements) {
+      const txt = (el.innerText || el.textContent || '').trim().toLowerCase();
+      if (!txt) continue;
+      if (txt.includes(clean)) return true;
+      if (firstName.length >= 3 && lastName.length >= 3 && txt.includes(firstName) && txt.includes(lastName)) return true;
+      if (firstName.length >= 3 && txt.includes(firstName)) return true;
+      if (lastName.length >= 3 && txt.includes(lastName)) return true;
+    }
+
+    // 2. Check general right container text
+    const rightContainers = Array.from(document.querySelectorAll('div, section, article, aside, [role="dialog"], [class*="detail"], [class*="pane"]')).filter(el => {
+      if (isExcluded(el)) return false;
+      if (el.tagName.toLowerCase() === 'smui-card' || el.closest('smui-card')) return false;
+      const rect = el.getBoundingClientRect();
+      return rect.left >= window.innerWidth * 0.20 && rect.width >= 200 && rect.height >= 50;
+    });
+
+    for (const c of rightContainers) {
+      const txt = (c.innerText || c.textContent || '').slice(0, 3000).toLowerCase();
+      if (txt.includes(clean)) return true;
+      if (firstName.length >= 3 && lastName.length >= 3 && txt.includes(firstName) && txt.includes(lastName)) return true;
+      if (firstName.length >= 3 && txt.includes(firstName)) return true;
+      if (lastName.length >= 3 && txt.includes(lastName)) return true;
+    }
+    return false;
+  };
+
   // Select / click candidate card safely without navigating away or reloading
   window.selectMonsterCandidateCard = function(card) {
     if (!card) return false;
     try {
-      // Elements that MUST NEVER be clicked because they trigger page navigation, checkboxes, or favorites
-      const isUnsafeTarget = (el) => {
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+      // Attach one-shot event capturer to prevent any anchor from navigating away
+      const preventAnchorNavigation = (e) => {
+        const anchor = e.target && (e.target.tagName === 'A' ? e.target : e.target.closest('a'));
+        if (anchor) {
+          const href = anchor.getAttribute('href') || '';
+          if (href && !href.startsWith('#') && !href.startsWith('javascript:')) {
+            e.preventDefault();
+          }
+        }
+      };
+      window.addEventListener('click', preventAnchorNavigation, { capture: true, once: true });
+
+      // Elements that should never be clicked (action buttons, favorites, checkboxes)
+      const isUnsafeElement = (el) => {
         if (!el) return true;
-        // Strictly exclude anchor tags and elements with href (prevents navigating to candidate full profile / reloading page)
-        if (el.tagName === 'A' || el.closest('a') || el.hasAttribute('href')) return true;
-        // Exclude checkboxes
         if (el.type === 'checkbox' || el.closest('[role="checkbox"]') || el.closest('[class*="checkbox"]')) return true;
-        // Exclude favorite / star buttons
         if (el.closest('[data-testid*="favorite"]') || el.closest('[class*="favorite"]')) return true;
-        // Exclude action buttons (menu, download, email, etc.)
-        if (el.tagName === 'BUTTON' || el.closest('button') || el.closest('[role="button"]')) return true;
+        if (el.closest('[aria-label*="favorite"]') || el.closest('[aria-label*="Favorite"]')) return true;
+        if (el.closest('[aria-label*="Actions"]') || el.closest('[aria-label*="more options"]')) return true;
         return false;
       };
 
-      // Search for safe clickable body / header elements inside the card
-      const safeTargets = [
+      // Best targets on card: candidate title, card body, card header, or card root
+      const targets = [
+        card.querySelector('[class*="candidate-details"]'),
+        card.querySelector('[class*="candidate-summary"]'),
         card.querySelector('.smui-card-body'),
         card.querySelector('[class*="card-body"]'),
         card.querySelector('.smui-card-header'),
         card.querySelector('[class*="card-header"]'),
         card.querySelector('[data-testid*="card-content"]'),
         card.querySelector('[class*="card-content"]'),
-        card.querySelector('[class*="candidate-details"]'),
-        card.querySelector('[class*="candidate-summary"]'),
+        card.querySelector('h2, h3, h4, [class*="title"], [class*="role"], [class*="job"]'),
         card
-      ].filter(el => el && !isUnsafeTarget(el));
+      ].filter(el => el && !isUnsafeElement(el));
 
-      const clickTarget = safeTargets[0] || card;
+      const clickTarget = targets[0] || card;
 
-      clickTarget.scrollIntoView({ behavior: 'auto', block: 'nearest' });
-      clickTarget.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, view: window }));
-      clickTarget.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true, view: window }));
-      
-      const clickEvt = new MouseEvent('click', { bubbles: true, cancelable: true, view: window });
-      clickTarget.dispatchEvent(clickEvt);
+      const opts = { bubbles: true, cancelable: true, view: window };
+      clickTarget.dispatchEvent(new MouseEvent('pointerdown', opts));
+      clickTarget.dispatchEvent(new MouseEvent('mousedown', opts));
+      clickTarget.dispatchEvent(new MouseEvent('pointerup', opts));
+      clickTarget.dispatchEvent(new MouseEvent('mouseup', opts));
+      clickTarget.dispatchEvent(new MouseEvent('click', opts));
 
-      // Only invoke native .click() if target has NO anchor / href and is not inside an anchor
-      if (!isUnsafeTarget(clickTarget) && typeof clickTarget.click === 'function') {
+      if (clickTarget.tagName !== 'A' && !clickTarget.closest('a') && typeof clickTarget.click === 'function') {
         try { clickTarget.click(); } catch (e) {}
       }
       return true;
@@ -1000,34 +1059,56 @@
     const firstWord = expectedCandidateName ? expectedCandidateName.trim().split(/\s+/)[0].toLowerCase() : '';
     const lastWord = expectedCandidateName ? expectedCandidateName.trim().split(/\s+/).slice(-1)[0].toLowerCase() : '';
 
-    // 1. First, check inside the specific candidate card element if provided
+    const cleanEmail = (raw) => {
+      if (!raw) return '';
+      const em = raw.trim().toLowerCase();
+      if (em.includes('coolsofttech') || em.includes('smarthireus')) return '';
+      if (em.startsWith('support@') || em.startsWith('info@') || em.startsWith('sales@') ||
+          em.startsWith('careers@') || em.startsWith('jobs@') || em.startsWith('privacy@') ||
+          em.startsWith('help@') || em.startsWith('donotreply@') || em.startsWith('noreply@')) return '';
+      if (em.includes('monster.com') && !em.endsWith('@contact.monster.com')) return '';
+      return em;
+    };
+
+    const cleanPhone = (raw) => {
+      if (!raw) return '';
+      const p = utils.extractPhones(raw);
+      if (p.length > 0 && !p[0].includes('555-01')) return p[0];
+      return '';
+    };
+
+    // 1. First, check inside specific candidate card element if provided
     if (cardEl) {
       const cardMailLinks = cardEl.querySelectorAll('a[href^="mailto:"]');
       for (const a of cardMailLinks) {
-        const clean = a.href.replace(/^mailto:/i, '').split('?')[0].trim().toLowerCase();
-        if (clean && !clean.startsWith('support@') && !clean.startsWith('info@')) {
-          email = clean;
-          break;
-        }
+        const c = cleanEmail(a.href.replace(/^mailto:/i, '').split('?')[0]);
+        if (c) { email = c; break; }
       }
       const cardTelLinks = cardEl.querySelectorAll('a[href^="tel:"]');
       for (const a of cardTelLinks) {
-        const clean = a.href.replace(/^tel:/i, '').trim();
-        const extracted = utils.extractPhones(clean);
-        if (extracted.length > 0) { phone = extracted[0]; break; }
+        const c = cleanPhone(a.href.replace(/^tel:/i, ''));
+        if (c) { phone = c; break; }
       }
       if (!email) {
-        const cEmails = utils.extractEmails(cardEl.innerText || '');
+        const cEmails = utils.extractEmails(cardEl.innerText || '').map(cleanEmail).filter(Boolean);
         if (cEmails.length > 0) email = cEmails[0];
       }
       if (!phone) {
-        const cPhones = utils.extractPhones(cardEl.innerText || '');
+        const cPhones = utils.extractPhones(cardEl.innerText || '').map(cleanPhone).filter(Boolean);
         if (cPhones.length > 0) phone = cPhones[0];
       }
       if (email && phone) return { phone, email };
     }
 
-    // 2. High-Precision Direct Text Scan: Search for explicit "Email:" and "Phone:" patterns in the split-view detail pane
+    // 2. Search Right-hand Split View: First confirm candidate match if expectedCandidateName provided
+    if (expectedCandidateName && typeof window.isMonsterCandidateActive === 'function') {
+      const active = window.isMonsterCandidateActive(expectedCandidateName);
+      if (!active) {
+        // Right pane is not yet rendering this candidate; return any contact found on card only
+        return { phone, email };
+      }
+    }
+
     const isExcluded = (el) => {
       if (!el) return true;
       if (el.closest('#smarthire-copilot-drawer') || el.closest('#smarthire-copilot-trigger') || el.closest('#smarthire-dossier-overlay')) return true;
@@ -1036,41 +1117,39 @@
       return false;
     };
 
-    const rightPaneElements = Array.from(document.querySelectorAll('div, section, article, aside, p, span, li, a')).filter(el => {
+    // 3. Priority 1: High-precision regex pattern scanning across all elements in right pane
+    const rightElements = Array.from(document.querySelectorAll('div, section, article, aside, p, span, li, a, h1, h2, h3, h4')).filter(el => {
       if (isExcluded(el)) return false;
       const rect = el.getBoundingClientRect();
-      return rect.left >= window.innerWidth * 0.20 && rect.width >= 30 && rect.height >= 12;
+      return rect.left >= window.innerWidth * 0.20 && rect.width >= 20 && rect.height >= 10;
     });
 
-    for (const el of rightPaneElements) {
+    for (const el of rightElements) {
       const txt = (el.innerText || el.textContent || '').trim();
       if (!txt) continue;
 
-      // Sniff Email: <email>
       if (!email) {
-        const emMatch = txt.match(/(?:Email|E-mail|Mail):\s*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i);
+        // Pattern: Email: <email> OR E-mail: <email> OR Mail: <email> OR Contact: <email>
+        const emMatch = txt.match(/(?:Email|E-mail|Mail|Contact)[\s\S]{0,15}[:\s]\s*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i);
         if (emMatch) {
-          const em = emMatch[1].trim().toLowerCase();
-          if (!em.includes('coolsofttech') && !em.includes('smarthireus') && !em.startsWith('support@')) {
-            email = em;
-          }
+          const ce = cleanEmail(emMatch[1]);
+          if (ce) email = ce;
         }
       }
 
-      // Sniff Phone: <phone> (e.g. Phone: +14049267436)
       if (!phone) {
-        const phMatch = txt.match(/(?:Phone|Cell|Mobile|Tel|Home):\s*(\+?1?[-.\s]?\(?[2-9]\d{2}\)?[-.\s]?[0-9]{3}[-.\s]?[0-9]{4})/i);
+        // Pattern: Phone: <phone> OR Cell: <phone> OR Mobile: <phone> OR Home: <phone> OR Tel: <phone>
+        const phMatch = txt.match(/(?:Phone|Cell|Mobile|Tel|Telephone|Home|Work|Primary)[\s\S]{0,15}[:\s]\s*(\+?1?[-.\s]?\(?[2-9]\d{2}\)?[-.\s]?[0-9]{3}[-.\s]?[0-9]{4})/i);
         if (phMatch) {
-          const rawPh = phMatch[1].trim();
-          const p = utils.extractPhones(rawPh);
-          phone = p.length > 0 ? p[0] : rawPh;
+          const cp = cleanPhone(phMatch[1]);
+          if (cp) phone = cp;
         }
       }
 
       if (email && phone) break;
     }
 
-    // 3. Scan mailto: and tel: links in right-side preview area
+    // 4. Priority 2: Scan mailto: and tel: links in right-side preview area
     if (!email || !phone) {
       const rightLinks = Array.from(document.querySelectorAll('a[href^="mailto:"], a[href^="tel:"]')).filter(a => {
         if (isExcluded(a)) return false;
@@ -1080,21 +1159,42 @@
 
       for (const a of rightLinks) {
         if (!email && a.href.startsWith('mailto:')) {
-          const clean = a.href.replace(/^mailto:/i, '').split('?')[0].trim().toLowerCase();
-          if (clean && !clean.includes('coolsofttech') && !clean.startsWith('support@') && !clean.startsWith('privacy@')) {
-            email = clean;
-          }
+          const clean = cleanEmail(a.href.replace(/^mailto:/i, '').split('?')[0]);
+          if (clean) email = clean;
         }
         if (!phone && a.href.startsWith('tel:')) {
-          const clean = a.href.replace(/^tel:/i, '').trim();
-          const p = utils.extractPhones(clean);
-          if (p.length > 0) phone = p[0];
+          const clean = cleanPhone(a.href.replace(/^tel:/i, ''));
+          if (clean) phone = clean;
         }
         if (email && phone) break;
       }
     }
 
-    // 4. Search right containers for general contact text
+    // 5. Priority 3: Scan dedicated contact legend / header containers for raw emails and phones
+    if (!email || !phone) {
+      const contactContainers = Array.from(document.querySelectorAll(
+        '[data-testid*="contact"], [class*="contact"], [class*="Contact"], [class*="phone"], [class*="email"], [class*="legend"], [class*="header"], [data-testid*="candidate-header"]'
+      )).filter(el => {
+        if (isExcluded(el)) return false;
+        const rect = el.getBoundingClientRect();
+        return rect.left >= window.innerWidth * 0.20;
+      });
+
+      for (const box of contactContainers) {
+        const boxText = box.innerText || box.textContent || '';
+        if (!email) {
+          const found = utils.extractEmails(boxText).map(cleanEmail).filter(Boolean);
+          if (found.length > 0) email = found[0];
+        }
+        if (!phone) {
+          const foundP = utils.extractPhones(boxText).map(cleanPhone).filter(Boolean);
+          if (foundP.length > 0) phone = foundP[0];
+        }
+        if (email && phone) break;
+      }
+    }
+
+    // 6. Priority 4: Search right containers for general contact text
     if (!email || !phone) {
       const rightContainers = Array.from(document.querySelectorAll('div, section, article, aside, [role="dialog"], [class*="detail"], [class*="preview"], [class*="pane"], [class*="contact"]')).filter(el => {
         if (isExcluded(el)) return false;
@@ -1110,26 +1210,16 @@
         const matches = (!expectedCandidateName) || 
                         (firstWord && containerLower.includes(firstWord)) || 
                         (lastWord && containerLower.includes(lastWord)) ||
-                        containerLower.includes('phone:') ||
-                        containerLower.includes('email:');
+                        containerLower.includes('phone') ||
+                        containerLower.includes('email');
 
         if (matches) {
           if (!email) {
-            const foundEmails = utils.extractEmails(containerText);
-            const cleanEmails = foundEmails.filter(e => 
-              !e.includes('coolsofttech') &&
-              !e.includes('smarthireus') &&
-              !e.startsWith('support@') && 
-              !e.startsWith('info@') && 
-              !e.startsWith('privacy@') && 
-              !e.startsWith('contact@') &&
-              !e.startsWith('jobs@') &&
-              !e.startsWith('careers@')
-            );
-            if (cleanEmails.length > 0) email = cleanEmails[0];
+            const foundEmails = utils.extractEmails(containerText).map(cleanEmail).filter(Boolean);
+            if (foundEmails.length > 0) email = foundEmails[0];
           }
           if (!phone) {
-            const foundPhones = utils.extractPhones(containerText);
+            const foundPhones = utils.extractPhones(containerText).map(cleanPhone).filter(Boolean);
             if (foundPhones.length > 0) phone = foundPhones[0];
           }
 
@@ -1282,32 +1372,30 @@
         // 2. Select card to open detail pane in Monster's split view
         window.selectMonsterCandidateCard(card);
 
-        // 3. Dynamic Polling: Wait up to 2000ms for detail pane to reflect THIS candidate's name
+        // 3. Dynamic Polling: Wait up to 3000ms for detail pane to reflect THIS candidate's name
         const pollStart = Date.now();
-        const firstName = name ? name.split(/\s+/)[0].toLowerCase() : '';
-        let detailPane = null;
+        let paneActive = false;
 
-        while (Date.now() - pollStart < 2000) {
-          detailPane = window.findMonsterDetailPane(name);
-          const paneText = detailPane ? (detailPane.innerText || '') : '';
-          const paneMatchesCandidate = detailPane && firstName && paneText.toLowerCase().includes(firstName);
+        while (Date.now() - pollStart < 3000) {
+          paneActive = (typeof window.isMonsterCandidateActive === 'function' && window.isMonsterCandidateActive(name)) ||
+                       (window.findMonsterDetailPane(name) !== null);
 
-          if (paneMatchesCandidate) {
+          if (paneActive) {
             // Check contact directly in detail pane
             const contact = window.extractMonsterContact(null, name);
             if (contact.email) email = contact.email;
             if (contact.phone) phone = contact.phone;
 
-            // If contact not found yet, click Profile tab where Monster renders contact legend
+            // If contact not found yet, find and click Profile tab across right pane
             if (!email || !phone) {
-              const profileTab = detailPane.querySelector('li:nth-of-type(2) > .tab__title > .tab__label') ||
-                                 detailPane.querySelector('li:nth-of-type(2)') ||
-                                 Array.from(detailPane.querySelectorAll('.tab__label, button, [role="tab"], li')).find(t => 
-                                   (t.innerText || '').trim().toLowerCase() === 'profile'
-                                 );
-              if (profileTab && !profileTab.closest('.tab--active') && !profileTab.classList.contains('active') && profileTab.getAttribute('aria-selected') !== 'true') {
+              const tabs = Array.from(document.querySelectorAll('.tab__label, [role="tab"], button, li')).filter(t => {
+                const rect = t.getBoundingClientRect();
+                return rect.left >= window.innerWidth * 0.20 && (t.innerText || '').trim().toLowerCase() === 'profile';
+              });
+              if (tabs.length > 0) {
+                const profTab = tabs[0];
                 try {
-                  const targetTab = profileTab.closest('[role="tab"]') || profileTab.closest('button') || profileTab.closest('li') || profileTab;
+                  const targetTab = profTab.closest('[role="tab"]') || profTab.closest('button') || profTab.closest('li') || profTab;
                   targetTab.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, view: window }));
                   targetTab.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true, view: window }));
                   targetTab.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
@@ -1325,6 +1413,11 @@
             }
             break;
           }
+
+          // Retry clicking card after 1200ms if pane hasn't updated
+          if (Date.now() - pollStart > 1200 && Date.now() - pollStart < 1350) {
+            window.selectMonsterCandidateCard(card);
+          }
           await sleep(120);
         }
 
@@ -1337,14 +1430,8 @@
 
         // 5. Reconcile Location if not found on card
         if (!location || location === 'United States') {
-          if (detailPane) {
-            const paneLoc = window.extractCleanMonsterLocation(detailPane.innerText || '');
-            if (paneLoc) location = paneLoc;
-          }
-        }
-        if (!location || location === 'United States') {
-          const resumeLoc = window.extractCleanMonsterLocation(candidateFullText.slice(0, 2500));
-          if (resumeLoc) location = resumeLoc;
+          const rightLoc = window.extractCleanMonsterLocation(candidateFullText.slice(0, 2500));
+          if (rightLoc) location = rightLoc;
         }
         if (!location) location = 'United States';
 
