@@ -261,7 +261,7 @@ Website: http://www.coolsofttech.com`;
 
             <div id="smarthire-req-info" style="margin-top:8px; font-size:11px; color:#475569; background:#F8FAFC; border:1px solid #E2E8F0; padding:8px 10px; border-radius:6px;"></div>
 
-            <button id="smarthire-btn-autosearch" class="smarthire-btn-secondary" style="margin-top:8px;">
+            <button type="button" id="smarthire-btn-autosearch" class="smarthire-btn-secondary" style="margin-top:8px;">
               🔍 Auto-Fill Search on Current Page
             </button>
           </div>
@@ -273,7 +273,7 @@ Website: http://www.coolsofttech.com`;
               <span style="font-size:10px; color:#059669; font-weight:700;">Deep Click Scraper</span>
             </div>
             
-            <button id="smarthire-btn-scrape" class="smarthire-btn-primary">
+            <button type="button" id="smarthire-btn-scrape" class="smarthire-btn-primary">
               ⚡ 1-Click Scrape Candidates
             </button>
             
@@ -488,7 +488,11 @@ Website: http://www.coolsofttech.com`;
     });
 
     // Auto-fill Search Button
-    document.getElementById('smarthire-btn-autosearch').addEventListener('click', () => {
+    document.getElementById('smarthire-btn-autosearch').addEventListener('click', (e) => {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
       if (!selectedJob) return;
       const title = (selectedJob.title || '').replace(/\(.*?\)/g, '').replace(/\[.*?\]/g, '').trim();
       const skillsQuery = generateBooleanQuery(selectedJob);
@@ -507,7 +511,11 @@ Website: http://www.coolsofttech.com`;
     });
 
     // Quick 1-Click Scrape
-    document.getElementById('smarthire-btn-scrape').addEventListener('click', () => {
+    document.getElementById('smarthire-btn-scrape').addEventListener('click', (e) => {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
       runQuickScrape();
     });
 
@@ -2772,16 +2780,22 @@ ${(match.interviewQuestions || [
         container.style.borderRadius = '6px';
 
         // Action 1: Multi-event Click (dispatches pointerdown, mousedown, pointerup, mouseup, click)
+        const isAnchorOrUnsafe = (el) => {
+          if (!el) return true;
+          if (el.tagName === 'A' || el.closest('a') || el.hasAttribute('href')) return true;
+          if (el.type === 'checkbox' || el.closest('[role="checkbox"]') || el.closest('[class*="checkbox"]')) return true;
+          if (el.closest('[data-testid*="favorite"]') || el.closest('[class*="favorite"]')) return true;
+          return false;
+        };
+
         const clickCandidates = [];
         if (clickSelector) {
           const userEl = container.querySelector(clickSelector);
-          if (userEl) clickCandidates.push(userEl);
+          if (userEl && !isAnchorOrUnsafe(userEl)) clickCandidates.push(userEl);
         }
-        const bodyEl = container.querySelector('.smui-card-body');
-        if (bodyEl && !clickCandidates.includes(bodyEl)) clickCandidates.push(bodyEl);
-        const nameLink = container.querySelector('a[href*="/candidates/"], a[href*="/candidate/"], h2 a, h3 a, a');
-        if (nameLink && !clickCandidates.includes(nameLink)) clickCandidates.push(nameLink);
-        if (!clickCandidates.includes(container)) clickCandidates.push(container);
+        const bodyEl = container.querySelector('.smui-card-body') || container.querySelector('[class*="card-body"]');
+        if (bodyEl && !isAnchorOrUnsafe(bodyEl) && !clickCandidates.includes(bodyEl)) clickCandidates.push(bodyEl);
+        if (!clickCandidates.includes(container) && !isAnchorOrUnsafe(container)) clickCandidates.push(container);
 
         const primaryTarget = clickCandidates[0] || container;
         const rect = primaryTarget.getBoundingClientRect();
@@ -2793,7 +2807,10 @@ ${(match.interviewQuestions || [
         primaryTarget.dispatchEvent(new MouseEvent('mousedown', evtInit));
         primaryTarget.dispatchEvent(new PointerEvent('pointerup', evtInit));
         primaryTarget.dispatchEvent(new MouseEvent('mouseup', evtInit));
-        primaryTarget.click();
+        primaryTarget.dispatchEvent(new MouseEvent('click', evtInit));
+        if (!isAnchorOrUnsafe(primaryTarget) && typeof primaryTarget.click === 'function') {
+          try { primaryTarget.click(); } catch (e) {}
+        }
 
         // Dynamic Polling: Wait up to 1800ms for detail pane to render contact details
         let email = '';

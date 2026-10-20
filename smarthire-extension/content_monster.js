@@ -336,28 +336,30 @@
     return null;
   };
 
-  // Activate Monster Resume Tab
+  // Activate Monster Resume Tab safely without navigating or reloading
   window.activateMonsterResumeTab = function(resumeTab) {
     if (!resumeTab) return false;
     try {
-      const clickTargets = [
-        resumeTab.closest('li'),
-        resumeTab.closest('button'),
-        resumeTab.closest('[role="tab"]'),
-        resumeTab.closest('a'),
-        resumeTab
-      ].filter(Boolean);
+      // Pick the single best tab target (prefer role="tab", button, or li over raw anchor)
+      const target = resumeTab.closest('[role="tab"]') ||
+                     resumeTab.closest('button') ||
+                     resumeTab.closest('li') ||
+                     resumeTab;
 
-      const uniqueTargets = Array.from(new Set(clickTargets));
+      target.scrollIntoView({ behavior: 'auto', block: 'nearest' });
+      target.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, view: window }));
+      target.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true, view: window }));
 
-      for (const target of uniqueTargets) {
-        try {
-          target.scrollIntoView({ behavior: 'auto', block: 'nearest' });
-          target.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
-          target.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true }));
-          target.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
-          if (typeof target.click === 'function') target.click();
-        } catch (e) {}
+      const clickEvt = new MouseEvent('click', { bubbles: true, cancelable: true, view: window });
+      target.dispatchEvent(clickEvt);
+
+      // Only invoke native .click() if target is NOT an anchor with an external href (to prevent browser navigation/page reload)
+      const anchor = target.tagName === 'A' ? target : target.closest('a');
+      const href = anchor ? anchor.getAttribute('href') : null;
+      if (!anchor || !href || href === '#' || href.startsWith('javascript:')) {
+        if (typeof target.click === 'function') {
+          try { target.click(); } catch (e) {}
+        }
       }
       return true;
     } catch (e) {
@@ -395,32 +397,51 @@
     return null;
   };
 
-  // Select / click candidate card
+  // Select / click candidate card safely without navigating away or reloading
   window.selectMonsterCandidateCard = function(card) {
     if (!card) return false;
     try {
-      const clickTargets = [
+      // Elements that MUST NEVER be clicked because they trigger page navigation, checkboxes, or favorites
+      const isUnsafeTarget = (el) => {
+        if (!el) return true;
+        // Strictly exclude anchor tags and elements with href (prevents navigating to candidate full profile / reloading page)
+        if (el.tagName === 'A' || el.closest('a') || el.hasAttribute('href')) return true;
+        // Exclude checkboxes
+        if (el.type === 'checkbox' || el.closest('[role="checkbox"]') || el.closest('[class*="checkbox"]')) return true;
+        // Exclude favorite / star buttons
+        if (el.closest('[data-testid*="favorite"]') || el.closest('[class*="favorite"]')) return true;
+        // Exclude action buttons (menu, download, email, etc.)
+        if (el.tagName === 'BUTTON' || el.closest('button') || el.closest('[role="button"]')) return true;
+        return false;
+      };
+
+      // Search for safe clickable body / header elements inside the card
+      const safeTargets = [
         card.querySelector('.smui-card-body'),
         card.querySelector('[class*="card-body"]'),
-        card.querySelector('a[href*="/candidate/"]'),
-        card.querySelector('[data-testid*="candidate-name"]'),
-        card.querySelector('h2, h3, h4'),
         card.querySelector('.smui-card-header'),
+        card.querySelector('[class*="card-header"]'),
+        card.querySelector('[data-testid*="card-content"]'),
+        card.querySelector('[class*="card-content"]'),
+        card.querySelector('[class*="candidate-details"]'),
+        card.querySelector('[class*="candidate-summary"]'),
         card
-      ].filter(Boolean);
+      ].filter(el => el && !isUnsafeTarget(el));
 
-      for (const clickTarget of clickTargets) {
-        if (clickTarget.type === 'checkbox' || clickTarget.closest('[role="checkbox"]') || clickTarget.closest('[class*="checkbox"]') || clickTarget.closest('[data-testid*="favorite"]')) {
-          continue;
-        }
-        clickTarget.scrollIntoView({ behavior: 'auto', block: 'nearest' });
-        clickTarget.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
-        clickTarget.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true }));
-        clickTarget.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
-        if (typeof clickTarget.click === 'function') clickTarget.click();
-        return true;
+      const clickTarget = safeTargets[0] || card;
+
+      clickTarget.scrollIntoView({ behavior: 'auto', block: 'nearest' });
+      clickTarget.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, view: window }));
+      clickTarget.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true, view: window }));
+      
+      const clickEvt = new MouseEvent('click', { bubbles: true, cancelable: true, view: window });
+      clickTarget.dispatchEvent(clickEvt);
+
+      // Only invoke native .click() if target has NO anchor / href and is not inside an anchor
+      if (!isUnsafeTarget(clickTarget) && typeof clickTarget.click === 'function') {
+        try { clickTarget.click(); } catch (e) {}
       }
-      return false;
+      return true;
     } catch (e) {
       return false;
     }
@@ -1268,7 +1289,15 @@
                                  );
               if (profileTab && !profileTab.closest('.tab--active') && !profileTab.classList.contains('active') && profileTab.getAttribute('aria-selected') !== 'true') {
                 try {
-                  profileTab.click();
+                  const targetTab = profileTab.closest('[role="tab"]') || profileTab.closest('button') || profileTab.closest('li') || profileTab;
+                  targetTab.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, view: window }));
+                  targetTab.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true, view: window }));
+                  targetTab.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+                  const pAnchor = targetTab.tagName === 'A' ? targetTab : targetTab.closest('a');
+                  const pUrl = pAnchor ? pAnchor.getAttribute('href') : null;
+                  if (!pAnchor || !pUrl || pUrl === '#' || pUrl.startsWith('javascript:')) {
+                    if (typeof targetTab.click === 'function') targetTab.click();
+                  }
                   await sleep(250);
                   const profContact = window.extractMonsterContact(null, name);
                   if (profContact.email) email = profContact.email;
@@ -1487,9 +1516,7 @@
       targetInp.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, bubbles: true }));
       return `Injected search parameters and submitted!`;
     } else {
-      const directUrl = `https://manage.monster.com/en-us/candidateSearch/job?title=${encodeURIComponent(cleanTitle)}&keywords=${encodeURIComponent(cleanSkills)}&location=${encodeURIComponent(cleanLoc)}`;
-      window.location.href = directUrl;
-      return `Navigating directly to Monster+ search.`;
+      return `Search inputs not currently visible on page. Please expand Monster's search filters on the left.`;
     }
   };
 })();
