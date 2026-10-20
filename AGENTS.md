@@ -66,6 +66,35 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
     - In resume views, every responsibility, project accomplishment, and contribution line must be formatted with an explicit bullet point (`•`) and proper indentation.
     - The engine must automatically detect responsibilities (lines following `Responsibilities:`, action verbs, or list items) even when converted from plain text or Word documents without literal Unicode bullets.
 
+### 2026-10-20 — Fix Monster Auto-Reload & Navigation on Scrape / Workflow Execution
+- **Context & Objectives**:
+  - The user reported: `bhai ak aur problem ho rahi hai ki run karne pe moster relod ho ja raha hai auto so kay kar sakte hai hum` (Monster was auto-reloading whenever running candidate extraction/workflow).
+- **Root Cause & Architectural Implementations**:
+  1. *Hyperlink Navigation in `selectMonsterCandidateCard`*:
+     - In `content_monster.js`, `clickTargets` previously included `a[href*="/candidate/"]` and `h2, h3, h4` (which wrap candidate profile hyperlinks).
+     - When `selectMonsterCandidateCard` executed `clickTarget.click()` on that anchor link, the browser followed the candidate profile URL (`https://manage.monster.com/.../candidate/...`), navigating away from search results and appearing as an immediate page reload.
+     - Fix: Built `isUnsafeTarget` gating to strictly exclude ANY anchor tag (`el.tagName === 'A'`, `el.closest('a')`, `hasAttribute('href')`), action buttons, checkboxes, and favorites. Only safe card containers (`.smui-card-body`, `.smui-card-header`, `card`) receive mouse events, and native `.click()` is never invoked on any anchor.
+  2. *Tab Activation Anchor Navigation*:
+     - In `activateMonsterResumeTab`, a multi-target loop clicked `resumeTab.closest('a')` with native `.click()`. If the tab was an anchor with `href=""` or `href="#"`, it reloaded the page.
+     - Fix: Consolidated to the single best tab target (`[role="tab"]`, `button`, or `li`), avoiding native `.click()` on anchors with external hrefs.
+  3. *Profile Tab Safe Activation*:
+     - Replaced raw `profileTab.click()` with synthetic mouse event dispatching and anchor href protection.
+  4. *Browserflow Studio Anchor Exclusion*:
+     - In `runFlowStudioWorkflow` (`injected_dock.js`), removed `nameLink` (`a[href*="/candidate/"]`) from `clickCandidates`, preventing automation from navigating away.
+  5. *Dock Button Form Protection*:
+     - Added `type="button"` and `e.preventDefault()`, `e.stopPropagation()` to all dock action buttons (`#smarthire-btn-scrape`, `#smarthire-btn-autosearch`).
+  6. *Auto-Fill Hard Redirect Removal*:
+     - Replaced `window.location.href = directUrl;` fallback in `smartHireAutoFillSearch` with graceful user guidance.
+- **Verification & Deployment Protocol**:
+  - `node -c` verified syntax for all extension and server files (0 syntax errors).
+  - All 42 unit tests pass (`node smarthire-main/tests/ats_matching_engine.test.js`).
+  - Production build in `smarthire-react`: 0 errors, 0 warnings.
+  - Repackaged `smarthire-extension.zip`.
+  - Git committed (`aec8cea`) and pushed to GitHub `origin main`.
+  - Deployed updated `smarthire-extension.zip` to AWS Lightsail server (`34.194.119.199`) at `/var/www/html/smarthire-extension.zip`.
+  - Verified live download URL: `https://smarthireus.com/smarthire-extension.zip` returns HTTP 200 OK.
+
+
 ### 2026-10-20 — Fix Monster ReferenceError: immediateText is not defined & Zero Extraction Crash
 - **Context & Objectives**:
   - The user reported: `extension mai kuch error agaya hai dekho extrect 0 bata raha hai bhai fix karo isko` with screenshots showing `ReferenceError: immediateText is not defined at content_monster.js:1361 (window.smartHireScrapeCandidatesAsync)` on cards 0, 1, 2... resulting in `Extracted 0 candidate(s) successfully!`.
