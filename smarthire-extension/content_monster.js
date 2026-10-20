@@ -229,74 +229,42 @@
     return cleanLines.join('\n');
   };
 
-  // Find Monster Resume Tab
-  window.findMonsterResumeTab = function(container = document) {
-    const roots = [container, document].filter(Boolean);
+  // Find Monster Resume Tab strictly in the candidate preview / right column
+  window.findMonsterResumeTab = function(container = null) {
+    const isExcluded = (el) => {
+      if (!el) return true;
+      if (el.closest('#smarthire-copilot-drawer') || el.closest('#smarthire-copilot-trigger') || el.closest('#smarthire-dossier-overlay')) return true;
+      if (el.closest('smui-card') || el.closest('[class*="candidate-card"]')) return true;
+      return false;
+    };
 
-    // 1. Direct targeted selectors for Monster+ SMUI tabs (both 2-tab and 3-tab layouts)
-    const directSelectors = [
-      'li:nth-of-type(2) > .tab__title > .tab__label',
-      'li:nth-of-type(3) > .tab__title > .tab__label',
-      'li:nth-of-type(2) .tab__label',
-      'li:nth-of-type(3) .tab__label',
-      'li:nth-of-type(2) [role="tab"]',
-      'li:nth-of-type(3) [role="tab"]',
-      'li:nth-of-type(2)',
-      'li:nth-of-type(3)',
-      '[data-testid*="resume-tab"]',
-      '[data-testid*="tab-resume"]',
-      '[id*="tab-resume"]',
-      '[aria-controls*="resume"]',
-      '[aria-label*="resume" i]',
-      '[aria-label*="cv" i]'
-    ];
-
-    for (const root of roots) {
-      for (const sel of directSelectors) {
-        try {
-          const els = root.querySelectorAll(sel);
-          for (const el of els) {
-            if (el && !el.closest('#smarthire-copilot-drawer') && !el.closest('#smarthire-dossier-overlay')) {
-              const t = (el.innerText || el.textContent || '').trim().toLowerCase();
-              if (t.includes('resume') || t.includes('cv') || sel.includes('resume')) {
-                return el;
-              }
-            }
-          }
-        } catch (e) {}
-      }
-    }
-
-    // 2. Generic tab selectors with flexible label matching
-    const tabSelectors = [
-      '[role="tab"]',
-      'button[role="tab"]',
-      'a[role="tab"]',
-      'li[class*="tab"]',
-      '.tab__label',
-      '.tab__title',
-      '[data-testid*="tab"]',
-      'button',
-      'a',
-      'li',
-      'span'
-    ];
-
-    for (const root of roots) {
-      for (const sel of tabSelectors) {
-        let els;
-        try { els = Array.from(root.querySelectorAll(sel)); } catch (e) { continue; }
-        for (const el of els) {
-          if (el.closest('#smarthire-copilot-drawer') || el.closest('#smarthire-copilot-trigger') || el.closest('#smarthire-dossier-overlay')) continue;
-          const t = (el.innerText || el.textContent || '').trim().toLowerCase();
-          if (t.length > 0 && t.length <= 40) {
-            if (/^resume\b/i.test(t) || /\bresume\b/i.test(t) || t === 'cv' || t.includes('resume &') || t.includes('view resume')) {
-              return el;
-            }
-          }
+    // 1. Check inside container if provided
+    if (container) {
+      const containerTabs = Array.from(container.querySelectorAll('[role="tab"], button, li, a, .tab__label, .tab__title, span, div')).filter(el => !isExcluded(el));
+      for (const el of containerTabs) {
+        const txt = (el.innerText || el.textContent || '').trim().toLowerCase();
+        if (txt === 'resume' || txt === 'cv' || txt === 'resume & cv' || txt === 'view resume') {
+          return el.closest('[role="tab"]') || el.closest('button') || el.closest('li') || el;
         }
       }
     }
+
+    // 2. Strict right-side preview search (x >= 20% window width). Never match search filters on the left!
+    const rightElements = Array.from(document.querySelectorAll(
+      '[role="tab"], button, li, a, .tab__label, .tab__title, [class*="tab"], [data-testid*="tab"]'
+    )).filter(el => {
+      if (isExcluded(el)) return false;
+      const rect = el.getBoundingClientRect();
+      return rect.left >= window.innerWidth * 0.20 && rect.width >= 10 && rect.height >= 10;
+    });
+
+    for (const el of rightElements) {
+      const txt = (el.innerText || el.textContent || '').trim().toLowerCase();
+      if (txt === 'resume' || txt === 'cv' || txt === 'resume & cv' || txt === 'view resume' || txt === 'candidate resume') {
+        return el.closest('[role="tab"]') || el.closest('button') || el.closest('li') || el;
+      }
+    }
+
     return null;
   };
 
@@ -324,6 +292,8 @@
         try { els = Array.from(root.querySelectorAll(sel)); } catch (e) { continue; }
         for (const el of els) {
           if (el.closest('#smarthire-copilot-drawer') || el.closest('#smarthire-copilot-trigger') || el.closest('#smarthire-dossier-overlay')) continue;
+          const rect = el.getBoundingClientRect();
+          if (rect.left < window.innerWidth * 0.20) continue;
           const t = (el.innerText || el.textContent || '').trim().toLowerCase();
           if (t.length > 0 && t.length <= 40) {
             if (t === 'profile' || t === 'candidate profile' || t === 'profile details' || t.startsWith('profile')) {
@@ -340,20 +310,40 @@
   window.activateMonsterResumeTab = function(resumeTab) {
     if (!resumeTab) return false;
     try {
-      // Pick the single best tab target (prefer role="tab", button, or li over raw anchor)
       const target = resumeTab.closest('[role="tab"]') ||
                      resumeTab.closest('button') ||
                      resumeTab.closest('li') ||
                      resumeTab;
 
       target.scrollIntoView({ behavior: 'auto', block: 'nearest' });
-      target.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, view: window }));
-      target.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true, view: window }));
+      const rect = target.getBoundingClientRect();
+      const x = rect.left + Math.max(5, rect.width / 2);
+      const y = rect.top + Math.max(5, rect.height / 2);
 
-      const clickEvt = new MouseEvent('click', { bubbles: true, cancelable: true, view: window });
-      target.dispatchEvent(clickEvt);
+      const eventInit = {
+        bubbles: true,
+        cancelable: true,
+        composed: true,
+        view: window,
+        detail: 1,
+        screenX: window.screenX + x,
+        screenY: window.screenY + y,
+        clientX: x,
+        clientY: y,
+        button: 0,
+        buttons: 1
+      };
 
-      // Only invoke native .click() if target is NOT an anchor with an external href (to prevent browser navigation/page reload)
+      try {
+        target.dispatchEvent(new PointerEvent('pointerdown', { ...eventInit, pointerId: 1, pointerType: 'mouse', isPrimary: true }));
+      } catch (e) {}
+      target.dispatchEvent(new MouseEvent('mousedown', eventInit));
+      try {
+        target.dispatchEvent(new PointerEvent('pointerup', { ...eventInit, buttons: 0, pointerId: 1, pointerType: 'mouse', isPrimary: true }));
+      } catch (e) {}
+      target.dispatchEvent(new MouseEvent('mouseup', { ...eventInit, buttons: 0 }));
+      target.dispatchEvent(new MouseEvent('click', { ...eventInit, buttons: 0 }));
+
       const anchor = target.tagName === 'A' ? target : target.closest('a');
       const href = anchor ? anchor.getAttribute('href') : null;
       if (!anchor || !href || href === '#' || href.startsWith('javascript:')) {
@@ -428,30 +418,19 @@
       if (lastName.length >= 3 && txt.includes(lastName)) return true;
     }
 
-    return true; // Graceful default if ambiguous
+    return false;
   };
 
   // Select / click candidate card safely without navigating away or reloading
   window.selectMonsterCandidateCard = function(card) {
     if (!card) return false;
     try {
-      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-      // Attach one-shot event capturer to prevent any anchor from navigating away
-      const preventAnchorNavigation = (e) => {
-        const anchor = e.target && (e.target.tagName === 'A' ? e.target : e.target.closest('a'));
-        if (anchor) {
-          const href = anchor.getAttribute('href') || '';
-          if (href && !href.startsWith('#') && !href.startsWith('javascript:')) {
-            e.preventDefault();
-          }
-        }
-      };
-      window.addEventListener('click', preventAnchorNavigation, { capture: true, once: true });
+      card.scrollIntoView({ behavior: 'instant', block: 'center' });
 
       // Elements that should never be clicked (action buttons, favorites, checkboxes)
       const isUnsafeElement = (el) => {
         if (!el) return true;
+        if (el.tagName === 'A' || el.closest('a') || el.hasAttribute('href')) return true;
         if (el.type === 'checkbox' || el.closest('[role="checkbox"]') || el.closest('[class*="checkbox"]')) return true;
         if (el.closest('[data-testid*="favorite"]') || el.closest('[class*="favorite"]')) return true;
         if (el.closest('[aria-label*="favorite"]') || el.closest('[aria-label*="Favorite"]')) return true;
@@ -459,32 +438,65 @@
         return false;
       };
 
-      // Best targets on card: candidate title, card body, card header, or card root
-      const targets = [
-        card.querySelector('[class*="candidate-details"]'),
-        card.querySelector('[class*="candidate-summary"]'),
+      const dispatchRealisticClick = (el) => {
+        if (!el || isUnsafeElement(el)) return false;
+        try {
+          const rect = el.getBoundingClientRect();
+          const x = rect.left + Math.max(5, rect.width / 2);
+          const y = rect.top + Math.max(5, rect.height / 2);
+
+          const eventInit = {
+            bubbles: true,
+            cancelable: true,
+            composed: true,
+            view: window,
+            detail: 1,
+            screenX: window.screenX + x,
+            screenY: window.screenY + y,
+            clientX: x,
+            clientY: y,
+            button: 0,
+            buttons: 1
+          };
+
+          try {
+            el.dispatchEvent(new PointerEvent('pointerdown', { ...eventInit, pointerId: 1, pointerType: 'mouse', isPrimary: true }));
+          } catch (e) {}
+          el.dispatchEvent(new MouseEvent('mousedown', eventInit));
+          try {
+            el.dispatchEvent(new PointerEvent('pointerup', { ...eventInit, buttons: 0, pointerId: 1, pointerType: 'mouse', isPrimary: true }));
+          } catch (e) {}
+          el.dispatchEvent(new MouseEvent('mouseup', { ...eventInit, buttons: 0 }));
+          el.dispatchEvent(new MouseEvent('click', { ...eventInit, buttons: 0 }));
+
+          if (typeof el.click === 'function') {
+            try { el.click(); } catch (e) {}
+          }
+          return true;
+        } catch (e) {
+          return false;
+        }
+      };
+
+      // Candidate card targets to activate split view:
+      // In Monster Svelte Material UI, clicking the primary action, card body, candidate summary, or card itself triggers selection.
+      const candidateTargets = [
+        card.querySelector('.mdc-card__primary-action'),
+        card.querySelector('[class*="primary-action"]'),
         card.querySelector('.smui-card-body'),
         card.querySelector('[class*="card-body"]'),
-        card.querySelector('.smui-card-header'),
-        card.querySelector('[class*="card-header"]'),
-        card.querySelector('[data-testid*="card-content"]'),
+        card.querySelector('[class*="candidate-summary"]'),
+        card.querySelector('[class*="candidate-details"]'),
         card.querySelector('[class*="card-content"]'),
+        card.querySelector('[data-testid*="card-content"]'),
         card.querySelector('h2, h3, h4, [class*="title"], [class*="role"], [class*="job"]'),
         card
       ].filter(el => el && !isUnsafeElement(el));
 
-      const clickTarget = targets[0] || card;
-
-      const opts = { bubbles: true, cancelable: true, view: window };
-      clickTarget.dispatchEvent(new MouseEvent('pointerdown', opts));
-      clickTarget.dispatchEvent(new MouseEvent('mousedown', opts));
-      clickTarget.dispatchEvent(new MouseEvent('pointerup', opts));
-      clickTarget.dispatchEvent(new MouseEvent('mouseup', opts));
-      clickTarget.dispatchEvent(new MouseEvent('click', opts));
-
-      if (clickTarget.tagName !== 'A' && !clickTarget.closest('a') && typeof clickTarget.click === 'function') {
-        try { clickTarget.click(); } catch (e) {}
+      for (const target of candidateTargets) {
+        dispatchRealisticClick(target);
       }
+
       return true;
     } catch (e) {
       return false;
@@ -1092,36 +1104,51 @@
       return false;
     };
 
-    // 2. High-precision regex pattern scanning across all elements in right pane
-    const rightElements = Array.from(document.querySelectorAll('div, section, article, aside, p, span, li, a, h1, h2, h3, h4, header')).filter(el => {
-      if (isExcluded(el)) return false;
-      const rect = el.getBoundingClientRect();
-      return rect.left >= window.innerWidth * 0.20 && rect.width >= 20 && rect.height >= 10;
-    });
+    // 2. High-priority targeted scan for Monster's Contact Legend container: #contact-legend-detail
+    const contactLegendSelectors = [
+      '#contact-legend-detail',
+      '[id*="contact-legend"]',
+      '[class*="contact-legend"]',
+      '[class*="contactLegend"]',
+      '[data-testid*="contact-legend"]',
+      '[data-testid*="contact"]',
+      '[class*="contact-info"]',
+      '[class*="contactInfo"]'
+    ];
 
-    for (const el of rightElements) {
-      const txt = (el.innerText || el.textContent || '').trim();
-      if (!txt) continue;
+    for (const sel of contactLegendSelectors) {
+      try {
+        const els = Array.from(document.querySelectorAll(sel)).filter(el => {
+          if (isExcluded(el)) return false;
+          const rect = el.getBoundingClientRect();
+          return rect.left >= window.innerWidth * 0.20;
+        });
 
-      if (!email) {
-        // Pattern: Email: <email> OR E-mail: <email> OR Mail: <email> OR Contact: <email>
-        const emMatch = txt.match(/(?:Email|E-mail|Mail|Contact)[\s\S]{0,15}[:\s]\s*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i);
-        if (emMatch) {
-          const ce = cleanEmail(emMatch[1]);
-          if (ce) email = ce;
+        for (const el of els) {
+          const txt = el.innerText || el.textContent || '';
+          if (!email) {
+            const emMatch = txt.match(/(?:Email|E-mail|Mail|Contact)[\s\S]{0,15}[:\s]\s*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i);
+            if (emMatch) {
+              const ce = cleanEmail(emMatch[1]);
+              if (ce) email = ce;
+            } else {
+              const found = utils.extractEmails(txt).map(cleanEmail).filter(Boolean);
+              if (found.length > 0) email = found[0];
+            }
+          }
+          if (!phone) {
+            const phMatch = txt.match(/(?:Phone|Cell|Mobile|Tel|Telephone|Home|Work|Primary)[\s\S]{0,15}[:\s]\s*(\+?1?[-.\s]?\(?[2-9]\d{2}\)?[-.\s]?[0-9]{3}[-.\s]?[0-9]{4})/i);
+            if (phMatch) {
+              const cp = cleanPhone(phMatch[1]);
+              if (cp) phone = cp;
+            } else {
+              const foundP = utils.extractPhones(txt).map(cleanPhone).filter(Boolean);
+              if (foundP.length > 0) phone = foundP[0];
+            }
+          }
+          if (email && phone) return { phone, email };
         }
-      }
-
-      if (!phone) {
-        // Pattern: Phone: <phone> OR Cell: <phone> OR Mobile: <phone> OR Home: <phone> OR Tel: <phone>
-        const phMatch = txt.match(/(?:Phone|Cell|Mobile|Tel|Telephone|Home|Work|Primary)[\s\S]{0,15}[:\s]\s*(\+?1?[-.\s]?\(?[2-9]\d{2}\)?[-.\s]?[0-9]{3}[-.\s]?[0-9]{4})/i);
-        if (phMatch) {
-          const cp = cleanPhone(phMatch[1]);
-          if (cp) phone = cp;
-        }
-      }
-
-      if (email && phone) break;
+      } catch (e) {}
     }
 
     // 3. Scan mailto: and tel: links in right-side preview area
@@ -1141,51 +1168,66 @@
           const clean = cleanPhone(a.href.replace(/^tel:/i, ''));
           if (clean) phone = clean;
         }
-        if (email && phone) break;
+        if (email && phone) return { phone, email };
       }
     }
 
-    // 4. Scan dedicated contact legend / header containers for raw emails and phones
-    if (!email || !phone) {
-      const contactContainers = Array.from(document.querySelectorAll(
-        '[data-testid*="contact"], [class*="contact"], [class*="Contact"], [class*="phone"], [class*="email"], [class*="legend"], [class*="header"], [data-testid*="candidate-header"]'
-      )).filter(el => {
-        if (isExcluded(el)) return false;
-        const rect = el.getBoundingClientRect();
-        return rect.left >= window.innerWidth * 0.20;
-      });
+    // 4. Scan right-pane header elements specifically (where candidate contact info is rendered)
+    const rightHeaderElements = Array.from(document.querySelectorAll('header, [class*="header"], [data-testid*="header"], [class*="detail"], [class*="preview"], [class*="legend"]')).filter(el => {
+      if (isExcluded(el)) return false;
+      const rect = el.getBoundingClientRect();
+      return rect.left >= window.innerWidth * 0.20 && rect.width >= 100 && rect.height >= 20;
+    });
 
-      for (const box of contactContainers) {
-        const boxText = box.innerText || box.textContent || '';
-        if (!email) {
-          const found = utils.extractEmails(boxText).map(cleanEmail).filter(Boolean);
-          if (found.length > 0) email = found[0];
+    for (const el of rightHeaderElements) {
+      const txt = (el.innerText || el.textContent || '').trim();
+      if (!txt) continue;
+
+      if (!email) {
+        const emMatch = txt.match(/(?:Email|E-mail|Mail|Contact)[\s\S]{0,15}[:\s]\s*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i);
+        if (emMatch) {
+          const ce = cleanEmail(emMatch[1]);
+          if (ce) email = ce;
         }
-        if (!phone) {
-          const foundP = utils.extractPhones(boxText).map(cleanPhone).filter(Boolean);
-          if (foundP.length > 0) phone = foundP[0];
-        }
-        if (email && phone) break;
       }
+
+      if (!phone) {
+        const phMatch = txt.match(/(?:Phone|Cell|Mobile|Tel|Telephone|Home|Work|Primary)[\s\S]{0,15}[:\s]\s*(\+?1?[-.\s]?\(?[2-9]\d{2}\)?[-.\s]?[0-9]{3}[-.\s]?[0-9]{4})/i);
+        if (phMatch) {
+          const cp = cleanPhone(phMatch[1]);
+          if (cp) phone = cp;
+        }
+      }
+
+      if (email && phone) return { phone, email };
     }
 
-    // 5. Search right containers for general contact text
+    // 5. Fallback: Scan text elements in right pane
     if (!email || !phone) {
-      const rightContainers = Array.from(document.querySelectorAll('div, section, article, aside, [role="dialog"], [class*="detail"], [class*="preview"], [class*="pane"], [class*="contact"], header')).filter(el => {
+      const rightElements = Array.from(document.querySelectorAll('div, section, article, aside, p, span, li')).filter(el => {
         if (isExcluded(el)) return false;
         const rect = el.getBoundingClientRect();
-        return rect.width >= 150 && rect.height >= 30 && rect.left >= window.innerWidth * 0.20;
+        return rect.left >= window.innerWidth * 0.20 && rect.width >= 20 && rect.height >= 10 && rect.height <= 300;
       });
 
-      for (const container of rightContainers) {
-        const containerText = container.innerText || container.textContent || '';
+      for (const el of rightElements) {
+        const txt = (el.innerText || el.textContent || '').trim();
+        if (!txt) continue;
+
         if (!email) {
-          const foundEmails = utils.extractEmails(containerText).map(cleanEmail).filter(Boolean);
-          if (foundEmails.length > 0) email = foundEmails[0];
+          const emMatch = txt.match(/(?:Email|E-mail|Mail|Contact)[\s\S]{0,15}[:\s]\s*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i);
+          if (emMatch) {
+            const ce = cleanEmail(emMatch[1]);
+            if (ce) email = ce;
+          }
         }
+
         if (!phone) {
-          const foundPhones = utils.extractPhones(containerText).map(cleanPhone).filter(Boolean);
-          if (foundPhones.length > 0) phone = foundPhones[0];
+          const phMatch = txt.match(/(?:Phone|Cell|Mobile|Tel|Telephone|Home|Work|Primary)[\s\S]{0,15}[:\s]\s*(\+?1?[-.\s]?\(?[2-9]\d{2}\)?[-.\s]?[0-9]{3}[-.\s]?[0-9]{4})/i);
+          if (phMatch) {
+            const cp = cleanPhone(phMatch[1]);
+            if (cp) phone = cp;
+          }
         }
 
         if (email && phone) break;
@@ -1336,29 +1378,40 @@
         // 2. Select card to open detail pane in Monster's split view
         window.selectMonsterCandidateCard(card);
 
-        // 3. Short pause for Monster's right-side detail pane to update
-        await sleep(350);
+        // 3. Wait for Monster's right-side detail pane to update and confirm active candidate (up to 1200ms)
+        const selectStart = Date.now();
+        while (Date.now() - selectStart < 1200) {
+          if (window.isMonsterCandidateActive(name)) break;
+          await sleep(100);
+        }
 
-        // Sniff detail pane immediately for contact info
+        // 4. Ensure Resume tab is active so Monster renders contact legend and resume document!
+        const resumeTab = window.findMonsterResumeTab();
+        if (resumeTab) {
+          window.activateMonsterResumeTab(resumeTab);
+          await sleep(200);
+        }
+
+        // 5. Sniff detail pane immediately for contact info
         const paneDirect = window.extractMonsterContact(null, name);
         if (!email && paneDirect.email) email = paneDirect.email;
         if (!phone && paneDirect.phone) phone = paneDirect.phone;
 
-        // 4. Extract authentic clean resume text from right detail pane / Resume document
+        // 6. Extract authentic clean resume text from right detail pane / Resume document
         const extRes = await window.extractCleanMonsterResumeTextAsync(card, name, true);
         let candidateFullText = extRes.text;
         if (!candidateFullText || candidateFullText.length < 50) {
           candidateFullText = window.cleanMonsterResumeText(cardText);
         }
 
-        // 5. Reconcile Location if not found on card
+        // 7. Reconcile Location if not found on card
         if (!location || location === 'United States') {
           const rightLoc = window.extractCleanMonsterLocation(candidateFullText.slice(0, 2500));
           if (rightLoc) location = rightLoc;
         }
         if (!location) location = 'United States';
 
-        // 6. Verified Contact Extraction: Scan resume text, then confirmed detail pane, then card
+        // 8. Verified Contact Extraction: Scan resume text, then confirmed detail pane, then card
         if (!email) email = window.extractCandidateEmailFromText(candidateFullText);
         if (!phone) phone = window.extractCandidatePhoneFromText(candidateFullText);
 

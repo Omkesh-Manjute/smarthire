@@ -2837,13 +2837,16 @@ ${(match.interviewQuestions || [
         const maxWait = delayMs ? Math.max(delayMs, 1500) : 1800;
 
         while (Date.now() - pollStart < maxWait) {
-          // Action 2: Switch to Profile tab if present
-          const profileTab = document.querySelector('li:nth-of-type(2) > .tab__title > .tab__label') ||
-                             Array.from(document.querySelectorAll('.tab__label, button, [role="tab"]')).find(t => 
-                               t.innerText && t.innerText.trim().toLowerCase() === 'profile'
-                             );
-          if (profileTab && !profileTab.closest('.tab--active') && !profileTab.classList.contains('active')) {
-            profileTab.click();
+          // Action 2: Ensure Resume tab is active so Monster renders contact legend (#contact-legend-detail) and resume document
+          const resumeTab = (typeof window.findMonsterResumeTab === 'function' ? window.findMonsterResumeTab() : null) ||
+                            Array.from(document.querySelectorAll('.tab__label, button, [role="tab"]')).find(t => {
+                              const txt = (t.innerText || '').trim().toLowerCase();
+                              return (txt === 'resume' || txt === 'cv') && t.getBoundingClientRect().left >= window.innerWidth * 0.20;
+                            });
+          if (resumeTab && typeof window.activateMonsterResumeTab === 'function') {
+            window.activateMonsterResumeTab(resumeTab);
+          } else if (resumeTab && typeof resumeTab.click === 'function') {
+            try { resumeTab.click(); } catch (e) {}
           }
 
           // Check standard Monster/Dice deep contact extraction
@@ -3021,12 +3024,15 @@ ${(match.interviewQuestions || [
           }
         }
 
-        // Live DOM fallback for visible contact box if still Not Disclosed
+        // Live DOM fallback for visible contact box if still Not Disclosed and candidate is active in preview pane
         if ((!c.email || c.email === 'Not Disclosed' || !c.phone || c.phone === 'Not Disclosed') && typeof window.extractMonsterContact === 'function') {
           try {
-            const fresh = window.extractMonsterContact(null, c.name);
-            if ((!c.email || c.email === 'Not Disclosed') && fresh && fresh.email) c.email = fresh.email;
-            if ((!c.phone || c.phone === 'Not Disclosed') && fresh && fresh.phone) c.phone = fresh.phone;
+            const isActive = typeof window.isMonsterCandidateActive === 'function' ? window.isMonsterCandidateActive(c.name) : true;
+            if (isActive) {
+              const fresh = window.extractMonsterContact(null, c.name);
+              if ((!c.email || c.email === 'Not Disclosed') && fresh && fresh.email) c.email = fresh.email;
+              if ((!c.phone || c.phone === 'Not Disclosed') && fresh && fresh.phone) c.phone = fresh.phone;
+            }
           } catch (e) {}
         }
       });
