@@ -788,10 +788,11 @@
 
     // 1. Check if a matching detail pane is already open for THIS candidate
     let pane = window.findMonsterDetailPane(candidateName);
+    let immediateText = '';
 
     // If matching pane is open and full resume document is ALREADY rendered in viewer, return immediately
     if (pane && nameMatches(pane.innerText || '')) {
-      const immediateText = window.extractDeepMonsterResumeText(candidateName);
+      immediateText = window.extractDeepMonsterResumeText(candidateName) || '';
       if (immediateText && immediateText.length >= 1200 && nameMatches(immediateText)) {
         return {
           text: immediateText,
@@ -835,7 +836,7 @@
     let lastLen = 0;
     let stableCount = 0;
     const tabPollStart = Date.now();
-    let bestText = (nameMatches(immediateText) ? immediateText : '') || '';
+    let bestText = (immediateText && nameMatches(immediateText)) ? immediateText : '';
 
     while (Date.now() - tabPollStart < 3500) {
       // Trigger scroll down in viewer container to force virtualized pages (e.g. page 2, page 3) to render
@@ -860,6 +861,8 @@
       } else {
         stableCount = 0;
       }
+      lastLen = bestText.length;
+      await sleep(150);
     }
 
     // Reset scroll
