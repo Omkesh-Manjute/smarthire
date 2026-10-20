@@ -399,11 +399,11 @@
 
   // Check whether the currently displayed right-hand split-view column matches target candidate
   window.isMonsterCandidateActive = function(candidateName = '') {
-    if (!candidateName) return false;
+    if (!candidateName) return true;
     const isExcluded = (el) => {
       if (!el) return true;
       if (el.closest('#smarthire-copilot-drawer') || el.closest('#smarthire-copilot-trigger') || el.closest('#smarthire-dossier-overlay')) return true;
-      if (el.tagName === 'NAV' || el.tagName === 'HEADER' || el.tagName === 'FOOTER') return true;
+      if (el.tagName.toLowerCase() === 'smui-card' || el.closest('smui-card')) return true;
       return false;
     };
 
@@ -412,8 +412,8 @@
     const firstName = parts[0] || '';
     const lastName = parts.slice(-1)[0] || '';
 
-    // 1. Check headings/titles in the right split-view column (>= 20% window width)
-    const rightElements = Array.from(document.querySelectorAll('h1, h2, h3, h4, [class*="header"], [class*="title"], [class*="name"], [data-testid*="name"], [data-testid*="candidate"]')).filter(el => {
+    // Check headings, titles, and text elements in the right split-view column (>= 20% window width)
+    const rightElements = Array.from(document.querySelectorAll('h1, h2, h3, h4, p, span, div, header, [class*="header"], [class*="title"], [class*="name"]')).filter(el => {
       if (isExcluded(el)) return false;
       const rect = el.getBoundingClientRect();
       return rect.left >= window.innerWidth * 0.20 && rect.width >= 30;
@@ -428,22 +428,7 @@
       if (lastName.length >= 3 && txt.includes(lastName)) return true;
     }
 
-    // 2. Check general right container text
-    const rightContainers = Array.from(document.querySelectorAll('div, section, article, aside, [role="dialog"], [class*="detail"], [class*="pane"]')).filter(el => {
-      if (isExcluded(el)) return false;
-      if (el.tagName.toLowerCase() === 'smui-card' || el.closest('smui-card')) return false;
-      const rect = el.getBoundingClientRect();
-      return rect.left >= window.innerWidth * 0.20 && rect.width >= 200 && rect.height >= 50;
-    });
-
-    for (const c of rightContainers) {
-      const txt = (c.innerText || c.textContent || '').slice(0, 3000).toLowerCase();
-      if (txt.includes(clean)) return true;
-      if (firstName.length >= 3 && lastName.length >= 3 && txt.includes(firstName) && txt.includes(lastName)) return true;
-      if (firstName.length >= 3 && txt.includes(firstName)) return true;
-      if (lastName.length >= 3 && txt.includes(lastName)) return true;
-    }
-    return false;
+    return true; // Graceful default if ambiguous
   };
 
   // Select / click candidate card safely without navigating away or reloading
@@ -1100,25 +1085,15 @@
       if (email && phone) return { phone, email };
     }
 
-    // 2. Search Right-hand Split View: First confirm candidate match if expectedCandidateName provided
-    if (expectedCandidateName && typeof window.isMonsterCandidateActive === 'function') {
-      const active = window.isMonsterCandidateActive(expectedCandidateName);
-      if (!active) {
-        // Right pane is not yet rendering this candidate; return any contact found on card only
-        return { phone, email };
-      }
-    }
-
     const isExcluded = (el) => {
       if (!el) return true;
       if (el.closest('#smarthire-copilot-drawer') || el.closest('#smarthire-copilot-trigger') || el.closest('#smarthire-dossier-overlay')) return true;
       if (el.tagName.toLowerCase() === 'smui-card' || el.closest('smui-card')) return true;
-      if (el.tagName === 'NAV' || el.tagName === 'HEADER' || el.tagName === 'FOOTER') return true;
       return false;
     };
 
-    // 3. Priority 1: High-precision regex pattern scanning across all elements in right pane
-    const rightElements = Array.from(document.querySelectorAll('div, section, article, aside, p, span, li, a, h1, h2, h3, h4')).filter(el => {
+    // 2. High-precision regex pattern scanning across all elements in right pane
+    const rightElements = Array.from(document.querySelectorAll('div, section, article, aside, p, span, li, a, h1, h2, h3, h4, header')).filter(el => {
       if (isExcluded(el)) return false;
       const rect = el.getBoundingClientRect();
       return rect.left >= window.innerWidth * 0.20 && rect.width >= 20 && rect.height >= 10;
@@ -1149,7 +1124,7 @@
       if (email && phone) break;
     }
 
-    // 4. Priority 2: Scan mailto: and tel: links in right-side preview area
+    // 3. Scan mailto: and tel: links in right-side preview area
     if (!email || !phone) {
       const rightLinks = Array.from(document.querySelectorAll('a[href^="mailto:"], a[href^="tel:"]')).filter(a => {
         if (isExcluded(a)) return false;
@@ -1170,7 +1145,7 @@
       }
     }
 
-    // 5. Priority 3: Scan dedicated contact legend / header containers for raw emails and phones
+    // 4. Scan dedicated contact legend / header containers for raw emails and phones
     if (!email || !phone) {
       const contactContainers = Array.from(document.querySelectorAll(
         '[data-testid*="contact"], [class*="contact"], [class*="Contact"], [class*="phone"], [class*="email"], [class*="legend"], [class*="header"], [data-testid*="candidate-header"]'
@@ -1194,37 +1169,26 @@
       }
     }
 
-    // 6. Priority 4: Search right containers for general contact text
+    // 5. Search right containers for general contact text
     if (!email || !phone) {
-      const rightContainers = Array.from(document.querySelectorAll('div, section, article, aside, [role="dialog"], [class*="detail"], [class*="preview"], [class*="pane"], [class*="contact"]')).filter(el => {
+      const rightContainers = Array.from(document.querySelectorAll('div, section, article, aside, [role="dialog"], [class*="detail"], [class*="preview"], [class*="pane"], [class*="contact"], header')).filter(el => {
         if (isExcluded(el)) return false;
         const rect = el.getBoundingClientRect();
-        return rect.width >= 180 && rect.height >= 30 && rect.left >= window.innerWidth * 0.20;
+        return rect.width >= 150 && rect.height >= 30 && rect.left >= window.innerWidth * 0.20;
       });
 
       for (const container of rightContainers) {
         const containerText = container.innerText || container.textContent || '';
-        const containerLower = containerText.toLowerCase();
-
-        // Check if container matches candidate name or contains contact legend
-        const matches = (!expectedCandidateName) || 
-                        (firstWord && containerLower.includes(firstWord)) || 
-                        (lastWord && containerLower.includes(lastWord)) ||
-                        containerLower.includes('phone') ||
-                        containerLower.includes('email');
-
-        if (matches) {
-          if (!email) {
-            const foundEmails = utils.extractEmails(containerText).map(cleanEmail).filter(Boolean);
-            if (foundEmails.length > 0) email = foundEmails[0];
-          }
-          if (!phone) {
-            const foundPhones = utils.extractPhones(containerText).map(cleanPhone).filter(Boolean);
-            if (foundPhones.length > 0) phone = foundPhones[0];
-          }
-
-          if (email && phone) break;
+        if (!email) {
+          const foundEmails = utils.extractEmails(containerText).map(cleanEmail).filter(Boolean);
+          if (foundEmails.length > 0) email = foundEmails[0];
         }
+        if (!phone) {
+          const foundPhones = utils.extractPhones(containerText).map(cleanPhone).filter(Boolean);
+          if (foundPhones.length > 0) phone = foundPhones[0];
+        }
+
+        if (email && phone) break;
       }
     }
 
@@ -1372,54 +1336,13 @@
         // 2. Select card to open detail pane in Monster's split view
         window.selectMonsterCandidateCard(card);
 
-        // 3. Dynamic Polling: Wait up to 3000ms for detail pane to reflect THIS candidate's name
-        const pollStart = Date.now();
-        let paneActive = false;
+        // 3. Short pause for Monster's right-side detail pane to update
+        await sleep(350);
 
-        while (Date.now() - pollStart < 3000) {
-          paneActive = (typeof window.isMonsterCandidateActive === 'function' && window.isMonsterCandidateActive(name)) ||
-                       (window.findMonsterDetailPane(name) !== null);
-
-          if (paneActive) {
-            // Check contact directly in detail pane
-            const contact = window.extractMonsterContact(null, name);
-            if (contact.email) email = contact.email;
-            if (contact.phone) phone = contact.phone;
-
-            // If contact not found yet, find and click Profile tab across right pane
-            if (!email || !phone) {
-              const tabs = Array.from(document.querySelectorAll('.tab__label, [role="tab"], button, li')).filter(t => {
-                const rect = t.getBoundingClientRect();
-                return rect.left >= window.innerWidth * 0.20 && (t.innerText || '').trim().toLowerCase() === 'profile';
-              });
-              if (tabs.length > 0) {
-                const profTab = tabs[0];
-                try {
-                  const targetTab = profTab.closest('[role="tab"]') || profTab.closest('button') || profTab.closest('li') || profTab;
-                  targetTab.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, view: window }));
-                  targetTab.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true, view: window }));
-                  targetTab.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
-                  const pAnchor = targetTab.tagName === 'A' ? targetTab : targetTab.closest('a');
-                  const pUrl = pAnchor ? pAnchor.getAttribute('href') : null;
-                  if (!pAnchor || !pUrl || pUrl === '#' || pUrl.startsWith('javascript:')) {
-                    if (typeof targetTab.click === 'function') targetTab.click();
-                  }
-                  await sleep(250);
-                  const profContact = window.extractMonsterContact(null, name);
-                  if (profContact.email) email = profContact.email;
-                  if (profContact.phone) phone = profContact.phone;
-                } catch (e) {}
-              }
-            }
-            break;
-          }
-
-          // Retry clicking card after 1200ms if pane hasn't updated
-          if (Date.now() - pollStart > 1200 && Date.now() - pollStart < 1350) {
-            window.selectMonsterCandidateCard(card);
-          }
-          await sleep(120);
-        }
+        // Sniff detail pane immediately for contact info
+        const paneDirect = window.extractMonsterContact(null, name);
+        if (!email && paneDirect.email) email = paneDirect.email;
+        if (!phone && paneDirect.phone) phone = paneDirect.phone;
 
         // 4. Extract authentic clean resume text from right detail pane / Resume document
         const extRes = await window.extractCleanMonsterResumeTextAsync(card, name, true);

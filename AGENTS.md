@@ -66,6 +66,26 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
     - In resume views, every responsibility, project accomplishment, and contribution line must be formatted with an explicit bullet point (`•`) and proper indentation.
     - The engine must automatically detect responsibilities (lines following `Responsibilities:`, action verbs, or list items) even when converted from plain text or Word documents without literal Unicode bullets.
 
+### 2026-10-21 — Monster Unblocked Contact Extraction & Tab Disruption Removal
+- **Context & Objectives**:
+  - The user reported: `bhai pahle sab a raha tha but abhi kay hogaya same error not disclosed ab to kisi ka bhi nahi a raha hai dekho and fix karo isko` with screenshot showing all candidates returning `Email: Not Disclosed`, `Phone: Not Disclosed`.
+- **Root Cause & Architectural Implementations**:
+  1. *Premature Return Gate in `extractMonsterContact`*:
+     - In the prior commit, `if (expectedCandidateName && !isMonsterCandidateActive(expectedCandidateName)) return { phone, email };` was introduced as a strict guard.
+     - Because `isExcluded` was filtering out `HEADER` elements (where Monster renders the candidate's name, phone, and email in the right column header), `isMonsterCandidateActive` returned `false` for every candidate, completely aborting right-pane contact extraction.
+     - Fix: Removed the blocking gate completely and removed `HEADER` from `isExcluded`.
+  2. *Tab Switching Disruption Removal*:
+     - Previously, the scraper clicked the "Profile" tab if contact info wasn't found immediately. On Monster, clicking "Profile" scrolls down to the candidate's skills list (`Skills`, `Other Skills`) and hides the upper contact header where phone/email reside.
+     - Fix: Removed synthetic "Profile" tab clicking during scraping. Contact info is extracted directly from the visible split-view header after card selection, with 4 fallback tiers (card contact, right header/legend, resume document text, card text).
+- **Verification & Deployment Protocol**:
+  - `node -c` verified syntax for all extension files (0 syntax errors).
+  - All 42 unit tests pass (`node smarthire-main/tests/ats_matching_engine.test.js`).
+  - Production build in `smarthire-react`: 0 errors, 0 warnings.
+  - Repackaged `smarthire-extension.zip`.
+  - Git committed and pushed to GitHub `origin main`.
+  - Deployed updated `smarthire-extension.zip` to AWS Lightsail server (`34.194.119.199`) at `/var/www/html/smarthire-extension.zip`.
+  - Verified live download URL: `https://smarthireus.com/smarthire-extension.zip` returns HTTP 200 OK.
+
 ### 2026-10-21 — Monster Omnichannel Contact Extraction, Active Pane Verification & Card Selection Gating
 - **Context & Objectives**:
   - The user reported: `bhai same issu a raha hai kuch ka le raha hai kuch ka nahi pure ka nahi a raha hai fix karo` (Email/phone extraction was working for some candidates, but failing / returning "Not Disclosed" for other candidates).
