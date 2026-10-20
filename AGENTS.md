@@ -66,6 +66,87 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
     - In resume views, every responsibility, project accomplishment, and contribution line must be formatted with an explicit bullet point (`•`) and proper indentation.
     - The engine must automatically detect responsibilities (lines following `Responsibilities:`, action verbs, or list items) even when converted from plain text or Word documents without literal Unicode bullets.
 
+### 2026-10-20 — Fix Monster ReferenceError: immediateText is not defined & Zero Extraction Crash
+- **Context & Objectives**:
+  - The user reported: `extension mai kuch error agaya hai dekho extrect 0 bata raha hai bhai fix karo isko` with screenshots showing `ReferenceError: immediateText is not defined at content_monster.js:1361 (window.smartHireScrapeCandidatesAsync)` on cards 0, 1, 2... resulting in `Extracted 0 candidate(s) successfully!`.
+- **Root Cause & Architectural Fix**:
+  1. *Scoping ReferenceError*:
+     - In `extractCleanMonsterResumeTextAsync`, `const immediateText` was declared inside `if (pane && nameMatches(pane.innerText || '')) { ... }`.
+     - When inspecting cards where the right detail pane was not yet open or matching, execution bypassed the `if` block, leaving `immediateText` undeclared.
+     - At line 838, `let bestText = (nameMatches(immediateText) ? immediateText : '') || '';` threw an uncaught `ReferenceError: immediateText is not defined`, aborting extraction for all cards.
+  2. *Scoped Declaration & Yielding Event Loop*:
+     - Declared `let immediateText = '';` at function scope in `extractCleanMonsterResumeTextAsync`.
+     - Initialized `bestText` safely with `(immediateText && nameMatches(immediateText)) ? immediateText : ''`.
+     - Added `await sleep(150);` and `lastLen = bestText.length;` inside the viewer polling loop to prevent event-loop starvation and allow DOM text layers to render asynchronously.
+- **Verification & Deployment Protocol**:
+  - `node -c` verified syntax for all extension and server files (0 syntax errors).
+  - All 42 unit tests pass (`node smarthire-main/tests/ats_matching_engine.test.js`).
+  - Production build in `smarthire-react`: 0 errors, 0 warnings.
+  - Repackaged `smarthire-extension.zip`.
+  - Git committed (`46e894d`) and pushed to GitHub `origin main`.
+  - Deployed updated `smarthire-extension.zip` to AWS Lightsail server (`34.194.119.199`) at `/var/www/html/smarthire-extension.zip`.
+  - Verified live download URL: `https://smarthireus.com/smarthire-extension.zip` returns HTTP 200 OK.
+
+
+### 2026-10-20 — Monster Detail Pane Activation, Multi-Card Exclusion & Contact Scraping Restoration
+- **Context & Objectives**:
+  - The user reported: `ab not discolsed a raha hai bhai dekho` with screenshot showing Monster scraping displaying `Email: Not Disclosed` and `Phone: Not Disclosed` for all candidates, while Monster's right-hand split-view pane displayed: `No candidate selected. Select a candidate from the results.`
+  - The user requested restoring proper candidate card selection and contact extraction so email and phone are captured reliably.
+- **Root Cause & Architectural Implementations**:
+  1. *Premature Short-Circuit in `extractCleanMonsterResumeTextAsync`*:
+     - `extractDeepMonsterResumeText` scanned broad containers (`main, section, article`) without excluding the multi-card search results list.
+     - Monster's middle column container (`main`) holds all search results cards combined (~3,000+ characters). `nameMatches(text)` matched Candidate 1, and with length >= 1200, `extractCleanMonsterResumeTextAsync` short-circuited immediately without confirming that a detail pane was actually open.
+     - Consequently, candidate cards were never clicked, Monster's right pane remained on `No candidate selected`, and candidate emails and phones were never rendered or loaded.
+  2. *Multi-Card Search Container Exclusion*:
+     - In `extractDeepMonsterResumeText`, explicitly excluded any container holding more than one card (`querySelectorAll('smui-card').length > 1`) and any container containing `"No candidate selected"`.
+     - In `extractCleanMonsterResumeTextAsync`, enforced that `immediateText` only short-circuits if a matching `pane` for that candidate is ALREADY confirmed open and rendering the resume viewer.
+  3. *Upgraded Card Selection Target Scoping (`selectMonsterCandidateCard`)*:
+     - Broadened target selectors to click `.smui-card-body`, `a[href*="/candidate/"]`, `[data-testid*="candidate-name"]`, `h2, h3`.
+     - Explicitly skipped clicking checkboxes (`type="checkbox"`, `[role="checkbox"]`) and star/favorite buttons so the split-view pane reliably opens.
+  4. *Restored End-to-End Extraction Sequence (`smartHireScrapeCandidatesAsync`)*:
+     - Sequentially clicks each card, polls up to 2000ms for detail pane to render candidate name, sniffs contact info from the pane, clicks Profile tab if contact info isn't yet rendered, extracts full resume from Resume tab, and scans resume text for contact details.
+- **Verification & Deployment Protocol**:
+  - `node -c` verified syntax for all extension and server files (0 syntax errors).
+  - All 42 unit tests pass (`node smarthire-main/tests/ats_matching_engine.test.js`).
+  - Production build in `smarthire-react`: 0 errors, 0 warnings.
+  - Repackaged `smarthire-extension.zip`.
+  - Git committed (`2061059`) and pushed to GitHub `origin main`.
+  - Deployed updated `smarthire-extension.zip` to AWS Lightsail server (`34.194.119.199`) at `/var/www/html/smarthire-extension.zip`.
+  - Verified live download URL: `https://smarthireus.com/smarthire-extension.zip` returns HTTP 200 OK.
+
+### 2026-10-20 — Monster & Dice Contact Extraction Scoping, Recruiter Email Blacklisting & Authentic Location Parsing
+- **Context & Objectives**:
+  - The user reported three critical scraping issues:
+    1. *Monster Contact Scraping Stalled*: Monster candidates extracted full resumes but `Email:` and `Phone:` remained blank, disabling `Bulk Send JD Email to Selected`.
+    2. *Monster Location Inaccurate*: Defaulting to generic `United States` for 100% of candidates instead of authentic candidate city and state (e.g. `Pontiac, Michigan`, `Milwaukee, Wisconsin`).
+    3. *Dice Ingesting Recruiter Email*: On Dice profiles (e.g. `Tarun Bolisetty`), candidate's personal resume email was `saivenkataboli1992@gmail.com`, but Copilot captured recruiter's account email `omkesh@coolsofttech.com`.
+- **Root Cause & Architectural Implementations**:
+  1. *Monster Contact Scraping*:
+     - Root cause: `smartHireScrapeCandidatesAsync` clicked Monster's `Profile` tab (which contains only skills/work history and no contact info) and never scanned `candidateFullText` (3,000–7,000 chars) for email/phone.
+     - Fix: Scans `candidateFullText` directly first with `extractCandidateEmailFromText` and `extractCandidatePhoneFromText`, with scoped fallbacks to confirmed split-view pane, candidate card, and card text.
+  2. *Monster Location Extraction*:
+     - Root cause: Multiline card regex `/\b([A-Z][a-zA-Z\s.-]+),\s*([A-Z]{2}|[A-Za-z\s]+)\b/` matched across newlines, hitting Monster's screen-reader text `Select a Card Number-1, Open In New Tab`. The safeguard `!locMatch[0].includes('Open In')` failed, forcing fallback to `'United States'`.
+     - Fix: Added `SmartHireUtils.extractLocation` and `extractCleanMonsterLocation`. Parses line-by-line against 50 US states and two-letter postal codes, ignoring UI noise, filter labels, and screen-reader headers.
+  3. *Dice Recruiter Email Blacklisting & Candidate Resume Scoping (`content_dice.js`)*:
+     - Root cause: `extractDiceCandidateEmailAsync` scanned `document.querySelector('a[href^="mailto:"]')` and `document.body.innerText`, which contained the SmartHire Copilot dock header (`Omkesh (omkesh@coolsofttech.com)`) and the Dice navigation bar.
+     - Fix: Prioritizes candidate's personal email directly from `candidateFullText` first. Strictly filters out recruiter domains (`@coolsofttech.com`, `@coolsoft.com`, `@smarthireus.com`), portal support prefixes (`support@`, `help@`, `info@`), and scopes DOM searches outside `#smarthire-copilot-drawer`, `#smarthire-dossier-overlay`, `header`, and `nav`.
+  4. *In-Dock & Dossier Auto-Backfill (`injected_dock.js`)*:
+     - In `renderResults(list)`: Auto-backfills missing contact info and generic `United States` locations directly from `c.resumeText` before rendering. Displays graceful `Not Disclosed` when empty instead of blank labels.
+     - In `dossier-btn-reextract` & `openAiDossier`: Reconciles and backfills candidate email, phone, and location from live resume text upon re-extraction.
+  5. *Core Engine & Automated Unit Test Suite (`matching_engine.js`, `matching_engine.cjs`, `tests/ats_matching_engine.test.js`)*:
+     - Exported `extractCandidateEmail`, `extractCandidatePhone`, and `extractLocation` on `SmartHireMatchingEngine`.
+     - Added Tests 41 (contact extraction & recruiter domain blacklisting) and 42 (authentic location parsing & system noise avoidance). All 42 / 42 unit tests pass cleanly.
+- **Verification & Deployment Protocol**:
+  - `node -c` verified syntax for all extension and server files (0 syntax errors).
+  - All 42 unit tests pass (`node smarthire-main/tests/ats_matching_engine.test.js`).
+  - Production build in `smarthire-react`: **0 errors, 0 warnings** in 4.52s.
+  - Repackaged `smarthire-extension.zip`.
+  - Git committed (`4ebdee7`) and pushed to GitHub `origin main`.
+  - Deployed updated `matching_engine.cjs` and production bundle to AWS Lightsail server (`34.194.119.199`).
+  - Immediate archive removal, bundle asset pruning, and journal vacuuming completed per Rule 5.
+  - Server disk space verified: 8.3GB available (45% free space, $\ge 40\%$ compliant).
+  - PM2 `smarthire-ats` reloaded and live domain verified: `https://smarthireus.com` returning HTTP 200 OK.
+  - Verified extension download URL: `https://smarthireus.com/smarthire-extension.zip` returning HTTP 200 OK.
 
 ### 2026-10-20 — Full Resume Document Extraction & Split-View Tab Reconciliation for Monster
 - **Context & Objectives**:
