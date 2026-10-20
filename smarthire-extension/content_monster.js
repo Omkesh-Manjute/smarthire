@@ -722,16 +722,16 @@
     }
 
     // 4. Scan right-side preview pane / drawer containers (Monster Split View)
-    const rightSideContainers = Array.from(document.querySelectorAll('div, section, article, aside, [role="dialog"], [class*="detail"], [class*="preview"], [class*="pane"]')).filter(el => {
+    const rightSideContainers = Array.from(document.querySelectorAll('div, section, article, aside, [role="dialog"], [class*="detail"], [class*="preview"], [class*="pane"], [class*="header"]')).filter(el => {
       if (isExcluded(el)) return false;
       if (el.tagName.toLowerCase() === 'smui-card' || el.closest('smui-card')) return false;
       const rect = el.getBoundingClientRect();
-      return rect.width >= 300 && rect.height >= 250 && rect.left >= window.innerWidth * 0.25;
+      return rect.width >= 200 && rect.height >= 30 && rect.left >= window.innerWidth * 0.20;
     });
 
     for (const container of rightSideContainers) {
       const sections = container.querySelectorAll(
-        '[data-testid*="work-history"], [class*="work-history"], [data-testid*="experience"], [class*="experience"], [class*="profile-content"], [class*="candidate-experience"], [class*="timeline"], [class*="education"], [data-testid*="education"]'
+        '[data-testid*="work-history"], [class*="work-history"], [data-testid*="experience"], [class*="experience"], [class*="profile-content"], [class*="candidate-experience"], [class*="timeline"], [class*="education"], [data-testid*="education"], [class*="contact"], [id*="contact"]'
       );
       if (sections.length > 0) {
         let secText = '';
@@ -1027,96 +1027,114 @@
       if (email && phone) return { phone, email };
     }
 
-    // 2. Search detail pane / right-side split view container
+    // 2. High-Precision Direct Text Scan: Search for explicit "Email:" and "Phone:" patterns in the split-view detail pane
     const isExcluded = (el) => {
       if (!el) return true;
       if (el.closest('#smarthire-copilot-drawer') || el.closest('#smarthire-copilot-trigger') || el.closest('#smarthire-dossier-overlay')) return true;
       if (el.tagName.toLowerCase() === 'smui-card' || el.closest('smui-card')) return true;
+      if (el.tagName === 'NAV' || el.tagName === 'HEADER' || el.tagName === 'FOOTER') return true;
       return false;
     };
 
-    const rightContainers = Array.from(document.querySelectorAll('div, section, article, aside, [role="dialog"], [class*="detail"], [class*="preview"], [class*="pane"]')).filter(el => {
+    const rightPaneElements = Array.from(document.querySelectorAll('div, section, article, aside, p, span, li, a')).filter(el => {
       if (isExcluded(el)) return false;
       const rect = el.getBoundingClientRect();
-      return rect.width >= 300 && rect.height >= 250 && rect.left >= window.innerWidth * 0.25;
+      return rect.left >= window.innerWidth * 0.20 && rect.width >= 30 && rect.height >= 12;
     });
 
-    for (const container of rightContainers) {
-      const containerText = container.innerText || container.textContent || '';
-      const containerLower = containerText.toLowerCase();
+    for (const el of rightPaneElements) {
+      const txt = (el.innerText || el.textContent || '').trim();
+      if (!txt) continue;
 
-      // Check if container matches the candidate name (to avoid stale pane contamination)
-      const matches = (!expectedCandidateName) || 
-                      (firstWord && containerLower.includes(firstWord)) || 
-                      (lastWord && containerLower.includes(lastWord));
+      // Sniff Email: <email>
+      if (!email) {
+        const emMatch = txt.match(/(?:Email|E-mail|Mail):\s*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i);
+        if (emMatch) {
+          const em = emMatch[1].trim().toLowerCase();
+          if (!em.includes('coolsofttech') && !em.includes('smarthireus') && !em.startsWith('support@')) {
+            email = em;
+          }
+        }
+      }
 
-      if (matches) {
-        // Sniff mailto links inside this confirmed container
-        const mailLinks = container.querySelectorAll('a[href^="mailto:"]');
-        for (const a of mailLinks) {
+      // Sniff Phone: <phone> (e.g. Phone: +14049267436)
+      if (!phone) {
+        const phMatch = txt.match(/(?:Phone|Cell|Mobile|Tel|Home):\s*(\+?1?[-.\s]?\(?[2-9]\d{2}\)?[-.\s]?[0-9]{3}[-.\s]?[0-9]{4})/i);
+        if (phMatch) {
+          const rawPh = phMatch[1].trim();
+          const p = utils.extractPhones(rawPh);
+          phone = p.length > 0 ? p[0] : rawPh;
+        }
+      }
+
+      if (email && phone) break;
+    }
+
+    // 3. Scan mailto: and tel: links in right-side preview area
+    if (!email || !phone) {
+      const rightLinks = Array.from(document.querySelectorAll('a[href^="mailto:"], a[href^="tel:"]')).filter(a => {
+        if (isExcluded(a)) return false;
+        const rect = a.getBoundingClientRect();
+        return rect.left >= window.innerWidth * 0.20;
+      });
+
+      for (const a of rightLinks) {
+        if (!email && a.href.startsWith('mailto:')) {
           const clean = a.href.replace(/^mailto:/i, '').split('?')[0].trim().toLowerCase();
-          if (clean && !clean.startsWith('support@') && !clean.startsWith('info@') && !clean.startsWith('privacy@')) {
+          if (clean && !clean.includes('coolsofttech') && !clean.startsWith('support@') && !clean.startsWith('privacy@')) {
             email = clean;
-            break;
           }
         }
-
-        // Sniff tel links inside this confirmed container
-        const telLinks = container.querySelectorAll('a[href^="tel:"]');
-        for (const a of telLinks) {
+        if (!phone && a.href.startsWith('tel:')) {
           const clean = a.href.replace(/^tel:/i, '').trim();
-          const extracted = utils.extractPhones(clean);
-          if (extracted.length > 0) { phone = extracted[0]; break; }
+          const p = utils.extractPhones(clean);
+          if (p.length > 0) phone = p[0];
         }
+        if (email && phone) break;
+      }
+    }
 
-        // Search dedicated contact containers inside this confirmed container
-        const contactBoxSelectors = [
-          '#contact-legend-detail',
-          '[id*="contact-legend"]',
-          '[data-testid*="contact"]',
-          '[data-testid*="phone"]',
-          '[data-testid*="email"]',
-          '[class*="contact-legend"]',
-          '[class*="candidate-contact"]',
-          '[class*="contact-info"]',
-          '[class*="ContactInfo"]'
-        ];
+    // 4. Search right containers for general contact text
+    if (!email || !phone) {
+      const rightContainers = Array.from(document.querySelectorAll('div, section, article, aside, [role="dialog"], [class*="detail"], [class*="preview"], [class*="pane"], [class*="contact"]')).filter(el => {
+        if (isExcluded(el)) return false;
+        const rect = el.getBoundingClientRect();
+        return rect.width >= 180 && rect.height >= 30 && rect.left >= window.innerWidth * 0.20;
+      });
 
-        for (const sel of contactBoxSelectors) {
-          const contactBox = container.querySelector(sel);
-          if (contactBox) {
-            const boxText = contactBox.innerText || contactBox.textContent || '';
-            if (!email) {
-              const foundEmails = utils.extractEmails(boxText);
-              if (foundEmails.length > 0) email = foundEmails[0];
-            }
-            if (!phone) {
-              const foundPhones = utils.extractPhones(boxText);
-              if (foundPhones.length > 0) phone = foundPhones[0];
-            }
-            if (email && phone) break;
+      for (const container of rightContainers) {
+        const containerText = container.innerText || container.textContent || '';
+        const containerLower = containerText.toLowerCase();
+
+        // Check if container matches candidate name or contains contact legend
+        const matches = (!expectedCandidateName) || 
+                        (firstWord && containerLower.includes(firstWord)) || 
+                        (lastWord && containerLower.includes(lastWord)) ||
+                        containerLower.includes('phone:') ||
+                        containerLower.includes('email:');
+
+        if (matches) {
+          if (!email) {
+            const foundEmails = utils.extractEmails(containerText);
+            const cleanEmails = foundEmails.filter(e => 
+              !e.includes('coolsofttech') &&
+              !e.includes('smarthireus') &&
+              !e.startsWith('support@') && 
+              !e.startsWith('info@') && 
+              !e.startsWith('privacy@') && 
+              !e.startsWith('contact@') &&
+              !e.startsWith('jobs@') &&
+              !e.startsWith('careers@')
+            );
+            if (cleanEmails.length > 0) email = cleanEmails[0];
           }
-        }
+          if (!phone) {
+            const foundPhones = utils.extractPhones(containerText);
+            if (foundPhones.length > 0) phone = foundPhones[0];
+          }
 
-        // Fallback: extract email from confirmed container text
-        if (!email) {
-          const foundEmails = utils.extractEmails(containerText);
-          const cleanEmails = foundEmails.filter(e => 
-            !e.startsWith('support@') && 
-            !e.startsWith('info@') && 
-            !e.startsWith('privacy@') && 
-            !e.startsWith('contact@') &&
-            !e.startsWith('jobs@') &&
-            !e.startsWith('careers@')
-          );
-          if (cleanEmails.length > 0) email = cleanEmails[0];
+          if (email && phone) break;
         }
-        if (!phone) {
-          const foundPhones = utils.extractPhones(containerText);
-          if (foundPhones.length > 0) phone = foundPhones[0];
-        }
-
-        if (email || phone) break;
       }
     }
 

@@ -2400,7 +2400,7 @@ ${(match.interviewQuestions || [
       if (Array.isArray(jobsList) && jobsList.length > 0) {
         allJobs = jobsList;
         filteredJobs = [...allJobs];
-        renderJobsSelect(true);
+        renderJobsSelect(false);
       } else if (badge) {
         badge.innerText = `${allJobs.length} Jobs`;
       }
@@ -3001,6 +3001,15 @@ ${(match.interviewQuestions || [
                         (window.SmartHireUtils && typeof window.SmartHireUtils.extractLocation === 'function' ? window.SmartHireUtils.extractLocation(c.resumeText.slice(0, 2500)) : '');
             if (loc) c.location = loc;
           }
+        }
+
+        // Live DOM fallback for visible contact box if still Not Disclosed
+        if ((!c.email || c.email === 'Not Disclosed' || !c.phone || c.phone === 'Not Disclosed') && typeof window.extractMonsterContact === 'function') {
+          try {
+            const fresh = window.extractMonsterContact(null, c.name);
+            if ((!c.email || c.email === 'Not Disclosed') && fresh && fresh.email) c.email = fresh.email;
+            if ((!c.phone || c.phone === 'Not Disclosed') && fresh && fresh.phone) c.phone = fresh.phone;
+          } catch (e) {}
         }
       });
 

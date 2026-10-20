@@ -66,6 +66,33 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
     - In resume views, every responsibility, project accomplishment, and contribution line must be formatted with an explicit bullet point (`•`) and proper indentation.
     - The engine must automatically detect responsibilities (lines following `Responsibilities:`, action verbs, or list items) even when converted from plain text or Word documents without literal Unicode bullets.
 
+### 2026-10-20 — Monster Detail Pane Contact Header Extraction & Auto-Select Top Requisition
+- **Context & Objectives**:
+  - The user reported: `bhai ab bahut logo ki email and number nahi aye hai jab ki avible hai sab not discloed a rahahai and req jo a ati hai to top wali mai hona cahiye set so update this also`
+  - Problem 1: On Monster+ (`manage.monster.com`), candidate contact info was visibly rendered in the right detail pane header (e.g. `Phone: +14049267436`, `Email: brookstone_56@yahoo.com`), but SmartHire Copilot extracted `Email: Not Disclosed` and `Phone: Not Disclosed`.
+  - Problem 2: When ATS target requisitions were loaded or fetched from `/api/jobs`, the dropdown preserved previous/arbitrary requisition selections instead of defaulting to the top-most active requisition (`filteredJobs[0]`).
+- **Root Cause & Architectural Implementations**:
+  1. *Monster Contact Header Extraction (`content_monster.js`)*:
+     - Root cause: `window.extractMonsterContact` had a bounding box filter requiring `rect.height >= 250`. The visible contact header box on Monster is only ~140px tall, so it was filtered out completely.
+     - Root cause: Container name matching (`containerLower.includes(firstWord)`) failed because Monster's upper contact box contains only the candidate's phone, email, and action links without repeating the candidate's name inside the inner contact node.
+     - Root cause: The inner loop had `if (email || phone) break;`, causing premature loop exit if only one field was partially matched.
+     - Fix: Built high-precision direct text pattern sniffing for `/(?:Email|E-mail|Mail):\s*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i` and `/(?:Phone|Cell|Mobile|Tel|Home):\s*(\+?1?[-.\s]?\(?[2-9]\d{2}\)?[-.\s]?[0-9]{3}[-.\s]?[0-9]{4})/i` without height restrictions on the right pane area (`rect.left >= window.innerWidth * 0.20 && rect.height >= 12`).
+     - Scanned `mailto:` and `tel:` links on the right split pane.
+     - Fixed loop break condition to `if (email && phone) break;`.
+     - In `extractDeepMonsterResumeText`, expanded container boundaries (`rect.width >= 200 && rect.height >= 30 && rect.left >= window.innerWidth * 0.20`) and included candidate contact/header sections so `candidateFullText` holds the header contact info.
+  2. *Live DOM Fallback in Results Drawer (`injected_dock.js`)*:
+     - In `renderResults(list)`, added DOM fallback to `window.extractMonsterContact(null, c.name)` if email or phone is missing, immediately enriching `c.email` and `c.phone` from the active DOM.
+  3. *Default Top Requisition Selection (`injected_dock.js`)*:
+     - In `fetchLiveJobs()`, changed `renderJobsSelect(true)` to `renderJobsSelect(false)`. This guarantees that `selectedJob = filteredJobs[0]` (the top requisition, e.g. `#159368`) is selected automatically upon data fetch.
+- **Verification & Deployment Protocol**:
+  - `node -c` verified syntax for all extension and server files (0 syntax errors).
+  - All 42 unit tests pass (`node smarthire-main/tests/ats_matching_engine.test.js`).
+  - Production build in `smarthire-react`: 0 errors, 0 warnings.
+  - Repackaged `smarthire-extension.zip`.
+  - Git committed and pushed to GitHub `origin main`.
+  - Deployed updated `smarthire-extension.zip` to AWS Lightsail server (`34.194.119.199`) at `/var/www/html/smarthire-extension.zip`.
+  - Verified live download URL: `https://smarthireus.com/smarthire-extension.zip` returns HTTP 200 OK.
+
 ### 2026-10-20 — Fix Monster Auto-Reload & Navigation on Scrape / Workflow Execution
 - **Context & Objectives**:
   - The user reported: `bhai ak aur problem ho rahi hai ki run karne pe moster relod ho ja raha hai auto so kay kar sakte hai hum` (Monster was auto-reloading whenever running candidate extraction/workflow).
