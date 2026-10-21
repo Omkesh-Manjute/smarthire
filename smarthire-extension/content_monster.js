@@ -1,7 +1,7 @@
-// SmartHire Sourcing Copilot v3.9 - Monster+ Content Script
+// SmartHire Sourcing Copilot v4.0 - Monster+ Content Script
 (function() {
   window.smartHirePortal = 'Monster+';
-  console.log('[SmartHire Copilot v3.9] Monster+ content script loaded on:', window.location.href);
+  console.log('[SmartHire Copilot v4.0] Monster+ content script loaded on:', window.location.href);
 
   const utils = window.SmartHireUtils || {
     extractEmails: (text) => {
@@ -235,6 +235,11 @@
       if (!el) return true;
       if (el.closest('#smarthire-copilot-drawer') || el.closest('#smarthire-copilot-trigger') || el.closest('#smarthire-dossier-overlay')) return true;
       if (el.closest('smui-card') || el.closest('[class*="candidate-card"]')) return true;
+      // Strictly exclude left search filter sidebar elements (e.g. "Resume Updated" filter on left sidebar)
+      const rect = el.getBoundingClientRect();
+      if (rect.left < window.innerWidth * 0.20) return true;
+      const t = (el.innerText || el.textContent || '').toLowerCase();
+      if (t.includes('updated') || t.includes('filter') || t.includes('search') || t.includes('clear')) return true;
       return false;
     };
 
@@ -243,27 +248,63 @@
       const containerTabs = Array.from(container.querySelectorAll('[role="tab"], button, li, a, .tab__label, .tab__title, span, div')).filter(el => !isExcluded(el));
       for (const el of containerTabs) {
         const txt = (el.innerText || el.textContent || '').trim().toLowerCase();
-        if (txt === 'resume' || txt === 'cv' || txt === 'resume & cv' || txt === 'view resume') {
+        if (txt === 'resume' || txt === 'cv' || txt === 'resume & cv' || txt === 'view resume' || txt.startsWith('resume')) {
           return el.closest('[role="tab"]') || el.closest('button') || el.closest('li') || el;
         }
       }
     }
 
-    // 2. Strict right-side preview search (x >= 20% window width). Never match search filters on the left!
+    // 2. Dedicated attributes in right-side preview area (x >= 20% window width)
+    const attrSelectors = [
+      '[data-testid*="resume-tab"]',
+      '[data-testid*="resumeTab"]',
+      '[aria-controls*="resume"]',
+      '[id*="resume-tab"]',
+      '[id*="resumeTab"]',
+      'a[href*="#resume"]',
+      '[aria-label*="resume" i]'
+    ];
+    for (const sel of attrSelectors) {
+      const els = Array.from(document.querySelectorAll(sel)).filter(el => !isExcluded(el));
+      if (els.length > 0) {
+        return els[0].closest('[role="tab"]') || els[0].closest('button') || els[0].closest('li') || els[0];
+      }
+    }
+
+    // 3. Strict right-side preview search (x >= 20% window width, top <= 450)
     const rightElements = Array.from(document.querySelectorAll(
-      '[role="tab"], button, li, a, .tab__label, .tab__title, [class*="tab"], [data-testid*="tab"]'
+      '[role="tab"], button, li, a, .tab__label, .tab__title, [class*="tab"], [data-testid*="tab"], span, div'
     )).filter(el => {
       if (isExcluded(el)) return false;
       const rect = el.getBoundingClientRect();
-      return rect.left >= window.innerWidth * 0.20 && rect.width >= 10 && rect.height >= 10;
+      return rect.left >= window.innerWidth * 0.20 && rect.width >= 10 && rect.height >= 10 && rect.top <= 450;
     });
 
     for (const el of rightElements) {
       const txt = (el.innerText || el.textContent || '').trim().toLowerCase();
-      if (txt === 'resume' || txt === 'cv' || txt === 'resume & cv' || txt === 'view resume' || txt === 'candidate resume') {
+      if (txt === 'resume' || txt === 'cv' || txt === 'resume & cv' || txt === 'view resume' || txt === 'candidate resume' || txt.startsWith('resume')) {
         return el.closest('[role="tab"]') || el.closest('button') || el.closest('li') || el;
       }
     }
+
+    // 4. Sibling of Profile tab (In Monster, Tab 1 is Profile, Tab 2 is Resume)
+    try {
+      const profileTab = window.findMonsterProfileTab();
+      if (profileTab) {
+        const pTabContainer = profileTab.closest('[role="tab"]') || profileTab.closest('li') || profileTab.closest('button') || profileTab;
+        const nextEl = pTabContainer.nextElementSibling;
+        if (nextEl && !isExcluded(nextEl)) {
+          return nextEl.querySelector('[role="tab"], button, a, span') || nextEl;
+        }
+        const parent = pTabContainer.parentElement;
+        if (parent && parent.children.length >= 2) {
+          const secondChild = parent.children[1];
+          if (secondChild && !isExcluded(secondChild)) {
+            return secondChild.querySelector('[role="tab"], button, a, span') || secondChild;
+          }
+        }
+      }
+    } catch (e) {}
 
     return null;
   };
@@ -306,6 +347,44 @@
     return null;
   };
 
+  // Check whether Monster's Resume tab is currently the active tab in the detail pane
+  window.isMonsterResumeTabActive = function() {
+    // 1. Check if #contact-legend-detail is visible in right pane (only rendered on Resume tab!)
+    const contactLegend = document.querySelector('#contact-legend-detail, [id*="contact-legend"]');
+    if (contactLegend) {
+      const rect = contactLegend.getBoundingClientRect();
+      if (rect.left >= window.innerWidth * 0.20 && rect.height >= 10) return true;
+    }
+
+    // 2. Check if resume document viewer / textLayer is visible in right pane
+    const docViewer = document.querySelector('[class*="document-viewer"], [class*="resume-view"], [class*="documentViewer"], .document-viewer, [class*="text-resume"], .textLayer');
+    if (docViewer) {
+      const rect = docViewer.getBoundingClientRect();
+      if (rect.left >= window.innerWidth * 0.20 && rect.height >= 50) return true;
+    }
+
+    // 3. Check if Resume tab has active class or aria-selected="true"
+    const resumeTab = window.findMonsterResumeTab();
+    if (resumeTab) {
+      const activeEl = resumeTab.closest('[aria-selected="true"], .mdc-tab--active, .tab--active, .active') ||
+                       resumeTab.querySelector('[aria-selected="true"], .mdc-tab--active, .tab--active, .active');
+      if (activeEl) return true;
+    }
+    return false;
+  };
+
+  // Ensure Monster's Resume tab is active; if not, activate it and wait for DOM render
+  window.ensureMonsterResumeTabActive = async function() {
+    if (window.isMonsterResumeTabActive()) return true;
+    const resumeTab = window.findMonsterResumeTab();
+    if (resumeTab) {
+      window.activateMonsterResumeTab(resumeTab);
+      await new Promise(r => setTimeout(r, 250));
+      return true;
+    }
+    return false;
+  };
+
   // Activate Monster Resume Tab safely without navigating or reloading
   window.activateMonsterResumeTab = function(resumeTab) {
     if (!resumeTab) return false;
@@ -334,22 +413,36 @@
         buttons: 1
       };
 
-      try {
-        target.dispatchEvent(new PointerEvent('pointerdown', { ...eventInit, pointerId: 1, pointerType: 'mouse', isPrimary: true }));
-      } catch (e) {}
-      target.dispatchEvent(new MouseEvent('mousedown', eventInit));
-      try {
-        target.dispatchEvent(new PointerEvent('pointerup', { ...eventInit, buttons: 0, pointerId: 1, pointerType: 'mouse', isPrimary: true }));
-      } catch (e) {}
-      target.dispatchEvent(new MouseEvent('mouseup', { ...eventInit, buttons: 0 }));
-      target.dispatchEvent(new MouseEvent('click', { ...eventInit, buttons: 0 }));
+      const dispatchSequence = (el) => {
+        if (!el) return;
+        try {
+          el.dispatchEvent(new PointerEvent('pointerdown', { ...eventInit, pointerId: 1, pointerType: 'mouse', isPrimary: true }));
+        } catch (e) {}
+        el.dispatchEvent(new MouseEvent('mousedown', eventInit));
+        try {
+          el.dispatchEvent(new PointerEvent('pointerup', { ...eventInit, buttons: 0, pointerId: 1, pointerType: 'mouse', isPrimary: true }));
+        } catch (e) {}
+        el.dispatchEvent(new MouseEvent('mouseup', { ...eventInit, buttons: 0 }));
+        el.dispatchEvent(new MouseEvent('click', { ...eventInit, buttons: 0 }));
+      };
 
-      const anchor = target.tagName === 'A' ? target : target.closest('a');
-      const href = anchor ? anchor.getAttribute('href') : null;
-      if (!anchor || !href || href === '#' || href.startsWith('javascript:')) {
-        if (typeof target.click === 'function') {
-          try { target.click(); } catch (e) {}
-        }
+      dispatchSequence(target);
+      if (target !== resumeTab) {
+        dispatchSequence(resumeTab);
+      }
+
+      const isSafeAnchor = (el) => {
+        const anchor = el.tagName === 'A' ? el : el.closest('a');
+        if (!anchor) return true;
+        const href = anchor.getAttribute('href');
+        return !href || href === '#' || href.startsWith('javascript:');
+      };
+
+      if (isSafeAnchor(target) && typeof target.click === 'function') {
+        try { target.click(); } catch (e) {}
+      }
+      if (target !== resumeTab && isSafeAnchor(resumeTab) && typeof resumeTab.click === 'function') {
+        try { resumeTab.click(); } catch (e) {}
       }
       return true;
     } catch (e) {
@@ -846,8 +939,14 @@
     let pane = window.findMonsterDetailPane(candidateName);
     let immediateText = '';
 
-    // If matching pane is open and full resume document is ALREADY rendered in viewer, return immediately
-    if (pane && nameMatches(pane.innerText || '')) {
+    // If autoSwitchTabs is enabled, ensure Resume tab is active first
+    if (autoSwitchTabs) {
+      await window.ensureMonsterResumeTabActive();
+      pane = window.findMonsterDetailPane(candidateName);
+    }
+
+    // Only return early if Resume tab is verified active AND full resume document is rendered in viewer
+    if (pane && nameMatches(pane.innerText || '') && window.isMonsterResumeTabActive()) {
       immediateText = window.extractDeepMonsterResumeText(candidateName) || '';
       if (immediateText && immediateText.length >= 1200 && nameMatches(immediateText)) {
         return {
@@ -882,10 +981,7 @@
 
     // 3. If autoSwitchTabs is enabled, find and activate Monster's Resume tab
     if (autoSwitchTabs) {
-      const resumeTab = window.findMonsterResumeTab(pane) || window.findMonsterResumeTab(document);
-      if (resumeTab) {
-        window.activateMonsterResumeTab(resumeTab);
-      }
+      await window.ensureMonsterResumeTabActive();
     }
 
     // 4. Poll for document viewer / multi-page DOCX/PDF to finish rendering (up to 3500ms)
@@ -1219,7 +1315,7 @@
   // Deep Scraper: Click each card, reveal details with polling, extract verified contact info
   window.smartHireScrapeCandidatesAsync = async function(onProgress) {
     const cards = window.getMonsterCards();
-    console.log(`[SmartHire Copilot v3.9] Found ${cards.length} cards for deep scrape.`);
+    console.log(`[SmartHire Copilot v4.0] Found ${cards.length} cards for deep scrape.`);
 
     if (cards.length === 0) {
       if (typeof onProgress === 'function') {
@@ -1375,36 +1471,23 @@
           );
 
           if (paneMatchesCandidate) {
-            // Sniff contact from confirmed detail pane
+            // Unconditionally ensure Monster is on the RESUME tab (never stay on Profile!)
+            await window.ensureMonsterResumeTabActive();
+
+            // Sniff contact from confirmed detail pane / #contact-legend-detail
             const contact = window.extractMonsterContact(null, name);
             if (contact.email) email = contact.email;
             if (contact.phone) phone = contact.phone;
 
-            // If contact is still missing, ensure Resume tab is active so Monster renders contact legend
+            // If contact is still missing, explicitly click Resume tab and wait 250ms
             if (!email || !phone) {
-              const resumeTab = window.findMonsterResumeTab(detailPane) ||
-                                detailPane.querySelector('li:nth-of-type(2) > .tab__title > .tab__label') ||
-                                detailPane.querySelector('li:nth-of-type(2)') ||
-                                Array.from(detailPane.querySelectorAll('.tab__label, button, [role="tab"], li')).find(t => {
-                                  const txt = (t.innerText || '').trim().toLowerCase();
-                                  return txt === 'resume' || txt === 'cv' || txt === 'profile';
-                                });
-              if (resumeTab && !resumeTab.closest('.tab--active') && !resumeTab.classList.contains('active')) {
-                try {
-                  const targetTab = resumeTab.closest('[role="tab"]') || resumeTab.closest('button') || resumeTab.closest('li') || resumeTab;
-                  targetTab.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, view: window }));
-                  targetTab.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true, view: window }));
-                  targetTab.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
-                  const pAnchor = targetTab.tagName === 'A' ? targetTab : targetTab.closest('a');
-                  const pUrl = pAnchor ? pAnchor.getAttribute('href') : null;
-                  if (!pAnchor || !pUrl || pUrl === '#' || pUrl.startsWith('javascript:')) {
-                    if (typeof targetTab.click === 'function') targetTab.click();
-                  }
-                  await sleep(300);
-                  const tabContact = window.extractMonsterContact(null, name);
-                  if (tabContact.email) email = tabContact.email;
-                  if (tabContact.phone) phone = tabContact.phone;
-                } catch (e) {}
+              const resumeTab = window.findMonsterResumeTab();
+              if (resumeTab) {
+                window.activateMonsterResumeTab(resumeTab);
+                await sleep(250);
+                const retryContact = window.extractMonsterContact(null, name);
+                if (retryContact.email) email = retryContact.email;
+                if (retryContact.phone) phone = retryContact.phone;
               }
             }
             break;
