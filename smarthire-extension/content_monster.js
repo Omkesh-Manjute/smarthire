@@ -1,7 +1,7 @@
-// SmartHire Sourcing Copilot v4.2 - Monster+ Content Script
+// SmartHire Sourcing Copilot v4.3 - Monster+ Content Script
 (function() {
   window.smartHirePortal = 'Monster+';
-  console.log('[SmartHire Copilot v4.2] Monster+ content script loaded on:', window.location.href);
+  console.log('[SmartHire Copilot v4.3] Monster+ content script loaded on:', window.location.href);
 
   const utils = window.SmartHireUtils || {
     extractEmails: (text) => {
@@ -234,7 +234,7 @@
     const isExcluded = (el) => {
       if (!el) return true;
       if (el.closest('#smarthire-copilot-drawer') || el.closest('#smarthire-copilot-trigger') || el.closest('#smarthire-dossier-overlay')) return true;
-      if (el.closest('smui-card') || el.closest('[class*="candidate-card"]')) return true;
+      if (el.closest('smui-card')) return true;
       // Strictly exclude left search filter sidebar elements (e.g. "Resume Updated" filter on left sidebar)
       const rect = el.getBoundingClientRect();
       if (rect.left < window.innerWidth * 0.33) return true;
@@ -387,7 +387,11 @@
     const resumeTab = window.findMonsterResumeTab();
     if (resumeTab) {
       window.activateMonsterResumeTab(resumeTab);
-      await new Promise(r => setTimeout(r, 250));
+      const pollStart = Date.now();
+      while (Date.now() - pollStart < 800) {
+        if (window.isMonsterResumeTabActive()) return true;
+        await sleep(100);
+      }
       return true;
     }
     return false;
@@ -443,6 +447,12 @@
       if (target !== resumeTab) {
         dispatchSequence(resumeTab);
       }
+      try {
+        const innerLabel = target.querySelector('.mdc-tab__text-label, [class*="tab-label"], span, label');
+        if (innerLabel && innerLabel !== target && innerLabel !== resumeTab) {
+          dispatchSequence(innerLabel);
+        }
+      } catch (e) {}
 
       const isSafeAnchor = (el) => {
         const anchor = el.tagName === 'A' ? el : el.closest('a');
@@ -500,9 +510,9 @@
     if (el.closest('#smarthire-copilot-drawer') || el.closest('#smarthire-copilot-trigger') || el.closest('#smarthire-dossier-overlay')) return false;
     // Strictly exclude top navigation bars
     if (el.closest('nav, [role="navigation"], [class*="navbar"], [class*="top-nav"]')) return false;
-    // Strictly exclude any element inside a candidate card or search results list in the middle column
-    if (el.closest('smui-card') || el.closest('[data-testid*="candidate-card"]') || el.closest('[class*="candidate-card"]') || el.closest('[class*="search-result"]') || el.closest('article')) return false;
-    if (el.closest('[data-testid*="search-results"]') || el.closest('[class*="search-results"]') || el.closest('[class*="results-list"]')) return false;
+    // Strictly exclude candidate cards in search results list (middle column)
+    if (el.closest('smui-card')) return false;
+    if (el.closest('[data-testid*="search-results"], [class*="search-results"], [class*="results-list"]')) return false;
     if (el.tagName === 'FOOTER' || el.closest('footer')) return false;
     // Detail pane is always in the right split-view column (left >= 33% of window width, top >= 40)
     const rect = el.getBoundingClientRect();
@@ -545,7 +555,7 @@
         const clean = window.extractCleanMonsterName(txt);
         if (clean && clean.length >= 3 && clean.length <= 40 &&
             !window.extractCleanMonsterLocation(clean) &&
-            !/^(?:profile|resume|overview|candidate|skills|actions|need help|matches|favorites|skipped)/i.test(clean)) {
+            !/^(?:profile|resume|overview|candidate|skills|actions|need help|matches|favorites|skipped|select a candidate)/i.test(clean)) {
           return clean;
         }
       }
@@ -556,6 +566,12 @@
   // Check whether the right-hand split-view column matches target candidate
   window.isMonsterCandidateActive = function(candidateName = '') {
     if (!candidateName) return false;
+
+    // Check direct candidate name extracted from detail pane header
+    const paneName = window.extractMonsterCandidateNameFromDetailPane();
+    if (paneName && window.monsterNameMatches(candidateName, paneName)) {
+      return true;
+    }
 
     // If candidate name is generic placeholder (e.g. "Candidate 1"), verify any right detail pane is open
     if (/^candidate\s*\d+/i.test(candidateName)) {
@@ -601,16 +617,22 @@
         if (el.type === 'checkbox' || el.closest('[role="checkbox"]') || el.closest('[class*="checkbox"]')) return true;
         // Exclude favorite / star buttons
         if (el.closest('[data-testid*="favorite"]') || el.closest('[class*="favorite"]')) return true;
-        // Exclude action buttons (menu, download, email, etc.)
-        if (el.tagName === 'BUTTON' || el.closest('button') || el.closest('[role="button"]')) return true;
+        // Exclude action buttons (menu, download, email, etc.) but ALLOW card primary action (.mdc-card__primary-action, .smui-card-body)
+        const btn = (el.tagName === 'BUTTON' || (el.getAttribute && el.getAttribute('role') === 'button')) ? el : (el.closest('button') || el.closest('[role="button"]'));
+        if (btn && !btn.classList.contains('mdc-card__primary-action') && !btn.classList.contains('smui-card-body')) {
+          const btnText = (btn.innerText || btn.getAttribute('aria-label') || '').trim();
+          if (/^(?:actions|save|skip|share|download|export|message|email|favorite|more)$/i.test(btnText)) {
+            return true;
+          }
+        }
         return false;
       };
 
       // Search for safe clickable body / header elements inside the card
       const safeTargets = [
+        card.querySelector('.mdc-card__primary-action'),
         card.querySelector('.smui-card-body'),
         card.querySelector('[class*="card-body"]'),
-        card.querySelector('.mdc-card__primary-action'),
         card.querySelector('[class*="primary-action"]'),
         card.querySelector('.smui-card-header'),
         card.querySelector('[class*="card-header"]'),
@@ -1217,9 +1239,14 @@
     }
 
     // 2. If reading from right detail pane without cardEl:
-    // STRICT GUARD: If expectedCandidateName is provided, the detail pane MUST be actively showing that candidate!
-    if (expectedCandidateName && !window.isMonsterCandidateActive(expectedCandidateName)) {
-      return { phone, email };
+    // If expectedCandidateName is provided, verify right pane matches candidate
+    if (expectedCandidateName) {
+      const activeName = window.extractMonsterCandidateNameFromDetailPane();
+      const isMatch = (activeName && window.monsterNameMatches(expectedCandidateName, activeName)) ||
+                      window.isMonsterCandidateActive(expectedCandidateName);
+      if (!isMatch) {
+        return { phone, email };
+      }
     }
 
     // High-priority scan for Monster's Contact Legend container: #contact-legend-detail in the right detail pane
@@ -1237,6 +1264,20 @@
         const els = Array.from(document.querySelectorAll(sel)).filter(el => window.isInsideMonsterDetailPane(el));
 
         for (const el of els) {
+          // Check links inside legend first
+          for (const a of el.querySelectorAll('a[href^="mailto:"]')) {
+            if (!email) {
+              const ce = cleanEmail(a.href.replace(/^mailto:/i, '').split('?')[0]);
+              if (ce) email = ce;
+            }
+          }
+          for (const a of el.querySelectorAll('a[href^="tel:"]')) {
+            if (!phone) {
+              const cp = cleanPhone(a.href.replace(/^tel:/i, ''));
+              if (cp) phone = cp;
+            }
+          }
+
           const txt = el.innerText || el.textContent || '';
           if (!email) {
             const emMatch = txt.match(/(?:Email|E-mail|Mail|Contact)[\s\S]{0,15}[:\s]\s*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i);
@@ -1280,17 +1321,35 @@
     }
 
     // 4. Scan right-pane header elements specifically
-    const rightHeaderElements = Array.from(document.querySelectorAll('header, [class*="header"], [data-testid*="header"]')).filter(el => window.isInsideMonsterDetailPane(el));
+    const rightHeaderElements = Array.from(document.querySelectorAll(
+      'header, [class*="header"], [data-testid*="header"], [class*="contact"], [data-testid*="contact"], [class*="candidate-info"]'
+    )).filter(el => window.isInsideMonsterDetailPane(el));
 
     for (const el of rightHeaderElements) {
       const txt = (el.innerText || el.textContent || '').trim();
-      if (!txt) continue;
+      if (!txt || txt.length > 2000) continue;
+
+      for (const a of el.querySelectorAll('a[href^="mailto:"]')) {
+        if (!email) {
+          const ce = cleanEmail(a.href.replace(/^mailto:/i, '').split('?')[0]);
+          if (ce) email = ce;
+        }
+      }
+      for (const a of el.querySelectorAll('a[href^="tel:"]')) {
+        if (!phone) {
+          const cp = cleanPhone(a.href.replace(/^tel:/i, ''));
+          if (cp) phone = cp;
+        }
+      }
 
       if (!email) {
         const emMatch = txt.match(/(?:Email|E-mail|Mail|Contact)[\s\S]{0,15}[:\s]\s*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i);
         if (emMatch) {
           const ce = cleanEmail(emMatch[1]);
           if (ce) email = ce;
+        } else {
+          const found = utils.extractEmails(txt).map(cleanEmail).filter(Boolean);
+          if (found.length > 0) email = found[0];
         }
       }
 
@@ -1299,6 +1358,9 @@
         if (phMatch) {
           const cp = cleanPhone(phMatch[1]);
           if (cp) phone = cp;
+        } else {
+          const foundP = utils.extractPhones(txt).map(cleanPhone).filter(Boolean);
+          if (foundP.length > 0) phone = foundP[0];
         }
       }
 
@@ -1331,7 +1393,7 @@
   // Deep Scraper: Click each card, reveal details with polling, extract verified contact info
   window.smartHireScrapeCandidatesAsync = async function(onProgress) {
     const cards = window.getMonsterCards();
-    console.log(`[SmartHire Copilot v4.2] Found ${cards.length} cards for deep scrape.`);
+    console.log(`[SmartHire Copilot v4.3] Found ${cards.length} cards for deep scrape.`);
 
     if (cards.length === 0) {
       if (typeof onProgress === 'function') {

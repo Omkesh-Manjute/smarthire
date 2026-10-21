@@ -99,7 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Initialize
   const versionTextEl = document.getElementById('versionText');
   if (versionTextEl) {
-    const v = chrome.runtime?.getManifest?.()?.version || '4.2.0';
+    const v = chrome.runtime?.getManifest?.()?.version || '4.3.0';
     versionTextEl.innerText = `v${v} Live`;
   }
   checkActiveTab();
