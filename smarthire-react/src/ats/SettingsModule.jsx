@@ -308,6 +308,7 @@ function SettingsModule() {
 
   const TAB_BTNS = [
     { id: 'email', label: 'Email & Monster Config' },
+    { id: 'extension', label: 'Sourcing Extension' },
     { id: 'templates', label: 'Email Templates' },
     { id: 'pipeline', label: 'Pipeline' },
     { id: 'export', label: 'Export' }
@@ -322,7 +323,7 @@ function SettingsModule() {
         <div>
           <h3 style={{ margin: 0, fontFamily: 'Plus Jakarta Sans' }}>ATS Settings</h3>
           <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--ink-soft)' }}>
-            Configure your email settings, email templates, pipeline stages, and data export.
+            Configure your email settings, sourcing extension, email templates, pipeline stages, and data export.
           </p>
         </div>
         {savedToast && <div className="settings-toast">Settings saved successfully!</div>}
@@ -341,6 +342,23 @@ function SettingsModule() {
       {/* ── EMAIL CONFIG TAB ── */}
       {activeSettingsTab === 'email' && (
         <div style={{ maxWidth: 860 }}>
+          {/* Quick Extension Download Banner */}
+          <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 12, padding: '12px 18px', marginBottom: 18, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
+            <div>
+              <strong style={{ fontSize: 13, color: '#0F172A' }}>SmartHire Sourcing Chrome Extension v4.3</strong>
+              <p style={{ margin: '2px 0 0', fontSize: 12, color: '#64748B' }}>
+                Extract Monster+ & Dice candidate profiles in 1 click. Outreach emails send automatically using your configured work email below.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setActiveSettingsTab('extension')}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px', background: '#2563EB', color: '#FFFFFF', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              <span>View Extension & Download</span>
+            </button>
+          </div>
           {/* Step-by-Step App Password Tutorial Guide */}
           <div style={{ background: '#fff', border: '1px solid #bfdbfe', borderRadius: 14, padding: '18px 20px', marginBottom: 20, boxShadow: '0 2px 10px rgba(37,99,235,0.06)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 10 }}>
@@ -758,6 +776,152 @@ function SettingsModule() {
                     Cancel
                   </button>
                 )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── SOURCING CHROME EXTENSION TAB ── */}
+      {activeSettingsTab === 'extension' && (
+        <div style={{ maxWidth: 880 }}>
+          {/* Main Download & Status Card */}
+          <div style={{ background: '#FFFFFF', border: '1px solid #CBD5E1', borderRadius: 12, padding: '24px', marginBottom: 20, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
+              <div style={{ flex: 1, minWidth: 280 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+                  <h4 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#0F172A', fontFamily: 'Plus Jakarta Sans' }}>
+                    SmartHire Sourcing Copilot
+                  </h4>
+                  <span style={{ background: '#EFF6FF', color: '#1D4ED8', border: '1px solid #BFDBFE', fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 4 }}>
+                    v4.3 Production
+                  </span>
+                </div>
+                <p style={{ margin: 0, fontSize: 13, color: '#475569', lineHeight: 1.5 }}>
+                  AI-powered candidate profile extraction, document parsing, contact sniffing, and 1-click requisition matching for Monster+ and Dice.
+                </p>
+              </div>
+
+              <div>
+                <a
+                  href="/smarthire-extension.zip"
+                  download="smarthire-extension.zip"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '10px 20px',
+                    background: '#2563EB',
+                    color: '#FFFFFF',
+                    borderRadius: 8,
+                    fontWeight: 700,
+                    fontSize: 13,
+                    textDecoration: 'none',
+                    boxShadow: '0 2px 8px rgba(37,99,235,0.25)',
+                    transition: 'all 0.15s ease'
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = '#1D4ED8'}
+                  onMouseLeave={e => e.currentTarget.style.background = '#2563EB'}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="7 10 12 15 17 10" />
+                    <line x1="12" y1="15" x2="12" y2="3" />
+                  </svg>
+                  <span>Download Extension Package (.zip)</span>
+                </a>
+                <div style={{ fontSize: 11, color: '#64748B', textAlign: 'center', marginTop: 4 }}>
+                  Size: ~684 KB · Direct Download
+                </div>
+              </div>
+            </div>
+
+            {/* Feature Highlights Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12, marginTop: 20, paddingTop: 18, borderTop: '1px solid #E2E8F0' }}>
+              <div style={{ padding: '10px 12px', background: '#F8FAFC', borderRadius: 8, border: '1px solid #E2E8F0' }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#2563EB', textTransform: 'uppercase', marginBottom: 2 }}>Monster+ & Dice Extraction</div>
+                <div style={{ fontSize: 12, color: '#334155' }}>Extract candidate contacts (direct phone, email) and resumes straight from search results.</div>
+              </div>
+              <div style={{ padding: '10px 12px', background: '#F8FAFC', borderRadius: 8, border: '1px solid #E2E8F0' }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#2563EB', textTransform: 'uppercase', marginBottom: 2 }}>Requisition Matching</div>
+                <div style={{ fontSize: 12, color: '#334155' }}>Real-time match scoring against 500+ active requisitions from your SmartHire ATS.</div>
+              </div>
+              <div style={{ padding: '10px 12px', background: '#F8FAFC', borderRadius: 8, border: '1px solid #E2E8F0' }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#2563EB', textTransform: 'uppercase', marginBottom: 2 }}>Direct Email Outreach</div>
+                <div style={{ fontSize: 12, color: '#334155' }}>Send personalized JD outreach emails delivered through your own configured corporate email.</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Unified Authentication Notice Card */}
+          <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 12, padding: '18px 20px', marginBottom: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2.2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>
+              <h5 style={{ margin: 0, fontSize: 14, fontWeight: 800, color: '#166534' }}>
+                Team Login: Exact Same ATS Email & Password
+              </h5>
+            </div>
+            <p style={{ margin: '0 0 10px', fontSize: 12.5, color: '#15803D', lineHeight: 1.5 }}>
+              All recruiters and sourcing specialists log into the Chrome Extension using their exact same SmartHire ATS corporate credentials. No separate account or password setup is required.
+            </p>
+            <div style={{ fontSize: 12, color: '#166534', background: '#DCFCE7', padding: '8px 12px', borderRadius: 6 }}>
+              <strong>Automatic Sender Routing:</strong> When any recruiter dispatches candidate emails via the extension, the platform automatically routes the email through that recruiter's configured work email address and SMTP settings from the <em>Email & Monster Config</em> tab.
+            </div>
+          </div>
+
+          {/* Step-by-Step Installation Guide */}
+          <div style={{ background: '#FFFFFF', border: '1px solid #CBD5E1', borderRadius: 12, padding: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+            <h4 style={{ margin: '0 0 16px', fontSize: 15, fontWeight: 800, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              <span>3-Step Team Installation Guide</span>
+            </h4>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {/* Step 1 */}
+              <div style={{ display: 'flex', gap: 14 }}>
+                <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#2563EB', color: '#FFFFFF', fontWeight: 800, fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  1
+                </div>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 13.5, color: '#0F172A', marginBottom: 3 }}>
+                    Download & Unzip the Extension
+                  </div>
+                  <div style={{ fontSize: 12.5, color: '#475569', lineHeight: 1.5 }}>
+                    Click the blue <strong>"Download Extension Package (.zip)"</strong> button above. Once downloaded, open your downloads folder, right-click the zip file, and choose <strong>"Extract All"</strong> (or double-click to unzip on macOS) into a folder of your choice.
+                  </div>
+                </div>
+              </div>
+
+              {/* Step 2 */}
+              <div style={{ display: 'flex', gap: 14 }}>
+                <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#2563EB', color: '#FFFFFF', fontWeight: 800, fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  2
+                </div>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 13.5, color: '#0F172A', marginBottom: 3 }}>
+                    Load the Extension in Google Chrome
+                  </div>
+                  <div style={{ fontSize: 12.5, color: '#475569', lineHeight: 1.5 }}>
+                    In Google Chrome, navigate to <code style={{ background: '#F1F5F9', padding: '2px 6px', borderRadius: 4, color: '#2563EB', fontWeight: 600 }}>chrome://extensions/</code> in your address bar. In the upper-right corner, toggle <strong>Developer mode</strong> to <strong>ON</strong>. Then click the <strong>"Load unpacked"</strong> button in the top-left, and select the extracted <code style={{ background: '#F1F5F9', padding: '2px 6px', borderRadius: 4 }}>smarthire-extension</code> folder.
+                  </div>
+                </div>
+              </div>
+
+              {/* Step 3 */}
+              <div style={{ display: 'flex', gap: 14 }}>
+                <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#2563EB', color: '#FFFFFF', fontWeight: 800, fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  3
+                </div>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 13.5, color: '#0F172A', marginBottom: 3 }}>
+                    Open Monster or Dice & Sign In
+                  </div>
+                  <div style={{ fontSize: 12.5, color: '#475569', lineHeight: 1.5 }}>
+                    Open Monster (<a href="https://monster.com" target="_blank" rel="noopener noreferrer" style={{ color: '#2563EB' }}>monster.com</a>) or Dice (<a href="https://dice.com" target="_blank" rel="noopener noreferrer" style={{ color: '#2563EB' }}>dice.com</a>). You will see the floating <strong>SmartHire ATS Copilot dock</strong> on the right edge of the screen. Click to open it, enter your SmartHire ATS email & password, and start candidate extraction!
+                  </div>
+                </div>
               </div>
             </div>
           </div>

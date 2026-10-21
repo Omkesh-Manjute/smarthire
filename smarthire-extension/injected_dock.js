@@ -212,17 +212,17 @@ Website: http://www.coolsofttech.com`;
           </div>
           <div style="font-weight:800; font-size:14.5px; color:#0F172A; margin-bottom:4px; text-align:center;">Recruiter Login Required</div>
           <div style="font-size:11px; color:#64748B; margin-bottom:16px; line-height:1.45; text-align:center;">
-            Sign in with your SmartHire ATS recruiter credentials to access live requisitions, candidate scraping, and email outreach.
+            Sign in with your SmartHire ATS email & password (the same credentials you use on smarthireus.com) to access live requisitions, candidate scraping, and team outreach.
           </div>
           
           <div style="margin-bottom:10px; text-align:left;">
             <label style="display:block; font-size:11px; font-weight:700; color:#334155; margin-bottom:4px;">Work Email</label>
-            <input type="email" id="smarthire-gate-email" placeholder="Enter work email" class="smarthire-input" style="width:100%; box-sizing:border-box; font-size:12px; padding:8px 10px;" />
+            <input type="email" id="smarthire-gate-email" placeholder="name@coolsofttech.com" class="smarthire-input" style="width:100%; box-sizing:border-box; font-size:12px; padding:8px 10px;" />
           </div>
 
           <div style="margin-bottom:14px; text-align:left;">
-            <label style="display:block; font-size:11px; font-weight:700; color:#334155; margin-bottom:4px;">Password</label>
-            <input type="password" id="smarthire-gate-pass" placeholder="Enter password" class="smarthire-input" style="width:100%; box-sizing:border-box; font-size:12px; padding:8px 10px;" />
+            <label style="display:block; font-size:11px; font-weight:700; color:#334155; margin-bottom:4px;">SmartHire ATS Password</label>
+            <input type="password" id="smarthire-gate-pass" placeholder="Enter your ATS password" class="smarthire-input" style="width:100%; box-sizing:border-box; font-size:12px; padding:8px 10px;" />
           </div>
 
           <button id="smarthire-gate-btn-login" class="smarthire-btn-primary" style="width:100%; height:38px; padding:0; font-size:12.5px; font-weight:700; border-radius:6px; background:#2563EB; box-shadow:0 2px 6px rgba(37,99,235,0.25); display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; margin-top:4px;">

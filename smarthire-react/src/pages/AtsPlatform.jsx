@@ -1120,7 +1120,7 @@ export default function AtsPlatform() {
             { id: 'inquiries', label: 'Client Inquiries', count: inquiriesCount || undefined, adminOnly: true },
             { id: 'audit', label: 'Audit Logs', adminOnly: false },
             { id: 'automation', label: 'Automation', adminOnly: true },
-            { id: 'settings', label: 'Settings', adminOnly: true },
+            { id: 'settings', label: 'Settings', adminOnly: false },
             { id: 'users', label: 'Manage Users', adminOnly: true },
           ]
             .filter(m => !m.adminOnly || isSuperAdmin)
