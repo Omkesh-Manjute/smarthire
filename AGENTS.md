@@ -66,6 +66,125 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
     - In resume views, every responsibility, project accomplishment, and contribution line must be formatted with an explicit bullet point (`•`) and proper indentation.
     - The engine must automatically detect responsibilities (lines following `Responsibilities:`, action verbs, or list items) even when converted from plain text or Word documents without literal Unicode bullets.
 
+### 2026-10-21 — Monster Contact Cross-Contamination Elimination, Strict Right-Pane Gating & Extension v4.1.0 Release
+- **Context & Objectives**:
+  - The user reported: `bhai dekho email bhi galat liye abh and 3 candidate ke liya abhi baki ke nahi le raha hai ye and pure ke email galat hai abhi dekho and fix karo update karo bhut time hogaya hai is bar sahi mai fix karo` with 2 screenshots attached:
+    - `media_1792594843333_1bc8151d.png`: Monster preview shows Candidate 4 (`DEMMY OLARINDE`) with visible phone `+12407551915` and email `dammyolarinde@gmail.com`. Copilot drawer extracted `developerit472+priyava@gmail.com` and `Phone: Not Disclosed`.
+    - `media_1792594897845_453ea278.png`: Monster preview shows Candidate 2 (`Abhishek Narra`) with phone `+19403376212` and email `ncabhishek@outlook.com`. In the drawer, Candidate 1 (`Eli Khoffie`) and Candidate 2 (`Abhishek Narra`) both had identical email `wkkydq5zn7@privaterelay.appleid.com` and phone `(703) 595-0260`.
+- **Root Cause & Architectural Implementations**:
+  1. *Horizontal Geometry & Middle Column Collision*:
+     - Previously, `isMonsterCandidateActive` and `findMonsterDetailPane` used `rect.left >= window.innerWidth * 0.20`. On standard 1280px–1440px displays, Monster's search results cards in the middle column span from ~18% to ~45% screen width.
+     - Because `isExcluded` only filtered outer `smui-card` elements, unnested candidate names inside cards in the middle column matched the target name immediately (at millisecond 0), falsely convincing the scraper that the right preview pane had finished loading the candidate when it was still showing the previous candidate.
+     - Fix: Built `window.isInsideMonsterDetailPane(el)`: strictly verifies `rect.left >= window.innerWidth * 0.40`, and explicitly filters out any element inside candidate cards, search result containers, navigation, or Copilot drawer.
+  2. *Strict Multi-Word Candidate Name Matching*:
+     - Built `window.monsterNameMatches(candidateName, text)`: requires either full name match or both first AND last names ($\ge 3$ characters each), preventing single-token substring collisions.
+  3. *Elimination of Dangerous Blind Relay Query*:
+     - In `findMonsterDetailPane`, Strategy 3 previously performed `document.querySelectorAll('*')` searching for any relay email (`@contact.monster.com` or `@privaterelay.appleid.com`). This caused Candidate 2 to latch onto Candidate 1's container!
+     - Fix: Strategy 3 was completely removed. Detail pane discovery strictly requires candidate name verification inside `isInsideMonsterDetailPane`.
+  4. *Idempotent UI Rendering & Loop Contamination Removal in `renderResults`*:
+     - In `injected_dock.js` (lines 3027-3037), `renderResults` had an active DOM fallback loop that scanned the live DOM for missing contact info. Because the live DOM only ever shows one candidate at a time, every re-render overwrote missing rows with whichever candidate was currently on screen.
+     - Fix: Completely eliminated the live DOM fallback inside `renderResults`. `renderResults` is strictly an idempotent UI renderer.
+  5. *Strict Active Guard in `extractMonsterContact`*:
+     - Added `if (expectedCandidateName && !window.isMonsterCandidateActive(expectedCandidateName)) return { phone: '', email: '' };` before scanning right-pane headers or legends, ensuring zero cross-candidate contact leaks.
+  6. *Scraper Synchronization with 1500ms Retry*:
+     - The scraper loop now checks `window.isMonsterCandidateActive(name)` via polling up to 2500ms; if inactive, it re-clicks the card with full pointer/mouse sequences and polls for another 1500ms before touching the detail pane.
+  7. *Extension Version Bump to v4.1.0*:
+     - Bumped extension version from `4.0.0` to `4.1.0` across `manifest.json`, `injected_dock.js` (`v4.1 Live`), `popup.html`, `popup.js`, and `matching_engine.js`.
+- **Verification & Deployment Protocol**:
+  - `node -c` verified syntax for all extension files (0 syntax errors).
+  - All 42 unit tests pass (`node smarthire-main/tests/ats_matching_engine.test.js`).
+  - Production build in `smarthire-react`: 0 errors, 0 warnings.
+  - Repackaged `smarthire-extension.zip` (`Content-Length: 682666`).
+  - Git committed (`817719f`) and pushed to GitHub `origin main`.
+  - Deployed updated `smarthire-extension.zip` and frontend bundle to AWS Lightsail server (`34.194.119.199`) across `/var/www/html/` and Express dist directories, reloaded PM2 `smarthire-ats`.
+  - Verified live download URL: `https://smarthireus.com/smarthire-extension.zip` returns HTTP 200 OK (`Content-Length: 682666`).
+  - Verified live domain `https://smarthireus.com` returns HTTP 200 OK.
+
+### 2026-10-21 — Monster Resume Tab Enforcement, Profile Tab Exclusion & Extension v4.0.0 Release
+- **Context & Objectives**:
+  - The user reported: `bhai nahi aya ho q nahi raha hai deeply check karo fix karo abhi sirf 2 logo ka dikh raha hai baki ka nahi aya hai so check and update is bar paaka fix karo` and requested `bhai extension ka virsion bhi incrize karna jisse samj to aye ki update ho raha hai ya nahi`.
+  - In screenshot `media_1792591819885_75c80622.png`, 13 candidates were extracted, but only 2 candidates had emails and 11 had `Email: Not Disclosed`, `Phone: Not Disclosed`. On the Monster UI, the right split pane was stuck on the `[Profile]` tab showing the `Skills` table instead of the `[Resume]` tab where the contact legend (`#contact-legend-detail`) and resume document reside.
+- **Root Cause & Architectural Implementations**:
+  1. *Profile Tab Inclusion Elimination*:
+     - In `content_monster.js`, lines 1388-1396 previously contained `return txt === 'resume' || txt === 'cv' || txt === 'profile';`.
+     - In Monster's tab bar, Tab 1 is `Profile` and Tab 2 is `Resume`. When `Array.find()` encountered this condition, it matched Tab 1 (`Profile`), clicked it, and permanently switched Monster away from `Resume` to `Profile`.
+     - On the `[Profile]` tab, Monster only renders the Skills table, while `#contact-legend-detail` and the document viewer are hidden.
+     - Fix: Completely eliminated `|| txt === 'profile'` across all tab lookups. Tab switching strictly targets `Resume` / `CV` only.
+  2. *Resilient Resume Tab Discovery & Sibling Fallback (`window.findMonsterResumeTab`)*:
+     - Added 4-tier discovery: (1) container search, (2) dedicated attributes (`[data-testid*="resume-tab"]`, `[aria-controls*="resume"]`, `[id*="resume-tab"]`), (3) text search in upper right pane (`top <= 450`), (4) Profile tab sibling detection (`profileTab.nextElementSibling` or tablist child #2).
+  3. *Active Resume Tab Validation & Dual-Element Dispatch (`window.activateMonsterResumeTab` & `window.isMonsterResumeTabActive`)*:
+     - Built `isMonsterResumeTabActive`: verifies `#contact-legend-detail` or document viewer presence or tab active indicators (`mdc-tab--active`, `aria-selected="true"`).
+     - Enhanced `activateMonsterResumeTab`: dispatches full pointer/mouse event sequences (`pointerdown` -> `mousedown` -> `pointerup` -> `mouseup` -> `click` with `composed: true`, `clientX/Y`, `screenX/Y`) to BOTH the outer tab container and the inner label/ripple element, with native `.click()` invocation.
+     - Built `ensureMonsterResumeTabActive`: unconditionally forces the right pane to the `Resume` tab and waits 250ms for `#contact-legend-detail` and document viewer rendering before contact sniffing begins.
+  4. *Profile Skills Early Return Prevention in `extractCleanMonsterResumeTextAsync`*:
+     - Previously, `extractCleanMonsterResumeTextAsync` checked `if (immediateText && immediateText.length >= 1200)` and returned early. When on the Profile tab, a candidate with 105+ skills had > 1200 chars of skills text, causing it to return the skills table as "RESUME_DOCUMENT" and skip activating the Resume tab!
+     - Fix: Added `autoSwitchTabs` activation before checking text, and strictly gated early return with `window.isMonsterResumeTabActive()`.
+  5. *Extension Version Bump to v4.0.0*:
+     - Bumped extension version from `3.9.0` to `4.0.0` in `manifest.json`.
+     - Updated dock header badge to `v4.0 Live` with glowing blue container (`#1E293B`, `#93C5FD`).
+     - Updated dock trigger tooltip to `SmartHire ATS Sourcing Copilot v4.0 (Click to Open)`.
+     - Updated popup header/footer and console logs to `v4.0 Live`.
+- **Verification & Deployment Protocol**:
+  - `node -c` verified syntax for all extension files (0 syntax errors).
+  - All 42 unit tests pass (`node smarthire-main/tests/ats_matching_engine.test.js`).
+  - Production build in `smarthire-react`: 0 errors, 0 warnings.
+  - Repackaged `smarthire-extension.zip` (`Content-Length: 683534`).
+  - Git committed (`52fe948`) and pushed to GitHub `origin main`.
+  - Deployed updated `smarthire-extension.zip` to AWS Lightsail server (`34.194.119.199`) across `/var/www/html/` and Express dist directories, reloaded PM2 `smarthire-ats`.
+  - Verified live download URL: `https://smarthireus.com/smarthire-extension.zip` returns HTTP 200 OK (`Content-Length: 683534`).
+  - Verified live domain `https://smarthireus.com` returns HTTP 200 OK.
+
+### 2026-10-21 — Monster Controlled Pace Polling, Single Safe Target Selection & Contact Extraction
+- **Context & Objectives**:
+  - The user reported: `bhai nahi ho pa raha hia pata nahi q to ak kam karo return karo jaisa tha ya fix karo maine jo bola tha rumko moster referse ho raha hai run karne pe vo wala part se retun la do ya isko fix karo may be fast karne ke reson se ho sakta hai and batavo hoga ya nahi`.
+  - Diagnosis: The user correctly identified the root cause: the scraping loop was running too fast (350ms static delay), not allowing Monster's SPA enough time to complete network fetch calls and render the right preview pane before contact extraction took place. Additionally, multi-target concurrent click bursts were interrupting Svelte's state transitions.
+- **Root Cause & Architectural Implementations**:
+  1. *Controlled Pace & Dynamic Polling (Fixing the "Too Fast" failure)*:
+     - Restored the proven dynamic polling loop from `aec8cea`, giving Monster up to 2,500ms per candidate with 150ms check intervals.
+     - Early break triggers immediately once the candidate's first or last name is detected in the right detail pane, ensuring zero wasted time while never prematurely extracting blank DOM states.
+  2. *Single Safe Target Card Selection (Preventing Refresh & Event Storms)*:
+     - Replaced concurrent multi-target click bursts with single best target selection (`safeTargets[0] || card`).
+     - Preserved strict exclusion of all `<a>` tags and action buttons to ensure Monster never auto-refreshes or navigates away.
+  3. *Detail Pane Tab Activation & Contact Sniffing*:
+     - If contact info is missing after candidate appears, automatically checks and clicks the tab revealing `#contact-legend-detail` (`Resume` / `CV` / `Profile`).
+     - Extracts contact from `#contact-legend-detail`, header text, and resume text layer.
+- **Verification & Deployment Protocol**:
+  - `node -c` verified syntax for all extension files (0 syntax errors).
+  - All 42 unit tests pass (`node smarthire-main/tests/ats_matching_engine.test.js`).
+  - Production build in `smarthire-react`: 0 errors, 0 warnings.
+  - Repackaged `smarthire-extension.zip`.
+  - Git committed (`7b92438`) and pushed to GitHub `origin main`.
+  - Deployed updated `smarthire-extension.zip` to AWS Lightsail server (`34.194.119.199`) across `/var/www/html/` and Express dist directories, reloaded PM2 `smarthire-ats`.
+  - Verified live download URL: `https://smarthireus.com/smarthire-extension.zip` returns HTTP 200 OK (`Content-Length: 683006`).
+  - Verified live domain `https://smarthireus.com` returns HTTP 200 OK.
+
+### 2026-10-21 — Monster Card Selection Activation, Right Pane Resume Tab Targeting & Contact Extraction
+- **Context & Objectives**:
+  - The user reported: `same error dekho not disclosed seedly ho rah ahai but ye number and emal nahi le rah ahai dekho fix karo update karo` with screenshot showing Monster candidate contact extraction failing with `Email: Not Disclosed`, `Phone: Not Disclosed` across all candidates.
+- **Root Cause & Architectural Implementations**:
+  1. *Desynchronized Candidate Card Selection (`selectMonsterCandidateCard`)*:
+     - Root cause: `scrollIntoView({ behavior: 'smooth' })` triggered asynchronous scroll animation during which synthetic pointer/click events were suppressed. Events were dispatched with `{ clientX: 0, clientY: 0 }` and lacked `composed: true`, failing Svelte/Material ripple handlers on `<smui-card>`.
+     - Fix: Updated `selectMonsterCandidateCard` to scroll with `behavior: 'instant'`, calculate center bounding-box coordinates (`clientX`, `clientY`), dispatch full `PointerEvent` and `MouseEvent` chains (`pointerdown` -> `mousedown` -> `pointerup` -> `mouseup` -> `click`) with `composed: true`, and systematically target `.mdc-card__primary-action`, `.smui-card-body`, `[class*="candidate-summary"]`, `[class*="card-content"]`, and `card`.
+  2. *Right-Pane Resume Tab Targeting vs. Left Filter Accordion Collision (`findMonsterResumeTab`)*:
+     - Root cause: `findMonsterResumeTab` searched `document` using generic `[aria-controls*="resume"]`, which collided with the "Resume Updated" search filter on the LEFT sidebar, clicking the search filter instead of the Resume tab on the right.
+     - Root cause: In `injected_dock.js`, line 2840 was programmatically switching to the `Profile` tab, which permanently hid Monster's contact legend and resume document viewer.
+     - Fix: Scoped `findMonsterResumeTab` strictly to the right preview pane (`rect.left >= window.innerWidth * 0.20`), requiring exact tab label matching (`resume`, `cv`, `resume & cv`). Replaced `Profile` tab switching in `injected_dock.js` with `Resume` tab activation.
+  3. *High-Priority Contact Legend Scanning (`#contact-legend-detail`)*:
+     - On Monster+, candidate contact details reside in `#contact-legend-detail` (under the header on the Resume tab).
+     - Upgraded `extractMonsterContact` to prioritize `#contact-legend-detail`, right-pane headers, and `mailto:`/`tel:` links.
+  4. *Active Pane Verification Gating in Scraper & Live DOM Fallback*:
+     - During `smartHireScrapeCandidatesAsync`, verifies `window.isMonsterCandidateActive(name)` before extracting right-pane contact info.
+     - In `renderResults`, guarded live DOM contact fallback with `isMonsterCandidateActive(c.name)` to prevent cross-candidate contact contamination.
+- **Verification & Deployment Protocol**:
+  - `node -c` verified syntax for all extension files (0 syntax errors).
+  - All 42 unit tests pass (`node smarthire-main/tests/ats_matching_engine.test.js`).
+  - Production build in `smarthire-react`: 0 errors, 0 warnings.
+  - Repackaged `smarthire-extension.zip`.
+  - Git committed (`a1b73da`) and pushed to GitHub `origin main`.
+  - Deployed updated `smarthire-extension.zip` to AWS Lightsail server (`34.194.119.199`) across `/var/www/html/` and Express dist directories, reloaded PM2 `smarthire-ats`.
+  - Verified live download URL: `https://smarthireus.com/smarthire-extension.zip` returns HTTP 200 OK (`Content-Length: 682477`).
+  - Verified live domain `https://smarthireus.com` returns HTTP 200 OK.
+
 ### 2026-10-21 — Monster Unblocked Contact Extraction & Tab Disruption Removal
 - **Context & Objectives**:
   - The user reported: `bhai pahle sab a raha tha but abhi kay hogaya same error not disclosed ab to kisi ka bhi nahi a raha hai dekho and fix karo isko` with screenshot showing all candidates returning `Email: Not Disclosed`, `Phone: Not Disclosed`.
