@@ -425,78 +425,57 @@
   window.selectMonsterCandidateCard = function(card) {
     if (!card) return false;
     try {
-      card.scrollIntoView({ behavior: 'instant', block: 'center' });
-
-      // Elements that should never be clicked (action buttons, favorites, checkboxes)
+      // Elements that MUST NEVER be clicked because they trigger page navigation, checkboxes, or favorites
       const isUnsafeElement = (el) => {
         if (!el) return true;
+        // Strictly exclude anchor tags and elements with href (prevents navigating to candidate full profile / reloading page)
         if (el.tagName === 'A' || el.closest('a') || el.hasAttribute('href')) return true;
+        // Exclude checkboxes
         if (el.type === 'checkbox' || el.closest('[role="checkbox"]') || el.closest('[class*="checkbox"]')) return true;
+        // Exclude favorite / star buttons
         if (el.closest('[data-testid*="favorite"]') || el.closest('[class*="favorite"]')) return true;
-        if (el.closest('[aria-label*="favorite"]') || el.closest('[aria-label*="Favorite"]')) return true;
-        if (el.closest('[aria-label*="Actions"]') || el.closest('[aria-label*="more options"]')) return true;
+        // Exclude action buttons (menu, download, email, etc.)
+        if (el.tagName === 'BUTTON' || el.closest('button') || el.closest('[role="button"]')) return true;
         return false;
       };
 
-      const dispatchRealisticClick = (el) => {
-        if (!el || isUnsafeElement(el)) return false;
-        try {
-          const rect = el.getBoundingClientRect();
-          const x = rect.left + Math.max(5, rect.width / 2);
-          const y = rect.top + Math.max(5, rect.height / 2);
-
-          const eventInit = {
-            bubbles: true,
-            cancelable: true,
-            composed: true,
-            view: window,
-            detail: 1,
-            screenX: window.screenX + x,
-            screenY: window.screenY + y,
-            clientX: x,
-            clientY: y,
-            button: 0,
-            buttons: 1
-          };
-
-          try {
-            el.dispatchEvent(new PointerEvent('pointerdown', { ...eventInit, pointerId: 1, pointerType: 'mouse', isPrimary: true }));
-          } catch (e) {}
-          el.dispatchEvent(new MouseEvent('mousedown', eventInit));
-          try {
-            el.dispatchEvent(new PointerEvent('pointerup', { ...eventInit, buttons: 0, pointerId: 1, pointerType: 'mouse', isPrimary: true }));
-          } catch (e) {}
-          el.dispatchEvent(new MouseEvent('mouseup', { ...eventInit, buttons: 0 }));
-          el.dispatchEvent(new MouseEvent('click', { ...eventInit, buttons: 0 }));
-
-          if (typeof el.click === 'function') {
-            try { el.click(); } catch (e) {}
-          }
-          return true;
-        } catch (e) {
-          return false;
-        }
-      };
-
-      // Candidate card targets to activate split view:
-      // In Monster Svelte Material UI, clicking the primary action, card body, candidate summary, or card itself triggers selection.
-      const candidateTargets = [
-        card.querySelector('.mdc-card__primary-action'),
-        card.querySelector('[class*="primary-action"]'),
+      // Search for safe clickable body / header elements inside the card
+      const safeTargets = [
         card.querySelector('.smui-card-body'),
         card.querySelector('[class*="card-body"]'),
+        card.querySelector('.mdc-card__primary-action'),
+        card.querySelector('[class*="primary-action"]'),
+        card.querySelector('.smui-card-header'),
+        card.querySelector('[class*="card-header"]'),
+        card.querySelector('[data-testid*="card-content"]'),
+        card.querySelector('[class*="card-content"]'),
         card.querySelector('[class*="candidate-summary"]'),
         card.querySelector('[class*="candidate-details"]'),
-        card.querySelector('[class*="card-content"]'),
-        card.querySelector('[data-testid*="card-content"]'),
-        card.querySelector('h2, h3, h4, [class*="title"], [class*="role"], [class*="job"]'),
         card
       ].filter(el => el && !isUnsafeElement(el));
 
-      for (const target of candidateTargets) {
-        dispatchRealisticClick(target);
-      }
+      const clickTarget = safeTargets[0] || card;
 
+      clickTarget.scrollIntoView({ behavior: 'auto', block: 'nearest' });
+      const rect = clickTarget.getBoundingClientRect();
+      const clientX = rect.left + Math.max(5, rect.width / 2);
+      const clientY = rect.top + Math.max(5, rect.height / 2);
+      const evtInit = { bubbles: true, cancelable: true, composed: true, view: window, clientX, clientY, buttons: 1 };
+
+      try {
+        clickTarget.dispatchEvent(new PointerEvent('pointerdown', { ...evtInit, pointerType: 'mouse', isPrimary: true }));
+      } catch (e) {}
+      clickTarget.dispatchEvent(new MouseEvent('mousedown', evtInit));
+      try {
+        clickTarget.dispatchEvent(new PointerEvent('pointerup', { ...evtInit, buttons: 0, pointerType: 'mouse', isPrimary: true }));
+      } catch (e) {}
+      clickTarget.dispatchEvent(new MouseEvent('mouseup', { ...evtInit, buttons: 0 }));
+      clickTarget.dispatchEvent(new MouseEvent('click', { ...evtInit, buttons: 0 }));
+
+      // Only invoke native .click() if target has NO anchor / href and is not inside an anchor
+      if (!isUnsafeElement(clickTarget) && typeof clickTarget.click === 'function') {
+        try { clickTarget.click(); } catch (e) {}
+      }
       return true;
     } catch (e) {
       return false;
@@ -1375,43 +1354,85 @@
         if (cardContact.email) email = cardContact.email;
         if (cardContact.phone) phone = cardContact.phone;
 
-        // 2. Select card to open detail pane in Monster's split view
+        // 2. Select card to open detail pane in Monster's split view (safe click, no reload)
         window.selectMonsterCandidateCard(card);
 
-        // 3. Wait for Monster's right-side detail pane to update and confirm active candidate (up to 1200ms)
-        const selectStart = Date.now();
-        while (Date.now() - selectStart < 1200) {
-          if (window.isMonsterCandidateActive(name)) break;
-          await sleep(100);
+        // 3. Dynamic Polling: Give Monster sufficient time (up to 2500ms) to update split view with this candidate
+        const pollStart = Date.now();
+        const parts = name.trim().toLowerCase().split(/\s+/).filter(p => p.length >= 2);
+        const firstName = parts[0] || '';
+        const lastName = parts.slice(-1)[0] || '';
+        let detailPane = null;
+
+        while (Date.now() - pollStart < 2500) {
+          detailPane = window.findMonsterDetailPane(name);
+          const paneText = detailPane ? (detailPane.innerText || '') : '';
+          const lowerPane = paneText.toLowerCase();
+          const paneMatchesCandidate = detailPane && (
+            (firstName.length >= 3 && lowerPane.includes(firstName)) ||
+            (lastName.length >= 3 && lowerPane.includes(lastName)) ||
+            window.isMonsterCandidateActive(name)
+          );
+
+          if (paneMatchesCandidate) {
+            // Sniff contact from confirmed detail pane
+            const contact = window.extractMonsterContact(null, name);
+            if (contact.email) email = contact.email;
+            if (contact.phone) phone = contact.phone;
+
+            // If contact is still missing, ensure Resume tab is active so Monster renders contact legend
+            if (!email || !phone) {
+              const resumeTab = window.findMonsterResumeTab(detailPane) ||
+                                detailPane.querySelector('li:nth-of-type(2) > .tab__title > .tab__label') ||
+                                detailPane.querySelector('li:nth-of-type(2)') ||
+                                Array.from(detailPane.querySelectorAll('.tab__label, button, [role="tab"], li')).find(t => {
+                                  const txt = (t.innerText || '').trim().toLowerCase();
+                                  return txt === 'resume' || txt === 'cv' || txt === 'profile';
+                                });
+              if (resumeTab && !resumeTab.closest('.tab--active') && !resumeTab.classList.contains('active')) {
+                try {
+                  const targetTab = resumeTab.closest('[role="tab"]') || resumeTab.closest('button') || resumeTab.closest('li') || resumeTab;
+                  targetTab.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, view: window }));
+                  targetTab.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true, view: window }));
+                  targetTab.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+                  const pAnchor = targetTab.tagName === 'A' ? targetTab : targetTab.closest('a');
+                  const pUrl = pAnchor ? pAnchor.getAttribute('href') : null;
+                  if (!pAnchor || !pUrl || pUrl === '#' || pUrl.startsWith('javascript:')) {
+                    if (typeof targetTab.click === 'function') targetTab.click();
+                  }
+                  await sleep(300);
+                  const tabContact = window.extractMonsterContact(null, name);
+                  if (tabContact.email) email = tabContact.email;
+                  if (tabContact.phone) phone = tabContact.phone;
+                } catch (e) {}
+              }
+            }
+            break;
+          }
+          await sleep(150);
         }
 
-        // 4. Ensure Resume tab is active so Monster renders contact legend and resume document!
-        const resumeTab = window.findMonsterResumeTab();
-        if (resumeTab) {
-          window.activateMonsterResumeTab(resumeTab);
-          await sleep(200);
-        }
-
-        // 5. Sniff detail pane immediately for contact info
-        const paneDirect = window.extractMonsterContact(null, name);
-        if (!email && paneDirect.email) email = paneDirect.email;
-        if (!phone && paneDirect.phone) phone = paneDirect.phone;
-
-        // 6. Extract authentic clean resume text from right detail pane / Resume document
+        // 4. Extract authentic clean resume text from right detail pane / Resume document
         const extRes = await window.extractCleanMonsterResumeTextAsync(card, name, true);
         let candidateFullText = extRes.text;
         if (!candidateFullText || candidateFullText.length < 50) {
           candidateFullText = window.cleanMonsterResumeText(cardText);
         }
 
-        // 7. Reconcile Location if not found on card
+        // 5. Reconcile Location if not found on card
+        if (!location || location === 'United States') {
+          if (detailPane) {
+            const paneLoc = window.extractCleanMonsterLocation(detailPane.innerText || '');
+            if (paneLoc) location = paneLoc;
+          }
+        }
         if (!location || location === 'United States') {
           const rightLoc = window.extractCleanMonsterLocation(candidateFullText.slice(0, 2500));
           if (rightLoc) location = rightLoc;
         }
         if (!location) location = 'United States';
 
-        // 8. Verified Contact Extraction: Scan resume text, then confirmed detail pane, then card
+        // 6. Verified Contact Extraction: Scan resume text, then confirmed detail pane, then card
         if (!email) email = window.extractCandidateEmailFromText(candidateFullText);
         if (!phone) phone = window.extractCandidatePhoneFromText(candidateFullText);
 
