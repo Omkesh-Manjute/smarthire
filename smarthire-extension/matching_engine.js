@@ -29,7 +29,7 @@
   // 1. CONSTANTS & DEFAULT CONFIGURATION
   // ==========================================
 
-  const ENGINE_VERSION = '4.0.0-authoritative';
+  const ENGINE_VERSION = '4.1.0-authoritative';
   const CONFIG_VERSION = '2026.10-7cat';
 
   const EVIDENCE_STATUS = {

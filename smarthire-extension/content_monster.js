@@ -1,7 +1,7 @@
-// SmartHire Sourcing Copilot v4.0 - Monster+ Content Script
+// SmartHire Sourcing Copilot v4.1 - Monster+ Content Script
 (function() {
   window.smartHirePortal = 'Monster+';
-  console.log('[SmartHire Copilot v4.0] Monster+ content script loaded on:', window.location.href);
+  console.log('[SmartHire Copilot v4.1] Monster+ content script loaded on:', window.location.href);
 
   const utils = window.SmartHireUtils || {
     extractEmails: (text) => {
@@ -237,7 +237,7 @@
       if (el.closest('smui-card') || el.closest('[class*="candidate-card"]')) return true;
       // Strictly exclude left search filter sidebar elements (e.g. "Resume Updated" filter on left sidebar)
       const rect = el.getBoundingClientRect();
-      if (rect.left < window.innerWidth * 0.20) return true;
+      if (rect.left < window.innerWidth * 0.40) return true;
       const t = (el.innerText || el.textContent || '').toLowerCase();
       if (t.includes('updated') || t.includes('filter') || t.includes('search') || t.includes('clear')) return true;
       return false;
@@ -254,7 +254,7 @@
       }
     }
 
-    // 2. Dedicated attributes in right-side preview area (x >= 20% window width)
+    // 2. Dedicated attributes in right-side preview area (x >= 40% window width)
     const attrSelectors = [
       '[data-testid*="resume-tab"]',
       '[data-testid*="resumeTab"]',
@@ -271,13 +271,13 @@
       }
     }
 
-    // 3. Strict right-side preview search (x >= 20% window width, top <= 450)
+    // 3. Strict right-side preview search (x >= 40% window width, top <= 450)
     const rightElements = Array.from(document.querySelectorAll(
       '[role="tab"], button, li, a, .tab__label, .tab__title, [class*="tab"], [data-testid*="tab"], span, div'
     )).filter(el => {
       if (isExcluded(el)) return false;
       const rect = el.getBoundingClientRect();
-      return rect.left >= window.innerWidth * 0.20 && rect.width >= 10 && rect.height >= 10 && rect.top <= 450;
+      return rect.left >= window.innerWidth * 0.40 && rect.width >= 10 && rect.height >= 10 && rect.top <= 450;
     });
 
     for (const el of rightElements) {
@@ -351,16 +351,14 @@
   window.isMonsterResumeTabActive = function() {
     // 1. Check if #contact-legend-detail is visible in right pane (only rendered on Resume tab!)
     const contactLegend = document.querySelector('#contact-legend-detail, [id*="contact-legend"]');
-    if (contactLegend) {
-      const rect = contactLegend.getBoundingClientRect();
-      if (rect.left >= window.innerWidth * 0.20 && rect.height >= 10) return true;
+    if (contactLegend && window.isInsideMonsterDetailPane(contactLegend)) {
+      if (contactLegend.getBoundingClientRect().height >= 10) return true;
     }
 
     // 2. Check if resume document viewer / textLayer is visible in right pane
     const docViewer = document.querySelector('[class*="document-viewer"], [class*="resume-view"], [class*="documentViewer"], .document-viewer, [class*="text-resume"], .textLayer');
-    if (docViewer) {
-      const rect = docViewer.getBoundingClientRect();
-      if (rect.left >= window.innerWidth * 0.20 && rect.height >= 50) return true;
+    if (docViewer && window.isInsideMonsterDetailPane(docViewer)) {
+      if (docViewer.getBoundingClientRect().height >= 50) return true;
     }
 
     // 3. Check if Resume tab has active class or aria-selected="true"
@@ -480,35 +478,63 @@
     return null;
   };
 
-  // Check whether the currently displayed right-hand split-view column matches target candidate
+  // Helper to determine if an element is strictly inside Monster's right detail / preview pane
+  window.isInsideMonsterDetailPane = function(el) {
+    if (!el) return false;
+    // Exclude Copilot drawer / trigger / dossier overlay
+    if (el.closest('#smarthire-copilot-drawer') || el.closest('#smarthire-copilot-trigger') || el.closest('#smarthire-dossier-overlay')) return false;
+    // Strictly exclude any element inside a candidate card or search results list in the middle column
+    if (el.closest('smui-card') || el.closest('[data-testid*="candidate-card"]') || el.closest('[class*="candidate-card"]') || el.closest('[class*="search-result"]') || el.closest('article')) return false;
+    if (el.closest('[data-testid*="search-results"]') || el.closest('[class*="search-results"]') || el.closest('[class*="results-list"]')) return false;
+    if (el.tagName === 'NAV' || el.tagName === 'HEADER' || el.tagName === 'FOOTER') return false;
+    // Detail pane is always in the right split-view column (left >= 40% of window width)
+    const rect = el.getBoundingClientRect();
+    return rect.left >= window.innerWidth * 0.40 && rect.width > 0;
+  };
+
+  // Robust candidate name matcher for text nodes
+  window.monsterNameMatches = function(candidateName, text) {
+    if (!candidateName || !text) return false;
+    const cleanCand = candidateName.trim().toLowerCase().replace(/[^a-z0-9\s]/g, '');
+    const cleanText = text.toLowerCase().replace(/[^a-z0-9\s]/g, ' ');
+    if (cleanCand.length < 3) return false;
+    // Direct full name match
+    if (cleanText.includes(cleanCand)) return true;
+
+    // Both First name AND Last name match
+    const parts = cleanCand.split(/\s+/).filter(p => p.length >= 2);
+    if (parts.length >= 2) {
+      const first = parts[0];
+      const last = parts[parts.length - 1];
+      if (first.length >= 3 && last.length >= 3) {
+        if (cleanText.includes(first) && cleanText.includes(last)) return true;
+      }
+    }
+    return false;
+  };
+
+  // Check whether the right-hand split-view column matches target candidate
   window.isMonsterCandidateActive = function(candidateName = '') {
-    if (!candidateName) return true;
-    const isExcluded = (el) => {
-      if (!el) return true;
-      if (el.closest('#smarthire-copilot-drawer') || el.closest('#smarthire-copilot-trigger') || el.closest('#smarthire-dossier-overlay')) return true;
-      if (el.tagName.toLowerCase() === 'smui-card' || el.closest('smui-card')) return true;
-      return false;
-    };
+    if (!candidateName) return false;
 
-    const clean = candidateName.trim().toLowerCase();
-    const parts = clean.split(/\s+/).filter(p => p.length >= 2);
-    const firstName = parts[0] || '';
-    const lastName = parts.slice(-1)[0] || '';
-
-    // Check headings, titles, and text elements in the right split-view column (>= 20% window width)
-    const rightElements = Array.from(document.querySelectorAll('h1, h2, h3, h4, p, span, div, header, [class*="header"], [class*="title"], [class*="name"]')).filter(el => {
-      if (isExcluded(el)) return false;
-      const rect = el.getBoundingClientRect();
-      return rect.left >= window.innerWidth * 0.20 && rect.width >= 30;
-    });
+    // Check headings, titles, and text elements strictly in the right split-view column (>= 40% window width)
+    const rightElements = Array.from(document.querySelectorAll(
+      'h1, h2, h3, h4, header, [class*="header"], [class*="name"], [class*="title"], [data-testid*="name"], [data-testid*="header"]'
+    )).filter(el => window.isInsideMonsterDetailPane(el));
 
     for (const el of rightElements) {
-      const txt = (el.innerText || el.textContent || '').trim().toLowerCase();
-      if (!txt) continue;
-      if (txt.includes(clean)) return true;
-      if (firstName.length >= 3 && lastName.length >= 3 && txt.includes(firstName) && txt.includes(lastName)) return true;
-      if (firstName.length >= 3 && txt.includes(firstName)) return true;
-      if (lastName.length >= 3 && txt.includes(lastName)) return true;
+      const txt = el.innerText || el.textContent || '';
+      if (window.monsterNameMatches(candidateName, txt)) return true;
+    }
+
+    // Also scan top portion of the detail pane container
+    const detailPanes = Array.from(document.querySelectorAll(
+      '[data-testid*="candidate-detail"], [class*="candidate-detail"], [class*="candidateDetail"], [class*="resume-view"], [class*="detail-pane"], aside, [role="dialog"]'
+    )).filter(el => window.isInsideMonsterDetailPane(el));
+
+    for (const pane of detailPanes) {
+      const topSlice = (pane.innerText || '').slice(0, 1000);
+      if (window.monsterNameMatches(candidateName, topSlice)) return true;
     }
 
     return false;
@@ -577,23 +603,6 @@
 
   // Locate the Monster Detail / Resume Preview Pane (handles split-view column, drawer, or dialog)
   window.findMonsterDetailPane = function(candidateName = '') {
-    const isExcluded = (el) => {
-      if (!el) return true;
-      if (el.closest('#smarthire-copilot-drawer') || el.closest('#smarthire-copilot-trigger') || el.closest('#smarthire-dossier-overlay')) return true;
-      if (el.tagName === 'NAV' || el.tagName === 'HEADER' || el.tagName === 'FOOTER') return true;
-      return false;
-    };
-
-    const firstName = candidateName ? candidateName.trim().split(/\s+/)[0].toLowerCase() : '';
-    const lastWord = candidateName ? candidateName.trim().split(/\s+/).slice(-1)[0].toLowerCase() : '';
-    const nameMatches = (text) => {
-      if (!candidateName) return true;
-      const lower = (text || '').toLowerCase();
-      if (firstName.length >= 3 && lower.includes(firstName)) return true;
-      if (lastWord.length >= 3 && lower.includes(lastWord)) return true;
-      return false;
-    };
-
     // Strategy 1: Known testid and class selectors for Monster preview pane / drawer
     const paneSelectors = [
       '[data-testid*="candidate-detail"]',
@@ -626,11 +635,13 @@
     ];
 
     for (const sel of paneSelectors) {
-      const els = Array.from(document.querySelectorAll(sel)).filter(el => !isExcluded(el));
+      const els = Array.from(document.querySelectorAll(sel)).filter(el => window.isInsideMonsterDetailPane(el));
       for (const el of els) {
         const txt = (el.innerText || el.textContent || '').trim();
-        if (txt.length > 200) {
-          if (nameMatches(txt) || (!candidateName && (txt.toLowerCase().includes('summary') || txt.toLowerCase().includes('experience')))) {
+        if (txt.length > 50) {
+          if (candidateName) {
+            if (window.monsterNameMatches(candidateName, txt)) return el;
+          } else {
             return el;
           }
         }
@@ -639,32 +650,17 @@
 
     // Strategy 2: Positional search for right-side preview column (Monster split view)
     const allContainers = Array.from(document.querySelectorAll('div, section, article, main > div > div')).filter(el => {
-      if (isExcluded(el)) return false;
-      if (el.tagName.toLowerCase() === 'smui-card' || el.closest('smui-card')) return false;
-      const rect = el.getBoundingClientRect();
-      return rect.width >= 300 && rect.height >= 250 && rect.left >= window.innerWidth * 0.25;
+      return window.isInsideMonsterDetailPane(el) && el.getBoundingClientRect().width >= 250;
     });
 
     for (const el of allContainers) {
       const txt = (el.innerText || el.textContent || '').trim();
-      const lower = txt.toLowerCase();
-      if (txt.length > 250 && (lower.includes('summary') || lower.includes('experience') || lower.includes('education') || lower.includes('skills') || lower.includes('resume'))) {
-        if (nameMatches(txt) || !candidateName) {
+      if (txt.length > 100) {
+        if (candidateName) {
+          if (window.monsterNameMatches(candidateName, txt)) return el;
+        } else {
           return el;
         }
-      }
-    }
-
-    // Strategy 3: Find element containing candidate's contact relay email
-    const relayEmails = Array.from(document.querySelectorAll('*')).filter(el => {
-      if (isExcluded(el) || el.children.length > 3) return false;
-      const t = el.innerText || '';
-      return t.includes('@contact.monster.com') || (t.includes('@') && !t.includes('support@') && !t.includes('info@'));
-    });
-    if (relayEmails.length > 0) {
-      const parentContainer = relayEmails[0].closest('[class*="pane"], [class*="detail"], [class*="preview"], [class*="view"], section, div') || relayEmails[0].parentElement?.parentElement;
-      if (parentContainer && (parentContainer.innerText || '').length > 200) {
-        return parentContainer;
       }
     }
 
@@ -1128,9 +1124,6 @@
     let phone = '';
     let email = '';
 
-    const firstWord = expectedCandidateName ? expectedCandidateName.trim().split(/\s+/)[0].toLowerCase() : '';
-    const lastWord = expectedCandidateName ? expectedCandidateName.trim().split(/\s+/).slice(-1)[0].toLowerCase() : '';
-
     const cleanEmail = (raw) => {
       if (!raw) return '';
       const em = raw.trim().toLowerCase();
@@ -1172,32 +1165,25 @@
       if (email && phone) return { phone, email };
     }
 
-    const isExcluded = (el) => {
-      if (!el) return true;
-      if (el.closest('#smarthire-copilot-drawer') || el.closest('#smarthire-copilot-trigger') || el.closest('#smarthire-dossier-overlay')) return true;
-      if (el.tagName.toLowerCase() === 'smui-card' || el.closest('smui-card')) return true;
-      return false;
-    };
+    // 2. If reading from right detail pane without cardEl:
+    // STRICT GUARD: If expectedCandidateName is provided, the detail pane MUST be actively showing that candidate!
+    if (expectedCandidateName && !window.isMonsterCandidateActive(expectedCandidateName)) {
+      return { phone, email };
+    }
 
-    // 2. High-priority targeted scan for Monster's Contact Legend container: #contact-legend-detail
+    // High-priority scan for Monster's Contact Legend container: #contact-legend-detail in the right detail pane
     const contactLegendSelectors = [
       '#contact-legend-detail',
       '[id*="contact-legend"]',
       '[class*="contact-legend"]',
       '[class*="contactLegend"]',
       '[data-testid*="contact-legend"]',
-      '[data-testid*="contact"]',
-      '[class*="contact-info"]',
-      '[class*="contactInfo"]'
+      '[data-testid*="contact"]'
     ];
 
     for (const sel of contactLegendSelectors) {
       try {
-        const els = Array.from(document.querySelectorAll(sel)).filter(el => {
-          if (isExcluded(el)) return false;
-          const rect = el.getBoundingClientRect();
-          return rect.left >= window.innerWidth * 0.20;
-        });
+        const els = Array.from(document.querySelectorAll(sel)).filter(el => window.isInsideMonsterDetailPane(el));
 
         for (const el of els) {
           const txt = el.innerText || el.textContent || '';
@@ -1226,14 +1212,9 @@
       } catch (e) {}
     }
 
-    // 3. Scan mailto: and tel: links in right-side preview area
+    // 3. Scan mailto: and tel: links in right detail pane
     if (!email || !phone) {
-      const rightLinks = Array.from(document.querySelectorAll('a[href^="mailto:"], a[href^="tel:"]')).filter(a => {
-        if (isExcluded(a)) return false;
-        const rect = a.getBoundingClientRect();
-        return rect.left >= window.innerWidth * 0.20;
-      });
-
+      const rightLinks = Array.from(document.querySelectorAll('a[href^="mailto:"], a[href^="tel:"]')).filter(el => window.isInsideMonsterDetailPane(el));
       for (const a of rightLinks) {
         if (!email && a.href.startsWith('mailto:')) {
           const clean = cleanEmail(a.href.replace(/^mailto:/i, '').split('?')[0]);
@@ -1247,12 +1228,8 @@
       }
     }
 
-    // 4. Scan right-pane header elements specifically (where candidate contact info is rendered)
-    const rightHeaderElements = Array.from(document.querySelectorAll('header, [class*="header"], [data-testid*="header"], [class*="detail"], [class*="preview"], [class*="legend"]')).filter(el => {
-      if (isExcluded(el)) return false;
-      const rect = el.getBoundingClientRect();
-      return rect.left >= window.innerWidth * 0.20 && rect.width >= 100 && rect.height >= 20;
-    });
+    // 4. Scan right-pane header elements specifically
+    const rightHeaderElements = Array.from(document.querySelectorAll('header, [class*="header"], [data-testid*="header"]')).filter(el => window.isInsideMonsterDetailPane(el));
 
     for (const el of rightHeaderElements) {
       const txt = (el.innerText || el.textContent || '').trim();
@@ -1277,34 +1254,22 @@
       if (email && phone) return { phone, email };
     }
 
-    // 5. Fallback: Scan text elements in right pane
+    // 5. Scan the top of the resume document textLayer/viewer in the right pane for personal contact
     if (!email || !phone) {
-      const rightElements = Array.from(document.querySelectorAll('div, section, article, aside, p, span, li')).filter(el => {
-        if (isExcluded(el)) return false;
-        const rect = el.getBoundingClientRect();
-        return rect.left >= window.innerWidth * 0.20 && rect.width >= 20 && rect.height >= 10 && rect.height <= 300;
-      });
+      const docViewers = Array.from(document.querySelectorAll(
+        '[class*="document-viewer"], [class*="resume-view"], [class*="documentViewer"], .document-viewer, [class*="text-resume"], .textLayer, section[data-page]'
+      )).filter(el => window.isInsideMonsterDetailPane(el));
 
-      for (const el of rightElements) {
-        const txt = (el.innerText || el.textContent || '').trim();
-        if (!txt) continue;
-
+      for (const dv of docViewers) {
+        const dvText = (dv.innerText || '').slice(0, 1500);
         if (!email) {
-          const emMatch = txt.match(/(?:Email|E-mail|Mail|Contact)[\s\S]{0,15}[:\s]\s*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i);
-          if (emMatch) {
-            const ce = cleanEmail(emMatch[1]);
-            if (ce) email = ce;
-          }
+          const em = window.extractCandidateEmailFromText(dvText);
+          if (em) email = em;
         }
-
         if (!phone) {
-          const phMatch = txt.match(/(?:Phone|Cell|Mobile|Tel|Telephone|Home|Work|Primary)[\s\S]{0,15}[:\s]\s*(\+?1?[-.\s]?\(?[2-9]\d{2}\)?[-.\s]?[0-9]{3}[-.\s]?[0-9]{4})/i);
-          if (phMatch) {
-            const cp = cleanPhone(phMatch[1]);
-            if (cp) phone = cp;
-          }
+          const ph = window.extractCandidatePhoneFromText(dvText);
+          if (ph) phone = ph;
         }
-
         if (email && phone) break;
       }
     }
@@ -1315,7 +1280,7 @@
   // Deep Scraper: Click each card, reveal details with polling, extract verified contact info
   window.smartHireScrapeCandidatesAsync = async function(onProgress) {
     const cards = window.getMonsterCards();
-    console.log(`[SmartHire Copilot v4.0] Found ${cards.length} cards for deep scrape.`);
+    console.log(`[SmartHire Copilot v4.1] Found ${cards.length} cards for deep scrape.`);
 
     if (cards.length === 0) {
       if (typeof onProgress === 'function') {
@@ -1443,7 +1408,7 @@
           onProgress(`Processing candidate ${i + 1} of ${cards.length} (${name})...`);
         }
 
-        // 1. Check card contact directly
+        // 1. Initial card contact sniff
         let email = '';
         let phone = '';
         const cardContact = window.extractMonsterContact(card, name);
@@ -1453,56 +1418,77 @@
         // 2. Select card to open detail pane in Monster's split view (safe click, no reload)
         window.selectMonsterCandidateCard(card);
 
-        // 3. Dynamic Polling: Give Monster sufficient time (up to 2500ms) to update split view with this candidate
+        // 3. Controlled Polling: WAIT for Monster's right detail pane to render THIS candidate!
         const pollStart = Date.now();
-        const parts = name.trim().toLowerCase().split(/\s+/).filter(p => p.length >= 2);
-        const firstName = parts[0] || '';
-        const lastName = parts.slice(-1)[0] || '';
-        let detailPane = null;
+        let candidateBecameActive = false;
 
         while (Date.now() - pollStart < 2500) {
-          detailPane = window.findMonsterDetailPane(name);
-          const paneText = detailPane ? (detailPane.innerText || '') : '';
-          const lowerPane = paneText.toLowerCase();
-          const paneMatchesCandidate = detailPane && (
-            (firstName.length >= 3 && lowerPane.includes(firstName)) ||
-            (lastName.length >= 3 && lowerPane.includes(lastName)) ||
-            window.isMonsterCandidateActive(name)
-          );
-
-          if (paneMatchesCandidate) {
-            // Unconditionally ensure Monster is on the RESUME tab (never stay on Profile!)
-            await window.ensureMonsterResumeTabActive();
-
-            // Sniff contact from confirmed detail pane / #contact-legend-detail
-            const contact = window.extractMonsterContact(null, name);
-            if (contact.email) email = contact.email;
-            if (contact.phone) phone = contact.phone;
-
-            // If contact is still missing, explicitly click Resume tab and wait 250ms
-            if (!email || !phone) {
-              const resumeTab = window.findMonsterResumeTab();
-              if (resumeTab) {
-                window.activateMonsterResumeTab(resumeTab);
-                await sleep(250);
-                const retryContact = window.extractMonsterContact(null, name);
-                if (retryContact.email) email = retryContact.email;
-                if (retryContact.phone) phone = retryContact.phone;
-              }
-            }
+          if (window.isMonsterCandidateActive(name)) {
+            candidateBecameActive = true;
             break;
           }
           await sleep(150);
         }
 
-        // 4. Extract authentic clean resume text from right detail pane / Resume document
-        const extRes = await window.extractCleanMonsterResumeTextAsync(card, name, true);
-        let candidateFullText = extRes.text;
+        // If not active after initial wait, retry clicking the card once and wait another 1500ms
+        if (!candidateBecameActive) {
+          window.selectMonsterCandidateCard(card);
+          const retryStart = Date.now();
+          while (Date.now() - retryStart < 1500) {
+            if (window.isMonsterCandidateActive(name)) {
+              candidateBecameActive = true;
+              break;
+            }
+            await sleep(150);
+          }
+        }
+
+        let detailPane = null;
+        let candidateFullText = '';
+
+        if (candidateBecameActive) {
+          detailPane = window.findMonsterDetailPane(name);
+
+          // 4. Ensure Monster is on the RESUME tab
+          await window.ensureMonsterResumeTabActive();
+
+          // 5. Sniff contact from confirmed active detail pane
+          const contact = window.extractMonsterContact(null, name);
+          if (contact.email) email = contact.email;
+          if (contact.phone) phone = contact.phone;
+
+          // If contact still missing, retry Resume tab click & wait 250ms
+          if (!email || !phone) {
+            const resumeTab = window.findMonsterResumeTab();
+            if (resumeTab) {
+              window.activateMonsterResumeTab(resumeTab);
+              await sleep(250);
+              const retryContact = window.extractMonsterContact(null, name);
+              if (retryContact.email) email = retryContact.email;
+              if (retryContact.phone) phone = retryContact.phone;
+            }
+          }
+
+          // 6. Extract authentic resume text from active pane
+          const extRes = await window.extractCleanMonsterResumeTextAsync(card, name, true);
+          candidateFullText = extRes.text;
+
+          // 7. Extract personal email/phone from the candidate's actual resume document text
+          if (!email) {
+            const docEmail = window.extractCandidateEmailFromText(candidateFullText);
+            if (docEmail) email = docEmail;
+          }
+          if (!phone) {
+            const docPhone = window.extractCandidatePhoneFromText(candidateFullText);
+            if (docPhone) phone = docPhone;
+          }
+        }
+
         if (!candidateFullText || candidateFullText.length < 50) {
           candidateFullText = window.cleanMonsterResumeText(cardText);
         }
 
-        // 5. Reconcile Location if not found on card
+        // Reconcile Location
         if (!location || location === 'United States') {
           if (detailPane) {
             const paneLoc = window.extractCleanMonsterLocation(detailPane.innerText || '');
@@ -1515,21 +1501,9 @@
         }
         if (!location) location = 'United States';
 
-        // 6. Verified Contact Extraction: Scan resume text, then confirmed detail pane, then card
-        if (!email) email = window.extractCandidateEmailFromText(candidateFullText);
-        if (!phone) phone = window.extractCandidatePhoneFromText(candidateFullText);
-
-        if (!email || !phone) {
-          const paneContact = window.extractMonsterContact(null, name);
-          if (!email && paneContact.email) email = paneContact.email;
-          if (!phone && paneContact.phone) phone = paneContact.phone;
-        }
-
-        if (!email || !phone) {
-          if (!email && cardContact.email) email = cardContact.email;
-          if (!phone && cardContact.phone) phone = cardContact.phone;
-        }
-
+        // Final fallbacks for contact from card
+        if (!email && cardContact.email) email = cardContact.email;
+        if (!phone && cardContact.phone) phone = cardContact.phone;
         if (!email) email = window.extractCandidateEmailFromText(cardText);
         if (!phone) phone = window.extractCandidatePhoneFromText(cardText);
 

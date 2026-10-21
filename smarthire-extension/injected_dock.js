@@ -160,7 +160,7 @@ Website: http://www.coolsofttech.com`;
     // 1. Discreet 38px Shield Logo Trigger (No long text strip!)
     const trigger = document.createElement('div');
     trigger.id = 'smarthire-copilot-trigger';
-    trigger.title = 'SmartHire ATS Sourcing Copilot v4.0 (Click to Open)';
+    trigger.title = 'SmartHire ATS Sourcing Copilot v4.1 (Click to Open)';
     trigger.innerHTML = `
       <svg width="22" height="22" viewBox="0 0 24 24" fill="#3B82F6">
         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
@@ -179,7 +179,7 @@ Website: http://www.coolsofttech.com`;
             <path d="m9 11 2 2 4-4" stroke="#ffffff" stroke-width="2.5" fill="none"/>
           </svg>
           <span style="font-weight:700; font-size:14px; letter-spacing:-0.02em;">SmartHire Copilot</span>
-          <span style="background:#1E293B; color:#93C5FD; font-size:10px; font-weight:700; padding:2px 6px; border-radius:4px; border:1px solid #334155;">v4.0 Live</span>
+          <span style="background:#1E293B; color:#93C5FD; font-size:10px; font-weight:700; padding:2px 6px; border-radius:4px; border:1px solid #334155;">v4.1 Live</span>
         </div>
         <button id="smarthire-drawer-close" style="background:none; border:none; color:#94A3B8; font-size:22px; cursor:pointer; line-height:1; padding:0 4px;">&times;</button>
       </div>
@@ -3022,18 +3022,6 @@ ${(match.interviewQuestions || [
                         (window.SmartHireUtils && typeof window.SmartHireUtils.extractLocation === 'function' ? window.SmartHireUtils.extractLocation(c.resumeText.slice(0, 2500)) : '');
             if (loc) c.location = loc;
           }
-        }
-
-        // Live DOM fallback for visible contact box if still Not Disclosed and candidate is active in preview pane
-        if ((!c.email || c.email === 'Not Disclosed' || !c.phone || c.phone === 'Not Disclosed') && typeof window.extractMonsterContact === 'function') {
-          try {
-            const isActive = typeof window.isMonsterCandidateActive === 'function' ? window.isMonsterCandidateActive(c.name) : true;
-            if (isActive) {
-              const fresh = window.extractMonsterContact(null, c.name);
-              if ((!c.email || c.email === 'Not Disclosed') && fresh && fresh.email) c.email = fresh.email;
-              if ((!c.phone || c.phone === 'Not Disclosed') && fresh && fresh.phone) c.phone = fresh.phone;
-            }
-          } catch (e) {}
         }
       });
 
