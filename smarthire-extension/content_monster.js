@@ -1,7 +1,7 @@
-// SmartHire Sourcing Copilot v4.1 - Monster+ Content Script
+// SmartHire Sourcing Copilot v4.2 - Monster+ Content Script
 (function() {
   window.smartHirePortal = 'Monster+';
-  console.log('[SmartHire Copilot v4.1] Monster+ content script loaded on:', window.location.href);
+  console.log('[SmartHire Copilot v4.2] Monster+ content script loaded on:', window.location.href);
 
   const utils = window.SmartHireUtils || {
     extractEmails: (text) => {
@@ -237,7 +237,7 @@
       if (el.closest('smui-card') || el.closest('[class*="candidate-card"]')) return true;
       // Strictly exclude left search filter sidebar elements (e.g. "Resume Updated" filter on left sidebar)
       const rect = el.getBoundingClientRect();
-      if (rect.left < window.innerWidth * 0.40) return true;
+      if (rect.left < window.innerWidth * 0.33) return true;
       const t = (el.innerText || el.textContent || '').toLowerCase();
       if (t.includes('updated') || t.includes('filter') || t.includes('search') || t.includes('clear')) return true;
       return false;
@@ -254,7 +254,7 @@
       }
     }
 
-    // 2. Dedicated attributes in right-side preview area (x >= 40% window width)
+    // 2. Dedicated attributes in right-side preview area (x >= 33% window width)
     const attrSelectors = [
       '[data-testid*="resume-tab"]',
       '[data-testid*="resumeTab"]',
@@ -271,13 +271,13 @@
       }
     }
 
-    // 3. Strict right-side preview search (x >= 40% window width, top <= 450)
+    // 3. Strict right-side preview search (x >= 33% window width, top <= 450)
     const rightElements = Array.from(document.querySelectorAll(
       '[role="tab"], button, li, a, .tab__label, .tab__title, [class*="tab"], [data-testid*="tab"], span, div'
     )).filter(el => {
       if (isExcluded(el)) return false;
       const rect = el.getBoundingClientRect();
-      return rect.left >= window.innerWidth * 0.40 && rect.width >= 10 && rect.height >= 10 && rect.top <= 450;
+      return rect.left >= window.innerWidth * 0.33 && rect.width >= 10 && rect.height >= 10 && rect.top <= 450;
     });
 
     for (const el of rightElements) {
@@ -363,10 +363,20 @@
 
     // 3. Check if Resume tab has active class or aria-selected="true"
     const resumeTab = window.findMonsterResumeTab();
-    if (resumeTab) {
-      const activeEl = resumeTab.closest('[aria-selected="true"], .mdc-tab--active, .tab--active, .active') ||
-                       resumeTab.querySelector('[aria-selected="true"], .mdc-tab--active, .tab--active, .active');
-      if (activeEl) return true;
+    if (resumeTab && resumeTab.nodeType === 1) {
+      try {
+        if (typeof resumeTab.closest === 'function') {
+          const activeContainer = resumeTab.closest('[aria-selected="true"], .mdc-tab--active, .tab--active, .active');
+          if (activeContainer) return true;
+        }
+        if (typeof resumeTab.querySelector === 'function') {
+          const activeChild = resumeTab.querySelector('[aria-selected="true"], .mdc-tab--active, .tab--active, .active');
+          if (activeChild) return true;
+        }
+        if (resumeTab.classList && (resumeTab.classList.contains('active') || resumeTab.classList.contains('mdc-tab--active') || resumeTab.getAttribute('aria-selected') === 'true')) {
+          return true;
+        }
+      } catch (e) {}
     }
     return false;
   };
@@ -387,13 +397,12 @@
   window.activateMonsterResumeTab = function(resumeTab) {
     if (!resumeTab) return false;
     try {
-      const target = resumeTab.closest('[role="tab"]') ||
-                     resumeTab.closest('button') ||
-                     resumeTab.closest('li') ||
-                     resumeTab;
+      const target = (typeof resumeTab.closest === 'function' ? (resumeTab.closest('[role="tab"]') || resumeTab.closest('button') || resumeTab.closest('li')) : null) || resumeTab;
 
-      target.scrollIntoView({ behavior: 'auto', block: 'nearest' });
-      const rect = target.getBoundingClientRect();
+      if (typeof target.scrollIntoView === 'function') {
+        try { target.scrollIntoView({ behavior: 'auto', block: 'nearest' }); } catch (e) {}
+      }
+      const rect = (typeof target.getBoundingClientRect === 'function') ? target.getBoundingClientRect() : { left: 500, top: 100, width: 60, height: 30 };
       const x = rect.left + Math.max(5, rect.width / 2);
       const y = rect.top + Math.max(5, rect.height / 2);
 
@@ -412,16 +421,22 @@
       };
 
       const dispatchSequence = (el) => {
-        if (!el) return;
+        if (!el || typeof el.dispatchEvent !== 'function') return;
         try {
           el.dispatchEvent(new PointerEvent('pointerdown', { ...eventInit, pointerId: 1, pointerType: 'mouse', isPrimary: true }));
         } catch (e) {}
-        el.dispatchEvent(new MouseEvent('mousedown', eventInit));
+        try {
+          el.dispatchEvent(new MouseEvent('mousedown', eventInit));
+        } catch (e) {}
         try {
           el.dispatchEvent(new PointerEvent('pointerup', { ...eventInit, buttons: 0, pointerId: 1, pointerType: 'mouse', isPrimary: true }));
         } catch (e) {}
-        el.dispatchEvent(new MouseEvent('mouseup', { ...eventInit, buttons: 0 }));
-        el.dispatchEvent(new MouseEvent('click', { ...eventInit, buttons: 0 }));
+        try {
+          el.dispatchEvent(new MouseEvent('mouseup', { ...eventInit, buttons: 0 }));
+        } catch (e) {}
+        try {
+          el.dispatchEvent(new MouseEvent('click', { ...eventInit, buttons: 0 }));
+        } catch (e) {}
       };
 
       dispatchSequence(target);
@@ -483,13 +498,15 @@
     if (!el) return false;
     // Exclude Copilot drawer / trigger / dossier overlay
     if (el.closest('#smarthire-copilot-drawer') || el.closest('#smarthire-copilot-trigger') || el.closest('#smarthire-dossier-overlay')) return false;
+    // Strictly exclude top navigation bars
+    if (el.closest('nav, [role="navigation"], [class*="navbar"], [class*="top-nav"]')) return false;
     // Strictly exclude any element inside a candidate card or search results list in the middle column
     if (el.closest('smui-card') || el.closest('[data-testid*="candidate-card"]') || el.closest('[class*="candidate-card"]') || el.closest('[class*="search-result"]') || el.closest('article')) return false;
     if (el.closest('[data-testid*="search-results"]') || el.closest('[class*="search-results"]') || el.closest('[class*="results-list"]')) return false;
-    if (el.tagName === 'NAV' || el.tagName === 'HEADER' || el.tagName === 'FOOTER') return false;
-    // Detail pane is always in the right split-view column (left >= 40% of window width)
+    if (el.tagName === 'FOOTER' || el.closest('footer')) return false;
+    // Detail pane is always in the right split-view column (left >= 33% of window width, top >= 40)
     const rect = el.getBoundingClientRect();
-    return rect.left >= window.innerWidth * 0.40 && rect.width > 0;
+    return rect.left >= window.innerWidth * 0.33 && rect.top >= 40 && rect.width > 0;
   };
 
   // Robust candidate name matcher for text nodes
@@ -497,7 +514,7 @@
     if (!candidateName || !text) return false;
     const cleanCand = candidateName.trim().toLowerCase().replace(/[^a-z0-9\s]/g, '');
     const cleanText = text.toLowerCase().replace(/[^a-z0-9\s]/g, ' ');
-    if (cleanCand.length < 3) return false;
+    if (cleanCand.length < 2) return false;
     // Direct full name match
     if (cleanText.includes(cleanCand)) return true;
 
@@ -506,18 +523,49 @@
     if (parts.length >= 2) {
       const first = parts[0];
       const last = parts[parts.length - 1];
-      if (first.length >= 3 && last.length >= 3) {
+      if (first.length >= 2 && last.length >= 2) {
         if (cleanText.includes(first) && cleanText.includes(last)) return true;
       }
+    } else if (parts.length === 1 && parts[0].length >= 3) {
+      if (cleanText.includes(parts[0])) return true;
     }
     return false;
+  };
+
+  // Extract candidate name directly from open right detail pane header
+  window.extractMonsterCandidateNameFromDetailPane = function(pane = null) {
+    try {
+      const root = pane || document;
+      const nameEls = Array.from(root.querySelectorAll(
+        'h1, h2, h3, h4, [data-testid*="name"], [data-testid*="candidate-name"], [class*="candidate-name"], [class*="candidateName"], a[href*="/candidate/"]'
+      )).filter(el => window.isInsideMonsterDetailPane(el));
+
+      for (const el of nameEls) {
+        const txt = (el.innerText || el.textContent || '').trim();
+        const clean = window.extractCleanMonsterName(txt);
+        if (clean && clean.length >= 3 && clean.length <= 40 &&
+            !window.extractCleanMonsterLocation(clean) &&
+            !/^(?:profile|resume|overview|candidate|skills|actions|need help|matches|favorites|skipped)/i.test(clean)) {
+          return clean;
+        }
+      }
+    } catch (e) {}
+    return '';
   };
 
   // Check whether the right-hand split-view column matches target candidate
   window.isMonsterCandidateActive = function(candidateName = '') {
     if (!candidateName) return false;
 
-    // Check headings, titles, and text elements strictly in the right split-view column (>= 40% window width)
+    // If candidate name is generic placeholder (e.g. "Candidate 1"), verify any right detail pane is open
+    if (/^candidate\s*\d+/i.test(candidateName)) {
+      const detailPanes = Array.from(document.querySelectorAll(
+        '[data-testid*="candidate-detail"], [class*="candidate-detail"], [class*="candidateDetail"], [class*="resume-view"], [class*="detail-pane"], aside, [role="dialog"], [class*="split-view"]'
+      )).filter(el => window.isInsideMonsterDetailPane(el));
+      return detailPanes.length > 0;
+    }
+
+    // Check headings, titles, and text elements strictly in the right split-view column
     const rightElements = Array.from(document.querySelectorAll(
       'h1, h2, h3, h4, header, [class*="header"], [class*="name"], [class*="title"], [data-testid*="name"], [data-testid*="header"]'
     )).filter(el => window.isInsideMonsterDetailPane(el));
@@ -529,7 +577,7 @@
 
     // Also scan top portion of the detail pane container
     const detailPanes = Array.from(document.querySelectorAll(
-      '[data-testid*="candidate-detail"], [class*="candidate-detail"], [class*="candidateDetail"], [class*="resume-view"], [class*="detail-pane"], aside, [role="dialog"]'
+      '[data-testid*="candidate-detail"], [class*="candidate-detail"], [class*="candidateDetail"], [class*="resume-view"], [class*="detail-pane"], aside, [role="dialog"], [class*="split-view"]'
     )).filter(el => window.isInsideMonsterDetailPane(el));
 
     for (const pane of detailPanes) {
@@ -745,12 +793,15 @@
   // Extract authentic deep resume text from the entire Monster page
   window.extractDeepMonsterResumeText = function(candidateName = '') {
     const isExcluded = (el) => {
-      if (!el) return true;
-      if (el.closest('#smarthire-copilot-drawer') || el.closest('#smarthire-copilot-trigger') || el.closest('#smarthire-dossier-overlay')) return true;
-      if (el.tagName === 'NAV' || el.tagName === 'HEADER' || el.tagName === 'FOOTER') return true;
-      if (el.tagName.toLowerCase() === 'smui-card' || el.closest('smui-card')) return true;
+      if (!el || el.nodeType !== 1) return true;
+      if (typeof el.closest === 'function') {
+        if (el.closest('#smarthire-copilot-drawer') || el.closest('#smarthire-copilot-trigger') || el.closest('#smarthire-dossier-overlay')) return true;
+        if (el.closest('smui-card') || el.closest('[class*="candidate-card"]')) return true;
+      }
+      const tag = (el.tagName || '').toUpperCase();
+      if (tag === 'NAV' || tag === 'HEADER' || tag === 'FOOTER' || tag === 'SMUI-CARD') return true;
       // Strictly exclude any container with multiple candidate cards (e.g. search results list, main)
-      if (el.querySelectorAll('smui-card, [data-testid*="candidate-card"], [class*="CandidateCard"]').length > 1) return true;
+      if (typeof el.querySelectorAll === 'function' && el.querySelectorAll('smui-card, [data-testid*="candidate-card"], [class*="CandidateCard"]').length > 1) return true;
       const t = el.innerText || '';
       if (t.includes('No candidate selected') || t.includes('Select a candidate from the results')) return true;
       return false;
@@ -988,7 +1039,7 @@
 
     while (Date.now() - tabPollStart < 3500) {
       // Trigger scroll down in viewer container to force virtualized pages (e.g. page 2, page 3) to render
-      if (pane) {
+      if (pane && typeof pane.querySelector === 'function') {
         const scrollable = pane.querySelector('[class*="document-viewer"], [class*="resume-view"], [class*="documentViewer"], .document-viewer, [class*="viewer"]') || pane;
         if (scrollable && scrollable.scrollHeight > scrollable.clientHeight + 80) {
           scrollable.scrollTop = scrollable.scrollHeight;
@@ -1014,7 +1065,7 @@
     }
 
     // Reset scroll
-    if (pane) {
+    if (pane && typeof pane.querySelector === 'function') {
       const scrollable = pane.querySelector('[class*="document-viewer"], [class*="resume-view"], [class*="documentViewer"], .document-viewer') || pane;
       if (scrollable) scrollable.scrollTop = 0;
     }
@@ -1280,7 +1331,7 @@
   // Deep Scraper: Click each card, reveal details with polling, extract verified contact info
   window.smartHireScrapeCandidatesAsync = async function(onProgress) {
     const cards = window.getMonsterCards();
-    console.log(`[SmartHire Copilot v4.1] Found ${cards.length} cards for deep scrape.`);
+    console.log(`[SmartHire Copilot v4.2] Found ${cards.length} cards for deep scrape.`);
 
     if (cards.length === 0) {
       if (typeof onProgress === 'function') {
@@ -1294,20 +1345,35 @@
 
     for (let i = 0; i < cards.length; i++) {
       const card = cards[i];
+      let name = `Candidate ${i + 1}`;
+      let title = 'Candidate Profile';
+      let location = 'United States';
+      let email = '';
+      let phone = '';
+      let skills = [];
+      let recency = 'Active on Monster+';
+      let experience = '5+ Years';
+
       try {
         const cardText = card.innerText || '';
         let rawName = window.extractCleanMonsterName(cardText);
 
         // Candidate Name (STRICTLY FROM THIS CARD CONTAINER FIRST)
-        let name = '';
+        let extractedName = '';
         const cardNameEl = card.querySelector('a[href*="/candidate/"], a[href*="/candidates/"], h2, h3, h4, [class*="name"], [class*="Name"]');
         if (cardNameEl && cardNameEl.innerText.trim()) {
-          name = window.extractCleanMonsterName(cardNameEl.innerText);
+          extractedName = window.extractCleanMonsterName(cardNameEl.innerText);
         }
-        if (!name || name.length < 2) {
-          name = rawName || `Candidate ${i + 1}`;
+        if (!extractedName || extractedName.length < 2) {
+          extractedName = rawName || `Candidate ${i + 1}`;
         }
-        name = name.replace(/sms\s*opt-in/gi, '').replace(/viewed/gi, '').replace(/·/g, '').trim();
+        extractedName = extractedName.replace(/sms\s*opt-in/gi, '').replace(/viewed/gi, '').replace(/·/g, '').trim();
+
+        // If name extracted from card is actually a location, reject it so we can find real name from pane
+        if (extractedName && (window.extractCleanMonsterLocation(extractedName) || /^[A-Za-z\s.-]+,\s*[A-Za-z\s]+$/i.test(extractedName))) {
+          extractedName = `Candidate ${i + 1}`;
+        }
+        name = extractedName;
 
         // Check deduplication per candidate name on card BEFORE doing costly operations
         const nameKey = name.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -1317,7 +1383,7 @@
         }
 
         // Title Extraction (Robust: extracts Current/Previous, never assigns Date or raw numbers)
-        let title = '';
+        title = '';
 
         // Priority 1: Match "Current: <Title>" directly from card text
         const currentMatch = cardText.match(/Current:\s*([^\n\r·]+)/i);
@@ -1377,22 +1443,25 @@
         }
 
         // Location Extraction (Clean City, State; avoids multiline noise)
-        let location = window.extractCleanMonsterLocation(cardText);
-        if (!location) {
+        const parsedLoc = window.extractCleanMonsterLocation(cardText);
+        if (parsedLoc) {
+          location = parsedLoc;
+        } else {
           const locEl = card.querySelector('[data-testid*="location"], [class*="location"]');
           if (locEl) {
-            location = window.extractCleanMonsterLocation(locEl.innerText || locEl.textContent || '');
+            const locText = window.extractCleanMonsterLocation(locEl.innerText || locEl.textContent || '');
+            if (locText) location = locText;
           }
         }
 
         // Experience & Recency
-        const experience = utils.extractExperience(cardText) || '5+ Years';
-        let recency = 'Active on Monster+';
+        experience = utils.extractExperience(cardText) || '5+ Years';
+        recency = 'Active on Monster+';
         const recMatch = cardText.match(/Updated:\s*([^\n\r·]+)/i);
         if (recMatch) recency = `Updated ${recMatch[1].trim()}`;
 
         // Skills
-        const skills = [];
+        skills = [];
         const skillMatch = cardText.match(/Top Skills:\s*([^\n\r]+)/i);
         if (skillMatch) {
           const rawSkills = skillMatch[1].replace(/\+\d+\s*more/i, '').split(',');
@@ -1409,8 +1478,8 @@
         }
 
         // 1. Initial card contact sniff
-        let email = '';
-        let phone = '';
+        email = '';
+        phone = '';
         const cardContact = window.extractMonsterContact(card, name);
         if (cardContact.email) email = cardContact.email;
         if (cardContact.phone) phone = cardContact.phone;
@@ -1445,10 +1514,19 @@
 
         let detailPane = null;
         let candidateFullText = '';
+        let extRes = { text: '', rawLength: 0, sourceType: 'SEARCH_CARD_SNIPPET', isProvisional: true, error: null };
+
+        // Detail pane lookup & authentic name resolution from right pane if card had generic name
+        detailPane = window.findMonsterDetailPane(name);
+        if (detailPane) {
+          const paneName = window.extractMonsterCandidateNameFromDetailPane(detailPane);
+          if (paneName && (!name || /^candidate\s*\d+/i.test(name))) {
+            name = paneName;
+            candidateBecameActive = true;
+          }
+        }
 
         if (candidateBecameActive) {
-          detailPane = window.findMonsterDetailPane(name);
-
           // 4. Ensure Monster is on the RESUME tab
           await window.ensureMonsterResumeTabActive();
 
@@ -1457,12 +1535,12 @@
           if (contact.email) email = contact.email;
           if (contact.phone) phone = contact.phone;
 
-          // If contact still missing, retry Resume tab click & wait 250ms
+          // If contact still missing, retry Resume tab click & wait 300ms
           if (!email || !phone) {
             const resumeTab = window.findMonsterResumeTab();
             if (resumeTab) {
               window.activateMonsterResumeTab(resumeTab);
-              await sleep(250);
+              await sleep(300);
               const retryContact = window.extractMonsterContact(null, name);
               if (retryContact.email) email = retryContact.email;
               if (retryContact.phone) phone = retryContact.phone;
@@ -1470,8 +1548,8 @@
           }
 
           // 6. Extract authentic resume text from active pane
-          const extRes = await window.extractCleanMonsterResumeTextAsync(card, name, true);
-          candidateFullText = extRes.text;
+          extRes = await window.extractCleanMonsterResumeTextAsync(card, name, true);
+          if (extRes && extRes.text) candidateFullText = extRes.text;
 
           // 7. Extract personal email/phone from the candidate's actual resume document text
           if (!email) {
@@ -1482,6 +1560,10 @@
             const docPhone = window.extractCandidatePhoneFromText(candidateFullText);
             if (docPhone) phone = docPhone;
           }
+        } else {
+          // Fallback extraction when detail pane could not be strictly confirmed
+          extRes = await window.extractCleanMonsterResumeTextAsync(card, name, false);
+          if (extRes && extRes.text) candidateFullText = extRes.text;
         }
 
         if (!candidateFullText || candidateFullText.length < 50) {
@@ -1522,7 +1604,7 @@
           notes: `${recency} · Sourced via SmartHire Copilot.`,
           resumeText: candidateFullText,
           summary: candidateFullText.slice(0, 5000),
-          resumeSourceType: extRes.sourceType || 'RESUME_DOCUMENT'
+          resumeSourceType: (extRes && extRes.sourceType) ? extRes.sourceType : (candidateFullText.length >= 500 ? 'RESUME_DOCUMENT' : 'SEARCH_CARD_SNIPPET')
         };
 
         // Complete Resume Extraction & Verification
@@ -1550,6 +1632,29 @@
         }
       } catch (err) {
         console.warn(`[SmartHire Copilot] Error processing card ${i}:`, err);
+        // Robust fallback to ensure candidate is NEVER dropped on unexpected error
+        try {
+          const fallbackText = card.innerText || '';
+          candidates.push({
+            id: `mon-${i}-${Date.now().toString().slice(-4)}`,
+            name: name || `Candidate ${i + 1}`,
+            title: title || 'Candidate Profile',
+            email: email || '',
+            phone: phone || '',
+            location: location || 'United States',
+            experience: experience || '5+ Years',
+            skills: skills || [],
+            source: 'Monster+',
+            recency: recency || 'Active on Monster+',
+            profileUrl: window.location.href,
+            notes: 'Sourced via SmartHire Copilot (Fallback).',
+            resumeText: fallbackText,
+            summary: fallbackText.slice(0, 5000),
+            resumeSourceType: 'SEARCH_CARD_SNIPPET',
+            extractionStatus: 'PARTIAL_RESUME_EXTRACTED',
+            isProvisional: true
+          });
+        } catch (e2) {}
       }
     }
 

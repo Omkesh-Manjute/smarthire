@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "SmartHire Sourcing Copilot — Monster+ & Dice",
-  "version": "4.1.0",
+  "version": "4.2.0",
   "description": "1-Click talent sourcing copilot for Monster+ and Dice. Sync job requisitions from SmartHire ATS, generate boolean queries, scrape candidate contacts in 1 click, and export to Excel or ingest into ATS.",
   "permissions": [
     "activeTab",
@@ -20,7 +20,7 @@
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "SmartHire Sourcing Copilot v4.1",
+    "default_title": "SmartHire Sourcing Copilot v4.2",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",
