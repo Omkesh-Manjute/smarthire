@@ -66,6 +66,37 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
     - In resume views, every responsibility, project accomplishment, and contribution line must be formatted with an explicit bullet point (`•`) and proper indentation.
     - The engine must automatically detect responsibilities (lines following `Responsibilities:`, action verbs, or list items) even when converted from plain text or Word documents without literal Unicode bullets.
 
+### 2026-10-22 — Monster Variable Scope Fix, Zero-Candidate Prevention & Extension v4.2.0 Release
+- **Context & Objectives**:
+  - The user reported: `✓ Extracted 0 candidate(s) successfully! bhai ye dekho ye a raha hai ab kay fir nahi kar pa rahe ho tum accual mai error` with screenshot `media_1792607002749_854fd3a7.png` showing Monster Matches (13) with candidate cards displayed, Candidate 2 (`Prajakta Vaze`) selected, but drawer reporting `✓ Extracted 0 candidate(s) successfully!`.
+- **Root Cause & Architectural Implementations**:
+  1. *Block-Scoped `extRes` ReferenceError*:
+     - In `content_monster.js`, `const extRes = await window.extractCleanMonsterResumeTextAsync(...)` was declared inside `if (candidateBecameActive) { ... }`.
+     - Outside the `if` block, line 1525 accessed `resumeSourceType: extRes.sourceType || 'RESUME_DOCUMENT'`.
+     - This threw an uncaught `ReferenceError: extRes is not defined` on every single candidate card!
+     - The outer `catch (err)` block caught the error and skipped `candidates.push(candidateItem)`, resulting in an empty list of length 0.
+  2. *Undeclared Variables in Catch Fallback*:
+     - In the card loop, `name`, `title`, `location`, `email`, etc. were declared inside `try { ... }`. When an error occurred, accessing `name` in `catch (err)` threw `ReferenceError: name is not defined`, preventing the fallback candidate record from being created.
+  3. *Unprotected DOM Method Calls*:
+     - `resumeTab.querySelector(...)` in `isMonsterResumeTabActive` threw `TypeError` if `resumeTab` was not a standard Element.
+     - `target.scrollIntoView(...)` and `pane.querySelector(...)` in tab activation and resume extraction were called without checking `typeof === 'function'`.
+  4. *Card-Level Location as Name Collision*:
+     - When Card 1's name was cut off by scroll fold, the first line (`Midlothian, Virginia`) was treated as the candidate's name.
+     - Built `window.extractMonsterCandidateNameFromDetailPane(pane)` to read the true candidate name directly from the right-hand preview header once selected.
+  5. *Safe Fallback Retention*:
+     - Even if a right pane fails to switch or times out, the candidate is still parsed from the card snippet with authentic fallback metadata so zero candidates are ever lost.
+  6. *Extension Version Bump to v4.2.0*:
+     - Bumped extension version to `4.2.0` across `manifest.json`, `injected_dock.js` (`v4.2 Live`), `popup.html`, `popup.js`, and `matching_engine.js`.
+- **Verification & Deployment Protocol**:
+  - Executed Node VM simulation verifying complete end-to-end extraction of Prajakta Vaze with email `prajakta.vaze@gmail.com` and phone.
+  - All 42 unit tests pass (`node smarthire-main/tests/ats_matching_engine.test.js`).
+  - Production build in `smarthire-react`: 0 errors, 0 warnings.
+  - Repackaged `smarthire-extension.zip` (`Content-Length: 683814`).
+  - Git committed (`7e6d450`) and pushed to GitHub `origin main`.
+  - Deployed updated `smarthire-extension.zip` and frontend bundle to AWS Lightsail server (`34.194.119.199`) across `/var/www/html/` and Express dist directories, reloaded PM2 `smarthire-ats`.
+  - Verified live download URL: `https://smarthireus.com/smarthire-extension.zip` returns HTTP 200 OK (`Content-Length: 683814`).
+  - Verified live domain `https://smarthireus.com` returns HTTP 200 OK.
+
 ### 2026-10-21 — Monster Contact Cross-Contamination Elimination, Strict Right-Pane Gating & Extension v4.1.0 Release
 - **Context & Objectives**:
   - The user reported: `bhai dekho email bhi galat liye abh and 3 candidate ke liya abhi baki ke nahi le raha hai ye and pure ke email galat hai abhi dekho and fix karo update karo bhut time hogaya hai is bar sahi mai fix karo` with 2 screenshots attached:
