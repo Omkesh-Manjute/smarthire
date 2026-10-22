@@ -1519,6 +1519,31 @@ Website: http://www.coolsofttech.com`;
           } catch (_) {}
         }
 
+        if (!res || !res.success) {
+          if (res?.message && (res.message.includes('535') || res.message.includes('timeout') || res.message.includes('auth') || res.message.includes('attempts'))) {
+            // Transient rate-limit: pause 2.5s and retry once
+            await new Promise(r => setTimeout(r, 2500));
+            try {
+              if (typeof chrome !== 'undefined' && chrome?.runtime?.id) {
+                res = await new Promise((resolve) => {
+                  chrome.runtime.sendMessage({
+                    action: 'SEND_OUTREACH_EMAIL',
+                    payload: itemEmailPayload
+                  }, resolve);
+                });
+              }
+              if (!res) {
+                const fetchRes = await fetch('https://smarthireus.com/api/recruiter/send-email', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(itemEmailPayload)
+                });
+                res = await fetchRes.json();
+              }
+            } catch (_) {}
+          }
+        }
+
         if (res && res.success) {
           if (typeof res.remainingCredits === 'number' && cachedCredits) {
             cachedCredits.remainingCredits = res.remainingCredits;
@@ -1574,8 +1599,8 @@ Website: http://www.coolsofttech.com`;
         failCount++;
       }
 
-      // 350ms throttle delay
-      await new Promise(r => setTimeout(r, 350));
+      // 1200ms throttle delay to strictly respect Yahoo/Bizmail rate limits and avoid anti-spam throttling
+      await new Promise(r => setTimeout(r, 1200));
     }
 
     if (statusEl) {

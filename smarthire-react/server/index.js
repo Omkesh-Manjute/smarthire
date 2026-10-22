@@ -10665,6 +10665,37 @@ setInterval(() => {
   }
 }, 60000);
 
+// Global SMTP Connection Pool: Reuses authenticated connections across multiple bulk emails
+// Prevents Yahoo/Bizmail "535 5.7.0 Too many bad auth attempts" caused by rapid reconnects
+const recruiterSmtpTransporterPool = new Map();
+
+function getPooledRecruiterTransporter(nodemailer, host, port, isSecure, user, pass) {
+  const poolKey = `${user}:${host}:${port}:${pass}`;
+  if (recruiterSmtpTransporterPool.has(poolKey)) {
+    return recruiterSmtpTransporterPool.get(poolKey);
+  }
+
+  const createTransport = nodemailer.default?.createTransport || nodemailer.createTransport;
+  const transporter = createTransport({
+    pool: true,
+    host,
+    port,
+    secure: isSecure,
+    auth: { user, pass },
+    maxConnections: 1, // Single connection per mailbox to avoid concurrent auth lockouts
+    maxMessages: 100, // Reuses session for up to 100 emails without re-authenticating
+    rateDelta: 1000,
+    rateLimit: 2, // Safe rate limit
+    tls: { rejectUnauthorized: false, minVersion: 'TLSv1.2' },
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000
+  });
+
+  recruiterSmtpTransporterPool.set(poolKey, transporter);
+  return transporter;
+}
+
 // POST send email via recruiter's configured SMTP
 app.post('/api/recruiter/send-email', express.json(), async (req, res) => {
   const { recruiterEmail, to, subject, body, html, replyTo, recruiterName } = req.body;
@@ -10708,20 +10739,14 @@ app.post('/api/recruiter/send-email', express.json(), async (req, res) => {
     });
   }
 
+  const poolKey = `${fromEmail}:${smtpHost}:${port}:${cleanedPass}`;
+
   try {
     const nodemailer = await import('nodemailer').catch(() => null);
     if (!nodemailer) return res.json({ success: false, message: 'Email service not available on this server' });
 
-    const transporter = nodemailer.default.createTransport({
-      host: smtpHost,
-      port: port,
-      secure: isSecure,
-      auth: { user: fromEmail, pass: cleanedPass },
-      tls: { rejectUnauthorized: false, minVersion: 'TLSv1.2' },
-      connectionTimeout: 8000,
-      greetingTimeout: 8000,
-      socketTimeout: 10000
-    });
+    // Use pooled persistent connection to avoid repeated authentication floods
+    const transporter = getPooledRecruiterTransporter(nodemailer, smtpHost, port, isSecure, fromEmail, cleanedPass);
 
     const senderDisplayName = recruiterName 
       ? `${recruiterName} (COOLSOFT LLC)` 
@@ -10771,6 +10796,11 @@ app.post('/api/recruiter/send-email', express.json(), async (req, res) => {
     });
   } catch(err) {
     console.error('Email send error:', err.message);
+    // Invalidate pool on connection/auth drop so next attempt reconnects cleanly
+    if (recruiterSmtpTransporterPool.has(poolKey)) {
+      try { recruiterSmtpTransporterPool.get(poolKey).close(); } catch (_) {}
+      recruiterSmtpTransporterPool.delete(poolKey);
+    }
     res.json({ success: false, message: `Failed to send: ${err.message}` });
   }
 });

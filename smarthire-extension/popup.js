@@ -1346,7 +1346,7 @@ Website: http://www.coolsofttech.com`;
       if (popupBulkProgressBar) popupBulkProgressBar.style.width = `${pct}%`;
 
       try {
-        const res = await new Promise((resolve) => {
+        let res = await new Promise((resolve) => {
           chrome.runtime.sendMessage({
             action: 'SEND_OUTREACH_EMAIL',
             payload: {
@@ -1360,6 +1360,28 @@ Website: http://www.coolsofttech.com`;
           }, resolve);
         });
 
+        if (!res || !res.success) {
+          if (res?.message && (res.message.includes('535') || res.message.includes('timeout') || res.message.includes('auth') || res.message.includes('attempts'))) {
+            // Transient rate-limit: pause 2.5s and retry once
+            await new Promise(r => setTimeout(r, 2500));
+            try {
+              res = await new Promise((resolve) => {
+                chrome.runtime.sendMessage({
+                  action: 'SEND_OUTREACH_EMAIL',
+                  payload: {
+                    recruiterEmail: currentUser.email,
+                    recruiterName: currentUser.name,
+                    to: cand.email,
+                    subject: subjectTemplate,
+                    body: personalizedBody,
+                    html: personalizedBody.replace(/\n/g, '<br>')
+                  }
+                }, resolve);
+              });
+            } catch (_) {}
+          }
+        }
+
         if (res && res.success) {
           if (typeof res.remainingCredits === 'number' && cachedCredits) {
             cachedCredits.remainingCredits = res.remainingCredits;
@@ -1371,6 +1393,7 @@ Website: http://www.coolsofttech.com`;
               const row = document.createElement('div');
               row.style.color = '#F59E0B';
               row.innerText = `⚠ [${i+1}/${validCandidates.length}] Skipped duplicate email for ${cand.name} (${cand.email}) within 60s`;
+              liveLog = popupBulkLiveLog;
               popupBulkLiveLog.appendChild(row);
               popupBulkLiveLog.scrollTop = popupBulkLiveLog.scrollHeight;
             }
@@ -1415,7 +1438,8 @@ Website: http://www.coolsofttech.com`;
         failCount++;
       }
 
-      await new Promise(r => setTimeout(r, 350));
+      // 1200ms throttle delay to strictly respect Yahoo/Bizmail rate limits and avoid anti-spam throttling
+      await new Promise(r => setTimeout(r, 1200));
     }
 
     if (popupBulkStatus) {
