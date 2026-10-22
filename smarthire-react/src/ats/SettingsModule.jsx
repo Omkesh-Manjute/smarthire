@@ -95,6 +95,59 @@ function SettingsModule() {
   const [monsterSaving, setMonsterSaving] = useState(false)
   const [monsterMsg, setMonsterMsg] = useState('')
 
+  // Recruiter Credits & Sourcing Extension Usage States
+  const [creditSummary, setCreditSummary] = useState(null)
+  const [recruiterCreditsList, setRecruiterCreditsList] = useState([])
+  const [loadingCredits, setLoadingCredits] = useState(false)
+  const [refillLoadingEmail, setRefillLoadingEmail] = useState('')
+  const [customQuotaModal, setCustomQuotaModal] = useState(null)
+  const [customQuotaVal, setCustomQuotaVal] = useState(100)
+
+  const fetchRecruiterCreditsAdmin = async () => {
+    setLoadingCredits(true)
+    try {
+      const res = await fetch('/api/admin/credits/all')
+      const data = await res.json()
+      if (data && data.success) {
+        setCreditSummary(data.summary || null)
+        setRecruiterCreditsList(data.recruiters || [])
+      }
+    } catch (err) {
+      console.error('Error fetching recruiter credits:', err)
+    } finally {
+      setLoadingCredits(false)
+    }
+  }
+
+  const handleCreditRefill = async (email, payload) => {
+    setRefillLoadingEmail(email)
+    try {
+      const res = await fetch('/api/admin/credits/refill', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, ...payload })
+      })
+      const data = await res.json()
+      if (data && data.success) {
+        setSavedToast(data.message || 'Credits updated successfully!')
+        setTimeout(() => setSavedToast(false), 3000)
+        fetchRecruiterCreditsAdmin()
+      } else {
+        alert(data?.message || 'Failed to update credits')
+      }
+    } catch (err) {
+      alert('Network error updating credits: ' + err.message)
+    } finally {
+      setRefillLoadingEmail('')
+    }
+  }
+
+  useEffect(() => {
+    if (activeSettingsTab === 'extension') {
+      fetchRecruiterCreditsAdmin()
+    }
+  }, [activeSettingsTab])
+
   useEffect(() => {
     fetch(`/api/recruiter/monster-credentials?email=${encodeURIComponent(recruiterEmailKey)}`)
       .then(res => res.json())
@@ -326,7 +379,7 @@ function SettingsModule() {
             Configure your email settings, sourcing extension, email templates, pipeline stages, and data export.
           </p>
         </div>
-        {savedToast && <div className="settings-toast">Settings saved successfully!</div>}
+        {savedToast && <div className="settings-toast">{typeof savedToast === 'string' ? savedToast : 'Settings saved successfully!'}</div>}
       </div>
 
       {/* Tab Navigation */}
@@ -784,7 +837,7 @@ function SettingsModule() {
 
       {/* ── SOURCING CHROME EXTENSION TAB ── */}
       {activeSettingsTab === 'extension' && (
-        <div style={{ maxWidth: 880 }}>
+        <div style={{ maxWidth: 1040 }}>
           {/* Main Download & Status Card */}
           <div style={{ background: '#FFFFFF', border: '1px solid #CBD5E1', borderRadius: 12, padding: '24px', marginBottom: 20, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
@@ -794,7 +847,7 @@ function SettingsModule() {
                     SmartHire Sourcing Copilot
                   </h4>
                   <span style={{ background: '#EFF6FF', color: '#1D4ED8', border: '1px solid #BFDBFE', fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 4 }}>
-                    v4.3 Production
+                    v4.4 Production
                   </span>
                 </div>
                 <p style={{ margin: 0, fontSize: 13, color: '#475569', lineHeight: 1.5 }}>
@@ -831,7 +884,7 @@ function SettingsModule() {
                   <span>Download Extension Package (.zip)</span>
                 </a>
                 <div style={{ fontSize: 11, color: '#64748B', textAlign: 'center', marginTop: 4 }}>
-                  Size: ~684 KB · Direct Download
+                  Size: ~685 KB · Direct Download
                 </div>
               </div>
             </div>
@@ -869,6 +922,329 @@ function SettingsModule() {
             <div style={{ fontSize: 12, color: '#166534', background: '#DCFCE7', padding: '8px 12px', borderRadius: 6 }}>
               <strong>Automatic Sender Routing:</strong> When any recruiter dispatches candidate emails via the extension, the platform automatically routes the email through that recruiter's configured work email address and SMTP settings from the <em>Email & Monster Config</em> tab.
             </div>
+          </div>
+
+          {/* Recruiter Usage Telemetry & Sourcing Credit Management (Admin Control) */}
+          <div style={{ background: '#FFFFFF', border: '1px solid #CBD5E1', borderRadius: 12, padding: '24px', marginBottom: 20, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 18 }}>
+              <div>
+                <h4 style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 800, color: '#0F172A', fontFamily: 'Plus Jakarta Sans', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2.2">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                    <line x1="16" y1="2" x2="16" y2="6" />
+                    <line x1="8" y1="2" x2="8" y2="6" />
+                    <line x1="3" y1="10" x2="21" y2="10" />
+                  </svg>
+                  <span>Team Extension Usage & Credit Management</span>
+                </h4>
+                <p style={{ margin: 0, fontSize: 12.5, color: '#64748B' }}>
+                  Live candidate extraction counters, outreach email volume, and 1-click credit refills across all recruiters.
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <button
+                  type="button"
+                  onClick={fetchRecruiterCreditsAdmin}
+                  disabled={loadingCredits}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '7px 14px',
+                    background: '#F8FAFC',
+                    border: '1px solid #CBD5E1',
+                    borderRadius: 6,
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: '#334155',
+                    cursor: loadingCredits ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                    <path d="M23 4v6h-6" />
+                    <path d="M1 20v-6h6" />
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+                  </svg>
+                  <span>{loadingCredits ? 'Refreshing...' : 'Refresh Data'}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Telemetry Summary Cards */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 20 }}>
+              <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, padding: '12px 14px' }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', marginBottom: 4 }}>Candidates Sourced Today</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: '#2563EB', fontFamily: 'Plus Jakarta Sans' }}>
+                  {creditSummary?.candidatesScrapedToday || 0}
+                </div>
+                <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 2 }}>
+                  All-time Sourced: <strong>{creditSummary?.totalCandidatesScraped || 0}</strong>
+                </div>
+              </div>
+
+              <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, padding: '12px 14px' }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', marginBottom: 4 }}>Outreach Emails Sent Today</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: '#059669', fontFamily: 'Plus Jakarta Sans' }}>
+                  {creditSummary?.emailsSentToday || 0}
+                </div>
+                <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 2 }}>
+                  All-time Emails: <strong>{creditSummary?.totalEmailsSent || 0}</strong>
+                </div>
+              </div>
+
+              <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, padding: '12px 14px' }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', marginBottom: 4 }}>Active Team Members Today</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: '#0F172A', fontFamily: 'Plus Jakarta Sans' }}>
+                  {creditSummary?.activeToday || 0} <span style={{ fontSize: 14, fontWeight: 600, color: '#64748B' }}>/ {creditSummary?.totalRecruiters || recruiterCreditsList.length || 0}</span>
+                </div>
+                <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 2 }}>
+                  Credits: 1/cand scrape · 2/email dispatch
+                </div>
+              </div>
+            </div>
+
+            {/* Excel-Style Recruiter Credits Table */}
+            <div style={{ overflowX: 'auto', border: '1px solid #CBD5E1', borderRadius: 8 }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 12.5, fontFamily: 'inherit' }}>
+                <thead>
+                  <tr style={{ background: '#F1F5F9', borderBottom: '1px solid #CBD5E1' }}>
+                    <th style={{ padding: '10px 12px', fontWeight: 700, color: '#334155', borderRight: '1px solid #CBD5E1', width: 40, textTransform: 'uppercase', fontSize: 11 }}>#</th>
+                    <th style={{ padding: '10px 12px', fontWeight: 700, color: '#334155', borderRight: '1px solid #CBD5E1', minWidth: 180, textTransform: 'uppercase', fontSize: 11 }}>Recruiter & Email</th>
+                    <th style={{ padding: '10px 12px', fontWeight: 700, color: '#334155', borderRight: '1px solid #CBD5E1', width: 110, textAlign: 'center', textTransform: 'uppercase', fontSize: 11 }}>Sourced Today</th>
+                    <th style={{ padding: '10px 12px', fontWeight: 700, color: '#334155', borderRight: '1px solid #CBD5E1', width: 100, textAlign: 'center', textTransform: 'uppercase', fontSize: 11 }}>Total Sourced</th>
+                    <th style={{ padding: '10px 12px', fontWeight: 700, color: '#334155', borderRight: '1px solid #CBD5E1', width: 110, textAlign: 'center', textTransform: 'uppercase', fontSize: 11 }}>Emails Today</th>
+                    <th style={{ padding: '10px 12px', fontWeight: 700, color: '#334155', borderRight: '1px solid #CBD5E1', width: 100, textAlign: 'center', textTransform: 'uppercase', fontSize: 11 }}>Total Emails</th>
+                    <th style={{ padding: '10px 12px', fontWeight: 700, color: '#334155', borderRight: '1px solid #CBD5E1', width: 130, textAlign: 'center', textTransform: 'uppercase', fontSize: 11 }}>Credits Balance</th>
+                    <th style={{ padding: '10px 12px', fontWeight: 700, color: '#334155', minWidth: 200, textTransform: 'uppercase', fontSize: 11 }}>Refill Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recruiterCreditsList.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} style={{ padding: '24px', textAlign: 'center', color: '#64748B' }}>
+                        {loadingCredits ? 'Loading recruiter usage roster...' : 'No recruiter activity recorded yet.'}
+                      </td>
+                    </tr>
+                  ) : (
+                    recruiterCreditsList.map((rec, idx) => {
+                      const isUnl = rec.isUnlimited === true
+                      const remaining = typeof rec.remainingCredits === 'number' ? rec.remainingCredits : 0
+                      const quota = rec.dailyQuota || 100
+                      const isRefilling = refillLoadingEmail === rec.email
+
+                      return (
+                        <tr
+                          key={rec.email || idx}
+                          style={{
+                            background: idx % 2 === 0 ? '#FFFFFF' : '#F8FAFC',
+                            borderBottom: '1px solid #CBD5E1',
+                            height: 40,
+                            transition: 'background 0.15s ease'
+                          }}
+                          onMouseEnter={e => e.currentTarget.style.background = '#EFF6FF'}
+                          onMouseLeave={e => e.currentTarget.style.background = idx % 2 === 0 ? '#FFFFFF' : '#F8FAFC'}
+                        >
+                          <td style={{ padding: '8px 12px', color: '#64748B', fontWeight: 600, borderRight: '1px solid #CBD5E1', textAlign: 'center' }}>
+                            {idx + 1}
+                          </td>
+                          <td style={{ padding: '8px 12px', borderRight: '1px solid #CBD5E1' }}>
+                            <div style={{ fontWeight: 700, color: '#0F172A', fontSize: 13 }}>{rec.name || rec.email.split('@')[0]}</div>
+                            <div style={{ color: '#64748B', fontSize: 11 }}>{rec.email}</div>
+                          </td>
+                          <td style={{ padding: '8px 12px', textAlign: 'center', fontWeight: 700, color: rec.candidatesScrapedToday > 0 ? '#2563EB' : '#64748B', borderRight: '1px solid #CBD5E1' }}>
+                            {rec.candidatesScrapedToday || 0}
+                          </td>
+                          <td style={{ padding: '8px 12px', textAlign: 'center', fontWeight: 600, color: '#334155', borderRight: '1px solid #CBD5E1' }}>
+                            {rec.totalCandidatesScraped || 0}
+                          </td>
+                          <td style={{ padding: '8px 12px', textAlign: 'center', fontWeight: 700, color: rec.emailsSentToday > 0 ? '#059669' : '#64748B', borderRight: '1px solid #CBD5E1' }}>
+                            {rec.emailsSentToday || 0}
+                          </td>
+                          <td style={{ padding: '8px 12px', textAlign: 'center', fontWeight: 600, color: '#334155', borderRight: '1px solid #CBD5E1' }}>
+                            {rec.totalEmailsSent || 0}
+                          </td>
+                          <td style={{ padding: '8px 12px', textAlign: 'center', borderRight: '1px solid #CBD5E1' }}>
+                            {isUnl ? (
+                              <span style={{ display: 'inline-block', background: '#DCFCE7', color: '#166534', border: '1px solid #86EFAC', padding: '2px 8px', borderRadius: 4, fontWeight: 700, fontSize: 11.5 }}>
+                                Unlimited
+                              </span>
+                            ) : remaining <= 0 ? (
+                              <span style={{ display: 'inline-block', background: '#FEE2E2', color: '#991B1B', border: '1px solid #FCA5A5', padding: '2px 8px', borderRadius: 4, fontWeight: 700, fontSize: 11.5 }}>
+                                0 / {quota}
+                              </span>
+                            ) : remaining < 20 ? (
+                              <span style={{ display: 'inline-block', background: '#FEF3C7', color: '#92400E', border: '1px solid #FCD34D', padding: '2px 8px', borderRadius: 4, fontWeight: 700, fontSize: 11.5 }}>
+                                {remaining} / {quota}
+                              </span>
+                            ) : (
+                              <span style={{ display: 'inline-block', background: '#EFF6FF', color: '#1D4ED8', border: '1px solid #BFDBFE', padding: '2px 8px', borderRadius: 4, fontWeight: 700, fontSize: 11.5 }}>
+                                {remaining} / {quota}
+                              </span>
+                            )}
+                          </td>
+                          <td style={{ padding: '8px 12px' }}>
+                            <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                              <button
+                                type="button"
+                                disabled={isRefilling}
+                                onClick={() => handleCreditRefill(rec.email, { addCredits: 50 })}
+                                style={{
+                                  padding: '3px 8px',
+                                  fontSize: 11,
+                                  fontWeight: 700,
+                                  background: '#EFF6FF',
+                                  color: '#1D4ED8',
+                                  border: '1px solid #BFDBFE',
+                                  borderRadius: 4,
+                                  cursor: isRefilling ? 'not-allowed' : 'pointer'
+                                }}
+                                title="Add 50 credits"
+                              >
+                                +50
+                              </button>
+                              <button
+                                type="button"
+                                disabled={isRefilling}
+                                onClick={() => handleCreditRefill(rec.email, { addCredits: 100 })}
+                                style={{
+                                  padding: '3px 8px',
+                                  fontSize: 11,
+                                  fontWeight: 700,
+                                  background: '#EFF6FF',
+                                  color: '#1D4ED8',
+                                  border: '1px solid #BFDBFE',
+                                  borderRadius: 4,
+                                  cursor: isRefilling ? 'not-allowed' : 'pointer'
+                                }}
+                                title="Add 100 credits"
+                              >
+                                +100
+                              </button>
+                              <button
+                                type="button"
+                                disabled={isRefilling}
+                                onClick={() => handleCreditRefill(rec.email, { mode: 'unlimited', isUnlimited: true })}
+                                style={{
+                                  padding: '3px 8px',
+                                  fontSize: 11,
+                                  fontWeight: 700,
+                                  background: '#F0FDF4',
+                                  color: '#166534',
+                                  border: '1px solid #BBF7D0',
+                                  borderRadius: 4,
+                                  cursor: isRefilling ? 'not-allowed' : 'pointer'
+                                }}
+                                title="Grant unlimited credits"
+                              >
+                                Unlimited
+                              </button>
+                              <button
+                                type="button"
+                                disabled={isRefilling}
+                                onClick={() => {
+                                  setCustomQuotaModal(rec)
+                                  setCustomQuotaVal(rec.dailyQuota || 100)
+                                }}
+                                style={{
+                                  padding: '3px 8px',
+                                  fontSize: 11,
+                                  fontWeight: 600,
+                                  background: '#F8FAFC',
+                                  color: '#475569',
+                                  border: '1px solid #CBD5E1',
+                                  borderRadius: 4,
+                                  cursor: isRefilling ? 'not-allowed' : 'pointer'
+                                }}
+                                title="Set specific quota or custom credits"
+                              >
+                                Set Quota
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Custom Quota Inline Dialog / Modal */}
+            {customQuotaModal && (
+              <div style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: 'rgba(15, 23, 42, 0.6)',
+                backdropFilter: 'blur(3px)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 99999,
+                padding: 16
+              }}>
+                <div style={{ background: '#FFFFFF', borderRadius: 10, width: 420, maxWidth: '100%', padding: '24px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)', border: '1px solid #E2E8F0' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+                    <div>
+                      <h4 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: '#0F172A', fontFamily: 'Plus Jakarta Sans' }}>
+                        Set Daily Sourcing Quota
+                      </h4>
+                      <p style={{ margin: '4px 0 0', fontSize: 12.5, color: '#64748B' }}>
+                        {customQuotaModal.name} ({customQuotaModal.email})
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setCustomQuotaModal(null)}
+                      style={{ background: 'none', border: 'none', color: '#94A3B8', fontSize: 18, cursor: 'pointer', padding: 4 }}
+                    >
+                      &times;
+                    </button>
+                  </div>
+
+                  <div style={{ marginBottom: 16 }}>
+                    <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#334155', marginBottom: 6 }}>
+                      Daily Credits Quota
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={10000}
+                      value={customQuotaVal}
+                      onChange={e => setCustomQuotaVal(parseInt(e.target.value) || 0)}
+                      style={{ width: '100%', padding: '8px 12px', border: '1px solid #CBD5E1', borderRadius: 6, fontSize: 13, boxSizing: 'border-box' }}
+                    />
+                    <div style={{ fontSize: 11, color: '#64748B', marginTop: 4 }}>
+                      Sets daily reset quota and immediately restores balance to this number.
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                    <button
+                      type="button"
+                      onClick={() => setCustomQuotaModal(null)}
+                      style={{ padding: '8px 14px', borderRadius: 6, border: '1px solid #CBD5E1', background: '#F8FAFC', color: '#475569', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      disabled={refillLoadingEmail === customQuotaModal.email}
+                      onClick={() => {
+                        handleCreditRefill(customQuotaModal.email, { setQuota: customQuotaVal, mode: 'set' })
+                        setCustomQuotaModal(null)
+                      }}
+                      style={{ padding: '8px 16px', borderRadius: 6, border: 'none', background: '#2563EB', color: '#FFFFFF', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}
+                    >
+                      {refillLoadingEmail === customQuotaModal.email ? 'Saving...' : 'Apply Quota'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Step-by-Step Installation Guide */}

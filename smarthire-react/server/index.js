@@ -9055,8 +9055,8 @@ app.post('/api/auth/login', async (req, res) => {
       user = recruitersMock.find(r => (r.email || '').toLowerCase().trim() === cleanEmail);
     }
 
-    // Step 1: Check against local and admin master credentials
     let isAuthenticated = false;
+    let authSource = '';
     const dbPassword = user ? String(user.password || '').trim() : '';
 
     const isOmkesh = cleanEmail === 'omkesh@coolsofttech.com' || cleanEmail === 'omkeshmanjute1@gmail.com';
@@ -9074,58 +9074,66 @@ app.post('/api/auth/login', async (req, res) => {
       cleanPassword === 'admin'
     );
 
-    if (user && dbPassword && dbPassword === cleanPassword) {
-      isAuthenticated = true;
-    } else if (isOmkeshPassMatch) {
-      isAuthenticated = true;
-      if (user) user.password = cleanPassword;
-    } else if (user && isTeamDefaultPassMatch) {
-      isAuthenticated = true;
-    }
-
-    // Step 2: If not authenticated locally, verify with Firebase Authentication REST API (Google Identity Toolkit)
-    if (!isAuthenticated) {
-      try {
-        const fbRes = await fetch('https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=AIzaSyA2BwkaHIrKbgNO87CIQc7wSpO_ufdxPXQ', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+    // PRIORITY 1: Verify directly with Google Firebase Authentication (Identity Toolkit REST API)
+    // Ensures users added or who updated/reset their password in Firebase can login immediately with their Firebase password!
+    try {
+      const fbApiKey = process.env.VITE_FIREBASE_API_KEY || process.env.FIREBASE_API_KEY || 'AIzaSyA2BwkaHIrKbgNO87CIQc7wSpO_ufdxPXQ';
+      const fbRes = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${fbApiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: cleanEmail,
+          password: cleanPassword,
+          returnSecureToken: true
+        })
+      });
+      const fbData = await fbRes.json();
+      if (fbRes.ok && fbData && fbData.email) {
+        isAuthenticated = true;
+        authSource = 'firebase';
+        console.log(`✅ [Auth] Firebase Auth validated successfully for: ${cleanEmail}`);
+        // Synchronize user password in local roster so disk and cache stay updated
+        if (user) {
+          user.password = cleanPassword;
+          if (fbData.displayName && (!user.name || user.name === user.email.split('@')[0])) {
+            user.name = fbData.displayName;
+          }
+        } else {
+          // Auto-create local profile for valid Firebase user
+          user = {
+            _id: 'rec-' + Date.now(),
+            id: 'rec-' + Date.now(),
+            name: fbData.displayName || cleanEmail.split('@')[0],
             email: cleanEmail,
             password: cleanPassword,
-            returnSecureToken: true
-          })
-        });
-        const fbData = await fbRes.json();
-        if (fbRes.ok && fbData && fbData.email) {
-          isAuthenticated = true;
-          // Synchronize user password in local roster
-          if (user) {
-            user.password = cleanPassword;
-            if (fbData.displayName && (!user.name || user.name === user.email.split('@')[0])) {
-              user.name = fbData.displayName;
-            }
-          } else {
-            // Auto-create local profile for valid Firebase user
-            user = {
-              _id: 'rec-' + Date.now(),
-              id: 'rec-' + Date.now(),
-              name: fbData.displayName || cleanEmail.split('@')[0],
-              email: cleanEmail,
-              password: cleanPassword,
-              role: cleanEmail.includes('admin') || isOmkesh ? 'superadmin' : 'recruiter',
-              parentRecruiterName: '',
-              refCode: (fbData.displayName || cleanEmail.split('@')[0]).toLowerCase().replace(/[^a-z0-9]/g, '-'),
-              company: 'COOLSOFT LLC',
-              isActive: true,
-              lastLogin: new Date().toISOString(),
-              createdAt: new Date().toISOString()
-            };
-            recruitersMock.unshift(user);
-          }
-          saveRecruitersToDisk();
+            role: cleanEmail.includes('admin') || isOmkesh ? 'superadmin' : 'recruiter',
+            parentRecruiterName: '',
+            refCode: (fbData.displayName || cleanEmail.split('@')[0]).toLowerCase().replace(/[^a-z0-9]/g, '-'),
+            company: 'COOLSOFT LLC',
+            isActive: true,
+            lastLogin: new Date().toISOString(),
+            createdAt: new Date().toISOString()
+          };
+          recruitersMock.unshift(user);
         }
-      } catch (fbErr) {
-        console.warn('Firebase Identity Toolkit verification notice:', fbErr.message);
+        saveRecruitersToDisk();
+      }
+    } catch (fbErr) {
+      console.warn('Firebase Identity Toolkit verification notice:', fbErr.message);
+    }
+
+    // PRIORITY 2: Local ATS Roster & Master / Default Password Fallback
+    if (!isAuthenticated) {
+      if (user && dbPassword && dbPassword === cleanPassword) {
+        isAuthenticated = true;
+        authSource = 'local_db';
+      } else if (isOmkeshPassMatch) {
+        isAuthenticated = true;
+        authSource = 'omkesh_master';
+        if (user) user.password = cleanPassword;
+      } else if (user && isTeamDefaultPassMatch) {
+        isAuthenticated = true;
+        authSource = 'team_default';
       }
     }
 
@@ -9154,6 +9162,7 @@ app.post('/api/auth/login', async (req, res) => {
     return res.json({
       success: true,
       token,
+      authSource,
       user: {
         id: user._id ? user._id.toString() : user.id,
         name: user.name,
@@ -10328,6 +10337,208 @@ app.patch('/api/inquiries/:id/status', (req, res) => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// FEATURE: Recruiter Credits & Sourcing Telemetry Ledger
+// ═══════════════════════════════════════════════════════════════════════════════
+const recruiterCreditsPath = path.resolve(__dirname, 'recruiter_credits.json');
+let recruiterCreditsStore = {};
+
+function loadCreditsFromDisk() {
+  try {
+    if (fs.existsSync(recruiterCreditsPath)) {
+      recruiterCreditsStore = JSON.parse(fs.readFileSync(recruiterCreditsPath, 'utf8'));
+    }
+  } catch(e) {
+    recruiterCreditsStore = {};
+  }
+}
+loadCreditsFromDisk();
+
+function saveCreditsToDisk() {
+  try {
+    fs.writeFileSync(recruiterCreditsPath, JSON.stringify(recruiterCreditsStore, null, 2));
+  } catch(e) {}
+}
+
+function getRecruiterCredits(targetEmail) {
+  if (!targetEmail) return null;
+  loadCreditsFromDisk();
+  const clean = String(targetEmail).toLowerCase().trim();
+  const todayStr = new Date().toISOString().split('T')[0];
+  const isSuper = clean === 'omkesh@coolsofttech.com' || clean === 'omkeshmanjute1@gmail.com' || clean.includes('admin');
+
+  // Direct or alias lookup
+  let rec = recruiterCreditsStore[clean];
+  if (!rec) {
+    for (const [k, v] of Object.entries(recruiterCreditsStore)) {
+      if (k.toLowerCase().trim() === clean) { rec = v; break; }
+    }
+  }
+
+  // Auto-initialize if not yet registered in credit ledger
+  if (!rec) {
+    loadRecruitersFromDisk();
+    const matchedRec = (recruitersMock || []).find(r => (r.email || '').toLowerCase().trim() === clean);
+    rec = {
+      email: clean,
+      name: matchedRec ? matchedRec.name : clean.split('@')[0],
+      role: isSuper ? 'superadmin' : (matchedRec ? matchedRec.role : 'recruiter'),
+      totalCredits: isSuper ? 999999 : 100,
+      remainingCredits: isSuper ? 999999 : 100,
+      usedCredits: 0,
+      dailyQuota: isSuper ? 999999 : 100,
+      isUnlimited: isSuper,
+      candidatesScrapedToday: 0,
+      emailsSentToday: 0,
+      totalCandidatesScraped: 0,
+      totalEmailsSent: 0,
+      lastResetDate: todayStr,
+      lastActive: new Date().toISOString()
+    };
+    recruiterCreditsStore[clean] = rec;
+    saveCreditsToDisk();
+  }
+
+  // Daily quota replenishment check: at day rollover, reset today's counters and restore remaining credits to quota
+  if (rec.lastResetDate !== todayStr) {
+    rec.candidatesScrapedToday = 0;
+    rec.emailsSentToday = 0;
+    if (!rec.isUnlimited && rec.remainingCredits < rec.dailyQuota) {
+      rec.remainingCredits = rec.dailyQuota;
+    }
+    rec.lastResetDate = todayStr;
+    saveCreditsToDisk();
+  }
+
+  return rec;
+}
+
+function deductRecruiterCredits(targetEmail, action = 'SCRAPE_CANDIDATE', count = 1) {
+  const rec = getRecruiterCredits(targetEmail);
+  if (!rec) return { success: false, message: 'Recruiter not found', remainingCredits: 0 };
+
+  const qty = Math.max(1, parseInt(count) || 1);
+  let cost = 0;
+  if (action === 'SCRAPE_CANDIDATE') cost = qty * 1;
+  else if (action === 'SEND_SINGLE_EMAIL') cost = 2;
+  else if (action === 'SEND_BULK_EMAIL' || action === 'SEND_EMAIL') cost = qty * 2;
+  else cost = qty;
+
+  rec.lastActive = new Date().toISOString();
+
+  if (action === 'SCRAPE_CANDIDATE') {
+    rec.candidatesScrapedToday += qty;
+    rec.totalCandidatesScraped += qty;
+  } else if (action === 'SEND_SINGLE_EMAIL' || action === 'SEND_BULK_EMAIL' || action === 'SEND_EMAIL') {
+    rec.emailsSentToday += qty;
+    rec.totalEmailsSent += qty;
+  }
+
+  if (rec.isUnlimited) {
+    saveCreditsToDisk();
+    return { success: true, remainingCredits: 999999, deducted: cost, isUnlimited: true };
+  }
+
+  if (rec.remainingCredits < cost) {
+    return {
+      success: false,
+      message: `Insufficient credits. Required: ${cost}, Available: ${rec.remainingCredits}. Please contact Omkesh/Admin to refill.`,
+      remainingCredits: rec.remainingCredits,
+      requiredCredits: cost
+    };
+  }
+
+  rec.remainingCredits -= cost;
+  rec.usedCredits += cost;
+  saveCreditsToDisk();
+
+  return {
+    success: true,
+    remainingCredits: rec.remainingCredits,
+    deducted: cost,
+    dailyQuota: rec.dailyQuota
+  };
+}
+
+// GET recruiter credit balance & usage
+app.get('/api/recruiter/credits', (req, res) => {
+  const email = req.query.email || req.headers['x-recruiter-email'] || '';
+  if (!email) return res.status(400).json({ success: false, message: 'Email required' });
+  const rec = getRecruiterCredits(email);
+  res.json({ success: true, credits: rec });
+});
+
+// POST deduct credits for an action (candidate scraped, single email, bulk email)
+app.post('/api/recruiter/credits/deduct', express.json(), (req, res) => {
+  const { email, action, count, details } = req.body;
+  if (!email) return res.status(400).json({ success: false, message: 'Email required' });
+  const result = deductRecruiterCredits(email, action, count);
+  res.json(result);
+});
+
+// GET admin overview of all recruiters' credits & usage
+app.get(['/api/admin/credits/all', '/api/recruiter-credits'], (req, res) => {
+  loadCreditsFromDisk();
+  loadRecruitersFromDisk();
+
+  const list = [];
+  const processedEmails = new Set();
+
+  for (const r of (recruitersMock || [])) {
+    if (!r || !r.email) continue;
+    const cleanE = r.email.toLowerCase().trim();
+    if (processedEmails.has(cleanE)) continue;
+    processedEmails.add(cleanE);
+    const c = getRecruiterCredits(cleanE);
+    list.push(c);
+  }
+
+  const summary = {
+    totalRecruiters: list.length,
+    activeToday: list.filter(r => r.candidatesScrapedToday > 0 || r.emailsSentToday > 0).length,
+    candidatesScrapedToday: list.reduce((acc, r) => acc + (r.candidatesScrapedToday || 0), 0),
+    emailsSentToday: list.reduce((acc, r) => acc + (r.emailsSentToday || 0), 0),
+    totalCandidatesScraped: list.reduce((acc, r) => acc + (r.totalCandidatesScraped || 0), 0),
+    totalEmailsSent: list.reduce((acc, r) => acc + (r.totalEmailsSent || 0), 0)
+  };
+
+  res.json({ success: true, summary, recruiters: list });
+});
+
+// POST admin refill / adjust recruiter credits
+app.post('/api/admin/credits/refill', express.json(), (req, res) => {
+  const { email, addCredits, setQuota, isUnlimited, mode } = req.body;
+  if (!email) return res.status(400).json({ success: false, message: 'Recruiter email required' });
+  
+  const rec = getRecruiterCredits(email);
+  if (!rec) return res.status(404).json({ success: false, message: 'Recruiter not found' });
+
+  if (mode === 'unlimited' || isUnlimited === true) {
+    rec.isUnlimited = true;
+    rec.remainingCredits = 999999;
+    rec.dailyQuota = 999999;
+  } else if (mode === 'set' && typeof setQuota === 'number') {
+    rec.isUnlimited = false;
+    rec.dailyQuota = setQuota;
+    rec.remainingCredits = setQuota;
+  } else {
+    // Default: Add credits
+    const toAdd = parseInt(addCredits) || 50;
+    rec.remainingCredits += toAdd;
+    rec.totalCredits += toAdd;
+    rec.isUnlimited = false;
+  }
+
+  rec.lastActive = new Date().toISOString();
+  saveCreditsToDisk();
+
+  res.json({
+    success: true,
+    message: `Credits for ${rec.name} (${rec.email}) updated successfully! Remaining: ${rec.remainingCredits}`,
+    credits: rec
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // FEATURE 2: Per-Recruiter Email Configuration & Direct Send (nodemailer)
 // ═══════════════════════════════════════════════════════════════════════════════
 const emailConfigsPath = path.resolve(__dirname, 'email_configs.json');
@@ -10485,6 +10696,18 @@ app.post('/api/recruiter/send-email', express.json(), async (req, res) => {
     });
   }
 
+  // Enforce Recruiter Credits check
+  const creditStatus = getRecruiterCredits(cleanRecruiterEmail);
+  if (creditStatus && !creditStatus.isUnlimited && creditStatus.remainingCredits < 2) {
+    recentEmailSendsMap.delete(dedupKey);
+    return res.json({ 
+      success: false, 
+      message: `Insufficient credits to send email. Available: ${creditStatus.remainingCredits}, Required: 2. Please contact Omkesh/Admin to refill.`,
+      creditExhausted: true,
+      remainingCredits: creditStatus.remainingCredits
+    });
+  }
+
   try {
     const nodemailer = await import('nodemailer').catch(() => null);
     if (!nodemailer) return res.json({ success: false, message: 'Email service not available on this server' });
@@ -10537,7 +10760,15 @@ app.post('/api/recruiter/send-email', express.json(), async (req, res) => {
       }).catch(e => console.warn('Background append to Sent notice:', e.message));
     }).catch(() => {});
 
-    res.json({ success: true, message: `Email sent successfully from ${fromEmail}` });
+    // Deduct 2 credits for successful email delivery & update telemetry
+    deductRecruiterCredits(cleanRecruiterEmail, 'SEND_SINGLE_EMAIL', 1);
+    const updatedCredits = getRecruiterCredits(cleanRecruiterEmail);
+
+    res.json({ 
+      success: true, 
+      message: `Email sent successfully from ${fromEmail}`,
+      remainingCredits: updatedCredits?.remainingCredits ?? 999999
+    });
   } catch(err) {
     console.error('Email send error:', err.message);
     res.json({ success: false, message: `Failed to send: ${err.message}` });
@@ -13062,10 +13293,13 @@ app.post('/api/recruiter/live-monster-search', express.json(), async (req, res) 
 app.post('/api/recruiter/monster/import-candidate', express.json(), (req, res) => {
   try {
     loadCandidatesFromDisk();
-    const { candidate, targetReqId } = req.body || {};
+    const { candidate, targetReqId, recruiterEmail, recruiterName } = req.body || {};
     if (!candidate || !candidate.name) {
       return res.status(400).json({ success: false, error: 'Candidate profile data is required' });
     }
+
+    const assignedRecruiterEmail = (recruiterEmail || 'omkesh@coolsofttech.com').toLowerCase().trim();
+    const assignedRecruiterName = recruiterName || 'Omkesh Manjute';
 
     const existing = candidatesStore.find(c =>
       (candidate.email && c.email && c.email.toLowerCase() === candidate.email.toLowerCase()) ||
@@ -13077,6 +13311,7 @@ app.post('/api/recruiter/monster/import-candidate', express.json(), (req, res) =
         existing.targetReqId = String(targetReqId);
         saveCandidatesToDisk();
       }
+      deductRecruiterCredits(assignedRecruiterEmail, 'SCRAPE_CANDIDATE', 1);
       return res.json({
         success: true,
         message: `${candidate.name} is already in SmartHire ATS. Updated requisition assignment to Req #${targetReqId || 'Talent Pool'}.`,
@@ -13099,10 +13334,10 @@ app.post('/api/recruiter/monster/import-candidate', express.json(), (req, res) =
       status: targetReqId ? 'Screened' : 'New',
       source: 'Monster+ Sourcing',
       sourceCategory: 'monster_plus',
-      recruiterEmail: 'omkesh@coolsofttech.com',
-      recruiterName: 'Omkesh Manjute',
-      assignedBy: 'Omkesh Manjute',
-      recruiter: 'Omkesh Manjute',
+      recruiterEmail: assignedRecruiterEmail,
+      recruiterName: assignedRecruiterName,
+      assignedBy: assignedRecruiterName,
+      recruiter: assignedRecruiterName,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       notes: `Sourced via Monster+ AI Good Match Engine. Match Score: ${candidate.match_score || 85}%. ${candidate.recruiter_notes || ''}`,
@@ -13116,6 +13351,7 @@ app.post('/api/recruiter/monster/import-candidate', express.json(), (req, res) =
 
     candidatesStore.unshift(newCand);
     saveCandidatesToDisk();
+    deductRecruiterCredits(assignedRecruiterEmail, 'SCRAPE_CANDIDATE', 1);
 
     notificationsStore.unshift({
       id: `notif-monster-${newCand.id}-${Date.now()}`,
@@ -13273,6 +13509,10 @@ app.post('/api/recruiter/sourcing/bulk-import', express.json({ limit: '10mb' }),
     if (importedCount > 0 || updatedCount > 0) {
       saveCandidatesToDisk();
 
+      const totalCandidatesProcessed = importedCount + updatedCount;
+      deductRecruiterCredits(assignedRecruiterEmail, 'SCRAPE_CANDIDATE', totalCandidatesProcessed);
+      const updatedCredits = getRecruiterCredits(assignedRecruiterEmail);
+
       notificationsStore.unshift({
         id: `notif-bulk-${Date.now()}`,
         type: 'bulk_candidates_imported',
@@ -13285,15 +13525,27 @@ app.post('/api/recruiter/sourcing/bulk-import', express.json({ limit: '10mb' }),
         assignedRecruiters: [assignedRecruiterEmail]
       });
       saveNotifications();
+
+      return res.json({
+        success: true,
+        importedCount,
+        updatedCount,
+        totalProcessed: candidates.length,
+        remainingCredits: updatedCredits?.remainingCredits ?? 999999,
+        message: `Successfully processed ${candidates.length} candidates (${importedCount} newly added, ${updatedCount} updated) into ATS.`,
+        candidates: importedList
+      });
     }
 
+    const currentCredits = getRecruiterCredits(assignedRecruiterEmail);
     return res.json({
       success: true,
-      importedCount,
-      updatedCount,
+      importedCount: 0,
+      updatedCount: 0,
       totalProcessed: candidates.length,
-      message: `Successfully processed ${candidates.length} candidates (${importedCount} newly added, ${updatedCount} updated) into ATS.`,
-      candidates: importedList
+      remainingCredits: currentCredits?.remainingCredits ?? 999999,
+      message: `No new candidates to import.`,
+      candidates: []
     });
   } catch (err) {
     console.error('[BulkImportAPI] error:', err);

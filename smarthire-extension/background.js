@@ -172,4 +172,31 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       });
     return true;
   }
+
+  if (request.action === 'GET_RECRUITER_CREDITS') {
+    const email = request.email || '';
+    fetch(`https://smarthireus.com/api/recruiter/credits?email=${encodeURIComponent(email)}`)
+      .then(res => res.json())
+      .then(data => sendResponse(data))
+      .catch(err => {
+        console.error('[Background] Get credits error:', err);
+        sendResponse({ success: false, error: err.message });
+      });
+    return true;
+  }
+
+  if (request.action === 'DEDUCT_RECRUITER_CREDITS') {
+    fetch('https://smarthireus.com/api/recruiter/credits/deduct', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(request.payload || {})
+    })
+      .then(res => res.json())
+      .then(data => sendResponse(data))
+      .catch(err => {
+        console.error('[Background] Deduct credits error:', err);
+        sendResponse({ success: false, error: err.message });
+      });
+    return true;
+  }
 });

@@ -18,8 +18,59 @@ document.addEventListener('DOMContentLoaded', () => {
   // DOM Elements
   const popupRecruiterName = document.getElementById('popupRecruiterName');
   const popupRecruiterEmail = document.getElementById('popupRecruiterEmail');
+  const popupRecruiterCredits = document.getElementById('popupRecruiterCredits');
   const popupAuthToggle = document.getElementById('popupAuthToggle');
   const popupLoginCard = document.getElementById('popupLoginCard');
+  let cachedCredits = null;
+
+  function updateCreditsPill(credits) {
+    if (!popupRecruiterCredits) return;
+    if (!credits || !isUserAuthenticated) {
+      popupRecruiterCredits.style.display = 'none';
+      return;
+    }
+    popupRecruiterCredits.style.display = 'inline-block';
+    if (credits.isUnlimited) {
+      popupRecruiterCredits.innerText = 'Unlimited';
+      popupRecruiterCredits.style.background = 'rgba(16, 185, 129, 0.2)';
+      popupRecruiterCredits.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+      popupRecruiterCredits.style.color = '#34D399';
+    } else {
+      const remaining = typeof credits.remainingCredits === 'number' ? credits.remainingCredits : 0;
+      const quota = credits.dailyQuota || 100;
+      popupRecruiterCredits.innerText = `${remaining}/${quota} Credits`;
+      if (remaining <= 0) {
+        popupRecruiterCredits.style.background = 'rgba(239, 68, 68, 0.2)';
+        popupRecruiterCredits.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+        popupRecruiterCredits.style.color = '#F87171';
+      } else if (remaining < 20) {
+        popupRecruiterCredits.style.background = 'rgba(245, 158, 11, 0.2)';
+        popupRecruiterCredits.style.borderColor = 'rgba(245, 158, 11, 0.4)';
+        popupRecruiterCredits.style.color = '#FBBF24';
+      } else {
+        popupRecruiterCredits.style.background = 'rgba(37, 99, 235, 0.25)';
+        popupRecruiterCredits.style.borderColor = 'rgba(59, 130, 246, 0.4)';
+        popupRecruiterCredits.style.color = '#93C5FD';
+      }
+    }
+  }
+
+  function fetchRecruiterCredits() {
+    if (!isUserAuthenticated || !currentUser || !currentUser.email) {
+      updateCreditsPill(null);
+      return;
+    }
+    const cleanEmail = currentUser.email.toLowerCase().trim();
+    fetch(`${API_BASE}/api/recruiter/credits?email=${encodeURIComponent(cleanEmail)}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data && data.success && data.credits) {
+          cachedCredits = data.credits;
+          updateCreditsPill(cachedCredits);
+        }
+      })
+      .catch(e => console.warn('[Popup] Credits fetch error:', e));
+  }
   const popupLoginEmail = document.getElementById('popupLoginEmail');
   const popupLoginPass = document.getElementById('popupLoginPass');
   const popupDoLoginBtn = document.getElementById('popupDoLoginBtn');
@@ -769,6 +820,7 @@ document.addEventListener('DOMContentLoaded', () => {
         popupAuthToggle.innerText = 'Sign Out';
         popupAuthToggle.style.color = '#F87171';
       }
+      fetchRecruiterCredits();
     } else {
       if (popupRecruiterName) popupRecruiterName.innerText = 'Not Signed In';
       if (popupRecruiterEmail) popupRecruiterEmail.innerText = '(Login Required)';
@@ -776,6 +828,7 @@ document.addEventListener('DOMContentLoaded', () => {
         popupAuthToggle.innerText = 'Sign In';
         popupAuthToggle.style.color = '#38BDF8';
       }
+      updateCreditsPill(null);
     }
   }
 
@@ -1093,6 +1146,11 @@ Website: http://www.coolsofttech.com`;
       return;
     }
 
+    if (cachedCredits && !cachedCredits.isUnlimited && cachedCredits.remainingCredits < 2) {
+      if (popupCompStatus) popupCompStatus.innerHTML = `<span style="color:#DC2626; font-weight:700;">Insufficient credits to send email (Available: ${cachedCredits.remainingCredits}, Required: 2). Contact Admin to refill.</span>`;
+      return;
+    }
+
     popupCompSend.disabled = true;
     popupCompSend.innerText = 'Sending...';
     if (popupCompStatus) popupCompStatus.innerHTML = `<span style="color:#2563EB;">Delivering email to ${to}...</span>`;
@@ -1116,6 +1174,10 @@ Website: http://www.coolsofttech.com`;
       }
 
       if (res && res.success) {
+        if (typeof res.remainingCredits === 'number' && cachedCredits) {
+          cachedCredits.remainingCredits = res.remainingCredits;
+          updateCreditsPill(cachedCredits);
+        }
         if (popupCompStatus) popupCompStatus.innerHTML = `<span style="color:#059669; font-weight:700;">✓ Email delivered from ${currentUser.email}!</span>`;
         sentCandidateEmails.add(to.toLowerCase());
         if (activePopupCand) {
@@ -1128,7 +1190,15 @@ Website: http://www.coolsofttech.com`;
       } else {
         popupCompSend.disabled = false;
         popupCompSend.innerText = 'Retry Send';
-        if (popupCompStatus) popupCompStatus.innerHTML = `<span style="color:#DC2626; font-weight:600;">Failed: ${res?.message || 'SMTP delivery rejected'}</span>`;
+        if (res?.creditExhausted) {
+          if (typeof res.remainingCredits === 'number' && cachedCredits) {
+            cachedCredits.remainingCredits = res.remainingCredits;
+            updateCreditsPill(cachedCredits);
+          }
+          if (popupCompStatus) popupCompStatus.innerHTML = `<span style="color:#DC2626; font-weight:700;">Credit Limit Reached: ${res?.message || 'Insufficient credits. Contact Admin to refill.'}</span>`;
+        } else {
+          if (popupCompStatus) popupCompStatus.innerHTML = `<span style="color:#DC2626; font-weight:600;">Failed: ${res?.message || 'SMTP delivery rejected'}</span>`;
+        }
       }
     });
   }
@@ -1244,6 +1314,21 @@ Website: http://www.coolsofttech.com`;
       return;
     }
 
+    const requiredCredits = validCandidates.length * 2;
+    if (cachedCredits && !cachedCredits.isUnlimited) {
+      if (cachedCredits.remainingCredits < 2) {
+        if (popupBulkStatus) popupBulkStatus.innerHTML = `<span style="color:#DC2626; font-weight:700;">Insufficient credits (Available: ${cachedCredits.remainingCredits}, Required: 2 minimum). Please ask Admin/Omkesh to refill.</span>`;
+        alert(`Insufficient credits for bulk outreach (Available: ${cachedCredits.remainingCredits}, Required: 2 minimum). Please contact Admin (Omkesh) to refill your credits.`);
+        return;
+      }
+      if (cachedCredits.remainingCredits < requiredCredits) {
+        const affordable = Math.floor(cachedCredits.remainingCredits / 2);
+        const proceed = confirm(`Credit Notice: You have ${cachedCredits.remainingCredits} credits available, which covers ${affordable} of ${validCandidates.length} candidate emails (2 credits/email).\n\nDo you want to send to the first ${affordable} candidates now?`);
+        if (!proceed) return;
+        validCandidates.splice(affordable);
+      }
+    }
+
     popupBulkSend.disabled = true;
     if (popupBulkProgressContainer) popupBulkProgressContainer.style.display = 'block';
 
@@ -1276,6 +1361,10 @@ Website: http://www.coolsofttech.com`;
         });
 
         if (res && res.success) {
+          if (typeof res.remainingCredits === 'number' && cachedCredits) {
+            cachedCredits.remainingCredits = res.remainingCredits;
+            updateCreditsPill(cachedCredits);
+          }
           if (res.deduplicated) {
             duplicateCount++;
             if (popupBulkLiveLog) {
@@ -1299,6 +1388,21 @@ Website: http://www.coolsofttech.com`;
           }
         } else {
           failCount++;
+          if (res?.creditExhausted) {
+            if (typeof res.remainingCredits === 'number' && cachedCredits) {
+              cachedCredits.remainingCredits = res.remainingCredits;
+              updateCreditsPill(cachedCredits);
+            }
+            if (popupBulkLiveLog) {
+              const row = document.createElement('div');
+              row.style.color = '#DC2626';
+              row.style.fontWeight = '700';
+              row.innerText = `✗ Credits exhausted (${res.remainingCredits || 0} remaining). Aborting remaining outreach. Contact Admin to refill.`;
+              popupBulkLiveLog.appendChild(row);
+              popupBulkLiveLog.scrollTop = popupBulkLiveLog.scrollHeight;
+            }
+            break;
+          }
           if (popupBulkLiveLog) {
             const row = document.createElement('div');
             row.style.color = '#DC2626';

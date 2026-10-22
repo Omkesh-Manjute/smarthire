@@ -14,6 +14,7 @@
   });
 
   let scrapedCandidates = [];
+  let cachedCredits = null;
   
   // Synchronous jobs initialization (guarantees all 180 jobs are ready immediately)
   let allJobs = (window.SMARTHIRE_BUNDLED_JOBS && Array.isArray(window.SMARTHIRE_BUNDLED_JOBS)) 
@@ -160,7 +161,7 @@ Website: http://www.coolsofttech.com`;
     // 1. Discreet 38px Shield Logo Trigger (No long text strip!)
     const trigger = document.createElement('div');
     trigger.id = 'smarthire-copilot-trigger';
-    trigger.title = 'SmartHire ATS Sourcing Copilot v4.3 (Click to Open)';
+    trigger.title = 'SmartHire ATS Sourcing Copilot v4.4 (Click to Open)';
     trigger.innerHTML = `
       <svg width="22" height="22" viewBox="0 0 24 24" fill="#3B82F6">
         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
@@ -179,17 +180,21 @@ Website: http://www.coolsofttech.com`;
             <path d="m9 11 2 2 4-4" stroke="#ffffff" stroke-width="2.5" fill="none"/>
           </svg>
           <span style="font-weight:700; font-size:14px; letter-spacing:-0.02em;">SmartHire Copilot</span>
-          <span style="background:#1E293B; color:#93C5FD; font-size:10px; font-weight:700; padding:2px 6px; border-radius:4px; border:1px solid #334155;">v4.3 Live</span>
+          <span style="background:#1E293B; color:#93C5FD; font-size:10px; font-weight:700; padding:2px 6px; border-radius:4px; border:1px solid #334155;">v4.4 Live</span>
         </div>
         <button id="smarthire-drawer-close" style="background:none; border:none; color:#94A3B8; font-size:22px; cursor:pointer; line-height:1; padding:0 4px;">&times;</button>
       </div>
 
       <!-- Recruiter Identity Bar -->
-      <div id="smarthire-recruiter-bar" class="smarthire-recruiter-bar">
-        <div style="display:flex; align-items:center; gap:6px;">
+      <div id="smarthire-recruiter-bar" class="smarthire-recruiter-bar" style="display:flex; align-items:center; justify-content:space-between; padding:8px 12px; background:#0F172A; border-bottom:1px solid #1E293B; font-size:11px;">
+        <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#38BDF8" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
           <span id="smarthire-recruiter-name-label" style="font-weight:700; color:#F8FAFC; font-size:11.5px;">Not Signed In</span>
           <span id="smarthire-recruiter-email-label" style="color:#94A3B8; font-size:10.5px;">(Login Required)</span>
+          <div id="smarthire-recruiter-credits-badge" style="display:none; align-items:center; gap:4px; background:rgba(37,99,235,0.18); border:1px solid rgba(59,130,246,0.35); padding:2px 8px; border-radius:12px; font-size:10.5px; font-weight:700; color:#93C5FD;" title="SmartHire Sourcing & Outreach Credits">
+            <span>Credits:</span>
+            <span id="smarthire-recruiter-credits-val">...</span>
+          </div>
         </div>
         <button id="smarthire-btn-auth-toggle" class="smarthire-link-btn" style="color:#38BDF8;">Sign In</button>
       </div>
@@ -683,6 +688,81 @@ Website: http://www.coolsofttech.com`;
     }
   }
 
+  function updateCreditsBadge(credits) {
+    const badgeContainer = document.getElementById('smarthire-recruiter-credits-badge');
+    const valEl = document.getElementById('smarthire-recruiter-credits-val');
+    if (!badgeContainer || !valEl) return;
+
+    if (!credits || !isUserAuthenticated) {
+      badgeContainer.style.display = 'none';
+      return;
+    }
+
+    badgeContainer.style.display = 'inline-flex';
+    if (credits.isUnlimited) {
+      valEl.innerText = 'Unlimited';
+      badgeContainer.style.background = 'rgba(16, 185, 129, 0.15)';
+      badgeContainer.style.border = '1px solid rgba(16, 185, 129, 0.4)';
+      badgeContainer.style.color = '#34D399';
+      badgeContainer.title = 'Superadmin / Unlimited Sourcing & Outreach Credits';
+    } else {
+      const remaining = typeof credits.remainingCredits === 'number' ? credits.remainingCredits : 0;
+      const quota = credits.dailyQuota || 100;
+      valEl.innerText = `${remaining} / ${quota}`;
+      if (remaining <= 0) {
+        badgeContainer.style.background = 'rgba(239, 68, 68, 0.18)';
+        badgeContainer.style.border = '1px solid rgba(239, 68, 68, 0.4)';
+        badgeContainer.style.color = '#F87171';
+        badgeContainer.title = 'Credits Exhausted — Contact Admin to Refill';
+      } else if (remaining < 20) {
+        badgeContainer.style.background = 'rgba(245, 158, 11, 0.18)';
+        badgeContainer.style.border = '1px solid rgba(245, 158, 11, 0.4)';
+        badgeContainer.style.color = '#FBBF24';
+        badgeContainer.title = 'Low Credits — Contact Admin to Refill';
+      } else {
+        badgeContainer.style.background = 'rgba(37, 99, 235, 0.18)';
+        badgeContainer.style.border = '1px solid rgba(59, 130, 246, 0.35)';
+        badgeContainer.style.color = '#93C5FD';
+        badgeContainer.title = `SmartHire Sourcing & Outreach Credits (${remaining} remaining today)`;
+      }
+    }
+  }
+
+  function fetchRecruiterCredits() {
+    if (!isUserAuthenticated || !currentUser || !currentUser.email) {
+      updateCreditsBadge(null);
+      return;
+    }
+    const cleanEmail = currentUser.email.toLowerCase().trim();
+    try {
+      if (typeof chrome !== 'undefined' && chrome?.runtime?.id) {
+        chrome.runtime.sendMessage({ action: 'GET_RECRUITER_CREDITS', email: cleanEmail }, (res) => {
+          if (res && res.success && res.credits) {
+            cachedCredits = res.credits;
+            updateCreditsBadge(cachedCredits);
+          } else {
+            fallbackDirectCreditFetch();
+          }
+        });
+        return;
+      }
+    } catch (_) {}
+
+    fallbackDirectCreditFetch();
+
+    function fallbackDirectCreditFetch() {
+      fetch(`https://smarthireus.com/api/recruiter/credits?email=${encodeURIComponent(cleanEmail)}`)
+        .then(r => r.json())
+        .then(data => {
+          if (data && data.success && data.credits) {
+            cachedCredits = data.credits;
+            updateCreditsBadge(cachedCredits);
+          }
+        })
+        .catch(e => console.warn('[SmartHire Dock] direct credit fetch error:', e.message));
+    }
+  }
+
   function updateRecruiterBarUI() {
     const nameEl = document.getElementById('smarthire-recruiter-name-label');
     const emailEl = document.getElementById('smarthire-recruiter-email-label');
@@ -694,6 +774,7 @@ Website: http://www.coolsofttech.com`;
         toggleBtn.innerText = 'Sign Out';
         toggleBtn.style.color = '#F87171';
       }
+      fetchRecruiterCredits();
     } else {
       if (nameEl) nameEl.innerText = 'Not Signed In';
       if (emailEl) emailEl.innerText = '(Login Required)';
@@ -701,6 +782,7 @@ Website: http://www.coolsofttech.com`;
         toggleBtn.innerText = 'Sign In';
         toggleBtn.style.color = '#38BDF8';
       }
+      updateCreditsBadge(null);
     }
   }
 
@@ -1083,6 +1165,11 @@ Website: http://www.coolsofttech.com`;
       return;
     }
 
+    if (cachedCredits && !cachedCredits.isUnlimited && cachedCredits.remainingCredits < 2) {
+      if (statusEl) statusEl.innerHTML = `<span style="color:#DC2626; font-weight:700;">Insufficient credits to send email (Available: ${cachedCredits.remainingCredits}, Required: 2). Contact Admin to refill.</span>`;
+      return;
+    }
+
     sendBtn.disabled = true;
     sendBtn.innerText = 'Sending Email...';
     if (statusEl) statusEl.innerHTML = `<span style="color:#2563EB;">Delivering email to ${to} via SMTP...</span>`;
@@ -1098,6 +1185,10 @@ Website: http://www.coolsofttech.com`;
 
     const handleSendResult = (res) => {
       if (res && res.success) {
+        if (typeof res.remainingCredits === 'number' && cachedCredits) {
+          cachedCredits.remainingCredits = res.remainingCredits;
+          updateCreditsBadge(cachedCredits);
+        }
         if (statusEl) statusEl.innerHTML = `<span style="color:#059669; font-weight:700;">✓ Email delivered successfully from ${currentUser.email}!</span>`;
         sentCandidateEmails.add(to.toLowerCase());
         if (activeOutreachCandidate) {
@@ -1110,7 +1201,15 @@ Website: http://www.coolsofttech.com`;
       } else {
         sendBtn.disabled = false;
         sendBtn.innerText = 'Retry Send';
-        if (statusEl) statusEl.innerHTML = `<span style="color:#DC2626; font-weight:600;">Failed: ${res?.message || 'SMTP delivery rejected'}</span>`;
+        if (res?.creditExhausted) {
+          if (typeof res.remainingCredits === 'number' && cachedCredits) {
+            cachedCredits.remainingCredits = res.remainingCredits;
+            updateCreditsBadge(cachedCredits);
+          }
+          if (statusEl) statusEl.innerHTML = `<span style="color:#DC2626; font-weight:700;">Credit Limit Reached: ${res?.message || 'Insufficient credits. Contact Admin to refill.'}</span>`;
+        } else {
+          if (statusEl) statusEl.innerHTML = `<span style="color:#DC2626; font-weight:600;">Failed: ${res?.message || 'SMTP delivery rejected'}</span>`;
+        }
       }
     };
 
@@ -1353,6 +1452,21 @@ Website: http://www.coolsofttech.com`;
       return;
     }
 
+    const requiredCredits = validCandidates.length * 2;
+    if (cachedCredits && !cachedCredits.isUnlimited) {
+      if (cachedCredits.remainingCredits < 2) {
+        if (statusEl) statusEl.innerHTML = `<span style="color:#DC2626; font-weight:700;">Insufficient credits (Available: ${cachedCredits.remainingCredits}, Required: 2 minimum). Please ask Admin/Omkesh to refill.</span>`;
+        alert(`Insufficient credits for bulk outreach (Available: ${cachedCredits.remainingCredits}, Required: 2 minimum). Please contact Admin (Omkesh) to refill your credits.`);
+        return;
+      }
+      if (cachedCredits.remainingCredits < requiredCredits) {
+        const affordable = Math.floor(cachedCredits.remainingCredits / 2);
+        const proceed = confirm(`Credit Notice: You have ${cachedCredits.remainingCredits} credits available, which covers ${affordable} of ${validCandidates.length} candidate emails (2 credits/email).\n\nDo you want to send to the first ${affordable} candidates now?`);
+        if (!proceed) return;
+        validCandidates.splice(affordable);
+      }
+    }
+
     sendBtn.disabled = true;
     if (progContainer) progContainer.style.display = 'block';
 
@@ -1406,6 +1520,10 @@ Website: http://www.coolsofttech.com`;
         }
 
         if (res && res.success) {
+          if (typeof res.remainingCredits === 'number' && cachedCredits) {
+            cachedCredits.remainingCredits = res.remainingCredits;
+            updateCreditsBadge(cachedCredits);
+          }
           if (res.deduplicated) {
             duplicateCount++;
             if (liveLog) {
@@ -1429,6 +1547,21 @@ Website: http://www.coolsofttech.com`;
           }
         } else {
           failCount++;
+          if (res?.creditExhausted) {
+            if (typeof res.remainingCredits === 'number' && cachedCredits) {
+              cachedCredits.remainingCredits = res.remainingCredits;
+              updateCreditsBadge(cachedCredits);
+            }
+            if (liveLog) {
+              const row = document.createElement('div');
+              row.style.color = '#DC2626';
+              row.style.fontWeight = '700';
+              row.innerText = `✗ Credits exhausted (${res.remainingCredits || 0} remaining). Aborting remaining outreach. Contact Admin to refill.`;
+              liveLog.appendChild(row);
+              liveLog.scrollTop = liveLog.scrollHeight;
+            }
+            break;
+          }
           if (liveLog) {
             const row = document.createElement('div');
             row.style.color = '#DC2626';
@@ -2951,6 +3084,23 @@ ${(match.interviewQuestions || [
 
       scrapedCandidates = results;
       status.innerText = `✓ Flow finished! Extracted ${results.length} candidate(s).`;
+      if (results.length > 0 && currentUser && currentUser.email) {
+        try {
+          chrome.runtime.sendMessage({
+            action: 'DEDUCT_RECRUITER_CREDITS',
+            payload: {
+              email: currentUser.email,
+              action: 'SCRAPE_CANDIDATE',
+              count: results.length
+            }
+          }, (deductRes) => {
+            if (deductRes && typeof deductRes.remainingCredits === 'number' && cachedCredits) {
+              cachedCredits.remainingCredits = deductRes.remainingCredits;
+              updateCreditsBadge(cachedCredits);
+            }
+          });
+        } catch (_) {}
+      }
       renderResults(results);
 
     } catch (err) {
@@ -2964,6 +3114,12 @@ ${(match.interviewQuestions || [
 
   // 5. Quick Scrape execution
   async function runQuickScrape() {
+    if (cachedCredits && !cachedCredits.isUnlimited && cachedCredits.remainingCredits <= 0) {
+      const status = document.getElementById('smarthire-scrape-status');
+      if (status) status.innerText = 'Credits exhausted (0 remaining). Please contact Omkesh/Admin to refill.';
+      alert('Credit Quota Exhausted: You have 0 credits remaining today. Please contact Omkesh or Admin to refill your credits.');
+      return;
+    }
     const status = document.getElementById('smarthire-scrape-status');
     const scrapeBtn = document.getElementById('smarthire-btn-scrape');
     scrapeBtn.disabled = true;
@@ -2985,6 +3141,23 @@ ${(match.interviewQuestions || [
       scrapedCandidates = list;
       if (list.length > 0) {
         status.innerText = `✓ Extracted ${list.length} candidate(s) successfully!`;
+        if (currentUser && currentUser.email) {
+          try {
+            chrome.runtime.sendMessage({
+              action: 'DEDUCT_RECRUITER_CREDITS',
+              payload: {
+                email: currentUser.email,
+                action: 'SCRAPE_CANDIDATE',
+                count: list.length
+              }
+            }, (deductRes) => {
+              if (deductRes && typeof deductRes.remainingCredits === 'number' && cachedCredits) {
+                cachedCredits.remainingCredits = deductRes.remainingCredits;
+                updateCreditsBadge(cachedCredits);
+              }
+            });
+          } catch (_) {}
+        }
       } else {
         status.innerText = 'No candidates could be extracted. Please ensure Monster candidate cards are visible.';
       }
@@ -3261,6 +3434,10 @@ ${(match.interviewQuestions || [
         if (response && response.success && response.data) {
           msg.style.color = '#059669';
           msg.innerText = `✓ ${response.data.message || 'Successfully imported into SmartHire ATS!'}`;
+          if (typeof response.data.remainingCredits === 'number' && cachedCredits) {
+            cachedCredits.remainingCredits = response.data.remainingCredits;
+            updateCreditsBadge(cachedCredits);
+          }
         } else {
           msg.style.color = '#DC2626';
           msg.innerText = `Import failed: ${response?.error || 'Could not connect to ATS'}`;
