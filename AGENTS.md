@@ -66,6 +66,108 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
     - In resume views, every responsibility, project accomplishment, and contribution line must be formatted with an explicit bullet point (`•`) and proper indentation.
     - The engine must automatically detect responsibilities (lines following `Responsibilities:`, action verbs, or list items) even when converted from plain text or Word documents without literal Unicode bullets.
 
+### 2026-10-23 — 16 Screening Sessions Restoration, Top-Level AI Video Screening Nav, Sidebar Auto-Collapse Accordion & SmartScreen Studio Removal
+- **Context & Objectives**:
+  - The user reported:
+    1. Previous screening candidates disappeared ("bhai ismai purane kaha gayab hogaye bhai vo return lavo isko main delete karne nahi bola tha sab ka dikhna cahiye mujhe"): Only 4 sessions were visible on `/ats?tab=screening`. The user requested all previous screening candidates (Manisha, Meghana, Naveen, Sai Teja, Omkesh, etc.) to be restored and visible to everyone.
+    2. Auto-collapsing sidebar ("and side pannel mai auto colebe rahana cahiye"): The left navigation dropdown groups should auto-collapse so opening any group closes all other groups (single-open accordion behavior).
+    3. AI Video Screening button moved to top ("and scrning ka top mai hi show karo button telent hum ke upper mai okay"): Move the screening button to the primary upper navigation above `Talent Hub` (alongside `Home`).
+    4. SmartScreen Studio button removal ("and smartscrning studio ka button hata do vo website ka page hai yaha jarurat nahi hai iski"): Remove the SmartScreen Studio landing page button from the ATS console.
+- **Root Cause & Architectural Implementations**:
+  1. *Screening Sessions Full 16-Record Merge & Visibility Enforcement (`screening_sessions.json`, `server/index.js`, `ScreeningModule.jsx`)*:
+     - Discovered that the Lightsail server only retained 4 sessions while the local repository contained 12 sessions across git history.
+     - Merged all 16 unique sessions (Manisha Anantharam, Meghana Reddy, Naveen Kumar Reddy, Sai Teja Goud, Omkesh Manjute, Asifa Cheema, Sangeetha Kanamarlapudi, Zaman Adwani, Pankaj, Nishant Kathane, Sukamal Chatterjee, Ajay Arya, Rohit Nagwani, Pending Applicant) into `screening_sessions.json` locally and on the Lightsail server.
+     - In `server/index.js`, updated `/api/screening/sessions` to return all sessions unconditionally (`filtered = screeningStore`) so ATS recruiters have complete team visibility.
+     - In `ScreeningModule.jsx`, set `visibleSessions = sessions` so all candidates are visible across the company with live recruiter dropdown filtering.
+  2. *Top-Level AI Video Screening Navigation (`AtsUnifiedSidebar.jsx`, `AtsPlatform.jsx`)*:
+     - Added `AI Video Screening` to the primary upper navigation section right next to `Home` and directly above `Talent Hub`.
+     - Uses a sleek SVG camera glyph for crisp enterprise aesthetics.
+     - Clicking it switches immediately to `tab=screening` in `AtsPlatform` or navigates from any other route (`/inbox`, `/submittal-pack`).
+  3. *Auto-Collapse Accordion Navigation (`AtsUnifiedSidebar.jsx`)*:
+     - Implemented single-open accordion state management: toggling or opening any group immediately closes all other groups (`setNavGroupsOpen({ [grpId]: true })`).
+     - Added `useEffect` listener to auto-expand the active section and collapse other groups when switching between tabs.
+  4. *Complete Removal of SmartScreen Studio from ATS Navigation*:
+     - Removed `SmartScreen Studio` (`/smartscreen`) from the sidebar and from `ALL_MODULES` in `AtsPlatform.jsx`.
+- **Verification & Deployment Protocol**:
+  - Local production build verified in `smarthire-react`: 0 errors, 0 warnings (built in 3.04s).
+  - All 42 matching engine unit tests passed (0 failures).
+  - Git committed (`1b821c6`) and pushed to GitHub `origin main`.
+  - Deployed to AWS Lightsail server (`34.194.119.199`), updated web roots and PM2 backend files, pruned asset bundles, and cleaned archives immediately (Rule 5).
+  - Live verification:
+    - `https://smarthireus.com`: HTTP 200 OK with bundle `index-D5R88HJY.js`.
+    - `GET https://smarthireus.com/api/screening/sessions`: HTTP 200 OK returning all 16 sessions.
+    - Server disk space: 54% used, 8.5GB free (Rule 5 compliant).
+
+### 2026-10-23 — Unified 5-Group ATS Sidebar Normalization across Submittal Pack & Inbox, and Hostinger Mail Setup (support@praximinds.com)
+- **Context & Objectives**:
+  - The user reported:
+    1. Navigation discordance: Clicking "Settings" from `/submittal-pack` brought up a completely different page and sidebar ("nahi bhai same hai seiting mai click karne pe ye agag page a raha hai and dono alag alag hai dekho and fix and updae karo"). Submittal Pack and Inbox still displayed the legacy "Core ATS / Submissions & Closing / Intel & Portal" sidebar instead of the unified 5 normalized groups.
+    2. Video screening completion emails: Interview completed notification emails must now be sent from `support@praximinds.com` via Hostinger Mail (`smtp.hostinger.com:465 SSL`).
+- **Root Cause & Architectural Implementations**:
+  1. *Unified Reusable `AtsUnifiedSidebar` Component (`src/components/AtsUnifiedSidebar.jsx`)*:
+     - Extracted the standardized 5 Normalized Dropdown Groups:
+       - **Talent Hub**: Requisitions & Jobs, Candidate Database, Submittal Pack, SmartSign RTR.
+       - **Sourcing Console**: Vendor Hotlists, Universal Search, Sourcing Pipeline.
+       - **Evaluation & Pipeline**: Visual Pipeline, AI Video Screening, SmartScreen Studio.
+       - **Outreach & Comms**: Recruiter Inbox, Client Inquiries.
+       - **Administration**: Manage Users & Clients, Workspace Settings, Audit Logs, Automation Rules.
+     - Replaced legacy sidebar implementations in `SubmittalPackPage.jsx` and `RecruiterInbox.jsx` with `<AtsUnifiedSidebar />`.
+     - Clicking "Workspace Settings" anywhere on `/submittal-pack` or `/inbox` navigates seamlessly to `/ats?tab=settings` with the exact same sidebar layout, styling, and active highlight.
+  2. *Hostinger Mail Integration for Interview Completed Notifications (`server/index.js`, `SettingsModule.jsx`)*:
+     - Updated `sendScreeningCompletedNotificationEmail` in `server/index.js` to prioritize `support@praximinds.com` via Hostinger SMTP (`smtp.hostinger.com`, port 465, SSL).
+     - Added auto-seeding of `support@praximinds.com` into `email_configs.json` and disk store.
+     - Added candidate confirmation dispatch so the candidate also receives an official interview submission receipt from `support@praximinds.com`.
+     - In `SettingsModule.jsx`, added `hostinger` to `PROVIDER_DEFAULTS` (`smtp.hostinger.com:465 SSL`, `imap.hostinger.com:993 SSL`), added `support@praximinds.com` to the recruiter selection roster, added a Hostinger step-by-step setup guide, and added a 1-click "Configure support@praximinds.com" banner in the Email tab.
+- **Verification & Deployment Protocol**:
+  - Verified local production build (`npm run build`) in `smarthire-react`: 0 errors, 0 warnings (built in 2.98s).
+  - All 42 matching engine unit tests passed (0 failures).
+  - Git committed (`759861a`) and pushed to GitHub `origin main`.
+  - Deployed production bundle to AWS Lightsail server (`34.194.119.199`), updated `/var/www/html/` and `/home/ubuntu/smarthire/dist/`, pruned old bundles, and reloaded PM2 `smarthire-ats`.
+  - Live domain `https://smarthireus.com` verified HTTP 200 OK with new bundle `index-dtVnnMSR.js`. Server disk space: 54% used, 8.5GB available (Rule 5 compliant).
+
+### 2026-10-23 — ATS Sidebar Normalization into 5 Groups, Excel-Style Users Grid, 3-Slot Straight-Line Action Alignment, In-Table Credit Refill & 504 Safeguards
+- **Context & Objectives**:
+  - The user reported:
+    1. Out-of-line / staggered action buttons: `Add user`, `Edit`, `Delete` in the Manage Users table were not in a structured straight line (`Iska structure dekho, alag dikh raha hai idhar sab. Add user, edit, delete ek structure way mein nahi hai, line mein nahi hai`).
+    2. Interactive In-Table Extension Credits: Recruiter extension credits needed to be clickable right in the cell with an interactive modal to refill credits on the fly.
+    3. Side Panel Normalization & Centralized Unit Architecture: Side panel had too many buttons and scattered pages. The user requested: normalize the navigation into 5 clean dropdown groups (Talent Hub, Sourcing, Evaluation & Pipeline, Outreach & Comms, Administration) so everything functions as one cohesive single-shell ATS workspace without disjointed page flipping.
+    4. Complete Removal of Reports Page: `https://smarthireus.com/reports` completely eliminated from sidebar, 9-dot launcher, and navigation menus.
+    5. 504 Gateway Time-out Root Cause Fix: Node event loop starvation caused by heavy background IMAP scraping and concurrent failing Groq models.
+- **Root Cause & Architectural Implementations**:
+  1. *Action Buttons Straight-Line Alignment & Excel Grid (`UsersModule.jsx`)*:
+     - Enforced authentic Excel-Style grid (Rule 9): `#F1F5F9` headers, `1px solid #CBD5E1` cell borders, alternating `#FFFFFF` / `#F8FAFC` zebra rows, and `#EFF6FF` hover.
+     - Implemented a strict **Fixed 3-Slot Layout**:
+       - Slot 1 (Fixed 72px): `+ Sub-User` button for leads/managers, or a 72px invisible placeholder `div` for employees.
+       - Slot 2 (Fixed 46px): `Edit` button.
+       - Slot 3 (Fixed 52px): `Delete` button, or a 52px invisible placeholder for primary master owner.
+     - Result: `Edit` and `Delete` are 100% vertically aligned in a perfectly straight line across every single row.
+     - Subordinate employee rows: Rendered as seamless indented sub-rows (`#`, Member, `↳ Sourcing Sourcer`, Reports To, Sourced, Credits with refill, Status toggle, Last active, and aligned Edit/Delete buttons).
+  2. *Interactive In-Table Extension Credit Refill (`UsersModule.jsx`)*:
+     - Made the credit balance badge directly clickable (`setRefillModalRecruiter(rec)`) alongside the adjacent `+ Refill` button.
+     - Enhanced refill modal with quick chips (`+50`, `+100`, `+250`, `Make Unlimited`) and custom numeric input (`+ Add Custom`).
+  3. *5 Normalized Dropdown Navigation Groups (`AtsPlatform.jsx`)*:
+     - Structured sidebar into 5 collapsible accordion groups:
+       - **Talent Hub**: Requisitions & Jobs, Candidates Database, Submittal Pack, SmartSign RTR.
+       - **Sourcing Console**: Vendor Hotlists, Universal Search, Sourcing Pipeline.
+       - **Evaluation & Pipeline**: Visual Pipeline, AI Video Screening, SmartScreen Studio.
+       - **Outreach & Comms**: Recruiter Inbox, Client Inquiries.
+       - **Administration**: Manage Users & Clients, Workspace Settings, Audit Logs, Automation Rules.
+     - Preserved top **Home** Overview button and bottom Quick Portals (Public Careers, Requisitions).
+     - Single-shell transitions: active tabs highlight seamlessly with `#1164A3` active background and auto-expand their parent group.
+  4. *Complete Removal of Reports Page*:
+     - Removed `/reports` routes and components across `App.jsx`, `AtsPlatform.jsx`, `Navigation.jsx`, `QuickSearchModal.jsx`, `SubmittalPackPage.jsx`, `RecruiterInbox.jsx`, and `UsersModule.jsx`.
+  5. *504 Timeout Backend Safeguards (`server/index.js`, `jobsinhand-scraper.js`, `playwright-scraper.js`, `email-imap-scraper.js`)*:
+     - Increased background scraping intervals from 5m/6m to 30m.
+     - Updated Groq model from decommissioned `llama-3.3-70b-versatile` to `llama-3.1-8b-instant`.
+     - Added event loop yields (`setImmediate`) around `pdfParse` and in IMAP email loops, with a 4MB attachment guard.
+- **Verification & Deployment Protocol**:
+  - Local production build verified in `smarthire-react`: 0 errors, 0 warnings (built in 3.09s).
+  - All 42 matching engine unit tests passed (0 failures).
+  - Git committed (`89537c0`) and pushed to GitHub `origin main`.
+  - Deployed to AWS Lightsail (`34.194.119.199`), temporary archives removed immediately, asset bundles pruned (Rule 5).
+  - PM2 `smarthire-ats` reloaded and verified online.
+  - Live domain `https://smarthireus.com` verified HTTP 200 OK. Server disk space: 46% free (8.5GB available).
+
 ### 2026-10-23 — Permanent Recruiter Deletion, Complete Password Removal from DOM/Network, Client Access Isolation & Job Site Candidate Roster Filtering
 - **Context & Objectives**:
   - The user reported:
@@ -95,6 +197,46 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
   - Verified local production build (`npm run build`) in `smarthire-react`: 0 errors, 0 warnings (built in 2.98s).
   - All 42 matching engine unit tests passed (0 failures).
   - Production build synced to root `/dist` and `/api` via `node build.js`.
+
+### 2026-10-23 — B2B Client Portals Admin Console, Multi-Tenant Credit Refills & Portal Preview Mode
+- **Context & Objectives**:
+  - The user asked: *"B. External B2B Clients  bhai iska credits kaise set karna hai to ye batavo"*
+  - External B2B Clients use the Video Screening Portal (`/client/screening`), consuming two types of credits: Video Screening Interview Credits and AI Question Generator Credits.
+  - The Admin needed full clarity and complete UI controls in the ATS (`/ats?tab=users`) to:
+    1. Provision new B2B clients with login credentials, company branding, and initial credit packages.
+    2. View all client organizations, active workspaces, and remaining credit balances in an Excel-style spreadsheet grid (Rule 9).
+    3. Refill or set exact quotas for both Video Screening Credits (`+10`, `+25`, `+50`, `+100`) and AI Question Credits (`+50`, `+100`, `+300`, `+500`).
+    4. One-click "View Portal" allowing Super Admin to inspect and preview any client's live portal directly.
+- **Architectural Implementation**:
+  1. *Dedicated "B2B Client Portals" Subtab (`UsersModule.jsx`)*:
+     - Added `B2B Client Portals` tab into the master user hub alongside `Team & Hierarchy` and `Candidate Users`.
+     - 4 KPI Stat Cards: `TOTAL CLIENT PORTALS`, `INTERVIEWS COMPLETED`, `SCREENING CREDITS POOL`, and `AI QUESTION CREDITS`.
+     - Authentic Excel-Style spreadsheet grid (Rule 9): `#F1F5F9` headers, compact 38px rows, zebra striping (`#FFFFFF` & `#F8FAFC`), blue hover cell highlight (`#EFF6FF`).
+     - Columns: `#`, `Company & Contact`, `Login Email`, `Screening Credits`, `AI Question Credits`, `Sender Email`, `Last Active`, `Actions`.
+     - Dynamic Credit Health Badges: Green for healthy, amber for $\le 10$, red for exhausted ($0$).
+  2. *Add B2B Client Provisioning Modal (`UsersModule.jsx` & `server/index.js`)*:
+     - Form: Contact Name, Company Name, Login Email, Initial Password, Screening Credits (10, 25, 50, 100, 250), AI Question Credits (50, 100, 300, 500).
+     - Backend `POST /api/admin/client-credits/create`: provisions user in `recruitersMock` with `role: 'client'`, synchronizes with MongoDB, and initializes ledger in `client_credits.json`.
+  3. *Client Credit Refill & Quota Management Modal (`UsersModule.jsx` & `server/index.js`)*:
+     - 1-click modal with two modes: "Quick Refill (Add Credits)" and "Set Exact Balance (=)".
+     - Preset buttons for fast refills and manual numeric inputs.
+     - Backend `POST /api/admin/client-credits/refill`: updates screening and AI credits on disk immediately.
+     - Backend `POST /api/admin/client-credits/delete`: safe client deletion with prompt.
+  4. *Super Admin Portal Preview Mode (`ClientScreeningPortal.jsx`)*:
+     - Allows super admin to click "View Portal" on any client row (`/client/screening?clientEmail=...`).
+     - Renders an enterprise dark banner: `ADMIN PREVIEW MODE: Managing Portal for [Name] ([Company]) &bull; Return to ATS Users`.
+- **Verification & Deployment Protocol**:
+  - Production build in `smarthire-react`: 0 errors, 0 warnings (built in 2.97s).
+  - All 42 matching engine unit tests passed (0 failures).
+  - Git committed (`f78bc80`) and pushed to GitHub `origin main`.
+  - Deployed production bundle and backend files to AWS Lightsail server (`34.194.119.199`), temporary archives deleted immediately, asset bundles pruned (Rule 5).
+  - PM2 `smarthire-ats` reloaded and verified `online`.
+  - Live verification:
+    - `https://smarthireus.com`: HTTP 200 OK.
+    - Verified `GET /api/admin/client-credits/all` returns client ledger with 200 OK.
+    - Verified `POST /api/admin/client-credits/refill` updates balances correctly.
+    - Verified `POST /api/admin/client-credits/create` and `delete` operate smoothly.
+    - Server disk space verified (46% free, 8.6GB available, complying strictly with Rule 5).
 
 ### 2026-10-23 — Screening TDZ Initialization Fix, Manage Users 99% Speedup & In-Table Extension Credit Refills
 - **Context & Objectives**:
