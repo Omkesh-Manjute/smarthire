@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 
 const DEFAULT_TEAM_RECRUITERS = [
+  { name: 'SmartHire Support (Hostinger)', email: 'support@praximinds.com', role: 'admin', refCode: 'praximinds-support' },
   { name: 'Omkesh', email: 'omkesh@coolsofttech.com', role: 'superadmin', refCode: 'omkesh' },
   { name: 'Omkesh Manjute', email: 'omkesh.manjute@smarthire.com', role: 'superadmin', refCode: 'omkesh' },
   { name: 'Gourav', email: 'gourav@coolsofttech.com', role: 'recruiter', parentRecruiterName: 'Omkesh', refCode: 'gourav' },
@@ -208,18 +209,19 @@ function SettingsModule() {
         setEmailCfg(prev => ({ ...prev, ...data.config }))
       } else {
         const rec = teamList.find(r => (r.email || '').toLowerCase() === emailToFetch.toLowerCase())
+        const isHostinger = emailToFetch.toLowerCase().includes('praximinds') || emailToFetch.toLowerCase().includes('hostinger')
         setEmailCfg(prev => ({
           ...prev,
           displayName: rec ? rec.name : (emailToFetch.split('@')[0] || ''),
           fromEmail: emailToFetch,
-          provider: 'yahoo',
-          smtpHost: 'smtp.bizmail.yahoo.com',
+          provider: isHostinger ? 'hostinger' : 'yahoo',
+          smtpHost: isHostinger ? 'smtp.hostinger.com' : 'smtp.bizmail.yahoo.com',
           smtpPort: 465,
           security: 'SSL',
-          imapHost: 'imap.mail.yahoo.com',
+          imapHost: isHostinger ? 'imap.hostinger.com' : 'imap.mail.yahoo.com',
           imapPort: 993,
           appPassword: '',
-          signature: `With Regards,\n${rec ? rec.name : 'Technical Recruiter'}\nCOOLSOFT LLC | SmartHire ATS`
+          signature: isHostinger ? `Best regards,\nSmartHire Support Team\nsupport@praximinds.com` : `With Regards,\n${rec ? rec.name : 'Technical Recruiter'}\nCOOLSOFT LLC | SmartHire ATS`
         }))
       }
     } catch(e) {}
@@ -351,6 +353,7 @@ function SettingsModule() {
   const [guideProvider, setGuideProvider] = useState('gmail')
 
   const PROVIDER_DEFAULTS = {
+    hostinger: { smtpHost: 'smtp.hostinger.com', smtpPort: 465, security: 'SSL', imapHost: 'imap.hostinger.com', imapPort: 993 },
     gmail: { smtpHost: 'smtp.gmail.com', smtpPort: 587, security: 'TLS' },
     outlook: { smtpHost: 'smtp-mail.outlook.com', smtpPort: 587, security: 'TLS' },
     office365: { smtpHost: 'smtp.office365.com', smtpPort: 587, security: 'TLS' },
@@ -396,7 +399,7 @@ function SettingsModule() {
       {activeSettingsTab === 'email' && (
         <div style={{ maxWidth: 860 }}>
           {/* Quick Extension Download Banner */}
-          <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 12, padding: '12px 18px', marginBottom: 18, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
+          <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 12, padding: '12px 18px', marginBottom: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
             <div>
               <strong style={{ fontSize: 13, color: '#0F172A' }}>SmartHire Sourcing Chrome Extension v4.3</strong>
               <p style={{ margin: '2px 0 0', fontSize: 12, color: '#64748B' }}>
@@ -410,6 +413,30 @@ function SettingsModule() {
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               <span>View Extension & Download</span>
+            </button>
+          </div>
+
+          {/* Hostinger Notification Dispatcher Banner */}
+          <div style={{ background: '#F5F3FF', border: '1px solid #DDD6FE', borderRadius: 12, padding: '12px 18px', marginBottom: 18, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontSize: 10, fontWeight: 800, padding: '2px 7px', borderRadius: 4, background: '#7C3AED', color: '#FFFFFF' }}>HOSTINGER SMTP</span>
+                <strong style={{ fontSize: 13, color: '#4C1D95' }}>Interview Completion Notifications: support@praximinds.com</strong>
+              </div>
+              <p style={{ margin: '3px 0 0', fontSize: 12, color: '#6D28D9' }}>
+                All candidate video screening submissions and completion notifications are sent from <strong>support@praximinds.com</strong> via Hostinger (<code>smtp.hostinger.com:465 SSL</code>).
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setRecruiterEmailKey('support@praximinds.com')
+                fetchEmailConfig('support@praximinds.com')
+                setGuideProvider('hostinger')
+              }}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px', background: '#7C3AED', color: '#FFFFFF', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+            >
+              Configure support@praximinds.com
             </button>
           </div>
           {/* Step-by-Step App Password Tutorial Guide */}
@@ -426,6 +453,7 @@ function SettingsModule() {
               {/* Guide Tabs */}
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 {[
+                  { id: 'hostinger', label: 'Hostinger (support@praximinds.com)', color: '#7c3aed' },
                   { id: 'gmail', label: 'Gmail', color: '#ea4335' },
                   { id: 'yahoo', label: 'Yahoo Mail (SSL 465)', color: '#6001d2' },
                   { id: 'yahooBiz', label: 'Yahoo Biz / Turbify', color: '#4f46e5' },
@@ -455,6 +483,36 @@ function SettingsModule() {
                 ))}
               </div>
             </div>
+
+            {/* HOSTINGER INSTRUCTIONS */}
+            {guideProvider === 'hostinger' && (
+              <div style={{ background: '#f5f3ff', border: '1px solid #ddd6fe', borderRadius: 10, padding: 14 }}>
+                <div style={{ fontWeight: 800, fontSize: 13, color: '#5b21b6', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  Hostinger Mail Settings for support@praximinds.com (mail.hostinger.com)
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10, fontSize: 12, color: '#334155' }}>
+                  <div style={{ background: '#fff', padding: '10px 12px', borderRadius: 8, border: '1px solid #c4b5fd' }}>
+                    <div style={{ fontWeight: 800, color: '#6d28d9', marginBottom: 4 }}>1. Hostinger Mailbox</div>
+                    Email: <strong>support@praximinds.com</strong><br/>
+                    Login: <a href="https://mail.hostinger.com" target="_blank" rel="noreferrer" style={{ color: '#6d28d9', fontWeight: 700 }}>mail.hostinger.com</a>
+                  </div>
+                  <div style={{ background: '#fff', padding: '10px 12px', borderRadius: 8, border: '1px solid #c4b5fd' }}>
+                    <div style={{ fontWeight: 800, color: '#6d28d9', marginBottom: 4 }}>2. Outgoing SMTP</div>
+                    Host: <code>smtp.hostinger.com</code><br/>
+                    Port: <strong>465 (SSL)</strong>
+                  </div>
+                  <div style={{ background: '#fff', padding: '10px 12px', borderRadius: 8, border: '1px solid #c4b5fd' }}>
+                    <div style={{ fontWeight: 800, color: '#6d28d9', marginBottom: 4 }}>3. Incoming IMAP</div>
+                    Host: <code>imap.hostinger.com</code><br/>
+                    Port: <strong>993 (SSL)</strong>
+                  </div>
+                  <div style={{ background: '#fff', padding: '10px 12px', borderRadius: 8, border: '1px solid #c4b5fd' }}>
+                    <div style={{ fontWeight: 800, color: '#6d28d9', marginBottom: 4 }}>4. Password Entry</div>
+                    Enter your Hostinger email password in <strong>App Password</strong> below and click <strong>Test Connection</strong>.
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* GMAIL INSTRUCTIONS */}
             {guideProvider === 'gmail' && (
@@ -590,14 +648,15 @@ function SettingsModule() {
             <div style={{ marginBottom: 14 }}>
               <label style={labelStyle}>Email Provider</label>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {['gmail', 'outlook', 'office365', 'yahoo', 'yahooBiz', 'custom'].map(p => (
+                {['hostinger', 'gmail', 'outlook', 'office365', 'yahoo', 'yahooBiz', 'custom'].map(p => (
                   <button key={p} onClick={() => {
                     setEmailCfg(prev => ({ ...prev, provider: p, ...PROVIDER_DEFAULTS[p] }))
-                    if (p === 'gmail' || p === 'yahoo' || p === 'yahooBiz') setGuideProvider(p.startsWith('yahoo') ? 'yahoo' : p)
+                    if (p === 'hostinger') setGuideProvider('hostinger')
+                    else if (p === 'gmail' || p === 'yahoo' || p === 'yahooBiz') setGuideProvider(p.startsWith('yahoo') ? 'yahoo' : p)
                     else if (p === 'outlook' || p === 'office365') setGuideProvider('outlook')
                   }}
                     style={{ padding: '6px 14px', fontSize: 12, fontWeight: 700, borderRadius: 8, cursor: 'pointer', border: '1px solid', background: emailCfg.provider === p ? '#2563eb' : '#f8fafc', color: emailCfg.provider === p ? '#fff' : '#334155', borderColor: emailCfg.provider === p ? '#2563eb' : '#cbd5e1', textTransform: 'capitalize' }}>
-                    {p === 'office365' ? 'Office 365' : p === 'yahooBiz' ? 'Yahoo Business / Turbify' : p === 'yahoo' ? 'Yahoo Mail (SSL 465)' : p.charAt(0).toUpperCase() + p.slice(1)}
+                    {p === 'hostinger' ? 'Hostinger Mail (SSL 465)' : p === 'office365' ? 'Office 365' : p === 'yahooBiz' ? 'Yahoo Business / Turbify' : p === 'yahoo' ? 'Yahoo Mail (SSL 465)' : p.charAt(0).toUpperCase() + p.slice(1)}
                   </button>
                 ))}
               </div>

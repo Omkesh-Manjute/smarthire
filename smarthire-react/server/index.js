@@ -7528,23 +7528,54 @@ async function sendScreeningCompletedNotificationEmail(session) {
   }
 
   try {
-    const defaultSender = 'omkesh@coolsofttech.com';
-    const cfg = (typeof emailConfigsStore !== 'undefined' && emailConfigsStore[defaultSender])
-      ? emailConfigsStore[defaultSender]
-      : (typeof emailConfigsStore !== 'undefined' && Object.values(emailConfigsStore)[0])
-      ? Object.values(emailConfigsStore)[0]
-      : {
-          fromEmail: process.env.EMAIL_USER || defaultSender,
-          appPassword: process.env.EMAIL_PASS || process.env.COOLSOFT_PASS || '',
-          smtpHost: process.env.EMAIL_HOST || 'smtp.bizmail.yahoo.com',
-          smtpPort: parseInt(process.env.EMAIL_PORT || '465')
-        };
+    loadEmailConfigs();
+    const primarySender = 'support@praximinds.com';
+    const hostingerCfg = (typeof emailConfigsStore !== 'undefined' && emailConfigsStore[primarySender])
+      ? emailConfigsStore[primarySender]
+      : null;
 
-    const fromEmail = cfg.fromEmail || defaultSender;
-    const cleanedPass = (cfg.appPassword || process.env.EMAIL_PASS || process.env.COOLSOFT_PASS || '').replace(/\s+/g, '');
-    const smtpHost = cfg.smtpHost || process.env.EMAIL_HOST || 'smtp.bizmail.yahoo.com';
-    const port = parseInt(cfg.smtpPort || process.env.EMAIL_PORT || '465');
-    const isSecure = cfg.security === 'SSL' || port === 465;
+    const hostingerPass = (hostingerCfg?.appPassword || process.env.SUPPORT_EMAIL_PASS || process.env.HOSTINGER_PASS || '').replace(/\s+/g, '');
+
+    let cfg = null;
+    let fromEmail = primarySender;
+    let senderDisplayName = 'SmartHire Support';
+    let smtpHost = 'smtp.hostinger.com';
+    let port = 465;
+    let isSecure = true;
+    let cleanedPass = '';
+
+    if (hostingerPass) {
+      cfg = hostingerCfg;
+      fromEmail = primarySender;
+      senderDisplayName = hostingerCfg?.displayName || 'SmartHire Support';
+      smtpHost = hostingerCfg?.smtpHost || 'smtp.hostinger.com';
+      port = parseInt(hostingerCfg?.smtpPort || 465);
+      isSecure = hostingerCfg?.security === 'SSL' || port === 465;
+      cleanedPass = hostingerPass;
+      console.log(`[SmartScreen] Sending completion notification via Hostinger SMTP (${smtpHost}:${port}) from ${fromEmail}`);
+    } else {
+      // Temporary fallback until Hostinger password is provided in Settings or .env
+      const defaultSender = 'omkesh@coolsofttech.com';
+      const fallbackCfg = (typeof emailConfigsStore !== 'undefined' && emailConfigsStore[defaultSender])
+        ? emailConfigsStore[defaultSender]
+        : (typeof emailConfigsStore !== 'undefined' && Object.values(emailConfigsStore).find(c => c && c.appPassword))
+        ? Object.values(emailConfigsStore).find(c => c && c.appPassword)
+        : {
+            fromEmail: process.env.EMAIL_USER || defaultSender,
+            appPassword: process.env.EMAIL_PASS || process.env.COOLSOFT_PASS || '',
+            smtpHost: process.env.EMAIL_HOST || 'smtp.bizmail.yahoo.com',
+            smtpPort: parseInt(process.env.EMAIL_PORT || '465')
+          };
+
+      cfg = fallbackCfg;
+      fromEmail = fallbackCfg?.fromEmail || defaultSender;
+      senderDisplayName = fallbackCfg?.displayName || 'SmartHire Support';
+      cleanedPass = (fallbackCfg?.appPassword || process.env.EMAIL_PASS || process.env.COOLSOFT_PASS || '').replace(/\s+/g, '');
+      smtpHost = fallbackCfg?.smtpHost || process.env.EMAIL_HOST || 'smtp.bizmail.yahoo.com';
+      port = parseInt(fallbackCfg?.smtpPort || process.env.EMAIL_PORT || '465');
+      isSecure = fallbackCfg?.security === 'SSL' || port === 465;
+      console.warn(`[SmartScreen] Note: Hostinger password for support@praximinds.com not set yet. Using active fallback ${fromEmail} via ${smtpHost}`);
+    }
 
     if (!cleanedPass) {
       console.warn('[SmartScreen] No email password available to send screening completion email');
@@ -7792,13 +7823,39 @@ COOLSOFT LLC | Dispatched from ${fromEmail}`;
     });
 
     await transporter.sendMail({
-      from: `"Omkesh Manjute via SmartHire ATS" <${fromEmail}>`,
+      from: `"${senderDisplayName}" <${fromEmail}>`,
       to,
       cc: cc || undefined,
+      replyTo: primarySender,
       subject,
       text,
       html
     });
+
+    // Also send candidate receipt confirmation if candidate email is valid
+    if (candidateEmail && candidateEmail.includes('@') && candidateEmail !== 'N/A') {
+      try {
+        await transporter.sendMail({
+          from: `"${senderDisplayName}" <${fromEmail}>`,
+          to: candidateEmail,
+          replyTo: primarySender,
+          subject: `Interview Submitted: ${jobTitle} at ${jobClient}`,
+          text: `Hello ${candidateName},\n\nThank you for completing your video screening interview for the role of ${jobTitle} at ${jobClient}.\n\nYour responses have been successfully submitted to our recruitment team for review. We will evaluate your submission and reach out regarding next steps.\n\nBest regards,\nSmartHire Support Team\nsupport@praximinds.com`,
+          html: `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 580px; margin: 20px auto; padding: 24px; border: 1px solid #E2E8F0; border-radius: 10px; background: #FFFFFF;">
+            <div style="font-size: 18px; font-weight: 800; color: #0F172A; margin-bottom: 12px;">Interview Submitted Successfully</div>
+            <p style="font-size: 14px; color: #334155; line-height: 1.6;">Hello <strong>${candidateName}</strong>,</p>
+            <p style="font-size: 14px; color: #334155; line-height: 1.6;">Thank you for completing your video screening interview for the role of <strong>${jobTitle}</strong> (${jobClient}).</p>
+            <p style="font-size: 14px; color: #334155; line-height: 1.6;">Your responses have been successfully recorded and delivered to the hiring team for evaluation. We will review your submission and contact you regarding the next steps in the process.</p>
+            <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #E2E8F0; font-size: 12px; color: #64748B;">
+              Best regards,<br/><strong>SmartHire Support Team</strong><br/>support@praximinds.com
+            </div>
+          </div>`
+        });
+        console.log(`[SmartScreen] Candidate receipt confirmation sent to ${candidateEmail}`);
+      } catch (cErr) {
+        console.warn(`[SmartScreen] Candidate confirmation notice:`, cErr.message);
+      }
+    }
 
     session.completionEmailSent = true;
     session.completionEmailSentAt = new Date().toISOString();
@@ -11321,6 +11378,28 @@ if (envEmailPass && !emailConfigsStore[envEmailUser]) {
     appPassword: envEmailPass,
     signature: 'With Regards,\nOmkesh Manjute\nCOOLSOFT LLC | http://www.coolsofttech.com'
   };
+  saveEmailConfigs();
+}
+
+// Auto-seed Hostinger support@praximinds.com email config
+const hostingerUser = 'support@praximinds.com';
+const hostingerPass = process.env.SUPPORT_EMAIL_PASS || process.env.HOSTINGER_PASS || process.env.SUPPORT_PASS || (emailConfigsStore[hostingerUser]?.appPassword || '');
+if (!emailConfigsStore[hostingerUser]) {
+  emailConfigsStore[hostingerUser] = {
+    displayName: 'SmartHire Support',
+    fromEmail: hostingerUser,
+    provider: 'hostinger',
+    smtpHost: process.env.SUPPORT_SMTP_HOST || 'smtp.hostinger.com',
+    smtpPort: parseInt(process.env.SUPPORT_SMTP_PORT || '465'),
+    security: 'SSL',
+    imapHost: process.env.SUPPORT_IMAP_HOST || 'imap.hostinger.com',
+    imapPort: parseInt(process.env.SUPPORT_IMAP_PORT || '993'),
+    appPassword: hostingerPass,
+    signature: 'Best regards,\nSmartHire Support Team\nsupport@praximinds.com'
+  };
+  saveEmailConfigs();
+} else if (hostingerPass && !emailConfigsStore[hostingerUser].appPassword) {
+  emailConfigsStore[hostingerUser].appPassword = hostingerPass;
   saveEmailConfigs();
 }
 
