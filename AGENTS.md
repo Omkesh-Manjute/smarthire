@@ -66,6 +66,22 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
     - In resume views, every responsibility, project accomplishment, and contribution line must be formatted with an explicit bullet point (`•`) and proper indentation.
     - The engine must automatically detect responsibilities (lines following `Responsibilities:`, action verbs, or list items) even when converted from plain text or Word documents without literal Unicode bullets.
 
+### 2026-10-24 — Razorpay Multi-Currency USD Live Pricing & User Contact Prefill Elimination
+- **Context & Objectives**:
+  - The user uploaded screenshots showing Razorpay checkout opening with `₹1` and prefilled with default contact details (`omkesh@coolsofttech.com` and `8329776361`), and requested:
+    *"abhi koi card mai payment mai click karne mai 1 a raha hai ye acural wala ana cahiye price abhi demo hai but fir bhi and mera email and number defalt a raha hai so isko remove karo and ye calcualt kaise hoga sab dollor ka batavo auto hoga kay"*
+- **Architectural Implementations**:
+  1. *Actual Plan Price in USD*:
+     - Replaced hardcoded `100 paise (₹1.00)` with dynamic tier price: `amountInCents = Math.round((isYearly ? plan.priceYearly : plan.priceMonthly) * 100)`.
+     - Configured `currency: 'USD'` natively in `PricingSection.jsx` and `initiateRazorpayCheckout`.
+     - Razorpay natively processes USD currency for international cards and automatically converts to domestic currencies/UPI when needed.
+  2. *Hardcoded Contact Details Purge*:
+     - Removed hardcoded `omkesh@coolsofttech.com` and `9876543210` from `PricingSection.jsx` and `razorpayCheckout.js`.
+     - Only dynamic logged-in `savedUser` attributes are passed if present; otherwise `prefill` is cleanly empty, allowing buyers to enter their own credentials.
+- **Verification & Deployment Protocol**:
+  - Local production build in `smarthire-react`: 0 errors, 0 warnings (built in 4.69s).
+  - All 42 matching engine unit tests passed (0 failures).
+
 ### 2026-10-24 — Book a Demo CTAs, Video Player Black Screen Elimination, & Groq-to-AI Cleanse
 - **Context & Objectives**:
   - The user commanded: *"Option A karo and book a demo karo 1 scdual live 1 on 1 ko cahnge kar ke bhai and aur kaha issu hai find karo and groq ai ka hata do only AI rakho and ye video gayab ho rahi hai bar bar referse karne mai a jati hi so dekho kay issu hai"*.

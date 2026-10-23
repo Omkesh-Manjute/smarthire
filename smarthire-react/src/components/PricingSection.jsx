@@ -371,19 +371,26 @@ export default function PricingSection({ onAuthClick, isStandalonePage = false, 
     ? atsPlans
     : bundlePlans
 
-  const handleLaunchPayment = ({ amountInPaise, planName }) => {
+  const handleLaunchPayment = ({ amountInUnits, currency = 'USD', planName }) => {
     setIsProcessingPayment(true)
     setPaymentPlanName(planName)
     setPaymentError(null)
     setPaymentResult(null)
 
+    // Dynamically retrieve logged in user info (if any)
+    let savedUser = null
+    try {
+      const rawUser = localStorage.getItem('smarthire_user') || localStorage.getItem('currentUser')
+      if (rawUser) savedUser = JSON.parse(rawUser)
+    } catch (e) {}
+
     initiateRazorpayCheckout({
-      amountInPaise: amountInPaise || 100,
-      currency: 'INR',
+      amountInUnits,
+      currency,
       planName: planName || 'SmartHire Subscription',
-      userEmail: 'omkesh@coolsofttech.com',
-      userName: 'Recruiter Admin',
-      userPhone: '9876543210',
+      userEmail: savedUser?.email || '',
+      userName: savedUser?.name || '',
+      userPhone: savedUser?.phone || '',
       onSuccess: (data) => {
         setIsProcessingPayment(false)
         setPaymentResult(data)
@@ -406,10 +413,18 @@ export default function PricingSection({ onAuthClick, isStandalonePage = false, 
       window.location.href = '/about?section=inquiry#inquiry'
       return
     }
-    // Trigger Razorpay Standard Web Checkout
+
+    const priceUsd = isYearly ? plan.priceYearly : plan.priceMonthly
+    if (!priceUsd) return
+
+    // Convert USD to cents (e.g. $79 -> 7900 cents)
+    const amountInCents = Math.round(priceUsd * 100)
+
+    // Trigger Razorpay Standard Web Checkout with actual price in USD
     handleLaunchPayment({
-      amountInPaise: 100, // ₹1.00 Test Mode (100 paise)
-      planName: `${plan.name} (${isYearly ? 'Annual' : 'Monthly'})`
+      amountInUnits: amountInCents,
+      currency: 'USD',
+      planName: `${plan.name} (${isYearly ? 'Annual' : 'Monthly'} · $${priceUsd}/mo)`
     })
   }
 

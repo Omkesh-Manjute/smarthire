@@ -41,7 +41,8 @@ export const loadRazorpayScript = () => {
  */
 export const initiateRazorpayCheckout = async ({
   amountInPaise,
-  currency = 'INR',
+  amountInUnits,
+  currency = 'USD',
   planName = 'SmartHire Subscription',
   userEmail = '',
   userName = '',
@@ -56,8 +57,9 @@ export const initiateRazorpayCheckout = async ({
       throw new Error('Razorpay SDK could not be loaded. Please check your internet connection.')
     }
 
-    if (!amountInPaise || Number(amountInPaise) < 100) {
-      throw new Error('Minimum order amount is 100 paise (₹1.00)')
+    const rawAmount = amountInUnits !== undefined ? amountInUnits : amountInPaise
+    if (!rawAmount || Number(rawAmount) < 100) {
+      throw new Error('Minimum order amount is 100 units ($1.00 / ₹1.00)')
     }
 
     // Step 1: Create Order via Backend
@@ -67,7 +69,7 @@ export const initiateRazorpayCheckout = async ({
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        amount: Math.round(Number(amountInPaise)),
+        amount: Math.round(Number(rawAmount)),
         currency: currency.toUpperCase(),
         receipt: `rcpt_${Date.now()}`,
         notes: {
@@ -89,7 +91,7 @@ export const initiateRazorpayCheckout = async ({
       key: keyId,
       amount: orderData.amount,
       currency: orderData.currency || currency,
-      name: 'SmartHire Enterprise',
+      name: 'SmartHire ATS',
       description: `${planName} · Verified Checkout`,
       image: '/favicon.svg',
       order_id: orderData.order_id || orderData.id,
@@ -130,9 +132,9 @@ export const initiateRazorpayCheckout = async ({
         }
       },
       prefill: {
-        name: userName || 'Recruiter Admin',
-        email: userEmail || 'omkesh@coolsofttech.com',
-        contact: userPhone || '9876543210'
+        ...(userName?.trim() ? { name: userName.trim() } : {}),
+        ...(userEmail?.trim() ? { email: userEmail.trim() } : {}),
+        ...(userPhone?.trim() ? { contact: userPhone.trim() } : {})
       },
       notes: {
         plan_name: planName
