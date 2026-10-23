@@ -54,8 +54,8 @@ function About() {
   // Comprehensive FAQ list
   const faqs = [
     {
-      q: 'How does SmartHire train its AI model with 100s of placed candidate resumes?',
-      a: 'Unlike generic keyword parsers, SmartHire’s matching engine was fine-tuned and benchmarked against hundreds of verified IT candidates who successfully cleared technical interviews and received client offers across Fortune 500 enterprises and state government bodies (like NC DHHS). The model learns deep semantic skill relationships, context-specific tool stacks, and rate-to-experience correlations to identify genuine technical depth over superficial keyword stuffing.'
+      q: 'How does SmartHire match candidates with job requisitions accurately?',
+      a: 'Unlike generic keyword parsers, SmartHire’s matching engine evaluates deep semantic skill relationships, required tool stacks, experience levels, and rate feasibility. The engine analyzes authentic hands-on project depth rather than superficial keyword density, providing recruiters and hiring managers an accurate, objective fit score (0–100%).'
     },
     {
       q: 'How does the automated candidate matching and JD alert system work?',
@@ -67,11 +67,11 @@ function About() {
     },
     {
       q: 'How do Lead Managers and Super Admins approve submissions?',
-      a: 'Lead Managers have dedicated approval consoles. In the Requisitions tab under "Pipeline / Submissions", managers can inspect candidate verification badges, adjust bill rates, review anti-proxy biometric scores, and approve submissions for client presentation (transitioning status from Int-SubmittedToManager to Client-SubmittedToCustomer).'
+      a: 'Lead Managers have dedicated approval consoles. In the Requisitions tab under "Pipeline / Submissions", managers can inspect candidate verification badges, adjust bill rates, review candidate match scores and compliance documents, and approve submissions for client presentation (transitioning status from Int-SubmittedToManager to Client-SubmittedToCustomer).'
     },
     {
-      q: 'What anti-proxy and biometric verification safeguards are built in?',
-      a: 'SmartHire features integrated 3-tier anti-fraud screening: AI facial liveness detection, passport/work authorization OCR cross-checks, and IP geolocation telemetry. Candidates complete a 60-second digital verification before client submission, eliminating proxy candidate risks and saving recruiter reputations.'
+      q: 'What candidate proctoring and identity safeguards are built in for screening?',
+      a: 'SmartHire features integrated candidate proctoring safeguards: continuous single-take webcam and audio recording, browser tab focus tracking, verified geolocation telemetry, and SmartSign RTR digital authorization. This verifies candidate identity and continuous presence throughout the screening take.'
     },
     {
       q: 'Can I export candidate pools, submission histories, and audit logs to Excel/CSV?',
@@ -314,7 +314,7 @@ function About() {
         `}</style>
 
         {/* =========================================================================
-            1. HERO SECTION: Trained on 100s of Placed Resumes & High-Precision Staffing
+            1. HERO SECTION: High-Precision Semantic Matching & Enterprise ATS
             ========================================================================= */}
         <section style={{
           background: 'linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)',
@@ -330,12 +330,12 @@ function About() {
               </div>
 
               <h1 className="tf-hero-title">
-                Trained on 100s of Placed IT Resumes{' '}
-                <span className="tf-highlight-box">for Precision Staffing</span>
+                High-Precision Semantic Matching{' '}
+                <span className="tf-highlight-box">for Enterprise Staffing</span>
               </h1>
 
               <p className="tf-hero-subtitle" style={{ margin: '0 auto 32px' }}>
-                SmartHire ATS replaces guesswork with empirical recruitment intelligence. Fine-tuned on hundreds of successfully placed software engineers, cloud architects, and tech consultants across Fortune 500 enterprises and state government agencies.
+                SmartHire ATS streamlines end-to-end recruitment with automated JD semantic matching, continuous proctored video screening, and instant Right-to-Represent (RTR) compliance workflows.
               </p>
 
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '14px', flexWrap: 'wrap', marginBottom: '45px' }}>
@@ -364,8 +364,8 @@ function About() {
                 borderTop: '1px solid #e2e8f0'
               }}>
                 <div>
-                  <div style={{ fontSize: '28px', fontWeight: '800', color: '#2563eb' }}>500+</div>
-                  <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '600' }}>Placed Resume Benchmarks</div>
+                  <div style={{ fontSize: '28px', fontWeight: '800', color: '#2563eb' }}>180+</div>
+                  <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '600' }}>Active Tech Requisitions</div>
                 </div>
                 <div>
                   <div style={{ fontSize: '28px', fontWeight: '800', color: '#0f172a' }}>99.4%</div>
@@ -386,7 +386,7 @@ function About() {
         </section>
 
         {/* =========================================================================
-            2. DEEP DIVE: Why Keyword ATS Fails vs Placement-Trained AI
+            2. DEEP DIVE: Why Keyword ATS Fails vs Semantic Intelligence
             ========================================================================= */}
         <section style={{ padding: '80px 0', background: '#ffffff', borderBottom: '1px solid #e2e8f0' }}>
           <div className="tf-container">
@@ -406,11 +406,11 @@ function About() {
                 Why Generic Keyword ATS Fails — And How SmartHire Won
               </h2>
               <p style={{ fontSize: '15.5px', color: '#64748b', lineHeight: '1.6', margin: 0 }}>
-                Traditional ATS platforms rely on crude keyword counters that get fooled by keyword-stuffing resumes. SmartHire was trained on real-world placement datasets — actual candidate CVs that passed rigorous technical rounds and received client job offers.
+                Traditional ATS platforms rely on crude keyword counters that get fooled by keyword-stuffing resumes. SmartHire evaluates true technical competencies, hands-on architectural experience, and job requirements to deliver high-precision talent matching.
               </p>
             </div>
 
-            {/* 4 Pillars of Placement-Trained AI */}
+            {/* 4 Pillars of Semantic Recruitment Intelligence */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(270px, 1fr))', gap: '24px', marginBottom: '50px' }}>
               
               <div className="tf-card">
@@ -475,10 +475,10 @@ function About() {
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9333ea" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
                 </div>
                 <h3 style={{ fontSize: '17px', fontWeight: '800', color: '#0f172a', margin: '0 0 8px' }}>
-                  Client Interview Probability Scoring
+                  Client Qualification Scoring
                 </h3>
                 <p style={{ fontSize: '13.5px', color: '#64748b', lineHeight: '1.6', margin: 0 }}>
-                  Computes an empirical conversion score (0-100%) by measuring semantic alignment with prior candidates who successfully cleared client technical interviews for the same role.
+                  Computes an objective semantic match score (0-100%) by measuring candidate resume relevance against required tech stacks, responsibilities, and seniority levels.
                 </p>
               </div>
 
@@ -533,10 +533,10 @@ function About() {
                   Empirical Benchmark Data
                 </span>
                 <h3 style={{ fontSize: '24px', fontWeight: '800', margin: '12px 0 10px', color: '#ffffff' }}>
-                  Generic ATS vs Placement-Trained AI
+                  Generic ATS vs Semantic Intelligence
                 </h3>
                 <p style={{ fontSize: '13.5px', color: '#94a3b8', lineHeight: '1.6', margin: 0 }}>
-                  Real staffing metrics measured across 500+ requisition submissions in government, enterprise cloud, and high-frequency IT staffing.
+                  Staffing metrics measured across active IT requisition workflows in enterprise cloud, engineering, and government staffing.
                 </p>
 
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '20px' }}>
@@ -595,7 +595,7 @@ function About() {
         </section>
 
         {/* =========================================================================
-            3. PLATFORM ARCHITECTURE: Vaults, Anti-Proxy & Hierarchy
+            3. PLATFORM ARCHITECTURE: Vaults, Proctoring & Hierarchy
             ========================================================================= */}
         <section style={{ padding: '70px 0', background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
           <div className="tf-container">
@@ -634,10 +634,10 @@ function About() {
               <div className="tf-card" style={{ borderLeft: '4px solid #16a34a' }}>
                 <div style={{ marginBottom: '10px', display: 'flex' }}><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg></div>
                 <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a', margin: '0 0 6px' }}>
-                  Anti-Proxy Biometrics & OCR Verification
+                  Continuous Proctored Video Screening
                 </h3>
                 <p style={{ fontSize: '13.5px', color: '#64748b', lineHeight: '1.6', margin: 0 }}>
-                  Pre-screen candidates with facial liveness video, work authorization cross-validation, and IP telemetry before submission. Eliminate proxy interview risks and preserve client trust.
+                  Screen candidates with single-take webcam recording, browser tab-focus monitoring, and verified geolocation telemetry before submission. Eliminate proxy candidate risks and preserve client trust.
                 </p>
               </div>
 
@@ -767,7 +767,7 @@ function About() {
                 Get in Touch & Send an Inquiry
               </h2>
               <p style={{ fontSize: '15.5px', color: '#64748b', lineHeight: '1.6', margin: 0 }}>
-                Have questions about staffing tier deployments, custom AI resume training, or ATS integrations? Submit an inquiry below — our administrative leadership is notified instantly.
+                Have questions about staffing tier deployments, requisition parsing, or ATS integrations? Submit an inquiry below — our administrative leadership is notified instantly.
               </p>
             </div>
 
@@ -951,7 +951,7 @@ function About() {
                           className="tf-input"
                         >
                           <option value="Enterprise Demo & ATS Licensing">Enterprise Demo & ATS Licensing</option>
-                          <option value="Custom Placed-Resume AI Training">Custom Placed-Resume AI Training</option>
+                          <option value="Enterprise ATS & Team Workflows">Enterprise ATS & Team Workflows</option>
                           <option value="JobsInHand / Coolworks Integration">JobsInHand / Coolworks Integration</option>
                           <option value="Technical Support & Account Recovery">Technical Support & Account Recovery</option>
                           <option value="Billing, Invoicing & Contracts">Billing, Invoicing & Contracts</option>

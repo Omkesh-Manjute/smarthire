@@ -666,8 +666,8 @@ export default function CandidateMessengerWidget({ candidate, role = 'candidate'
                   <strong style={{ color: '#16A34A' }}>✓ Verification Verified</strong>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
-                  <span style={{ color: '#64748B' }}>Driver's License OCR check:</span>
-                  <strong style={{ color: '#16A34A' }}>✓ Match Passed</strong>
+                  <span style={{ color: '#64748B' }}>SmartSign RTR Status:</span>
+                  <strong style={{ color: '#16A34A' }}>✓ Signed & Locked</strong>
                 </div>
                 {candidate.gps_data && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
@@ -675,10 +675,10 @@ export default function CandidateMessengerWidget({ candidate, role = 'candidate'
                     <strong style={{ color: '#0F172A' }}>{candidate.gps_data.city || 'Dallas'}, {candidate.gps_data.state || 'TX'}</strong>
                   </div>
                 )}
-                {candidate.selfie_verified && (
+                {(candidate.selfie_verified || candidate.screening_completed) && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
-                    <span style={{ color: '#64748B' }}>Facial Biometric Match:</span>
-                    <strong style={{ color: '#16A34A' }}>✓ Legit (98% match)</strong>
+                    <span style={{ color: '#64748B' }}>Proctored Video Screening:</span>
+                    <strong style={{ color: '#16A34A' }}>✓ Verified Take</strong>
                   </div>
                 )}
               </div>

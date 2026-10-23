@@ -123,7 +123,7 @@ export default function CandidatePdfReportModal({ candidate, onClose }) {
                 Overall Trust Index: {score >= 80 ? 'HIGH TRUST (PASS)' : score >= 60 ? 'MEDIUM RISK (REVIEW)' : 'HIGH RISK (FLAGGED)'}
               </h2>
               <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#475569' }}>
-                This score is compiled using multi-layered GPS geolocation checks, IP intelligence, biometric selfie verification, ID document validation, and social profile cross-referencing.
+                This score is compiled using multi-layered GPS geolocation checks, IP intelligence, continuous proctored video screening, browser focus telemetry, and SmartSign RTR digital authorization.
               </p>
             </div>
           </div>
@@ -142,39 +142,33 @@ export default function CandidatePdfReportModal({ candidate, onClose }) {
               </thead>
               <tbody>
                 <tr>
-                  <td>GPS Geolocation</td>
+                  <td>GPS Geolocation Telemetry</td>
                   <td>Live Device Coordinates vs Work Location</td>
                   <td><strong>30 / 30</strong></td>
                   <td><span className="pdf-check-pass">✓ PASSED</span></td>
                 </tr>
                 <tr>
-                  <td>IP Geolocation & Proxy</td>
-                  <td>ISP Detection & Anti-VPN Check</td>
-                  <td><strong>20 / 20</strong></td>
+                  <td>IP Geolocation & Network Telemetry</td>
+                  <td>ISP Verification & Anti-Proxy/VPN Check</td>
+                  <td><strong>25 / 25</strong></td>
                   <td><span className="pdf-check-pass">✓ PASSED</span></td>
                 </tr>
                 <tr>
-                  <td>🆔 Government ID Document</td>
-                  <td>Passport / Driver License OCR Validation</td>
-                  <td><strong>20 / 20</strong></td>
+                  <td>Proctored Video Screening</td>
+                  <td>Continuous Single-Take Audio & Webcam Recording</td>
+                  <td><strong>25 / 25</strong></td>
                   <td><span className="pdf-check-pass">✓ PASSED</span></td>
                 </tr>
                 <tr>
-                  <td>Biometric Selfie Match</td>
-                  <td>Facial Recognition & Liveness Check</td>
+                  <td>Browser Focus Telemetry</td>
+                  <td>Uninterrupted Active Window & Tab Switch Monitoring</td>
                   <td><strong>10 / 10</strong></td>
                   <td><span className="pdf-check-pass">✓ PASSED</span></td>
                 </tr>
                 <tr>
-                  <td>Liveness Video Verification</td>
-                  <td>10-Second Candidate Video Greeting</td>
+                  <td>SmartSign RTR Digital Confirmation</td>
+                  <td>Electronic Signature & Identity Timestamping</td>
                   <td><strong>10 / 10</strong></td>
-                  <td><span className="pdf-check-pass">✓ PASSED</span></td>
-                </tr>
-                <tr>
-                  <td>LinkedIn Profile Check</td>
-                  <td>Work Experience Cross-Validation</td>
-                  <td><strong>{score >= 80 ? '10 / 10' : '5 / 10'}</strong></td>
                   <td><span className="pdf-check-pass">✓ VERIFIED</span></td>
                 </tr>
               </tbody>

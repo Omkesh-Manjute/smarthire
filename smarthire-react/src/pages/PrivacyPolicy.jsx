@@ -386,7 +386,7 @@ function PrivacyPolicy() {
                 <span className="tf-trust-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg></span>
                 <div>
                   <div className="tf-trust-title">Explainable AI</div>
-                  <div className="tf-trust-desc">Unbiased matching trained on placed resumes; no protected traits.</div>
+                  <div className="tf-trust-desc">Unbiased semantic matching based purely on technical qualifications; no protected traits.</div>
                 </div>
               </div>
               <div className="tf-trust-card">

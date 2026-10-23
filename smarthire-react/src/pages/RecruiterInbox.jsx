@@ -10414,12 +10414,12 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                           </h4>
                           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, fontSize: 12 }}>
                             <div>
-                              <span style={{ color: C.textSecondary, display: 'block', fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase' }}>Driver's License OCR</span>
-                              <strong style={{ color: '#16A34A', fontSize: 12 }}>✓ Match Verified</strong>
+                              <span style={{ color: C.textSecondary, display: 'block', fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase' }}>SmartSign RTR</span>
+                              <strong style={{ color: '#16A34A', fontSize: 12 }}>✓ Signed & Verified</strong>
                             </div>
                             <div>
-                              <span style={{ color: C.textSecondary, display: 'block', fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase' }}>Biometric Selfie</span>
-                              <strong style={{ color: '#16A34A', fontSize: 12 }}>✓ Match Passed (98%)</strong>
+                              <span style={{ color: C.textSecondary, display: 'block', fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase' }}>Proctored Screening</span>
+                              <strong style={{ color: '#16A34A', fontSize: 12 }}>✓ Verified Take</strong>
                             </div>
                             <div>
                               <span style={{ color: C.textSecondary, display: 'block', fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase' }}>US Work Authorization</span>
@@ -14532,8 +14532,8 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
         }
         const dynamicMatchScore = Math.max(25, Math.min(99, totalScore))
 
-        const hasDl = candidateDetails.uploadedDocuments?.dl || candidateDetails.documents?.some(d => d.type === 'driving_license' || d.type === 'driving_licence');
-        const hasSelfie = candidateDetails.uploadedDocuments?.selfie || candidateDetails.selfieUrl;
+        const hasDl = candidateDetails.uploadedDocuments?.dl || candidateDetails.documents?.some(d => d.type === 'driving_license' || d.type === 'driving_licence' || d.type === 'rtr');
+        const hasScreening = candidateDetails.screeningSessionId || candidateDetails.videoUrl || candidateDetails.screening_video_url || candidateDetails.uploadedDocuments?.selfie || candidateDetails.selfieUrl;
         const hasVisa = candidateDetails.uploadedDocuments?.visa || candidateDetails.documents?.some(d => d.type === 'visa' || d.type === 'work_permit' || d.type === 'passport');
 
         const isSpamOrigin = candidateDetails.isSpamRecovery || candidateDetails.sourceCategory === 'email_spam'
@@ -14985,15 +14985,15 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                     
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
-                        <span style={{ color: C.textSecondary }}>Driver's License OCR Check:</span>
+                        <span style={{ color: C.textSecondary }}>SmartSign RTR / Agreement:</span>
                         <strong style={{ color: hasDl ? '#16A34A' : '#64748B' }}>
-                          {hasDl ? '✓ Match Verified' : 'Pending / Not Uploaded'}
+                          {hasDl ? '✓ Signed & Verified' : 'Pending / Dispatched'}
                         </strong>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
-                        <span style={{ color: C.textSecondary }}>Biometric Selfie verification:</span>
-                        <strong style={{ color: hasSelfie ? '#16A34A' : '#64748B' }}>
-                          {hasSelfie ? '✓ Match Passed (98%)' : 'Pending / Not Uploaded'}
+                        <span style={{ color: C.textSecondary }}>Proctored Video Screening:</span>
+                        <strong style={{ color: hasScreening ? '#16A34A' : '#64748B' }}>
+                          {hasScreening ? '✓ Verified Take' : 'Pending / Dispatched'}
                         </strong>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>

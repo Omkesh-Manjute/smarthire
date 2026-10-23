@@ -774,8 +774,8 @@ function Homepage() {
                             <span className="tf-task-badge new">COMPLETED</span>
                           </li>
                           <li>
-                            <span>Anti-Proxy Face Liveness Verification</span>
-                            <span className="tf-task-badge default">PASSED 99.1%</span>
+                            <span>Proctored Video Screening Take</span>
+                            <span className="tf-task-badge default">100% VERIFIED</span>
                           </li>
                         </ul>
                       </div>
@@ -798,7 +798,7 @@ function Homepage() {
               <span className="tf-eyebrow-amber">INTELLIGENT RECRUITMENT AUTOMATION</span>
               <h2 className="tf-section-title">Engineered for High-Velocity Recruiter Workflows</h2>
               <p className="tf-section-subtitle">
-                Zero data leakage, fully trained AI screening, instant JD-to-talent matching alerts, and digital RTR compliance designed for enterprise staffing teams.
+                Zero data leakage, autonomous proctored video screening, instant JD-to-talent matching alerts, and digital RTR compliance designed for enterprise staffing teams.
               </p>
             </div>
 
@@ -884,7 +884,7 @@ function Homepage() {
                 </div>
                 <h3 className="tf-feature-title">Instant Digital RTR & Document Intake</h3>
                 <p className="tf-feature-desc">
-                  Collect digital Right-to-Represent (RTR) agreements, passports, visas, work authorizations (C2C/W2/1099), and rate lock confirmations in one instant step before client presentation.
+                  Collect digital Right-to-Represent (RTR) agreements, visas, work authorizations (C2C/W2/1099), and rate confirmations in one instant step before client presentation.
                 </p>
                 <div className="tf-feature-tag">1-Click RTR Sign & Lock</div>
               </motion.div>
@@ -949,7 +949,7 @@ function Homepage() {
                 <div className="tf-feature-tag">Executive Pipeline Analytics</div>
               </motion.div>
 
-              {/* Feature 8: Anti-Proxy Biometric & Identity Flow */}
+              {/* Feature 8: Continuous Proctored Video Screening */}
               <motion.div 
                 className="tf-feature-box"
                 variants={staggeredItemVariants}
@@ -960,11 +960,11 @@ function Homepage() {
                     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                   </svg>
                 </div>
-                <h3 className="tf-feature-title">Anti-Proxy & Biometric Identity Flow</h3>
+                <h3 className="tf-feature-title">Continuous Proctored Video Screening</h3>
                 <p className="tf-feature-desc">
-                  Prevent candidate substitution and proxy fraud. Candidate facial liveness verification, official ID document OCR matching, and IP geolocation telemetry guarantee authentic talent submissions.
+                  Prevent candidate substitution and unverified submissions. Single-take webcam recording, browser tab focus tracking, and verified geolocation telemetry ensure authentic candidate submissions.
                 </p>
-                <div className="tf-feature-tag">99.1% Biometric Precision</div>
+                <div className="tf-feature-tag">100% Verified Submissions</div>
               </motion.div>
 
             </motion.div>
