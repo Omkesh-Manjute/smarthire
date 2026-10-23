@@ -66,6 +66,17 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
     - In resume views, every responsibility, project accomplishment, and contribution line must be formatted with an explicit bullet point (`•`) and proper indentation.
     - The engine must automatically detect responsibilities (lines following `Responsibilities:`, action verbs, or list items) even when converted from plain text or Word documents without literal Unicode bullets.
 
+### 2026-10-23 — 50 Master Screening Candidates Full Recovery (Oct 21-22 Invites & Submissions)
+- **Context & Objectives**:
+  - The user reported: *"bhai ye pura nahi aya return dekho tody data kay hai and kab ka aya ye so please return lavo kal ka bahut candidate ko bheja gaya tha"* with screenshot showing only the older 16 records.
+  - On Oct 21 and Oct 22, many screening links were created and invitations sent to candidates (e.g. Maham Alf, Cleophas Williams, Mohammad Rizwan, Uma Maheswari, Mahendar Sitaram Neelkanth, Chidvinesh Lingam, Amrutha Moparthi, Geetha Challa, Hasini, Parmesh Nayak, Lahari Kothakonda, Ramya Priya Meka, Jerome Stepp, Rambabu Kurva, Swetha Dantica, Ramakrishna Tanneru, etc.).
+- **Root Cause & Architectural Implementations**:
+  - Deep-scanned Lightsail git object trees and recovered uncommitted blob `1772612aee26ff99de58a6d1950b72f518af199f` containing 39 sessions from Oct 1-22, along with runtime backups and dangling blobs.
+  - Performed master union merge preserving all 50 unique candidate sessions, answers, scorecards, and questions without dropping a single entry.
+  - Deployed master database to `/home/ubuntu/smarthire/smarthire-react/server/screening_sessions.json` and saved `/home/ubuntu/screening_sessions.json.master_backup`.
+  - Reloaded PM2 `smarthire-ats`. Verified via live API `https://smarthireus.com/api/screening/sessions` returning all 50 sessions.
+  - Pushed to GitHub `origin main` (`7a9fa87`). Disk space: 54% used, 8.5GB free (Rule 5 compliant).
+
 ### 2026-10-23 — 16 Screening Sessions Restoration, Top-Level AI Video Screening Nav, Sidebar Auto-Collapse Accordion & SmartScreen Studio Removal
 - **Context & Objectives**:
   - The user reported:
