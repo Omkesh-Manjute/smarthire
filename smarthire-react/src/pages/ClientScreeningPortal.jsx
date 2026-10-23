@@ -1116,7 +1116,7 @@ export default function ClientScreeningPortal() {
                         {/* Transcript */}
                         <div style={{ background: '#f8fafc', padding: '14px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                           <div style={{ fontSize: '11px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', marginBottom: '6px' }}>
-                            Spoken Response Transcript (Groq Whisper AI)
+                            Spoken Response Transcript (AI Speech-to-Text)
                           </div>
                           <p style={{ fontSize: '12.5px', color: '#334155', lineHeight: 1.6, margin: 0 }}>
                             {reviewSession.responses[activeQuestionTab].transcript || 'No transcript generated yet.'}

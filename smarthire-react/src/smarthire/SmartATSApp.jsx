@@ -399,7 +399,7 @@ export function SmartATSApp() {
   const handleAiMatch = useCallback(
     async (candidate) => {
       if (!isGroqApiConfigured()) {
-        setToast('️ Add Groq API key in Settings > AI Configuration');
+        setToast('️ Add AI API key in Settings > AI Configuration');
         setShowSettings(true);
         return;
       }
@@ -439,7 +439,7 @@ export function SmartATSApp() {
   );
   const handleAiRankAll = useCallback(async () => {
     if (!isGroqApiConfigured()) {
-      setToast('️ Add Groq API key in Settings > AI Configuration');
+      setToast('️ Add AI API key in Settings > AI Configuration');
       setShowSettings(true);
       return;
     }
@@ -1347,7 +1347,7 @@ export function SmartATSApp() {
                   {' '}
                   <div>
                     {' '}
-                    <label className="block text-xs text-gray-400 mb-1 font-medium">Groq API Key</label>{' '}
+                    <label className="block text-xs text-gray-400 mb-1 font-medium">AI Engine API Key</label>{' '}
                     <input
                       type="password"
                       value={groqKey}
@@ -1366,9 +1366,9 @@ export function SmartATSApp() {
                       setGroqConfigured(configured);
                       if (configured) {
                         setGroqKey(getGroqApiKey());
-                        setToast(' Groq API key saved');
+                        setToast(' AI API key saved');
                       } else {
-                        setToast('️ Enter valid Groq API key');
+                        setToast('️ Enter valid AI API key');
                       }
                     }}
                     className="px-4 py-2 bg-purple-600 hover-bg-purple-700 rounded-lg text-xs font-bold text-white transition"
@@ -1381,7 +1381,7 @@ export function SmartATSApp() {
                         clearGroqApiKey();
                         setGroqKey('');
                         setGroqConfigured(false);
-                        setToast(' Groq key cleared');
+                        setToast(' AI key cleared');
                       }}
                       className="px-4 py-2"
                       style={{
@@ -1400,7 +1400,7 @@ export function SmartATSApp() {
                 <p className={`mt-3 text-xs ${groqConfigured ? 'text-green-400' : 'text-yellow-400'}`}>
                   {groqConfigured
                     ? 'AI key configured. AI Match/Rank enabled.'
-                    : 'AI key missing. Add Groq key to enable AI Match/Rank.'}
+                    : 'AI key missing. Add AI key to enable AI Match/Rank.'}
                 </p>{' '}
               </div>{' '}
               <div className="bg-gray-800 rounded-xl p-5 border border-gray-700 mb-5">

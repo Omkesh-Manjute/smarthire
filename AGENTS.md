@@ -66,6 +66,22 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
     - In resume views, every responsibility, project accomplishment, and contribution line must be formatted with an explicit bullet point (`•`) and proper indentation.
     - The engine must automatically detect responsibilities (lines following `Responsibilities:`, action verbs, or list items) even when converted from plain text or Word documents without literal Unicode bullets.
 
+### 2026-10-24 — Book a Demo CTAs, Video Player Black Screen Elimination, & Groq-to-AI Cleanse
+- **Context & Objectives**:
+  - The user commanded: *"Option A karo and book a demo karo 1 scdual live 1 on 1 ko cahnge kar ke bhai and aur kaha issu hai find karo and groq ai ka hata do only AI rakho and ye video gayab ho rahi hai bar bar referse karne mai a jati hi so dekho kay issu hai"*.
+  - Strict objectives:
+    1. **Option A Execution**: Update `SmartScreenProduct.jsx` hero CTA button to `View Screening Plans ($79+)` (matching annual tier price), and synchronize `Pricing.jsx` competitor comparison table to `SmartHire Starter Combo` ($129/mo, From $79 Standalone).
+    2. **"Book a Demo" CTA Conversion**: Replace all awkward "Schedule Live 1-on-1 Walkthrough / Demo" copy across `SmartScreenProduct.jsx` and `Homepage.jsx` with sleek corporate `Book a Demo ➔` and `Book a Live Demo` modal.
+    3. **Demo Video Black-Screen / Disappearing Fix**:
+       - Extracted a crisp 1280x720 video poster image (`interview-demo-poster.jpg`) using FFmpeg and configured `poster="/interview-demo-poster.jpg"` so the video frame is never blank/black.
+       - Configured `autoPlay`, `muted`, `loop`, `playsInline`, `preload="auto"` and explicitly set `video.muted = true` in DOM to prevent browser autoplay blocks.
+       - Replaced aggressive scroll-based `video.pause()` with tab visibility handling (`document.addEventListener('visibilitychange')`).
+       - Added an elegant interactive "Click to Play Demo" overlay with play button badge when paused so the candidate scene remains 100% visible and interactive.
+    4. **Groq-to-AI Cleanse**: Purged all public and recruiter-facing mentions of "Groq" / "Groq Whisper" / "Groq AI" across `ClientScreeningPortal.jsx`, `AutomationModule.jsx`, `ScreeningModule.jsx`, `RecruiterInbox.jsx`, `SmartHireAiAgent.jsx`, `LinkedInVerificationModal.jsx`, and `SmartATSApp.jsx`, standardizing on "AI", "AI Speech-to-Text", and "SmartHire AI Engine".
+- **Verification & Deployment Protocol**:
+  - Local production build in `smarthire-react`: 0 errors, 0 warnings (built in 3.77s).
+  - All 42 matching engine unit tests passed (0 failures).
+
 ### 2026-10-24 — Pricing Plans Overhaul (15-Day Storage, Dossier Purge, & Unbuilt Features Cleanup)
 - **Context & Objectives**:
   - The user commanded: *"ha hata do ismai 15 days ka interview colod data karo and dosser word hata do ye sahi nahi lagta hai so do it bro scrning wala ka plan alag hai vaha bhi karna hai abhi isko to karo fir uska karte hai"*.

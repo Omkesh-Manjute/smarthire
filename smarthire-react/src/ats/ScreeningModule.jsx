@@ -1934,7 +1934,7 @@ SmartHire Recruitment Team`
                             alignItems: 'center',
                             gap: '4px'
                           }}
-                          title="Generate role-specific technical questions automatically using Groq AI"
+                          title="Generate role-specific technical questions automatically using AI"
                         >
                           {isGeneratingAIQuestions ? 'Generating...' : '✨ AI Generate Questions'}
                         </button>

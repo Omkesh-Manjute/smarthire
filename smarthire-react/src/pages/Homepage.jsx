@@ -1620,7 +1620,7 @@ function Homepage() {
                       </h3>
                     </div>
                     <p style={{ fontSize: '14px', color: '#64748b', lineHeight: 1.5, margin: '0 0 20px' }}>
-                      Schedule a personalized 1-on-1 live demonstration with our talent solution architects.
+                      Book a personalized live demonstration with our talent solution architects.
                     </p>
                     <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px', display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '13.5px', color: '#334155' }}>
                       <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1659,7 +1659,7 @@ function Homepage() {
                       boxShadow: '0 4px 14px rgba(37, 99, 235, 0.25)'
                     }}
                   >
-                    Schedule Live 1-on-1 Demo ➔
+                    Book a Demo ➔
                   </button>
                   <div style={{ textAlign: 'center', marginTop: '10px', fontSize: '11.5px', color: '#94a3b8' }}>
                     Personalized 1-on-1 walkthrough with our team
@@ -1953,7 +1953,7 @@ function Homepage() {
                 </div>
               </div>
 
-              {/* Right Column: Recruiter AI Evaluation Dossier & Scorecard */}
+              {/* Right Column: Recruiter AI Evaluation Report & Scorecard */}
               <div className="tf-recruiter-review-card">
                 <div className="tf-review-header">
                   <div className="tf-cand-summary-row">

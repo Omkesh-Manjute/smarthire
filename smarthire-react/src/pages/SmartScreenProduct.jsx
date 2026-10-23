@@ -53,8 +53,11 @@ export default function SmartScreenProduct() {
   const toggleVideoPlayback = () => {
     const v = demoVideoRef.current
     if (!v) return
+    v.muted = true
     if (v.paused) {
-      v.play().then(() => setIsPlaying(true)).catch(() => {})
+      v.play()
+        .then(() => setIsPlaying(true))
+        .catch(() => setIsPlaying(false))
     } else {
       v.pause()
       setIsPlaying(false)
@@ -67,25 +70,44 @@ export default function SmartScreenProduct() {
 
     const handlePlay = () => setIsPlaying(true)
     const handlePause = () => setIsPlaying(false)
+    const handleEnded = () => {
+      if (video) {
+        video.currentTime = 0
+        video.play().catch(() => {})
+      }
+    }
 
-    let videoObserver = null
+    let handleVisibilityChange = null
+
     if (video) {
+      video.muted = true
+      video.defaultMuted = true
+      video.loop = true
+      video.playsInline = true
+
       video.addEventListener('play', handlePlay)
       video.addEventListener('pause', handlePause)
+      video.addEventListener('ended', handleEnded)
 
-      videoObserver = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              video.play().catch(() => {})
-            } else {
-              video.pause()
-            }
+      // Start playback safely
+      const playPromise = video.play()
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => setIsPlaying(true))
+          .catch(() => {
+            // Autoplay blocked by browser policy without gesture; poster remains visible
+            setIsPlaying(false)
           })
-        },
-        { threshold: 0.3 }
-      )
-      videoObserver.observe(video)
+      }
+
+      handleVisibilityChange = () => {
+        if (document.hidden) {
+          video.pause()
+        } else {
+          video.play().catch(() => {})
+        }
+      }
+      document.addEventListener('visibilitychange', handleVisibilityChange)
     }
 
     const scrollObserver = new IntersectionObserver(
@@ -103,11 +125,14 @@ export default function SmartScreenProduct() {
     revealElements.forEach((el) => scrollObserver.observe(el))
 
     return () => {
-      if (videoObserver) videoObserver.disconnect()
       scrollObserver.disconnect()
       if (video) {
         video.removeEventListener('play', handlePlay)
         video.removeEventListener('pause', handlePause)
+        video.removeEventListener('ended', handleEnded)
+      }
+      if (handleVisibilityChange) {
+        document.removeEventListener('visibilitychange', handleVisibilityChange)
       }
     }
   }, [])
@@ -214,8 +239,8 @@ export default function SmartScreenProduct() {
       phone: demoPhone.trim() || '—',
       company: demoCompany.trim() || 'Direct Client / Staffing Agency',
       category: 'SmartScreen Live Demo Request',
-      subject: `Live 1-on-1 Demo Request from ${demoName.trim()} (${demoCompany.trim() || 'Staffing Firm'})`,
-      message: `Prospective client requested a live 1-on-1 demonstration of SmartScreen AI.\n\nProspect: ${demoName.trim()}\nCorporate Email: ${demoEmail.trim()}\nPhone / WhatsApp: ${demoPhone.trim() || 'N/A'}\nCompany: ${demoCompany.trim() || 'N/A'}\nPrimary Roles to Screen: ${demoRole.trim()}\nRequested At: ${new Date().toLocaleString()}`,
+      subject: `Demo Booking Request from ${demoName.trim()} (${demoCompany.trim() || 'Staffing Firm'})`,
+      message: `Prospective client requested a live demonstration of SmartScreen AI.\n\nProspect: ${demoName.trim()}\nCorporate Email: ${demoEmail.trim()}\nPhone / WhatsApp: ${demoPhone.trim() || 'N/A'}\nCompany: ${demoCompany.trim() || 'N/A'}\nPrimary Roles to Screen: ${demoRole.trim()}\nRequested At: ${new Date().toLocaleString()}`,
       priority: 'Urgent',
       status: 'New',
       createdAt: new Date().toISOString()
@@ -350,7 +375,7 @@ export default function SmartScreenProduct() {
                   transition: 'all 0.15s ease'
                 }}
               >
-                <span>Schedule Live 1-on-1 Demo</span>
+                <span>Book a Demo</span>
                 <span>➔</span>
               </button>
 
@@ -370,7 +395,7 @@ export default function SmartScreenProduct() {
                   gap: '8px'
                 }}
               >
-                View Screening Plans ($99+)
+                View Screening Plans ($79+)
               </a>
             </div>
 
@@ -486,21 +511,65 @@ export default function SmartScreenProduct() {
             {/* Split Two-Column Stage */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '0' }}>
               {/* Left Column: Video Feed */}
-              <div style={{ position: 'relative', background: '#020617', minHeight: '430px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ position: 'relative', background: '#020617', minHeight: '430px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
                 <video
                   ref={demoVideoRef}
                   src="/interview-demo-video.mp4"
+                  poster="/interview-demo-poster.jpg"
+                  autoPlay
                   muted
                   loop
                   playsInline
+                  preload="auto"
                   style={{
                     width: '100%',
                     height: '100%',
                     maxHeight: '440px',
-                    objectFit: 'cover'
+                    objectFit: 'cover',
+                    display: 'block',
+                    cursor: 'pointer'
                   }}
                   onClick={toggleVideoPlayback}
                 />
+
+                {!isPlaying && (
+                  <div
+                    onClick={toggleVideoPlayback}
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      background: 'rgba(2, 6, 23, 0.42)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      zIndex: 2
+                    }}
+                  >
+                    <div style={{
+                      width: '62px',
+                      height: '62px',
+                      borderRadius: '50%',
+                      background: '#2563eb',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 8px 24px rgba(37, 99, 235, 0.5)',
+                      color: '#ffffff',
+                      marginBottom: '10px',
+                      transition: 'transform 0.15s ease'
+                    }}>
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <polygon points="5 3 19 12 5 21 5 3" />
+                      </svg>
+                    </div>
+                    <span style={{ color: '#ffffff', fontSize: '13px', fontWeight: '700', textShadow: '0 2px 4px rgba(0,0,0,0.7)' }}>
+                      Click to Play Demo
+                    </span>
+                  </div>
+                )}
 
                 <div style={{
                   position: 'absolute',
@@ -515,7 +584,8 @@ export default function SmartScreenProduct() {
                   fontSize: '11px',
                   fontWeight: '600',
                   pointerEvents: 'none',
-                  whiteSpace: 'nowrap'
+                  whiteSpace: 'nowrap',
+                  zIndex: 3
                 }}>
                   Head & shoulders naturally framed (430px vertical height)
                 </div>
@@ -612,7 +682,7 @@ export default function SmartScreenProduct() {
                       boxShadow: '0 2px 8px rgba(37,99,235,0.25)'
                     }}
                   >
-                    Schedule Live 1-on-1 Walkthrough with Our Team ➔
+                    Book a Demo ➔
                   </button>
 
                   <div style={{ fontSize: '11.5px', color: '#64748b', textAlign: 'center' }}>
@@ -1007,7 +1077,7 @@ export default function SmartScreenProduct() {
               </button>
 
               <h3 style={{ fontSize: '20px', fontWeight: '800', color: '#0f172a', margin: '0 0 6px' }}>
-                Schedule a Live 1-on-1 Demonstration
+                Book a Live Demo
               </h3>
               <p style={{ fontSize: '13.5px', color: '#64748b', margin: '0 0 20px', lineHeight: '1.45' }}>
                 See how SmartScreen AI transforms candidate pre-screening for your staffing firm. Our solution architects will conduct a tailored live walkthrough.
@@ -1188,7 +1258,7 @@ export default function SmartScreenProduct() {
                       gap: '8px'
                     }}
                   >
-                    <span>{demoSubmitting ? 'Submitting Request...' : 'Schedule Live 1-on-1 Demo ➔'}</span>
+                    <span>{demoSubmitting ? 'Booking Demo...' : 'Book a Demo ➔'}</span>
                   </button>
                 </form>
               )}

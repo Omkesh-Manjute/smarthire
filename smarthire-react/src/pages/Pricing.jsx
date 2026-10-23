@@ -83,10 +83,10 @@ const COMPETITORS = [
     color: '#f87171'
   },
   {
-    name: 'SmartHire Pro',
-    category: 'All-in-One ATS',
-    price: '$149',
-    unit: '/mo flat',
+    name: 'SmartHire Starter Combo',
+    category: 'Unified ATS + AI Screening',
+    price: '$129',
+    unit: '/mo ($79 Standalone)',
     aiScreening: true,
     rtrSigning: true,
     hotlistIngestion: true,

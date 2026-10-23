@@ -6,7 +6,7 @@ import { doc, setDoc } from 'firebase/firestore'
  * LinkedIn Verification Modal
  * ────────────────────────────
  * Authorized Playwright session profile extraction,
- * Groq AI semantic cross-examination against ATS candidate resume,
+ * AI semantic cross-examination against ATS candidate resume,
  * Discrepancy highlights (company, title, dates, projects, skills),
  * and dual persistence (Server + Firebase Firestore).
  */
@@ -99,12 +99,12 @@ export default function LinkedInVerificationModal({
 
     try {
       if (textToSubmit && textToSubmit.trim().length > 15) {
-        setLoadingStep('Extracting structured profile attributes with Groq AI...')
+        setLoadingStep('Extracting structured profile attributes with AI...')
       } else {
         setTimeout(() => setLoadingStep('Navigating to profile and reading permitted background details...'), 2000)
         setTimeout(() => setLoadingStep('Extracting companies, titles, dates, skills, and projects...'), 4500)
       }
-      setTimeout(() => setLoadingStep('Running Groq AI cross-examination against candidate resume...'), 6500)
+      setTimeout(() => setLoadingStep('Running AI cross-examination against candidate resume...'), 6500)
 
       const candId = candidate.id || candidate.candidate_id
       const res = await fetch(`/api/candidates/${encodeURIComponent(candId)}/verify-linkedin`, {
@@ -468,7 +468,7 @@ export default function LinkedInVerificationModal({
               )}
             </div>
             <p style={{ fontSize: 11.5, color: '#475569', margin: '0 0 8px' }}>
-              Open the candidate&apos;s profile in your browser, copy their experience / headline / skills text (or Ctrl+A, Ctrl+C), and paste it below. Groq AI will parse and cross-examine with their resume in &lt;2 seconds!
+              Open the candidate&apos;s profile in your browser, copy their experience / headline / skills text (or Ctrl+A, Ctrl+C), and paste it below. SmartHire AI will parse and cross-examine with their resume in &lt;2 seconds!
             </p>
             <textarea
               placeholder="Paste candidate LinkedIn profile text, experience, or skills here..."
@@ -867,7 +867,7 @@ export default function LinkedInVerificationModal({
           justifyContent: 'space-between'
         }}>
           <div style={{ fontSize: 11, color: '#64748B' }}>
-            Authorized Playwright Session • Groq AI Fraud Verification • Firebase Firestore
+            Authorized Playwright Session • SmartHire AI Fraud Verification • Firebase Firestore
           </div>
 
           <div style={{ display: 'flex', gap: 8 }}>

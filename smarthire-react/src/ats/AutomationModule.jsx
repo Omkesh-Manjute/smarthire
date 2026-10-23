@@ -58,7 +58,7 @@ function AutomationModule() {
   const [apiOnline] = useState(true)
   const [webhookLog] = useState([
     { time: '08:00:12', type: 'incoming', msg: 'Webhook POST /api/webhook/email from n8n (payload: 4.2KB)' },
-    { time: '08:00:13', type: 'ai', msg: 'Groq llama-3.3-70b parsed resume: 14 skills extracted.' },
+    { time: '08:00:13', type: 'ai', msg: 'AI parser processed resume: 14 skills extracted.' },
     { time: '08:00:15', type: 'database', msg: 'Stored 2 new candidates in SmartHire DB.' },
     { time: '08:00:16', type: 'report', msg: 'Generating Daily Brief Summary...' },
     { time: '08:00:18', type: 'success', msg: 'Report broadcast complete (200 OK).' },
@@ -68,11 +68,11 @@ function AutomationModule() {
 
   const integrations = [
     { icon: 'WH', name: 'n8n Webhook', description: 'Email-to-ATS pipeline', status: apiOnline ? 'Connected' : 'Disconnected', statusClass: apiOnline ? 'pill-ok' : 'pill-warn', detail: apiOnline ? 'Receiving webhook events from email parser. Last ping: < 2 min ago.' : 'Webhook endpoint not reachable. Check n8n workflow status.', action: 'Test Connection', onAction: () => alert('Testing n8n webhook connection...') },
-    { icon: 'AI', name: 'Groq AI Parser', description: 'Resume parsing & JD matching', status: 'Active', statusClass: 'pill-ok', detail: 'Groq LLM API connected. Processing resumes with llama-3.3-70b-versatile. Average parse time: 1.8s.' },
+    { icon: 'AI', name: 'SmartHire AI Parser', description: 'Resume parsing & JD matching', status: 'Active', statusClass: 'pill-ok', detail: 'High-speed AI model connected. Processing resumes and candidate match scoring in real time.' },
     { icon: 'LI', name: 'LinkedIn Publisher', description: 'Auto-publish job posts', status: 'Active', statusClass: 'pill-ok', detail: 'LinkedIn OAuth authorized. Last post: 2 hours ago. Post limit: 100/day.' },
     { icon: 'EM', name: 'Email Scanner', description: 'Yahoo/Gmail inbox monitoring', status: apiOnline ? 'Active' : 'Standby', statusClass: apiOnline ? 'pill-ok' : 'pill-warn', detail: 'IMAP polling every 5 minutes. Scanning for resumes in attachments.' },
     { icon: 'JH', name: 'JobsInHand Scraper', description: 'Auto-scrapes new job postings', status: 'Active', statusClass: 'pill-ok', detail: 'Cron job runs every 15 minutes. Last scrape: 8 minutes ago. Found: 12 new jobs.' },
-    { icon: 'SH', name: 'SmartHire Video Screening', description: 'Async video & voice screening', status: 'Active', statusClass: 'pill-ok', detail: 'SmartHire media sessions active. Automated Groq Whisper transcription & candidate evaluation.' },
+    { icon: 'SH', name: 'SmartHire Video Screening', description: 'Async video & voice screening', status: 'Active', statusClass: 'pill-ok', detail: 'SmartHire media sessions active. Automated AI transcription & candidate evaluation.' },
   ]
 
   const cronJobs = [

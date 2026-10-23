@@ -3722,7 +3722,7 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
         verdict: match.verdict ?? (cand.matchScore >= 80 ? 'STRONG FIT' : (cand.matchScore >= 65 ? 'GOOD FIT' : 'MODERATE FIT')),
         summary: match.recommendationExplanation || match.reasoning || cand.aiReasoning || 'AI resume matching complete against requisition profile.',
         source: 'live_llm',
-        model: 'Groq AI Matching Engine',
+        model: 'SmartHire AI Matching Engine',
         matchingSkills: candSkills,
         missingSkills: gapsArr,
         preferredSkills: match.preferredSkills?.matched || [],
@@ -3784,8 +3784,8 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
           score: raw.matchScore ?? raw.score ?? 85,
           verdict: raw.aiVerdict || raw.verdict || 'Match Evaluated',
           summary: raw.aiSummary || raw.summary || 'Live AI evaluation complete.',
-          source: (raw.model && raw.model.includes('Groq')) ? 'live_llm' : (raw.source || 'hybrid_rule_engine'),
-          model: raw.model || 'Groq Llama 3.3 70B & Deep ATS NLP',
+          source: (raw.model && raw.model.includes('SmartHire')) ? 'live_llm' : (raw.source || 'hybrid_rule_engine'),
+          model: raw.model || 'SmartHire Deep ATS AI Engine',
           matchingSkills: raw.matchingRequiredSkills || raw.matchingSkills || [],
           missingSkills: raw.missingRequiredSkills || raw.missingSkills || [],
           preferredSkills: raw.matchingPreferredSkills || raw.preferredSkills || [],
@@ -15782,7 +15782,7 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                     <span>Live AI Requisition Match &amp; Screening Scan</span>
                     {liveAiMatchResult?.source === 'live_llm' ? (
                       <span style={{ fontSize: 10.5, fontWeight: 800, color: '#1D4ED8', background: '#DBEAFE', padding: '2px 7px', borderRadius: 10, border: '1px solid #BFDBFE' }}>
-                        Groq Llama 3.3 70B
+                        SmartHire AI Engine
                       </span>
                     ) : (
                       <span style={{ fontSize: 10.5, fontWeight: 800, color: '#047857', background: '#D1FAE5', padding: '2px 7px', borderRadius: 10, border: '1px solid #A7F3D0' }}>
@@ -16193,7 +16193,7 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
               flexShrink: 0
             }}>
               <div style={{ fontSize: 11, color: C.textSecondary }}>
-                Powered by SmartHire Deep ATS Match &amp; Groq Llama 3.3 Reasoning
+                Powered by SmartHire Deep ATS Match &amp; Semantic AI Reasoning
               </div>
 
               <div style={{ display: 'flex', gap: 10 }}>

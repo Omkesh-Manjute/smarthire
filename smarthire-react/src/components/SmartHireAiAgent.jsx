@@ -568,7 +568,7 @@ export default function SmartHireAiAgent({
             Press Enter ↵ to send • Shift+Enter for new line
           </span>
           <span style={{ fontSize: 10, color: '#38BDF8', fontWeight: 600 }}>
-            Powered by Groq & Gemini
+            Powered by SmartHire AI Intelligence
           </span>
         </div>
       </div>
