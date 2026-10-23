@@ -9448,7 +9448,6 @@ app.post('/api/auth/login', async (req, res) => {
 
 app.get(['/api/admin/recruiters', '/api/recruiters'], async (req, res) => {
   try {
-    unrecordRecruiterDeleted(cleanEmail);
     loadRecruitersFromDisk();
     loadCreditsFromDisk();
     if (isMongoConnected) {
