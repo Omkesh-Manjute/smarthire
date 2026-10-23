@@ -21,6 +21,7 @@ function Login() {
 
   const defaultRecs = [
     { id: 'rec-1', name: 'Omkesh', email: 'omkesh@coolsofttech.com', role: 'superadmin', refCode: 'omkesh', company: 'COOLSOFT LLC', isActive: true },
+    { id: 'rec-rohit', name: 'Rohit nagwani', email: 'rohit.nagwani@infoorigin.com', role: 'recruiter', refCode: 'rohit-nagwani', company: 'Infoorigin', isActive: true },
     { id: 'rec-1b', name: 'Omkesh Manjute', email: 'omkesh.manjute@smarthire.com', role: 'superadmin', refCode: 'omkesh', company: 'COOLSOFT LLC', isActive: true },
     { id: 'rec-2', name: 'Sukamal Chatterjee', email: 'kamal@coolsofttech.com', role: 'recruiter', refCode: 'sukamal-chatterjee', company: 'COOLSOFT LLC', isActive: true },
     { id: 'rec-3', name: 'Gourav', email: 'gourav@coolsofttech.com', role: 'recruiter', refCode: 'gourav', parentRecruiterName: 'Omkesh', company: 'COOLSOFT LLC', isActive: true },
@@ -38,14 +39,9 @@ function Login() {
       .then(res => res.json())
       .then(data => {
         if (data.success && Array.isArray(data.recruiters) && data.recruiters.length > 0) {
-          const serverRecs = data.recruiters
           try {
-            const raw = localStorage.getItem('smarthire_recruiters')
-            const local = raw ? JSON.parse(raw) : []
-            const existingEmails = new Set(serverRecs.map(u => (u.email || '').toLowerCase().trim()))
-            const localOnly = Array.isArray(local) ? local.filter(u => !existingEmails.has((u.email || '').toLowerCase().trim())) : []
-            const merged = [...serverRecs, ...localOnly]
-            localStorage.setItem('smarthire_recruiters', JSON.stringify(merged))
+            // Authoritative server roster replaces stale cached entries to prevent resurrection of deleted users
+            localStorage.setItem('smarthire_recruiters', JSON.stringify(data.recruiters))
           } catch (e) {}
         }
       })
@@ -85,15 +81,44 @@ function Login() {
       const gUser = await loginWithGoogle()
       const emailClean = (gUser.email || '').toLowerCase().trim()
 
-      // Check if user is a B2B Video Screening Client first
+      // 1. Look up user role and hierarchy from Firestore, server roster, or team defaults first
+      const firestoreUser = await getUserProfileByEmailFirestore(emailClean)
+      let matched = firestoreUser
+      if (!matched) {
+        const raw = localStorage.getItem('smarthire_recruiters')
+        const list = raw ? JSON.parse(raw) : []
+        matched = list.find(r => (r.email || '').toLowerCase().trim() === emailClean)
+      }
+      if (!matched) {
+        matched = defaultRecs.find(d => (d.email || '').toLowerCase().trim() === emailClean)
+      }
+
+      // If matched internal ATS team staff (recruiter/superadmin/manager/employee), log in directly with ATS team role!
+      if (matched && matched.role !== 'client') {
+        const userProfile = {
+          id: matched?.id || matched?._id || gUser.uid,
+          name: matched?.name || gUser.name || emailClean.split('@')[0],
+          email: emailClean,
+          role: matched?.role || (emailClean === 'omkesh@coolsofttech.com' ? 'superadmin' : 'recruiter'),
+          parentRecruiterName: matched?.parentRecruiterName || '',
+          refCode: matched?.refCode || emailClean.split('@')[0],
+          company: matched?.company || 'SmartHire'
+        }
+        setLoginSession(userProfile, gUser.idToken)
+        return
+      }
+
+      // 2. Only if NOT an internal staff member, check if user is a B2B Video Screening Client
       let isB2bClient = false
       let b2bClientData = null
       try {
         const clientRes = await fetch(`/api/client/portal-data?email=${encodeURIComponent(emailClean)}`)
-        const clientJson = await clientRes.json()
-        if (clientJson.success && clientJson.client) {
-          isB2bClient = true
-          b2bClientData = clientJson.client
+        if (clientRes.ok) {
+          const clientJson = await clientRes.json()
+          if (clientJson.success && clientJson.client) {
+            isB2bClient = true
+            b2bClientData = clientJson.client
+          }
         }
       } catch (_) {}
 
@@ -109,28 +134,15 @@ function Login() {
         return
       }
 
-      // Look up user role and hierarchy from Firestore or team roster
-      const firestoreUser = await getUserProfileByEmailFirestore(emailClean)
-      let matched = firestoreUser
-      if (!matched) {
-        const raw = localStorage.getItem('smarthire_recruiters')
-        const list = raw ? JSON.parse(raw) : []
-        matched = list.find(r => (r.email || '').toLowerCase().trim() === emailClean)
-      }
-      if (!matched) {
-        matched = defaultRecs.find(d => (d.email || '').toLowerCase().trim() === emailClean)
-      }
-
       const userProfile = {
-        id: matched?.id || matched?._id || gUser.uid,
-        name: matched?.name || gUser.name || emailClean.split('@')[0],
+        id: gUser.uid,
+        name: gUser.name || emailClean.split('@')[0],
         email: emailClean,
-        role: matched?.role || (emailClean === 'omkesh@coolsofttech.com' ? 'superadmin' : 'recruiter'),
-        parentRecruiterName: matched?.parentRecruiterName || '',
-        refCode: matched?.refCode || emailClean.split('@')[0],
-        company: matched?.company || 'SmartHire'
+        role: emailClean === 'omkesh@coolsofttech.com' ? 'superadmin' : 'recruiter',
+        parentRecruiterName: '',
+        refCode: emailClean.split('@')[0],
+        company: 'SmartHire'
       }
-
       setLoginSession(userProfile, gUser.idToken)
     } catch (err) {
       console.warn('Google sign-in error:', err)
@@ -194,15 +206,44 @@ function Login() {
       }
 
       if (firebaseUser) {
-        // Check if user is a B2B Video Screening Client first
+        // 1. Look up role and hierarchy from Firestore, server roster, or team defaults first
+        const firestoreProfile = await getUserProfileByEmailFirestore(inputEmail)
+        let matched = firestoreProfile
+        if (!matched) {
+          const raw = localStorage.getItem('smarthire_recruiters')
+          const list = raw ? JSON.parse(raw) : []
+          matched = list.find(r => (r.email || '').toLowerCase().trim() === inputEmail)
+        }
+        if (!matched) {
+          matched = defaultRecs.find(d => (d.email || '').toLowerCase().trim() === inputEmail)
+        }
+
+        // If matched internal ATS staff member, log in directly as team recruiter / superadmin!
+        if (matched && matched.role !== 'client') {
+          const userProfile = {
+            id: matched?.id || matched?._id || firebaseUser.uid,
+            name: matched?.name || firebaseUser.name || inputEmail.split('@')[0],
+            email: inputEmail,
+            role: matched?.role || (inputEmail === 'omkesh@coolsofttech.com' ? 'superadmin' : 'recruiter'),
+            parentRecruiterName: matched?.parentRecruiterName || '',
+            refCode: matched?.refCode || inputEmail.split('@')[0],
+            company: matched?.company || 'SmartHire'
+          }
+          setLoginSession(userProfile, firebaseUser.idToken)
+          return
+        }
+
+        // 2. Only if NOT an internal staff member, check if user is a B2B Video Screening Client
         let isB2bClient = false
         let b2bClientData = null
         try {
           const clientRes = await fetch(`/api/client/portal-data?email=${encodeURIComponent(inputEmail)}`)
-          const clientJson = await clientRes.json()
-          if (clientJson.success && clientJson.client) {
-            isB2bClient = true
-            b2bClientData = clientJson.client
+          if (clientRes.ok) {
+            const clientJson = await clientRes.json()
+            if (clientJson.success && clientJson.client) {
+              isB2bClient = true
+              b2bClientData = clientJson.client
+            }
           }
         } catch (_) {}
 
@@ -218,28 +259,15 @@ function Login() {
           return
         }
 
-        // Look up role and hierarchy from Firestore or local cache
-        const firestoreProfile = await getUserProfileByEmailFirestore(inputEmail)
-        let matched = firestoreProfile
-        if (!matched) {
-          const raw = localStorage.getItem('smarthire_recruiters')
-          const list = raw ? JSON.parse(raw) : []
-          matched = list.find(r => (r.email || '').toLowerCase().trim() === inputEmail)
-        }
-        if (!matched) {
-          matched = defaultRecs.find(d => (d.email || '').toLowerCase().trim() === inputEmail)
-        }
-
         const userProfile = {
-          id: matched?.id || matched?._id || firebaseUser.uid,
-          name: matched?.name || firebaseUser.name || inputEmail.split('@')[0],
+          id: firebaseUser.uid,
+          name: firebaseUser.name || inputEmail.split('@')[0],
           email: inputEmail,
-          role: matched?.role || (inputEmail === 'omkesh@coolsofttech.com' ? 'superadmin' : 'recruiter'),
-          parentRecruiterName: matched?.parentRecruiterName || '',
-          refCode: matched?.refCode || inputEmail.split('@')[0],
-          company: matched?.company || 'SmartHire'
+          role: inputEmail === 'omkesh@coolsofttech.com' ? 'superadmin' : 'recruiter',
+          parentRecruiterName: '',
+          refCode: inputEmail.split('@')[0],
+          company: 'SmartHire'
         }
-
         setLoginSession(userProfile, firebaseUser.idToken)
         return
       }
@@ -268,9 +296,7 @@ function Login() {
           try {
             const parsed = JSON.parse(savedRecruitersRaw)
             if (Array.isArray(parsed) && parsed.length > 0) {
-              const existingEmails = new Set(parsed.map(p => (p.email || '').toLowerCase().trim()))
-              const missing = defaultRecs.filter(d => !existingEmails.has(d.email.toLowerCase().trim()))
-              recruitersList = [...parsed, ...missing]
+              recruitersList = parsed
             }
           } catch (e) {}
         }

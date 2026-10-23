@@ -392,13 +392,129 @@ let recruitersMock = [
   { _id: 'rec-1', name: 'Omkesh', email: 'omkesh@coolsofttech.com', role: 'superadmin', refCode: 'omkesh', parentRecruiterName: '', company: 'SmartHire LLC', isActive: true, password: 'admin', lastLogin: '2026-08-27T18:45:00.000Z', createdAt: '2026-01-10T10:00:00.000Z' }
 ];
 
+// ─── Deleted Recruiters & Clients Tombstones (Permanent Deletion Protection) ──
+const deletedRecruitersDbPath = path.resolve(__dirname, 'deleted_recruiters.json');
+let deletedRecruiterEmails = new Set();
+
+function loadDeletedRecruiters() {
+  try {
+    if (fs.existsSync(deletedRecruitersDbPath)) {
+      const raw = fs.readFileSync(deletedRecruitersDbPath, 'utf-8');
+      const list = JSON.parse(raw);
+      if (Array.isArray(list)) {
+        deletedRecruiterEmails = new Set(list.map(s => String(s).toLowerCase().trim()));
+      }
+    }
+  } catch (err) {
+    deletedRecruiterEmails = new Set();
+  }
+}
+
+function saveDeletedRecruiters() {
+  try {
+    fs.writeFileSync(deletedRecruitersDbPath, JSON.stringify(Array.from(deletedRecruiterEmails), null, 2), 'utf-8');
+  } catch (err) {}
+}
+
+function recordRecruiterDeleted(email) {
+  if (!email) return;
+  const em = String(email).toLowerCase().trim();
+  if (em === 'omkesh@coolsofttech.com') return; // Master admin cannot be deleted
+  deletedRecruiterEmails.add(em);
+  saveDeletedRecruiters();
+}
+
+function unrecordRecruiterDeleted(email) {
+  if (!email) return;
+  const em = String(email).toLowerCase().trim();
+  if (deletedRecruiterEmails.has(em)) {
+    deletedRecruiterEmails.delete(em);
+    saveDeletedRecruiters();
+  }
+}
+
+loadDeletedRecruiters();
+
+const deletedClientsDbPath = path.resolve(__dirname, 'deleted_clients.json');
+let deletedClientEmails = new Set();
+
+function loadDeletedClients() {
+  try {
+    if (fs.existsSync(deletedClientsDbPath)) {
+      const raw = fs.readFileSync(deletedClientsDbPath, 'utf-8');
+      const list = JSON.parse(raw);
+      if (Array.isArray(list)) {
+        deletedClientEmails = new Set(list.map(s => String(s).toLowerCase().trim()));
+      }
+    }
+  } catch (err) {
+    deletedClientEmails = new Set();
+  }
+}
+
+function saveDeletedClients() {
+  try {
+    fs.writeFileSync(deletedClientsDbPath, JSON.stringify(Array.from(deletedClientEmails), null, 2), 'utf-8');
+  } catch (err) {}
+}
+
+function recordClientDeleted(email) {
+  if (!email) return;
+  const em = String(email).toLowerCase().trim();
+  deletedClientEmails.add(em);
+  saveDeletedClients();
+}
+
+function unrecordClientDeleted(email) {
+  if (!email) return;
+  const em = String(email).toLowerCase().trim();
+  if (deletedClientEmails.has(em)) {
+    deletedClientEmails.delete(em);
+    saveDeletedClients();
+  }
+}
+
+loadDeletedClients();
+
 function loadRecruitersFromDisk() {
   try {
+    loadDeletedRecruiters();
     if (fs.existsSync(recruitersDbPath)) {
       const raw = fs.readFileSync(recruitersDbPath, 'utf-8');
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        recruitersMock = parsed;
+        recruitersMock = parsed.filter(r => {
+          const em = (r.email || '').toLowerCase().trim();
+          if (em === 'omkesh@coolsofttech.com') return true;
+          return !deletedRecruiterEmails.has(em);
+        });
+
+        // Ensure Rohit Nagwani is preserved as ATS recruiter with full visibility
+        const rohitEmail = 'rohit.nagwani@infoorigin.com';
+        if (!deletedRecruiterEmails.has(rohitEmail)) {
+          const rohit = recruitersMock.find(r => (r.email || '').toLowerCase().trim() === rohitEmail);
+          if (!rohit) {
+            recruitersMock.unshift({
+              _id: 'rec-1790201114539',
+              id: 'rec-1790201114539',
+              name: 'Rohit nagwani',
+              email: rohitEmail,
+              password: 'Rohit@123',
+              role: 'recruiter',
+              parentRecruiterName: '',
+              refCode: 'rohit-nagwani',
+              company: 'Infoorigin',
+              isActive: true,
+              lastLogin: null,
+              createdAt: '2026-09-23T22:05:14.539Z'
+            });
+            saveRecruitersToDisk();
+          } else if (rohit.role === 'client') {
+            rohit.role = 'recruiter';
+            saveRecruitersToDisk();
+          }
+        }
+
         console.log(`📂 Loaded ${recruitersMock.length} recruiter(s) from disk.`);
         return;
       }
@@ -9194,8 +9310,9 @@ app.post('/api/auth/login', async (req, res) => {
     const dbPassword = user ? String(user.password || '').trim() : '';
 
     loadClientCreditsFromDisk();
-    const clientAccount = clientCreditsStore[cleanEmail];
-    const isClientUser = Boolean(clientAccount);
+    loadDeletedClients();
+    const clientAccount = !deletedClientEmails.has(cleanEmail) ? clientCreditsStore[cleanEmail] : null;
+    const isClientUser = Boolean(clientAccount) && (!user || user.role === 'client');
 
     const isOmkesh = cleanEmail === 'omkesh@coolsofttech.com';
     const isOmkeshPassMatch = isOmkesh && (
@@ -9233,7 +9350,7 @@ app.post('/api/auth/login', async (req, res) => {
         // Synchronize user password in local roster so disk and cache stay updated
         if (user) {
           user.password = cleanPassword;
-          if (isClientUser) {
+          if (isClientUser && (!user.role || user.role === 'client')) {
             user.role = 'client';
             user.company = clientAccount.company || user.company;
             if (clientAccount.name) user.name = clientAccount.name;
@@ -9289,7 +9406,7 @@ app.post('/api/auth/login', async (req, res) => {
     }
 
     user.lastLogin = new Date().toISOString();
-    if (isClientUser) {
+    if (isClientUser && (!user.role || user.role === 'client')) {
       user.role = 'client';
       if (clientAccount.company) user.company = clientAccount.company;
       if (clientAccount.name) user.name = clientAccount.name;
@@ -9331,6 +9448,7 @@ app.post('/api/auth/login', async (req, res) => {
 
 app.get(['/api/admin/recruiters', '/api/recruiters'], async (req, res) => {
   try {
+    unrecordRecruiterDeleted(cleanEmail);
     loadRecruitersFromDisk();
     loadCreditsFromDisk();
     if (isMongoConnected) {
@@ -9368,9 +9486,15 @@ app.get(['/api/admin/recruiters', '/api/recruiters'], async (req, res) => {
           }))
         ];
 
-        // Security & Scoping: Never expose passwords in inspect element, and filter out B2B clients
+        // Security & Scoping: Never expose passwords in inspect element, and filter out B2B clients and deleted recruiters
+        loadDeletedRecruiters();
         const cleanList = rawList
-          .filter(r => r.role !== 'client' && (r.email || '').toLowerCase().trim() !== 'omkeshmanjute1@gmail.com')
+          .filter(r => {
+            const em = (r.email || '').toLowerCase().trim();
+            if (em === 'omkesh@coolsofttech.com') return true;
+            if (deletedRecruiterEmails.has(em)) return false;
+            return r.role !== 'client' && em !== 'omkeshmanjute1@gmail.com';
+          })
           .map(r => {
             const copy = { ...r };
             delete copy.password;
@@ -9383,8 +9507,14 @@ app.get(['/api/admin/recruiters', '/api/recruiters'], async (req, res) => {
       }
     }
 
+    loadDeletedRecruiters();
     const list = recruitersMock
-      .filter(r => r.role !== 'client' && (r.email || '').toLowerCase().trim() !== 'omkeshmanjute1@gmail.com')
+      .filter(r => {
+        const em = (r.email || '').toLowerCase().trim();
+        if (em === 'omkesh@coolsofttech.com') return true;
+        if (deletedRecruiterEmails.has(em)) return false;
+        return r.role !== 'client' && em !== 'omkeshmanjute1@gmail.com';
+      })
       .map(r => {
         const copy = { ...r, id: r._id || r.id };
         delete copy.avatar; // Strip heavy base64 avatar
@@ -9547,6 +9677,7 @@ app.post('/api/admin/recruiters', async (req, res) => {
   const cleanParent = parentRecruiterName || '';
 
   try {
+    unrecordRecruiterDeleted(cleanEmail);
     loadRecruitersFromDisk();
     loadCreditsFromDisk();
 
@@ -9708,6 +9839,9 @@ app.post('/api/admin/recruiters/sync', async (req, res) => {
     }).filter(r => r.name && r.email);
 
     recruitersMock = cleanList;
+    cleanList.forEach(r => {
+      if (r && r.email) unrecordRecruiterDeleted(r.email);
+    });
     saveRecruitersToDisk();
 
     if (isMongoConnected) {
@@ -9744,9 +9878,10 @@ app.put('/api/admin/recruiters/:id', async (req, res) => {
   const { id } = req.params;
   const { name, email, password, role, refCode, company } = req.body;
   try {
-    loadRecruitersFromDisk();
     const cleanId = String(id || '').trim();
     const cleanEmail = email ? String(email).toLowerCase().trim() : '';
+    if (cleanEmail) unrecordRecruiterDeleted(cleanEmail);
+    loadRecruitersFromDisk();
 
     if (isMongoConnected) {
       let user = null;
@@ -9830,6 +9965,7 @@ app.post('/api/admin/recruiters/delete', express.json(), async (req, res) => {
   }
 
   try {
+    if (cleanEmail) recordRecruiterDeleted(cleanEmail);
     loadRecruitersFromDisk();
     loadCreditsFromDisk();
 
@@ -9860,9 +9996,18 @@ app.post('/api/admin/recruiters/delete', express.json(), async (req, res) => {
       const rName = (r.name || '').toLowerCase().trim();
 
       if (rEmail === 'omkesh@coolsofttech.com') return true;
-      if (cleanEmail && rEmail === cleanEmail) return false;
-      if (cleanId && rId === cleanId) return false;
-      if (!cleanEmail && !cleanId && cleanName && rName === cleanName) return false;
+      if (cleanEmail && rEmail === cleanEmail) {
+        recordRecruiterDeleted(rEmail);
+        return false;
+      }
+      if (cleanId && rId === cleanId) {
+        if (rEmail) recordRecruiterDeleted(rEmail);
+        return false;
+      }
+      if (!cleanEmail && !cleanId && cleanName && rName === cleanName) {
+        if (rEmail) recordRecruiterDeleted(rEmail);
+        return false;
+      }
       return true;
     });
     saveRecruitersToDisk();
@@ -9890,6 +10035,8 @@ app.delete('/api/admin/recruiters/:id', async (req, res) => {
   }
 
   try {
+    if (emailQuery) recordRecruiterDeleted(emailQuery);
+    if (lowerId.includes('@')) recordRecruiterDeleted(lowerId);
     loadRecruitersFromDisk();
     loadCreditsFromDisk();
 
@@ -9907,7 +10054,10 @@ app.delete('/api/admin/recruiters/:id', async (req, res) => {
       const rEmail = (r.email || '').toLowerCase().trim();
       const rId = String(r._id || r.id || '').trim();
       if (rEmail === 'omkesh@coolsofttech.com') return true;
-      if (rEmail === lowerId || rId === decodedId || (emailQuery && rEmail === emailQuery)) return false;
+      if (rEmail === lowerId || rId === decodedId || (emailQuery && rEmail === emailQuery)) {
+        if (rEmail) recordRecruiterDeleted(rEmail);
+        return false;
+      }
       return true;
     });
     saveRecruitersToDisk();
@@ -10809,7 +10959,10 @@ function saveClientCreditsToDisk() {
 function getClientAccount(email) {
   if (!email) return null;
   loadClientCreditsFromDisk();
+  loadDeletedClients();
   const clean = String(email).toLowerCase().trim();
+  if (deletedClientEmails.has(clean)) return null;
+
   let client = clientCreditsStore[clean];
 
   if (!client) {
@@ -10819,36 +10972,7 @@ function getClientAccount(email) {
     }
   }
 
-  if (!client) {
-    // Check if user is registered in recruiter/user store with role: 'client'
-    loadRecruitersFromDisk();
-    const matched = (recruitersMock || []).find(r => (r.email || '').toLowerCase().trim() === clean);
-    client = {
-      email: clean,
-      name: matched ? (matched.name || clean.split('@')[0]) : clean.split('@')[0],
-      company: matched?.company || (clean.split('@')[1] ? clean.split('@')[1].split('.')[0].toUpperCase() : 'Partner Client'),
-      role: 'client',
-      screeningCredits: 50,
-      usedScreeningCredits: 0,
-      aiCredits: 300,
-      usedAiCredits: 0,
-      emailConfig: {
-        senderName: '',
-        fromEmail: clean,
-        smtpHost: '',
-        smtpPort: 465,
-        security: 'SSL',
-        appPassword: '',
-        signature: ''
-      },
-      createdAt: new Date().toISOString(),
-      lastActive: new Date().toISOString()
-    };
-    clientCreditsStore[clean] = client;
-    saveClientCreditsToDisk();
-  }
-
-  return client;
+  return client || null;
 }
 
 // GET Client portal data: profile, credits, email config, and strictly scoped sessions
@@ -10857,6 +10981,10 @@ app.get('/api/client/portal-data', (req, res) => {
   if (!email) return res.status(400).json({ success: false, message: 'Email required' });
 
   const client = getClientAccount(email);
+  if (!client) {
+    return res.status(404).json({ success: false, message: 'Client portal not found' });
+  }
+
   loadScreeningFromDisk();
 
   // Multi-tenant isolation: strictly return sessions created by or assigned to this client
@@ -10898,6 +11026,7 @@ app.post('/api/client/email-config', express.json(), (req, res) => {
   if (!email) return res.status(400).json({ success: false, message: 'Client email is required' });
 
   const client = getClientAccount(email);
+  if (!client) return res.status(404).json({ success: false, message: 'Client not found' });
   if (!client.emailConfig) client.emailConfig = {};
 
   if (senderName !== undefined) client.emailConfig.senderName = String(senderName).trim();
@@ -10934,6 +11063,7 @@ app.post('/api/client/ai/generate-questions', express.json(), async (req, res) =
   if (!clientEmail) return res.status(400).json({ success: false, message: 'clientEmail is required' });
 
   const client = getClientAccount(clientEmail);
+  if (!client) return res.status(404).json({ success: false, message: 'Client not found' });
   if (client.aiCredits < 1) {
     return res.status(402).json({
       success: false,
@@ -11017,6 +11147,7 @@ app.post('/api/client/screening/create', express.json(), async (req, res) => {
   }
 
   const client = getClientAccount(clientEmail);
+  if (!client) return res.status(404).json({ success: false, message: 'Client not found' });
   if (client.screeningCredits < 1) {
     return res.status(402).json({
       success: false,
@@ -11143,19 +11274,24 @@ app.post('/api/client/screening/create', express.json(), async (req, res) => {
 // Admin endpoints for client credit management
 app.get('/api/admin/client-credits/all', (req, res) => {
   loadClientCreditsFromDisk();
-  loadRecruitersFromDisk();
+  loadDeletedClients();
 
-  // Synchronize any users with role 'client' from recruitersMock into clientCreditsStore
-  (recruitersMock || []).forEach(r => {
-    if (r && r.role === 'client') {
-      const em = (r.email || '').toLowerCase().trim();
-      if (em && !clientCreditsStore[em]) {
-        getClientAccount(em);
-      }
+  // Purge any deleted clients from disk store
+  let hasDeleted = false;
+  deletedClientEmails.forEach(delEm => {
+    if (clientCreditsStore[delEm]) {
+      delete clientCreditsStore[delEm];
+      hasDeleted = true;
     }
   });
+  if (hasDeleted) saveClientCreditsToDisk();
 
-  const list = Object.values(clientCreditsStore);
+  const list = Object.values(clientCreditsStore).filter(c => {
+    if (!c || !c.email) return false;
+    const em = c.email.toLowerCase().trim();
+    return !deletedClientEmails.has(em);
+  });
+
   res.json({
     success: true,
     clients: list,
@@ -11180,30 +11316,48 @@ app.post('/api/admin/client-credits/create', express.json(), async (req, res) =>
   const initialAi = typeof aiCredits === 'number' ? aiCredits : (parseInt(aiCredits, 10) || 300);
 
   try {
+    // Unmark from deleted clients since admin is explicitly creating this client
+    unrecordClientDeleted(cleanEmail);
+
     // 1. Initialize in clientCreditsStore
     loadClientCreditsFromDisk();
-    const client = getClientAccount(cleanEmail);
-    client.name = cleanName;
-    client.company = cleanCompany;
-    client.screeningCredits = initialScreening;
-    client.aiCredits = initialAi;
-    client.lastActive = new Date().toISOString();
+    let client = clientCreditsStore[cleanEmail];
+    if (!client) {
+      client = {
+        email: cleanEmail,
+        name: cleanName,
+        company: cleanCompany,
+        role: 'client',
+        screeningCredits: initialScreening,
+        usedScreeningCredits: 0,
+        aiCredits: initialAi,
+        usedAiCredits: 0,
+        emailConfig: {
+          senderName: '',
+          fromEmail: cleanEmail,
+          smtpHost: '',
+          smtpPort: 465,
+          security: 'SSL',
+          appPassword: '',
+          signature: ''
+        },
+        createdAt: new Date().toISOString(),
+        lastActive: new Date().toISOString()
+      };
+    } else {
+      client.name = cleanName;
+      client.company = cleanCompany;
+      client.screeningCredits = initialScreening;
+      client.aiCredits = initialAi;
+      client.lastActive = new Date().toISOString();
+    }
     clientCreditsStore[cleanEmail] = client;
     saveClientCreditsToDisk();
 
-    // 2. Add or update in recruitersMock with role: 'client'
+    // 2. Add to recruitersMock ONLY IF not already an internal team member (recruiter/manager/superadmin)
     loadRecruitersFromDisk();
-    const existingIdx = recruitersMock.findIndex(r => (r.email || '').toLowerCase().trim() === cleanEmail);
-    if (existingIdx >= 0) {
-      recruitersMock[existingIdx] = {
-        ...recruitersMock[existingIdx],
-        name: cleanName,
-        company: cleanCompany,
-        password: cleanPassword,
-        role: 'client',
-        isActive: true
-      };
-    } else {
+    const existingRec = recruitersMock.find(r => (r.email || '').toLowerCase().trim() === cleanEmail);
+    if (!existingRec) {
       recruitersMock.unshift({
         _id: 'cli-' + Date.now(),
         name: cleanName,
@@ -11214,22 +11368,15 @@ app.post('/api/admin/client-credits/create', express.json(), async (req, res) =>
         isActive: true,
         createdAt: new Date().toISOString()
       });
+      saveRecruitersToDisk();
     }
-    saveRecruitersToDisk();
 
-    // 3. Sync to Mongo if connected
+    // 3. Sync to Mongo if connected and not existing
     if (isMongoConnected) {
       try {
         const emailRegex = new RegExp('^' + cleanEmail.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&') + '$', 'i');
         let existing = await RecruiterDoc.findOne({ email: emailRegex });
-        if (existing) {
-          existing.name = cleanName;
-          existing.company = cleanCompany;
-          existing.password = cleanPassword;
-          existing.role = 'client';
-          existing.isActive = true;
-          await existing.save();
-        } else {
+        if (!existing) {
           await RecruiterDoc.create({
             name: cleanName,
             email: cleanEmail,
@@ -11259,6 +11406,10 @@ app.post('/api/admin/client-credits/refill', express.json(), (req, res) => {
   if (!email) return res.status(400).json({ success: false, message: 'Email required' });
 
   const client = getClientAccount(email);
+  if (!client) {
+    return res.status(404).json({ success: false, message: 'Client not found' });
+  }
+
   if (typeof addScreeningCredits === 'number') {
     client.screeningCredits += addScreeningCredits;
   }
@@ -11291,11 +11442,37 @@ app.post('/api/admin/client-credits/delete', express.json(), (req, res) => {
   delete clientCreditsStore[clean];
   saveClientCreditsToDisk();
 
-  loadRecruitersFromDisk();
-  recruitersMock = recruitersMock.filter(r => (r.email || '').toLowerCase().trim() !== clean);
-  saveRecruitersToDisk();
+  recordClientDeleted(clean);
 
-  res.json({ success: true, message: `Client ${clean} removed successfully.` });
+  // If this user was previously an ATS team recruiter (like Rohit Nagwani), protect them: do NOT delete from recruitersMock!
+  loadRecruitersFromDisk();
+  unrecordRecruiterDeleted(clean);
+
+  const existingIdx = recruitersMock.findIndex(r => (r.email || '').toLowerCase().trim() === clean);
+  if (existingIdx >= 0) {
+    if (recruitersMock[existingIdx].role === 'client') {
+      recruitersMock[existingIdx].role = 'recruiter';
+    }
+    recruitersMock[existingIdx].isActive = true;
+    saveRecruitersToDisk();
+  } else if (clean === 'rohit.nagwani@infoorigin.com') {
+    recruitersMock.unshift({
+      _id: 'rec-1790201114539',
+      id: 'rec-1790201114539',
+      name: 'Rohit nagwani',
+      email: 'rohit.nagwani@infoorigin.com',
+      password: 'Rohit@123',
+      role: 'recruiter',
+      parentRecruiterName: '',
+      refCode: 'rohit-nagwani',
+      company: 'Infoorigin',
+      isActive: true,
+      createdAt: new Date().toISOString()
+    });
+    saveRecruitersToDisk();
+  }
+
+  res.json({ success: true, message: `Client portal access for ${clean} removed successfully.` });
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════

@@ -1,0 +1,44 @@
+{
+  "demo@client.com": {
+    "email": "demo@client.com",
+    "name": "demo",
+    "company": "CLIENT",
+    "role": "client",
+    "screeningCredits": 150,
+    "usedScreeningCredits": 0,
+    "aiCredits": 400,
+    "usedAiCredits": 0,
+    "emailConfig": {
+      "senderName": "",
+      "fromEmail": "demo@client.com",
+      "smtpHost": "",
+      "smtpPort": 465,
+      "security": "SSL",
+      "appPassword": "",
+      "signature": ""
+    },
+    "createdAt": "2026-10-23T07:27:39.858Z",
+    "lastActive": "2026-10-23T08:41:45.623Z"
+  },
+  "client@partner.com": {
+    "email": "client@partner.com",
+    "name": "client",
+    "company": "PARTNER",
+    "role": "client",
+    "screeningCredits": 50,
+    "usedScreeningCredits": 0,
+    "aiCredits": 300,
+    "usedAiCredits": 0,
+    "emailConfig": {
+      "senderName": "",
+      "fromEmail": "client@partner.com",
+      "smtpHost": "",
+      "smtpPort": 465,
+      "security": "SSL",
+      "appPassword": "",
+      "signature": ""
+    },
+    "createdAt": "2026-10-23T08:39:40.219Z",
+    "lastActive": "2026-10-23T08:39:40.219Z"
+  }
+}

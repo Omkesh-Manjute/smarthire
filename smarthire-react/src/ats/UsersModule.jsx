@@ -130,7 +130,8 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
           const map = new Map()
 
           // 1. Authoritative Backend recruiters
-          if (backendRes.status === 'fulfilled' && backendRes.value?.success && Array.isArray(backendRes.value.recruiters)) {
+          const backendSuccess = backendRes.status === 'fulfilled' && backendRes.value?.success && Array.isArray(backendRes.value.recruiters)
+          if (backendSuccess) {
             backendRes.value.recruiters.forEach(u => {
               const emailKey = (u?.email || '').toLowerCase().trim()
               if (emailKey && u.role !== 'client' && emailKey !== 'omkeshmanjute1@gmail.com') {
@@ -139,13 +140,20 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
             })
           }
 
-          // 2. Authoritative Firestore recruiters
+          // 2. Authoritative Firestore recruiters (Enrich only if backend was successful, fallback if backend offline)
           if (firestoreRes.status === 'fulfilled' && Array.isArray(firestoreRes.value)) {
             firestoreRes.value.forEach(u => {
               const emailKey = (u?.email || '').toLowerCase().trim()
               if (emailKey && u.role !== 'client' && emailKey !== 'omkeshmanjute1@gmail.com') {
-                const existing = map.get(emailKey) || {}
-                map.set(emailKey, { ...existing, ...u })
+                if (backendSuccess) {
+                  // Only enrich active backend roster — never resurrect deleted users!
+                  if (map.has(emailKey)) {
+                    const existing = map.get(emailKey) || {}
+                    map.set(emailKey, { ...u, ...existing })
+                  }
+                } else {
+                  map.set(emailKey, u)
+                }
               }
             })
           }
@@ -373,18 +381,26 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
   const handleDeleteClient = async (email, name) => {
     if (!window.confirm(`Are you sure you want to remove client portal access for ${name} (${email})?`)) return
     try {
+      const cleanEmail = (email || '').toLowerCase().trim()
+      setClients(prev => prev.filter(c => (c.email || '').toLowerCase().trim() !== cleanEmail))
+
       const res = await fetch('/api/admin/client-credits/delete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
+        body: JSON.stringify({ email: cleanEmail })
       })
       const data = await res.json()
       if (data.success) {
         showToast(`Client ${name} removed.`)
         fetchClients()
+        fetchRecruiters()
+      } else {
+        showToast(`Failed: ${data.message || 'Error removing client'}`)
+        fetchClients()
       }
     } catch (err) {
       showToast(`Failed: ${err.message}`)
+      fetchClients()
     }
   }
 
