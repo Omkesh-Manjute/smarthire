@@ -1075,12 +1075,9 @@ export default function CandidateChat() {
           Please reach out to your recruiter or the talent acquisition team to request an updated screening link.
         </p>
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '20px' }}>
-          <Link to="/jobs" style={styles.primaryButton}>
-            Browse Open Requisitions
-          </Link>
-          <Link to="/blog" target="_blank" rel="noopener noreferrer" style={{ ...styles.secondaryButton, textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>
-            Career Resource Blog
-          </Link>
+          <a href="mailto:support@smarthireus.com" style={{ ...styles.primaryButton, textDecoration: 'none' }}>
+            Contact Recruitment Desk
+          </a>
         </div>
       </div>
     )
@@ -1100,12 +1097,9 @@ export default function CandidateChat() {
           This single-use screening assessment link has already been completed and submitted on {new Date(submittedAtDate).toLocaleDateString()}. Each assessment link is strictly single-use to maintain evaluation fairness and security.
         </p>
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '20px' }}>
-          <Link to="/jobs" style={styles.primaryButton}>
-            Browse Open Requisitions
-          </Link>
-          <Link to="/blog" target="_blank" rel="noopener noreferrer" style={{ ...styles.secondaryButton, textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>
-            Explore Career Blog
-          </Link>
+          <a href="mailto:support@smarthireus.com" style={{ ...styles.primaryButton, textDecoration: 'none' }}>
+            Contact Recruitment Desk
+          </a>
         </div>
       </div>
     )
@@ -1136,12 +1130,9 @@ export default function CandidateChat() {
           {error}
         </p>
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '16px' }}>
-          <Link to="/jobs" style={styles.primaryButton}>
-            Browse Open Positions
-          </Link>
-          <Link to="/blog" target="_blank" rel="noopener noreferrer" style={{ ...styles.secondaryButton, textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>
-            Explore Career Blog
-          </Link>
+          <a href="mailto:support@smarthireus.com" style={{ ...styles.primaryButton, textDecoration: 'none' }}>
+            Contact Support Desk
+          </a>
         </div>
       </div>
     )
