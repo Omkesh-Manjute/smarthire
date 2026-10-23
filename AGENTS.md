@@ -82,6 +82,43 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
   - Local production build in `smarthire-react`: 0 errors, 0 warnings (built in 4.69s).
   - All 42 matching engine unit tests passed (0 failures).
 
+### 2026-10-24 — Razorpay Actual USD Dynamic Plan Pricing, Blank Prefill, & Corporate Receipt Confirmation
+- **Context & Objectives**:
+  - The user commanded:
+    1. *"abhi koi card mai payment mai click karne mai 1 a raha hai ye acural wala ana cahiye price abhi demo hai but fir bhi and mera email and number defalt a raha hai so isko remove karo and ye calcualt kaise hoga sab dollor ka batavo auto hoga kay"*
+    2. *"and ye demo wala haa dena confirmation aye proprly"*
+  - The user uploaded screenshots:
+    - `media_1792793387399_1c27cadf.png`: Checkout showing hardcoded ₹1.00 instead of plan price in USD.
+    - `media_1792793440645_96283761.png`: Contact screen prefilling `omkesh@coolsofttech.com` and `+91 8329776361`.
+    - `media_1792793635893_817ce91a.png`: Post-payment card showing developer debug text `PAYMENT SIGNATURE VERIFIED (HMAC-SHA256 MATCH)`.
+- **Architectural Implementations**:
+  1. *Dynamic USD Dollar Calculation*:
+     - In `PricingSection.jsx`, converted plan prices directly to USD cents: `const amountInCents = Math.round(priceUsd * 100)`.
+     - Forwarded `amountInUnits: amountInCents`, `currency: 'USD'`, and explicit plan label (e.g. `Starter Screen (Annual · $79/mo)`) to `initiateRazorpayCheckout`.
+     - Razorpay natively accepts `currency: 'USD'` and automatically renders `$79.00 USD`, `$99.00 USD`, `$279.00 USD`, etc.
+     - For domestic or multi-currency conversions, Razorpay's banking engine automatically executes real-time forex conversions at live bank rates.
+  2. *Purge of Hardcoded Default Prefill*:
+     - Removed hardcoded defaults (`omkesh@coolsofttech.com`, `9876543210`) from `razorpayCheckout.js`.
+     - In `PricingSection.jsx`, stopped populating logged-in `savedUser` contact into Razorpay prefill (`userEmail: ''`, `userName: ''`, `userPhone: ''`).
+     - Razorpay modal now opens with clean, blank input fields allowing any buyer or recruiter to enter their preferred billing details.
+  3. *Corporate Subscription Receipt Confirmation*:
+     - Completely purged developer/debug HMAC-SHA256 match box.
+     - Replaced with sleek enterprise confirmation:
+       - Badge: `Subscription Confirmed · Official Receipt`
+       - Heading: `Subscription Activated Successfully!`
+       - Grid: Plan Subscribed, Status (`Active · Paid`), Payment Reference (`pay_...`), Order Reference (`order_...`).
+       - CTAs: `Launch Recruiter Workspace ➔` (`/ats`) and `Print / Save Receipt` (`window.print()`).
+  4. *Checkout Button State Feedback*:
+     - Added disabled and loading state `Opening Checkout...` to prevent duplicate clicks while Razorpay modal initializes.
+- **Verification & Deployment Protocol**:
+  - Local production build in `smarthire-react`: 0 errors, 0 warnings (built in 3.01s).
+  - All 42 matching engine unit tests passed (0 failures).
+  - Git committed (`8be10b7`) and pushed to GitHub `origin main`.
+  - Production bundle extracted to `/var/www/html/` and `/home/ubuntu/smarthire/dist/` on AWS Lightsail (`34.194.119.199`).
+  - Tested backend order creation: `order_TrVo1k8FNSO8FF` ($79.00 USD) and `order_TrVo8M37lEvOBX` ($279.00 USD) created successfully.
+  - Live domain `https://smarthireus.com` HTTP 200 OK with bundle `assets/index-dpGdwTMu.js`.
+  - Server disk space: 54% used, 8.5GB free (Rule 5 compliant).
+
 ### 2026-10-24 — Book a Demo CTAs, Video Player Black Screen Elimination, & Groq-to-AI Cleanse
 - **Context & Objectives**:
   - The user commanded: *"Option A karo and book a demo karo 1 scdual live 1 on 1 ko cahnge kar ke bhai and aur kaha issu hai find karo and groq ai ka hata do only AI rakho and ye video gayab ho rahi hai bar bar referse karne mai a jati hi so dekho kay issu hai"*.
