@@ -552,7 +552,7 @@ export default function PublicCareers() {
   const fetchJobs = async () => {
     setLoading(true)
     try {
-      const res = await fetch('/api/jobs')
+      const res = await fetch('/api/jobs?openOnly=true&scope=careers')
       const data = await res.json()
       if (data.success && Array.isArray(data.jobs) && data.jobs.length > 0) {
         setJobs(data.jobs)
@@ -1013,7 +1013,7 @@ export default function PublicCareers() {
     }}>
       {/* ─── WELLFOUND CAREERS MASTER VIEW (ZONAL & CLASSIC REMOVED) ─── */}
       <WellfoundCareersView
-        jobs={jobs}
+        jobs={activeOpenJobs}
         filteredJobs={filteredJobs}
         loading={loading}
         targetJobId={targetJobId}
@@ -1896,7 +1896,7 @@ export default function PublicCareers() {
         <>
           {botWidgetOpen ? (
             <SmartHireBotWidget
-              jobs={jobs}
+              jobs={activeOpenJobs}
               onClose={() => setBotWidgetOpen(false)}
             />
           ) : (

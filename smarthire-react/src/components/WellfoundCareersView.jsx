@@ -671,9 +671,14 @@ export default function WellfoundCareersView({
     return (jobs || []).find(j => j.id === selectedJobId) || null
   }, [jobs, selectedJobId])
 
+  // Strictly filter for open, non-expired jobs across all public views
+  const openJobs = useMemo(() => {
+    return (jobs || []).filter(j => !isJobExpired || !isJobExpired(j))
+  }, [jobs, isJobExpired])
+
   // Categorized Buckets for Page 1 default view
   const categorizedJobBuckets = useMemo(() => {
-    const list = jobs || []
+    const list = openJobs
     return {
       trending: list.slice(0, 6),
       engineering: list.filter(j => /software|engineer|developer|java|python|c#|\.net|react|full\s*stack|frontend|backend/i.test(`${j.title || ''} ${(j.skills || []).join(' ')}`)).slice(0, 6),
@@ -681,7 +686,7 @@ export default function WellfoundCareersView({
       cloudDevops: list.filter(j => /cloud|aws|azure|gcp|devops|kubernetes|docker|infrastructure|terraform/i.test(`${j.title || ''} ${(j.skills || []).join(' ')}`)).slice(0, 6),
       managementPublic: list.filter(j => /director|manager|lead|scrum|product|project|program|business\s*analyst|health|clinical|med/i.test(`${j.title || ''} ${(j.skills || []).join(' ')}`)).slice(0, 6)
     }
-  }, [jobs])
+  }, [openJobs])
 
   // Handle Search Submission from Hero
   const handleHeroSearchSubmit = (e) => {
@@ -725,10 +730,10 @@ export default function WellfoundCareersView({
   const similarJobsList = useMemo(() => {
     if (!selectedJob) return []
     if (typeof getSimilarJobs === 'function') {
-      return getSimilarJobs(selectedJob, jobs, 3)
+      return getSimilarJobs(selectedJob, openJobs, 3)
     }
-    return jobs.filter(j => j.id !== selectedJob.id).slice(0, 3)
-  }, [selectedJob, jobs, getSimilarJobs])
+    return openJobs.filter(j => j.id !== selectedJob.id).slice(0, 3)
+  }, [selectedJob, openJobs, getSimilarJobs])
 
   // Computed properties for selected job (Page 2)
   const selCleanTitle = selectedJob ? (cleanJobTitleWithPositionNumber ? cleanJobTitleWithPositionNumber(selectedJob.title) : selectedJob.title) : ''
@@ -737,6 +742,7 @@ export default function WellfoundCareersView({
   const selWorkMode = selectedJob ? resolveWorkArrangement(selectedJob) : 'Hybrid'
   const selLocalReq = selectedJob ? resolveLocalRequirement(selectedJob) : { label: 'Nationwide', isLocalNeeded: false, urgency: 'none' }
   const selDetails = selectedJob ? parseWellfoundJobDetails(selectedJob, selCleanTitle, selDomain, selLoc, selWorkMode, selLocalReq, getFullDescriptionText) : null
+  const isSelectedJobExpired = selectedJob && isJobExpired ? isJobExpired(selectedJob) : false
   const isSaved = Boolean(
     selectedJob && (
       Array.isArray(savedJobs)
@@ -889,7 +895,7 @@ export default function WellfoundCareersView({
         "@type": "ItemList",
         "name": "Direct Client IT Requisitions",
         "description": "Verified direct-client contract positions in Cloud, Software Engineering, Data & Public Sector IT.",
-        "itemListElement": (jobs || []).slice(0, 25).map((job, idx) => ({
+        "itemListElement": (openJobs || []).slice(0, 25).map((job, idx) => ({
           "@type": "ListItem",
           "position": idx + 1,
           "url": `${siteUrl}/jobs?jobId=${job.id}`,
@@ -905,16 +911,18 @@ export default function WellfoundCareersView({
       const ld = document.getElementById('smarthire-jobposting-jsonld')
       if (ld) ld.remove()
     }
-  }, [selectedJob, selCleanTitle, selLoc, selWorkMode, selDomain, jobs, cleanJobTitleWithPositionNumber, getFullDescriptionText])
+  }, [selectedJob, selCleanTitle, selLoc, selWorkMode, selDomain, openJobs, cleanJobTitleWithPositionNumber, getFullDescriptionText])
 
   // ─── Render Clean Job Row for Page 1 Feed (No save, No apply button) ──────
   const renderJobRow = (job) => {
+    if (!job) return null
+    const isExpired = isJobExpired ? isJobExpired(job) : false
+    if (isExpired) return null
     const cleanTitle = cleanJobTitleWithPositionNumber ? cleanJobTitleWithPositionNumber(job.title) : job.title
     const domainName = resolveClientDomainName(job)
     const loc = resolveJobLocation ? resolveJobLocation(job) : (job.work_mode || 'Remote, US')
     const workMode = resolveWorkArrangement(job)
     const localReq = resolveLocalRequirement(job)
-    const isExpired = isJobExpired ? isJobExpired(job) : false
 
     const workModeBadge = workMode === 'Remote'
       ? { bg: isLight ? '#DCFCE7' : '#052E16', text: isLight ? '#15803D' : '#86EFAC', border: isLight ? '#BBF7D0' : '#166534' }
@@ -1040,19 +1048,6 @@ export default function WellfoundCareersView({
           }} title={localReq.label}>
             {localReq.label}
           </span>
-          {isExpired && (
-            <span style={{
-              fontSize: 10,
-              fontWeight: 700,
-              color: '#DC2626',
-              backgroundColor: isLight ? '#FEE2E2' : '#450A0A',
-              padding: '1px 5px',
-              borderRadius: 4,
-              whiteSpace: 'nowrap'
-            }}>
-              Closed
-            </span>
-          )}
         </div>
 
         {/* Column 5: Action Button (View Job) */}
@@ -1936,7 +1931,7 @@ export default function WellfoundCareersView({
                   whiteSpace: 'nowrap'
                 }}
               >
-                All Requisitions ({jobs.length})
+                All Requisitions ({openJobs.length})
               </button>
               <button
                 onClick={() => {
@@ -2461,7 +2456,7 @@ export default function WellfoundCareersView({
                 position: 'sticky',
                 top: 84
               }}>
-                {(jobs || []).map(job => {
+                {(openJobs || []).map(job => {
                   const isSelected = selectedJob?.id === job.id
                   const cleanTitle = cleanJobTitleWithPositionNumber ? cleanJobTitleWithPositionNumber(job.title) : job.title
                   const domainName = resolveClientDomainName(job)
@@ -2602,19 +2597,6 @@ export default function WellfoundCareersView({
                         }}>
                           {localReq.label}
                         </span>
-
-                        {isExpired && (
-                          <span style={{
-                            fontSize: 10.5,
-                            fontWeight: 700,
-                            color: '#DC2626',
-                            backgroundColor: isLight ? '#FEE2E2' : '#450A0A',
-                            padding: '1px 6px',
-                            borderRadius: 4
-                          }}>
-                            Closed
-                          </span>
-                        )}
                       </div>
                     </div>
                   )
@@ -2633,6 +2615,30 @@ export default function WellfoundCareersView({
                   minHeight: 600
                 }}
               >
+                {/* Notice for Closed/Expired Requisitions */}
+                {isSelectedJobExpired && (
+                  <div style={{
+                    marginBottom: 24,
+                    padding: '12px 18px',
+                    borderRadius: 10,
+                    backgroundColor: isLight ? '#FEF2F2' : 'rgba(239, 68, 68, 0.15)',
+                    border: '1px solid #FCA5A5',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12
+                  }}>
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#DC2626', flexShrink: 0 }} />
+                    <div>
+                      <div style={{ fontSize: 13.5, fontWeight: 700, color: '#DC2626' }}>
+                        This requisition is closed
+                      </div>
+                      <div style={{ fontSize: 12.5, color: isLight ? '#7F1D1D' : '#FCA5A5', marginTop: 2 }}>
+                        This position has been filled or the deadline has passed. Applications are no longer being accepted.
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* ── 1. HEADER ROW: LOGO, TAGLINE, SAVE, APPLY NOW ── */}
                 <div style={{
                   display: 'flex',
@@ -2747,23 +2753,25 @@ export default function WellfoundCareersView({
                     />
 
                     <button
-                      onClick={() => handleApplyClick && handleApplyClick(selectedJob)}
+                      disabled={isSelectedJobExpired}
+                      onClick={() => !isSelectedJobExpired && handleApplyClick && handleApplyClick(selectedJob)}
                       style={{
-                        backgroundColor: colors.buttonDark,
-                        color: colors.buttonDarkText,
+                        backgroundColor: isSelectedJobExpired ? (isLight ? '#94A3B8' : '#475569') : colors.buttonDark,
+                        color: '#FFFFFF',
                         border: 'none',
                         borderRadius: 8,
                         padding: '10px 24px',
                         fontSize: 13.5,
                         fontWeight: 800,
-                        cursor: 'pointer',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                        cursor: isSelectedJobExpired ? 'not-allowed' : 'pointer',
+                        boxShadow: isSelectedJobExpired ? 'none' : '0 2px 8px rgba(0,0,0,0.1)',
+                        opacity: isSelectedJobExpired ? 0.75 : 1,
                         transition: 'opacity 0.15s ease'
                       }}
-                      onMouseEnter={(e) => e.currentTarget.style.opacity = '0.88'}
-                      onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+                      onMouseEnter={(e) => { if (!isSelectedJobExpired) e.currentTarget.style.opacity = '0.88' }}
+                      onMouseLeave={(e) => { if (!isSelectedJobExpired) e.currentTarget.style.opacity = '1' }}
                     >
-                      Apply Now
+                      {isSelectedJobExpired ? 'Position Closed' : 'Apply Now'}
                     </button>
                   </div>
                 </div>
@@ -3202,23 +3210,25 @@ export default function WellfoundCareersView({
                     />
 
                     <button
-                      onClick={() => handleApplyClick && handleApplyClick(selectedJob)}
+                      disabled={isSelectedJobExpired}
+                      onClick={() => !isSelectedJobExpired && handleApplyClick && handleApplyClick(selectedJob)}
                       style={{
-                        backgroundColor: colors.buttonDark,
-                        color: colors.buttonDarkText,
+                        backgroundColor: isSelectedJobExpired ? (isLight ? '#94A3B8' : '#475569') : colors.buttonDark,
+                        color: '#FFFFFF',
                         border: 'none',
                         borderRadius: 8,
                         padding: '12px 28px',
                         fontSize: 14.5,
                         fontWeight: 800,
-                        cursor: 'pointer',
-                        boxShadow: '0 2px 10px rgba(0,0,0,0.15)',
+                        cursor: isSelectedJobExpired ? 'not-allowed' : 'pointer',
+                        boxShadow: isSelectedJobExpired ? 'none' : '0 2px 10px rgba(0,0,0,0.15)',
+                        opacity: isSelectedJobExpired ? 0.75 : 1,
                         transition: 'opacity 0.15s ease'
                       }}
-                      onMouseEnter={(e) => e.currentTarget.style.opacity = '0.88'}
-                      onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+                      onMouseEnter={(e) => { if (!isSelectedJobExpired) e.currentTarget.style.opacity = '0.88' }}
+                      onMouseLeave={(e) => { if (!isSelectedJobExpired) e.currentTarget.style.opacity = '1' }}
                     >
-                      Apply for this position →
+                      {isSelectedJobExpired ? 'Position Closed' : 'Apply for this position →'}
                     </button>
                   </div>
                 </div>

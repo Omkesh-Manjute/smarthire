@@ -4906,8 +4906,8 @@ export async function scrapeAndImportLatestJobs() {
 
 export function isJobExpired(job) {
   if (!job) return true;
-  const s = (job.status || '').toLowerCase();
-  if (s === 'closed' || s === 'expired' || s === 'inactive') return true;
+  const s = String(job.status || '').toLowerCase().trim();
+  if (s === 'closed' || s === 'expired' || s === 'inactive' || s === 'filled' || s === 'cancelled') return true;
 
   const dl = job.deadline || job.submissionDeadline;
   if (dl) {
@@ -4982,16 +4982,17 @@ app.get('/api/jobs', (_req, res) => {
     )
   );
 
-  const coolsoftCount = sorted.filter(j => j.source === 'COOLSOFT' || j.source === 'jobsinhand' || j.company === 'COOLSOFT LLC').length;
-  const infooriginCount = sorted.filter(j => j.source === 'InfoOrigin' || j.client === 'InfoOrigin').length;
-  const indiaCount = sorted.filter(isIndiaJob).length;
-  const usaCount = sorted.filter(j => !isIndiaJob(j)).length;
-
   const requestedSource = _req.query?.source;
   const requestedCountry = _req.query?.country;
   const requestedScope = _req.query?.scope;
+  const openOnly = _req.query?.openOnly === 'true' || _req.query?.openOnly === true || requestedScope === 'careers' || requestedScope === 'public';
 
   let finalJobs = sorted;
+
+  // Filter out closed and expired positions for public careers / openOnly
+  if (openOnly) {
+    finalJobs = finalJobs.filter(j => !isJobExpired(j));
+  }
 
   // ATS Scope Exclusion: India jobs are restricted to the public Job Site only
   if (requestedScope === 'ats' || _req.headers['x-ats-scope'] === 'true') {
@@ -5016,11 +5017,17 @@ app.get('/api/jobs', (_req, res) => {
     }
   }
 
+  const poolForCounts = openOnly ? sorted.filter(j => !isJobExpired(j)) : sorted;
+  const coolsoftCount = poolForCounts.filter(j => j.source === 'COOLSOFT' || j.source === 'jobsinhand' || j.company === 'COOLSOFT LLC').length;
+  const infooriginCount = poolForCounts.filter(j => j.source === 'InfoOrigin' || j.client === 'InfoOrigin').length;
+  const indiaCount = poolForCounts.filter(isIndiaJob).length;
+  const usaCount = poolForCounts.filter(j => !isIndiaJob(j)).length;
+
   res.json({
     success: true,
     total: finalJobs.length,
     counts: {
-      total: sorted.length,
+      total: poolForCounts.length,
       coolsoft: coolsoftCount,
       infoorigin: infooriginCount,
       usa: usaCount,
@@ -5719,8 +5726,20 @@ Required Skills: ${JSON.stringify(job.skills)}`;
 
 // DELETE job by ID
 app.delete('/api/jobs/:id', (req, res) => {
+  const targetId = String(req.params.id || '').trim();
+  const cleanTarget = targetId.replace(/^(?:J-|REQ-)/i, '');
   const initialLength = jobsStore.length;
-  jobsStore = jobsStore.filter(j => j.id !== req.params.id);
+
+  jobsStore = jobsStore.filter(j => {
+    const jId = String(j.id || '').trim();
+    const jReqId = String(j.reqId || '').trim();
+    const cleanJId = jId.replace(/^(?:J-|REQ-)/i, '');
+    const cleanJReq = jReqId.replace(/^(?:J-|REQ-)/i, '');
+
+    if (jId === targetId || jReqId === targetId) return false;
+    if (cleanTarget && (cleanJId === cleanTarget || cleanJReq === cleanTarget)) return false;
+    return true;
+  });
 
   if (jobsStore.length === initialLength) {
     return res.status(404).json({ success: false, message: 'Job not found.' });
@@ -5736,8 +5755,20 @@ app.delete('/api/jobs/:id', (req, res) => {
 
 // UPDATE job by ID
 app.put('/api/jobs/:id', (req, res) => {
-  const { id } = req.params;
-  const index = jobsStore.findIndex(j => j.id === id);
+  const targetId = String(req.params.id || '').trim();
+  const cleanTarget = targetId.replace(/^(?:J-|REQ-)/i, '');
+
+  const index = jobsStore.findIndex(j => {
+    const jId = String(j.id || '').trim();
+    const jReqId = String(j.reqId || '').trim();
+    const cleanJId = jId.replace(/^(?:J-|REQ-)/i, '');
+    const cleanJReq = jReqId.replace(/^(?:J-|REQ-)/i, '');
+
+    if (jId === targetId || jReqId === targetId) return true;
+    if (cleanTarget && (cleanJId === cleanTarget || cleanJReq === cleanTarget)) return true;
+    return false;
+  });
+
   if (index === -1) {
     return res.status(404).json({ success: false, message: 'Job not found.' });
   }
@@ -5745,7 +5776,7 @@ app.put('/api/jobs/:id', (req, res) => {
   const {
     title, client, company, location, work_mode, workMode, type,
     employment_type, budget, billRate, experience, skills,
-    preferredSkills, description, status, deadline, assignedRecruiters
+    preferredSkills, description, rawDescription, status, deadline, assignedRecruiters
   } = req.body;
 
   const current = jobsStore[index];
@@ -5762,11 +5793,12 @@ app.put('/api/jobs/:id', (req, res) => {
     type: updatedWorkMode,
     employment_type: employment_type !== undefined ? employment_type : current.employment_type || 'Contract',
     budget: budget !== undefined ? budget : current.budget,
-    billRate: billRate !== undefined ? billRate : current.billRate || budget,
+    billRate: billRate !== undefined ? billRate : (budget !== undefined ? budget : (current.billRate || current.budget)),
     experience: experience !== undefined ? experience : current.experience,
     skills: Array.isArray(skills) ? skills : (typeof skills === 'string' ? skills.split(',').map(s => s.trim()).filter(Boolean) : current.skills),
     preferredSkills: Array.isArray(preferredSkills) ? preferredSkills : current.preferredSkills || [],
     description: description !== undefined ? description : current.description,
+    rawDescription: rawDescription !== undefined ? rawDescription : current.rawDescription,
     status: status !== undefined ? status : current.status,
     deadline: deadline !== undefined ? deadline : current.deadline,
     assignedRecruiters: assignedRecruiters !== undefined ? (Array.isArray(assignedRecruiters) ? assignedRecruiters : [assignedRecruiters]) : (current.assignedRecruiters || []),

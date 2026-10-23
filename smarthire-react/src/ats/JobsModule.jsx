@@ -385,7 +385,8 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
       experience: job.experience || '',
       skills: Array.isArray(job.skills) ? job.skills.join(', ') : (job.skills || ''),
       description: descText,
-      status: job.status || 'Active'
+      status: job.status || 'Active',
+      deadline: job.deadline || ''
     })
   }
 
@@ -394,12 +395,17 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
     if (!editingJob) return
     setSavingEdit(true)
     try {
-      const skillsArray = editFormData.skills.split(',').map(s => s.trim()).filter(Boolean)
+      const skillsArray = typeof editFormData.skills === 'string'
+        ? editFormData.skills.split(',').map(s => s.trim()).filter(Boolean)
+        : (Array.isArray(editFormData.skills) ? editFormData.skills : [])
       const updatePayload = {
         ...editFormData,
         skills: skillsArray,
+        budget: editFormData.budget,
         billRate: editFormData.budget,
-        rawDescription: editFormData.description
+        rawDescription: editFormData.description,
+        status: editFormData.status,
+        deadline: editFormData.deadline
       }
 
       // Save to Firebase Firestore
@@ -738,6 +744,7 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
               <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Work Mode</th>
               <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Key Skills</th>
               <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Deadline</th>
+              <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center', whiteSpace: 'nowrap' }}>Status</th>
               <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center', whiteSpace: 'nowrap' }}>Candidates</th>
               {isSuperAdmin && (
                 <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center', whiteSpace: 'nowrap' }}>LinkedIn Post</th>
@@ -748,7 +755,7 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
           <tbody>
             {filteredJobs.length === 0 ? (
               <tr>
-                <td colSpan={isSuperAdmin ? 10 : 9} style={{ padding: '36px 20px', textAlign: 'center', color: '#64748b' }}>
+                <td colSpan={isSuperAdmin ? 11 : 10} style={{ padding: '36px 20px', textAlign: 'center', color: '#64748b' }}>
                   No active job postings found matching search criteria.
                 </td>
               </tr>
@@ -818,6 +825,19 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
                     </td>
                     <td style={{ padding: '10px 14px', color: '#64748b', whiteSpace: 'nowrap' }}>
                       {job.deadline || '—'}
+                    </td>
+                    <td style={{ padding: '10px 14px', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                      <span style={{
+                        padding: '2px 8px',
+                        borderRadius: '4px',
+                        fontSize: '11px',
+                        fontWeight: '700',
+                        background: (job.status || '').toLowerCase() === 'closed' ? '#fee2e2' : '#ecfdf5',
+                        color: (job.status || '').toLowerCase() === 'closed' ? '#b91c1c' : '#047857',
+                        border: `1px solid ${(job.status || '').toLowerCase() === 'closed' ? '#fca5a5' : '#a7f3d0'}`
+                      }}>
+                        {job.status || 'Active'}
+                      </span>
                     </td>
                     <td style={{ padding: '10px 14px', textAlign: 'center', fontWeight: '700', color: candidateCount > 0 ? '#16a34a' : '#94a3b8' }}>
                       {candidateCount}
@@ -1155,6 +1175,24 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
                     <option>C2C</option>
                     <option>W2</option>
                   </select>
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+                <div>
+                  <label style={labelStyle}>Requisition Status</label>
+                  <select value={editFormData.status || 'Active'} onChange={(e) => setEditFormData({ ...editFormData, status: e.target.value })} style={inputStyle}>
+                    <option value="Active">Active</option>
+                    <option value="Open">Open</option>
+                    <option value="Closed">Closed</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={labelStyle}>Submission Deadline</label>
+                  <input type="date" value={editFormData.deadline || ''} onChange={(e) => setEditFormData({ ...editFormData, deadline: e.target.value })} style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Pay Rate / Budget</label>
+                  <input type="text" value={editFormData.budget || ''} onChange={(e) => setEditFormData({ ...editFormData, budget: e.target.value })} placeholder="e.g. $75/hr" style={inputStyle} />
                 </div>
               </div>
               <div>

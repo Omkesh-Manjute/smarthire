@@ -31,8 +31,19 @@ export default function SmartHireBotWidget({ jobs = [], onClose }) {
 
   function isJobExpired(job) {
     if (!job) return true
-    const s = (job.status || '').toLowerCase()
-    return s === 'closed' || s === 'expired' || s === 'inactive'
+    const s = String(job.status || '').toLowerCase().trim()
+    if (s === 'closed' || s === 'expired' || s === 'inactive' || s === 'filled' || s === 'cancelled') return true
+    const dl = job.deadline || job.submissionDeadline
+    if (dl) {
+      const deadlineDate = new Date(dl)
+      if (!isNaN(deadlineDate.getTime())) {
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        deadlineDate.setHours(0, 0, 0, 0)
+        if (today > deadlineDate) return true
+      }
+    }
+    return false
   }
 
   const handleSend = () => {
