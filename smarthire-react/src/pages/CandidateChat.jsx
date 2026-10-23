@@ -1831,134 +1831,272 @@ export default function CandidateChat() {
         {/* STEP 5: SUBMITTED CONFIRMATION */}
         {step === 5 && (
           <div style={styles.card}>
-            <div style={{ textAlign: 'center', padding: '24px 0' }}>
+            <div style={{ textAlign: 'center', padding: '16px 0 24px' }}>
               <div style={styles.successCircle}>
                 <span style={{ fontSize: '38px' }}>✓</span>
               </div>
 
-              <h1 style={{ fontSize: '28px', fontWeight: '800', color: '#0f172a', marginTop: '16px' }}>
+              <h1 style={{ fontSize: '26px', fontWeight: '800', color: '#0f172a', marginTop: '16px', letterSpacing: '-0.02em' }}>
                 Application Submitted Successfully!
               </h1>
-              <p style={{ fontSize: '15px', color: '#64748b', maxWidth: '520px', margin: '8px auto 0', lineHeight: 1.6 }}>
+              <p style={{ fontSize: '14.5px', color: '#64748b', maxWidth: '580px', margin: '8px auto 0', lineHeight: 1.6 }}>
                 Thank you, <strong>{candidateName}</strong>. Your single continuous proctored video interview has been securely transmitted to the recruitment desk for <strong>{jobTitle}</strong>.
               </p>
 
-              {/* Submission Receipt Card */}
-              <div style={styles.receiptCard}>
-                <div style={styles.receiptRow}>
-                  <span style={{ color: '#64748b' }}>Session ID:</span>
-                  <strong style={{ fontFamily: 'monospace', color: '#0f172a' }}>{sessionId}</strong>
-                </div>
-                <div style={styles.receiptRow}>
-                  <span style={{ color: '#64748b' }}>Submitted At:</span>
-                  <span>{new Date(submittedAtDate || Date.now()).toLocaleDateString()} {new Date(submittedAtDate || Date.now()).toLocaleTimeString()}</span>
-                </div>
-                <div style={styles.receiptRow}>
-                  <span style={{ color: '#64748b' }}>Role:</span>
-                  <strong>{jobTitle}</strong>
-                </div>
-                <div style={styles.receiptRow}>
-                  <span style={{ color: '#64748b' }}>Recording Mode:</span>
-                  <span style={styles.submittedPill}>✓ Continuous Proctored Take</span>
-                </div>
-              </div>
-
-              {/* What happens next */}
-              <div style={styles.nextStepsCard}>
-                <h4 style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a', marginBottom: '12px' }}>
-                  What happens next?
-                </h4>
-                <div style={styles.timelineList}>
-                  <div style={styles.timelineStep}>
-                    <span style={styles.stepNum}>1</span>
-                    <span style={{ fontSize: '13px', color: '#334155' }}>
-                      Our talent specialists review your full continuous recording and AI transcript.
-                    </span>
-                  </div>
-                  <div style={styles.timelineStep}>
-                    <span style={styles.stepNum}>2</span>
-                    <span style={{ fontSize: '13px', color: '#334155' }}>
-                      Check your email ({candidateEmail}) for updates from our recruitment desk.
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Career Guides Recommendation Card (Drives organic blog traffic for AdSense) */}
+              {/* Submission Dossier Card */}
               <div style={{
-                background: '#ffffff',
+                background: '#F8FAFC',
                 border: '1px solid #E2E8F0',
                 borderRadius: '12px',
                 padding: '16px 20px',
-                textAlign: 'left',
-                marginTop: '20px'
+                margin: '24px auto 28px',
+                maxWidth: '780px',
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
+                gap: '16px',
+                textAlign: 'left'
               }}>
-                <div style={{ fontSize: '12px', fontWeight: 800, color: '#0F172A', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                  Recommended Career & Interview Guides
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <span style={{ fontSize: '11px', textTransform: 'uppercase', fontWeight: '700', letterSpacing: '0.05em', color: '#64748B' }}>
+                    Session ID
+                  </span>
+                  <span style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace', fontSize: '12.5px', color: '#2563EB', background: '#EFF6FF', padding: '2px 6px', borderRadius: '4px', width: 'fit-content' }}>
+                    {sessionId}
+                  </span>
                 </div>
-                <p style={{ fontSize: '13px', color: '#64748B', margin: '0 0 12px', lineHeight: 1.5 }}>
-                  While our recruitment team reviews your submission, explore industry benchmarks and preparation resources:
-                </p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <Link
-                    to="/blog/data-center-staffing-boom"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ fontSize: '13px', color: '#2563EB', textDecoration: 'none', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
-                  >
-                    <span>Data Center Staffing Boom: Hot In-Demand IT Roles (2026)</span>
-                    <span style={{ fontSize: '12px', color: '#64748B' }}>Read &rarr;</span>
-                  </Link>
-                  <Link
-                    to="/blog/highest-paying-it-certifications-2026"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ fontSize: '13px', color: '#2563EB', textDecoration: 'none', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
-                  >
-                    <span>Highest-Paying IT Certifications & Skill Demand (2026)</span>
-                    <span style={{ fontSize: '12px', color: '#64748B' }}>Read &rarr;</span>
-                  </Link>
-                  <Link
-                    to="/blog/c2c-vs-w2-vs-1099-it-contracts-guide"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ fontSize: '13px', color: '#2563EB', textDecoration: 'none', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
-                  >
-                    <span>C2C vs W2 vs 1099 IT Contracts & Rate Guide</span>
-                    <span style={{ fontSize: '12px', color: '#64748B' }}>Read &rarr;</span>
-                  </Link>
-                  <Link
-                    to="/blog/us-it-recruitment-market-2026"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ fontSize: '13px', color: '#2563EB', textDecoration: 'none', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
-                  >
-                    <span>US IT Recruitment Market 2026: Direct Client Hiring Trends</span>
-                    <span style={{ fontSize: '12px', color: '#64748B' }}>Read &rarr;</span>
-                  </Link>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <span style={{ fontSize: '11px', textTransform: 'uppercase', fontWeight: '700', letterSpacing: '0.05em', color: '#64748B' }}>
+                    Submitted At
+                  </span>
+                  <span style={{ fontSize: '13px', fontWeight: '700', color: '#0F172A' }}>
+                    {new Date(submittedAtDate || Date.now()).toLocaleDateString()} · {new Date(submittedAtDate || Date.now()).toLocaleTimeString()}
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <span style={{ fontSize: '11px', textTransform: 'uppercase', fontWeight: '700', letterSpacing: '0.05em', color: '#64748B' }}>
+                    Position / Role
+                  </span>
+                  <span style={{ fontSize: '13px', fontWeight: '700', color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {jobTitle}
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <span style={{ fontSize: '11px', textTransform: 'uppercase', fontWeight: '700', letterSpacing: '0.05em', color: '#64748B' }}>
+                    Recording Mode
+                  </span>
+                  <span style={{ fontSize: '12px', fontWeight: '700', color: '#059669', background: '#DCFCE7', padding: '2px 8px', borderRadius: '4px', width: 'fit-content' }}>
+                    ✓ Continuous Proctored Take
+                  </span>
                 </div>
               </div>
 
-              <div style={{ marginTop: '24px', display: 'flex', gap: '12px', justifyContent: 'center' }}>
-                <Link
-                  to="/blog"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={styles.primaryButton}
-                >
-                  Explore Career Blog & Guides
-                </Link>
-                <Link
-                  to="/jobs"
-                  style={{
-                    ...styles.secondaryButton,
-                    textDecoration: 'none',
-                    display: 'inline-flex',
-                    alignItems: 'center'
-                  }}
-                >
-                  Browse More Open Positions
-                </Link>
+              {/* What Happens Next Section Title */}
+              <div style={{
+                maxWidth: '780px',
+                margin: '0 auto 16px',
+                fontSize: '13.5px',
+                fontWeight: '800',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                color: '#1E293B',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                textAlign: 'left'
+              }}>
+                <span>What Happens Next? (Hiring Process Timeline)</span>
+                <div style={{ flex: 1, height: '1px', backgroundColor: '#E2E8F0' }} />
+              </div>
+
+              {/* 4-Step Milestone Stepper */}
+              <div style={{
+                background: '#FFFFFF',
+                border: '1px solid #E2E8F0',
+                borderRadius: '14px',
+                padding: '20px 22px',
+                margin: '0 auto 28px',
+                maxWidth: '780px',
+                textAlign: 'left'
+              }}>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+                  gap: '16px'
+                }}>
+                  {/* Step 1 */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#10B981', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '800', flexShrink: 0 }}>
+                        ✓
+                      </div>
+                      <span style={{ fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', padding: '2px 7px', borderRadius: '4px', letterSpacing: '0.04em', background: '#ECFDF5', color: '#047857' }}>
+                        Complete
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '13px', fontWeight: '700', color: '#0F172A', lineHeight: 1.35 }}>
+                      1. Submission Captured
+                    </div>
+                    <div style={{ fontSize: '11.5px', color: '#64748B', lineHeight: 1.45 }}>
+                      Your continuous video take & proctor logs are securely archived.
+                    </div>
+                    <div style={{ fontSize: '11px', fontWeight: '600', color: '#059669', marginTop: '2px' }}>
+                      Recorded Just Now
+                    </div>
+                  </div>
+
+                  {/* Step 2 */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#2563EB', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '800', flexShrink: 0, boxShadow: '0 0 0 4px rgba(37, 99, 235, 0.2)' }}>
+                        2
+                      </div>
+                      <span style={{ fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', padding: '2px 7px', borderRadius: '4px', letterSpacing: '0.04em', background: '#EFF6FF', color: '#1D4ED8' }}>
+                        In Review
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '13px', fontWeight: '700', color: '#0F172A', lineHeight: 1.35 }}>
+                      2. AI & Recruiter Screening
+                    </div>
+                    <div style={{ fontSize: '11.5px', color: '#64748B', lineHeight: 1.45 }}>
+                      Talent specialists review your response scorecards & AI transcript.
+                    </div>
+                    <div style={{ fontSize: '11px', fontWeight: '600', color: '#2563EB', marginTop: '2px' }}>
+                      Estimated: 24–48 Hours
+                    </div>
+                  </div>
+
+                  {/* Step 3 */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#F1F5F9', color: '#94A3B8', border: '1px solid #CBD5E1', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '800', flexShrink: 0 }}>
+                        3
+                      </div>
+                      <span style={{ fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', padding: '2px 7px', borderRadius: '4px', letterSpacing: '0.04em', background: '#F8FAFC', color: '#64748B' }}>
+                        Upcoming
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '13px', fontWeight: '700', color: '#0F172A', lineHeight: 1.35 }}>
+                      3. Hiring Manager Review
+                    </div>
+                    <div style={{ fontSize: '11.5px', color: '#64748B', lineHeight: 1.45 }}>
+                      Qualified submissions are presented to the client hiring manager.
+                    </div>
+                    <div style={{ fontSize: '11px', fontWeight: '600', color: '#64748B', marginTop: '2px' }}>
+                      Shortlist Evaluation
+                    </div>
+                  </div>
+
+                  {/* Step 4 */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#F1F5F9', color: '#94A3B8', border: '1px solid #CBD5E1', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '800', flexShrink: 0 }}>
+                        4
+                      </div>
+                      <span style={{ fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', padding: '2px 7px', borderRadius: '4px', letterSpacing: '0.04em', background: '#F8FAFC', color: '#64748B' }}>
+                        Upcoming
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '13px', fontWeight: '700', color: '#0F172A', lineHeight: 1.35 }}>
+                      4. Final Round & Decision
+                    </div>
+                    <div style={{ fontSize: '11.5px', color: '#64748B', lineHeight: 1.45 }}>
+                      Direct client webcam interview or final submittal decision.
+                    </div>
+                    <div style={{ fontSize: '11px', fontWeight: '600', color: '#64748B', marginTop: '2px' }}>
+                      Official Email Notification
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Dedicated Talent Specialist & Support Section Title */}
+              <div style={{
+                maxWidth: '780px',
+                margin: '0 auto 16px',
+                fontSize: '13.5px',
+                fontWeight: '800',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                color: '#1E293B',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                textAlign: 'left'
+              }}>
+                <span>Dedicated Talent Advisor & Support</span>
+                <div style={{ flex: 1, height: '1px', backgroundColor: '#E2E8F0' }} />
+              </div>
+
+              {/* Dedicated Recruiter & Support Row */}
+              <div style={{
+                maxWidth: '780px',
+                margin: '0 auto',
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+                gap: '16px',
+                textAlign: 'left'
+              }}>
+                <div style={{
+                  background: '#F8FAFC',
+                  border: '1px solid #E2E8F0',
+                  borderRadius: '12px',
+                  padding: '16px 20px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '14px'
+                }}>
+                  <div style={{
+                    width: '44px',
+                    height: '44px',
+                    borderRadius: '50%',
+                    background: 'linear-gradient(135deg, #1E293B, #475569)',
+                    color: '#FFFFFF',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: '800',
+                    fontSize: '15px',
+                    flexShrink: 0
+                  }}>
+                    {(session?.recruiterName || 'Omkesh Manjute').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                  </div>
+                  <div>
+                    <h5 style={{ margin: '0 0 2px', fontSize: '13.5px', fontWeight: '700', color: '#0F172A' }}>
+                      {session?.recruiterName || 'Omkesh Manjute'}
+                    </h5>
+                    <p style={{ margin: 0, fontSize: '12px', color: '#64748B' }}>
+                      Assigned Talent Specialist · SmartHire Desk
+                    </p>
+                    <div style={{ fontSize: '11px', fontWeight: '600', color: '#059669', display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '3px' }}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                      Will email updates to {candidateEmail || 'your email'}
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{
+                  background: '#F8FAFC',
+                  border: '1px solid #E2E8F0',
+                  borderRadius: '12px',
+                  padding: '16px 20px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                  gap: '4px'
+                }}>
+                  <div style={{ fontSize: '12.5px', fontWeight: '700', color: '#0F172A' }}>
+                    Have Questions or Need Help?
+                  </div>
+                  <div style={{ fontSize: '11.5px', color: '#64748B' }}>
+                    Direct candidate support desk:
+                  </div>
+                  <a href="mailto:support@smarthireus.com" style={{ fontSize: '12px', fontWeight: '600', color: '#2563EB', textDecoration: 'none' }}>
+                    support@smarthireus.com
+                  </a>
+                </div>
               </div>
             </div>
           </div>
