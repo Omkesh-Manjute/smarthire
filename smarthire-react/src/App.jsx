@@ -40,7 +40,6 @@ const About = lazyWithRetry(() => import('./pages/About'))
 const PrivacyPolicy = lazyWithRetry(() => import('./pages/PrivacyPolicy'))
 const Terms = lazyWithRetry(() => import('./pages/Terms'))
 const AtsPlatform = lazyWithRetry(() => import('./pages/AtsPlatform'))
-const Reports = lazyWithRetry(() => import('./pages/Reports'))
 const BrandingCenter = lazyWithRetry(() => import('./pages/BrandingCenter'))
 const LinkedInPosts = lazyWithRetry(() => import('./pages/LinkedInPosts'))
 const CandidateChat = lazyWithRetry(() => import('./pages/CandidateChat'))
@@ -124,7 +123,7 @@ function App() {
           <Route path="/dashboard" element={<ProtectedRoute><RecruiterDashboard /></ProtectedRoute>} />
           <Route path="/verify" element={<Navigate to="/ats" replace />} />
           <Route path="/ats" element={<ProtectedRoute><AtsPlatform /></ProtectedRoute>} />
-          <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+          <Route path="/reports" element={<Navigate to="/ats" replace />} />
           <Route path="/pricing" element={<ProtectedRoute><Pricing /></ProtectedRoute>} />
           <Route path="/branding" element={<ProtectedRoute><BrandingCenter /></ProtectedRoute>} />
           <Route path="/inbox" element={<ProtectedRoute><RecruiterInbox /></ProtectedRoute>} />

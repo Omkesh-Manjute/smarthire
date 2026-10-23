@@ -3060,7 +3060,6 @@ ${coversheet.references}
               groupLabel: 'Intel & Portal',
               items: [
                 { id: 'chat', label: 'Messages', icon: <IconChat />, path: '/inbox?tab=chat' },
-                { id: 'reports', label: 'Reports', icon: <IconBarChart />, path: '/reports' },
                 { id: 'jobs', label: 'Careers Portal', icon: <IconGlobe />, path: '/jobs' },
                 { id: 'settings', label: 'Settings', icon: <IconSettings />, path: '/ats' },
               ]

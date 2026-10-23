@@ -77,7 +77,6 @@ const renderAtsIcon = (id, size = 16, color = 'currentColor') => {
           <polygon points="22 2 15 22 11 13 2 9 22 2" />
         </svg>
       )
-    case 'reports':
     case 'audit':
       return (
         <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
@@ -213,7 +212,6 @@ const ALL_MODULES = [
   { id: 'submittal',   label: 'Submittal Pack',  category: 'talent', isLink: '/submittal-pack' },
   { id: 'rtr',         label: 'SmartSign RTR',   category: 'talent', isLink: '/sign-rtr' },
   { id: 'smartscreen', label: 'SmartScreen AI',  category: 'talent', isLink: '/smartscreen' },
-  { id: 'reports',     label: 'Reports',         category: 'main', adminOnly: true },
   { id: 'analytics',   label: 'Analytics',       category: 'main' },
   { id: 'inquiries',   label: 'Client Inquiries',category: 'admin', adminOnly: true },
   { id: 'audit',       label: 'Audit Logs',      category: 'admin' },
@@ -243,17 +241,17 @@ export default function AtsPlatform() {
   const DEFAULT_PERMISSIONS = {
     superadmin: {
       ats: true, home: true, candidates: true, pipeline: true, screening: true, monster: true, hotlist: true,
-      submissions: true, submittal: true, rtr: true, smartscreen: true, reports: true, analytics: true, audit: true, automation: true,
+      submissions: true, submittal: true, rtr: true, smartscreen: true, analytics: true, audit: true, automation: true,
       inbox: true, settings: true, users: true,
     },
     manager: {
       ats: true, home: true, candidates: true, pipeline: true, screening: true, monster: true, hotlist: true,
-      submissions: true, submittal: true, rtr: true, smartscreen: true, reports: true, analytics: true, audit: true, automation: false,
+      submissions: true, submittal: true, rtr: true, smartscreen: true, analytics: true, audit: true, automation: false,
       inbox: true, settings: false, users: false,
     },
     recruiter: {
       ats: true, home: true, candidates: true, pipeline: false, screening: true, monster: true, hotlist: true,
-      submissions: false, submittal: true, rtr: true, smartscreen: true, reports: false, analytics: true, audit: true, automation: false,
+      submissions: false, submittal: true, rtr: true, smartscreen: true, analytics: true, audit: true, automation: false,
       inbox: true, settings: false, users: false,
     }
   }
@@ -329,6 +327,18 @@ export default function AtsPlatform() {
     const urlTab = getTabFromUrl()
     return urlTab || 'home'
   })
+
+  const [navGroupsOpen, setNavGroupsOpen] = useState({
+    talent: true,
+    sourcing: true,
+    evaluation: true,
+    comms: false,
+    admin: true
+  })
+
+  const toggleNavGroup = (grpId) => {
+    setNavGroupsOpen(prev => ({ ...prev, [grpId]: !prev[grpId] }))
+  }
 
   // Synchronize activeTab to URL query parameters & localStorage so refresh always preserves the active tab
   useEffect(() => {
@@ -901,11 +911,10 @@ export default function AtsPlatform() {
           </button>
         </div>
 
-        {/* Primary Upper Navigation (Home, Reports) */}
+        {/* Primary Upper Navigation (Home) */}
         <div style={{ padding: '8px 8px 4px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
           {[
-            { id: 'home', label: 'Home' },
-            { id: 'reports', label: 'Reports' }
+            { id: 'home', label: 'Home' }
           ].map(item => {
             const isActive = activeTab === item.id
             return (
@@ -942,233 +951,190 @@ export default function AtsPlatform() {
           <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)', margin: '8px 12px' }} />
         )}
 
-        {/* Scrollable Sub-modules List */}
+        {/* Scrollable Sub-modules List (5 Normalized Dropdown Groups) */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '4px 8px' }}>
-          {/* Section: Talent Acquisition */}
-          {!sidebarCollapsed && (
-            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.04em', padding: '8px 10px 4px' }}>
-              Talent Acquisition
-            </div>
-          )}
+          {[
+            {
+              id: 'talent',
+              label: 'Talent Hub',
+              icon: 'candidates',
+              items: [
+                { id: 'jobs', label: 'Requisitions & Jobs', action: () => setActiveTab('home') },
+                { id: 'candidates', label: 'Candidate Database', isLink: '/inbox', count: safeCandidates.length },
+                { id: 'submittal', label: 'Submittal Pack', isLink: '/submittal-pack' },
+                { id: 'rtr', label: 'SmartSign RTR', isLink: '/sign-rtr' },
+              ]
+            },
+            {
+              id: 'sourcing',
+              label: 'Sourcing Console',
+              icon: 'monster',
+              items: [
+                { id: 'hotlist', label: 'Vendor Hotlists', isLink: '/inbox?tab=hotlist' },
+                { id: 'monster', label: 'Universal Search', isLink: '/inbox?tab=monster' },
+                { id: 'sourcing_pipeline', label: 'Sourcing Pipeline', isLink: '/sourcing' },
+              ]
+            },
+            {
+              id: 'evaluation',
+              label: 'Evaluation & Pipeline',
+              icon: 'pipeline',
+              items: [
+                { id: 'submissions', label: 'Visual Pipeline', action: () => setActiveTab('submissions') },
+                { id: 'screening', label: 'AI Video Screening', action: () => setActiveTab('screening') },
+                { id: 'smartscreen', label: 'SmartScreen Studio', isLink: '/smartscreen' },
+              ]
+            },
+            {
+              id: 'comms',
+              label: 'Outreach & Comms',
+              icon: 'inbox',
+              items: [
+                { id: 'inbox', label: 'Recruiter Inbox', isLink: '/inbox' },
+                { id: 'inquiries', label: 'Client Inquiries', action: () => setActiveTab('inquiries'), count: inquiriesCount || undefined },
+              ]
+            },
+            {
+              id: 'admin',
+              label: 'Administration',
+              icon: 'users',
+              adminOnly: true,
+              items: [
+                { id: 'users', label: 'Manage Users & Clients', action: () => setActiveTab('users') },
+                { id: 'settings', label: 'Workspace Settings', action: () => setActiveTab('settings') },
+                { id: 'audit', label: 'Audit Logs', action: () => setActiveTab('audit') },
+                { id: 'automation', label: 'Automation Rules', action: () => setActiveTab('automation') },
+              ]
+            },
+          ]
+            .filter(grp => !grp.adminOnly || isSuperAdmin)
+            .map(grp => {
+              const isOpen = Boolean(navGroupsOpen[grp.id])
+              const isGroupActive = grp.items.some(it => activeTab === it.id)
 
-          {/* 1. Candidates with Slack-Style Collapsible Sub-views */}
-          <div style={{ marginBottom: '2px' }}>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: sidebarCollapsed ? '10px 0' : '7px 12px',
-                borderRadius: '6px',
-                background: activeTab === 'candidates' ? '#1164A3' : 'transparent',
-                color: activeTab === 'candidates' ? '#ffffff' : 'rgba(255,255,255,0.78)',
-                fontSize: '12.5px',
-                fontWeight: activeTab === 'candidates' ? '700' : '500',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease'
-              }}
-              onMouseEnter={e => { if (activeTab !== 'candidates') { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#ffffff' } }}
-              onMouseLeave={e => { if (activeTab !== 'candidates') { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.78)' } }}
-              onClick={() => navigate('/inbox')}
-              title={sidebarCollapsed ? 'Candidates' : undefined}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', justifyContent: sidebarCollapsed ? 'center' : 'flex-start', width: sidebarCollapsed ? '100%' : 'auto' }}>
-                <span style={{ display: 'inline-flex', alignItems: 'center' }}>{renderAtsIcon('candidates', 14, activeTab === 'candidates' ? '#ffffff' : 'rgba(255,255,255,0.78)')}</span>
-                {!sidebarCollapsed && <span>Candidates</span>}
-              </div>
-              {!sidebarCollapsed && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span style={{
-                    fontSize: '10.5px',
-                    background: activeTab === 'candidates' ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.16)',
-                    color: '#ffffff',
-                    padding: '1px 7px',
-                    borderRadius: '10px',
-                    fontWeight: '700'
-                  }}>
-                    {safeCandidates.length}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setCandidatesMenuExpanded(prev => !prev)
+              return (
+                <div key={grp.id} style={{ marginBottom: '6px' }}>
+                  {/* Group Header Accordion Button */}
+                  <div
+                    onClick={() => {
+                      if (sidebarCollapsed) {
+                        setSidebarCollapsed(false)
+                        setNavGroupsOpen(prev => ({ ...prev, [grp.id]: true }))
+                      } else {
+                        toggleNavGroup(grp.id)
+                      }
                     }}
-                    title={candidatesMenuExpanded ? 'Collapse Candidate sub-views' : 'Expand Candidate sub-views'}
+                    title={sidebarCollapsed ? grp.label : undefined}
                     style={{
-                      background: 'transparent',
-                      border: 'none',
-                      color: 'rgba(255,255,255,0.7)',
-                      cursor: 'pointer',
-                      padding: '2px 3px',
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'center',
-                      borderRadius: '4px'
+                      justifyContent: 'space-between',
+                      padding: sidebarCollapsed ? '10px 0' : '7px 10px',
+                      borderRadius: '6px',
+                      background: isGroupActive && !isOpen ? 'rgba(17, 100, 163, 0.25)' : 'transparent',
+                      color: isGroupActive ? '#ffffff' : 'rgba(255,255,255,0.75)',
+                      fontSize: '11px',
+                      fontWeight: '700',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.04em',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                      userSelect: 'none'
                     }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = '#ffffff' }}
+                    onMouseLeave={e => { e.currentTarget.style.background = isGroupActive && !isOpen ? 'rgba(17, 100, 163, 0.25)' : 'transparent'; e.currentTarget.style.color = isGroupActive ? '#ffffff' : 'rgba(255,255,255,0.75)' }}
                   >
-                    <motion.svg
-                      width="10"
-                      height="10"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      animate={{ rotate: candidatesMenuExpanded ? 180 : 0 }}
-                      transition={{ type: "spring", stiffness: 320, damping: 22 }}
-                    >
-                      <polyline points="6 9 12 15 18 9"></polyline>
-                    </motion.svg>
-                  </button>
-                </div>
-              )}
-            </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: sidebarCollapsed ? 'center' : 'flex-start', width: sidebarCollapsed ? '100%' : 'auto' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+                        {renderAtsIcon(grp.icon, 14, isGroupActive ? '#38bdf8' : 'rgba(255,255,255,0.75)')}
+                      </span>
+                      {!sidebarCollapsed && <span>{grp.label}</span>}
+                    </div>
 
-            {/* Skiper103 Bouncy / Smooth Collapsible Sub-menu */}
-            <AnimatePresence initial={false}>
-              {!sidebarCollapsed && candidatesMenuExpanded && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ type: 'spring', stiffness: 320, damping: 24, mass: 0.8 }}
-                  style={{ overflow: 'hidden', paddingLeft: '22px', display: 'flex', flexDirection: 'column', gap: '3px', marginTop: '2px', borderLeft: '1.5px solid rgba(255,255,255,0.15)', marginLeft: '14px' }}
-                >
-                  {[
-                    { label: 'Talent Hub (/inbox)', path: '/inbox' },
-                    { label: 'Universal Search', path: '/inbox?tab=monster' },
-                    { label: 'Vendor Hotlists', path: '/inbox?tab=hotlist' },
-                  ].map((sub, sIdx) => (
-                    <motion.div
-                      key={sub.path}
-                      onClick={() => navigate(sub.path)}
-                      initial={{ opacity: 0, x: -8, filter: 'blur(2px)' }}
-                      animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
-                      exit={{ opacity: 0, x: -8, filter: 'blur(2px)' }}
-                      transition={{ type: 'spring', stiffness: 350, damping: 25, delay: sIdx * 0.035 }}
-                      whileHover={{ x: 4, backgroundColor: 'rgba(255,255,255,0.12)', color: '#ffffff', transition: { duration: 0.15 } }}
-                      whileTap={{ scale: 0.97 }}
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 10px', borderRadius: '6px',
-                        color: 'rgba(255,255,255,0.8)', fontSize: '11.5px', fontWeight: '500', cursor: 'pointer', transition: 'color 0.15s, background-color 0.15s'
-                      }}
-                    >
-                      <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)' }}>•</span>
-                      <span>{sub.label}</span>
-                    </motion.div>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          {/* 2. Direct Talent Acquisition Pages */}
-          {[
-            { id: 'monster', label: 'Universal Search', isLink: '/inbox?tab=monster' },
-            { id: 'hotlist', label: 'Vendor Hotlists', isLink: '/inbox?tab=hotlist' },
-            { id: 'screening', label: 'Screening' },
-            { id: 'submissions', label: 'Submissions' },
-            { id: 'submittal', label: 'Submittal Pack', isLink: '/submittal-pack' },
-            { id: 'rtr', label: 'SmartSign RTR', isLink: '/sign-rtr' },
-            { id: 'smartscreen', label: 'SmartScreen AI', isLink: '/smartscreen' },
-          ]
-            .map(m => {
-              const isActive = activeTab === m.id
-              return (
-                <div
-                  key={m.id}
-                  onClick={() => {
-                    if (m.isLink) navigate(m.isLink)
-                    else setActiveTab(m.id)
-                  }}
-                  title={sidebarCollapsed ? m.label : undefined}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: sidebarCollapsed ? '10px 0' : '7px 12px',
-                    borderRadius: '6px',
-                    background: isActive ? '#1164A3' : 'transparent',
-                    color: isActive ? '#ffffff' : 'rgba(255,255,255,0.78)',
-                    fontSize: '12.5px',
-                    fontWeight: isActive ? '700' : '500',
-                    cursor: 'pointer',
-                    marginBottom: '2px',
-                    transition: 'all 0.15s ease'
-                  }}
-                  onMouseEnter={e => { if (!isActive) { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#ffffff' } }}
-                  onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.78)' } }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', justifyContent: sidebarCollapsed ? 'center' : 'flex-start', width: sidebarCollapsed ? '100%' : 'auto' }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center' }}>{renderAtsIcon(m.id, 14, isActive ? '#ffffff' : 'rgba(255,255,255,0.78)')}</span>
-                    {!sidebarCollapsed && <span>{m.label}</span>}
+                    {!sidebarCollapsed && (
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                        transition: 'transform 0.2s ease',
+                        fontSize: '9px',
+                        color: 'rgba(255,255,255,0.45)'
+                      }}>
+                        ▼
+                      </span>
+                    )}
                   </div>
-                </div>
-              )
-            })}
 
-          {/* Section: Operations & Admin */}
-          {!sidebarCollapsed && (
-            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.04em', padding: '12px 10px 4px' }}>
-              Operations & Admin
-            </div>
-          )}
-
-          {[
-            { id: 'inquiries', label: 'Client Inquiries', count: inquiriesCount || undefined, adminOnly: true },
-            { id: 'audit', label: 'Audit Logs', adminOnly: false },
-            { id: 'automation', label: 'Automation', adminOnly: true },
-            { id: 'settings', label: 'Settings', adminOnly: false },
-            { id: 'users', label: 'Manage Users', adminOnly: true },
-          ]
-            .filter(m => !m.adminOnly || isSuperAdmin)
-            .map(m => {
-              const isActive = activeTab === m.id
-              return (
-                <div
-                  key={m.id}
-                  onClick={() => { if (m.isLink) navigate(m.isLink); else setActiveTab(m.id) }}
-                  title={sidebarCollapsed ? m.label : undefined}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: sidebarCollapsed ? '10px 0' : '7px 12px',
-                    borderRadius: '6px',
-                    background: isActive ? '#1164A3' : 'transparent',
-                    color: isActive ? '#ffffff' : 'rgba(255,255,255,0.72)',
-                    fontSize: '12.5px',
-                    fontWeight: isActive ? '700' : '500',
-                    cursor: 'pointer',
-                    marginBottom: '2px',
-                    transition: 'all 0.15s ease'
-                  }}
-                  onMouseEnter={e => { if (!isActive) { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#ffffff' } }}
-                  onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.72)' } }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center' }}>{renderAtsIcon(m.id, 14, isActive ? '#ffffff' : 'rgba(255,255,255,0.72)')}</span>
-                    {!sidebarCollapsed && <span>{m.label}</span>}
-                  </div>
-                  {!sidebarCollapsed && m.count != null && m.count > 0 && (
-                    <span style={{
-                      fontSize: '10px',
-                      background: isActive ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.16)',
-                      color: '#ffffff',
-                      padding: '1px 7px',
-                      borderRadius: '10px',
-                      fontWeight: '800'
+                  {/* Group Sub-Items */}
+                  {!sidebarCollapsed && isOpen && (
+                    <div style={{
+                      paddingLeft: '12px',
+                      marginLeft: '12px',
+                      borderLeft: '1.5px solid rgba(255,255,255,0.12)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '2px',
+                      marginTop: '3px'
                     }}>
-                      {m.count}
-                    </span>
+                      {grp.items.map(it => {
+                        const isItemActive = activeTab === it.id
+                        return (
+                          <div
+                            key={it.id}
+                            onClick={() => {
+                              if (it.action) it.action()
+                              else if (it.isLink) navigate(it.isLink)
+                              else setActiveTab(it.id)
+                            }}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              padding: '6px 10px',
+                              borderRadius: '5px',
+                              background: isItemActive ? '#1164A3' : 'transparent',
+                              color: isItemActive ? '#ffffff' : 'rgba(255,255,255,0.75)',
+                              fontSize: '12px',
+                              fontWeight: isItemActive ? '700' : '500',
+                              cursor: 'pointer',
+                              transition: 'all 0.12s ease'
+                            }}
+                            onMouseEnter={e => { if (!isItemActive) { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#ffffff' } }}
+                            onMouseLeave={e => { if (!isItemActive) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.75)' } }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span style={{ fontSize: '9px', color: isItemActive ? '#ffffff' : 'rgba(255,255,255,0.4)' }}>•</span>
+                              <span>{it.label}</span>
+                            </div>
+
+                            {it.count != null && it.count > 0 && (
+                              <span style={{
+                                fontSize: '10px',
+                                background: isItemActive ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.14)',
+                                color: '#ffffff',
+                                padding: '1px 6px',
+                                borderRadius: '10px',
+                                fontWeight: '700'
+                              }}>
+                                {it.count}
+                              </span>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
                   )}
                 </div>
               )
             })}
 
-          {/* Quick Portals */}
+        {/* Clean Divider */}
+        {!sidebarCollapsed && (
+          <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)', margin: '8px 12px' }} />
+        )}
+
+        {/* Quick Portals */}
           {!sidebarCollapsed && (
             <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.04em', padding: '12px 10px 4px' }}>
               Quick Portals
@@ -1862,16 +1828,6 @@ export default function AtsPlatform() {
                 jobsList={safeJobs}
                 submissions={submissions}
                 setSubmissions={setSubmissions}
-              />
-            </div>
-          )}
-
-          {activeTab === 'reports' && (
-            <div style={{ padding: '20px' }}>
-              <ReportsModule
-                allCandidates={safeCandidates}
-                jobsList={safeJobs}
-                submissions={submissions}
               />
             </div>
           )}

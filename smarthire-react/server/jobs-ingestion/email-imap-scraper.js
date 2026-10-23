@@ -578,9 +578,13 @@ export async function scrapeResumesFromIMAP({
             if (isDoc) {
               let resumeText = '';
               try {
+                // Yield to event loop to keep server responsive during heavy email processing
+                await new Promise(r => setImmediate(r));
                 if (lowerFn.endsWith('.pdf') || (att.contentType && att.contentType.includes('pdf'))) {
-                  const pdfData = await pdfParse(att.content);
-                  resumeText = (pdfData && pdfData.text) ? pdfData.text.trim() : '';
+                  if (att.content && att.content.length < 4 * 1024 * 1024) {
+                    const pdfData = await pdfParse(att.content);
+                    resumeText = (pdfData && pdfData.text) ? pdfData.text.trim() : '';
+                  }
                 } else if (lowerFn.endsWith('.docx') || (att.contentType && att.contentType.includes('wordprocessingml'))) {
                   const res = await mammoth.extractRawText({ buffer: att.content });
                   resumeText = (res && res.value) ? res.value.trim() : '';
@@ -592,6 +596,7 @@ export async function scrapeResumesFromIMAP({
                     resumeText = att.content.toString('utf8').replace(/[^\x20-\x7E\r\n\t]/g, ' ').trim();
                   }
                 }
+                await new Promise(r => setImmediate(r));
               } catch (parseErr) {
                 console.warn(`⚠️ Failed parsing resume attachment ${att.filename}:`, parseErr.message);
               }

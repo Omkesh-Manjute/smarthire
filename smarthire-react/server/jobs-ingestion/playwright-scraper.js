@@ -87,7 +87,7 @@ async function parseJobWithGroq(rawDescription, jobTitle) {
   const userPrompt = `Parse the following Job Description:\nJob Title Hint: ${jobTitle}\n\n${rawDescription.substring(0, 2500)}`;
 
   const body = JSON.stringify({
-    model: 'llama-3.3-70b-versatile',
+    model: 'llama-3.1-8b-instant',
     messages: [
       { role: 'system', content: 'You are an expert HR ATS parser. Return a clean JSON with title, client, skills (array), location, work_mode (Remote/Hybrid/Onsite).' },
       { role: 'user', content: userPrompt },

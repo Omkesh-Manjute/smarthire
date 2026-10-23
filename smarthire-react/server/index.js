@@ -5987,14 +5987,14 @@ app.get('/api/jobs/ingestion/run-now', async (_req, res) => {
   }
 });
 
-// ─── 6-Minute Automatic Background Ingestion Scheduler ──────────────────────
-const INGESTION_INTERVAL_MS = 6 * 60 * 1000; // 6 Minutes
+// ─── 30-Minute Automatic Background Ingestion Scheduler ─────────────────────
+const INGESTION_INTERVAL_MS = 30 * 60 * 1000; // 30 Minutes
 setInterval(async () => {
   if (ingestionRunning) {
-    console.log('⏰ [6-Min Cron] Skipping: Ingestion is currently running.');
+    console.log('⏰ [30-Min Cron] Skipping: Ingestion is currently running.');
     return;
   }
-  console.log('⏰ [6-Min Cron] Triggering automatic 6-minute job scraper ingestion (COOLSOFT + InfoOrigin)...');
+  console.log('⏰ [30-Min Cron] Triggering automatic 30-minute job scraper ingestion (COOLSOFT + InfoOrigin)...');
   ingestionRunning = true;
   try {
     const { runIngestion, runInfoOriginIngestion } = await import('./jobs-ingestion/run-ingestion.js');
@@ -13361,7 +13361,7 @@ app.post('/api/recruiter/sync-email-resumes', express.json(), async (req, res) =
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// AUTOMATED 5-MINUTE BACKGROUND EMAIL HARVESTER & SPAM RECOVERY ENGINE
+// AUTOMATED 30-MINUTE BACKGROUND EMAIL HARVESTER & SPAM RECOVERY ENGINE
 // ═══════════════════════════════════════════════════════════════════════════════
 setInterval(async () => {
   const now = Date.now();
@@ -13369,7 +13369,7 @@ setInterval(async () => {
   try {
     isEmailSyncInProgress = true;
     emailSyncLockTimestamp = now;
-    console.log('\n⏰ [Auto-Harvester] Running scheduled 5-minute Yahoo Inbox & Spam sync...');
+    console.log('\n⏰ [Auto-Harvester] Running scheduled 30-minute Yahoo Inbox & Spam sync...');
     const result = await syncEmailResumesInternal('omkesh@coolsofttech.com', ['INBOX', 'SPAM'], false, 30);
     cleanupClosedRequisitionsFromCandidates();
     if (result.ingestedCount > 0) {
@@ -13382,7 +13382,7 @@ setInterval(async () => {
   } finally {
     isEmailSyncInProgress = false;
   }
-}, 5 * 60 * 1000);
+}, 30 * 60 * 1000);
 
 // POST /api/recruiter/send-direct-email
 // Strictly sends email from the recruiter's configured personal email address (never generic smarthire)

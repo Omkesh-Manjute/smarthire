@@ -8004,39 +8004,6 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
             {!sidebarCollapsed && <span>SmartScreen AI</span>}
           </button>
 
-          {/* 9. Reports & Analytics */}
-          <button
-            type="button"
-            title="Reports & Analytics"
-            onMouseEnter={() => setHoveredNav('reports')}
-            onMouseLeave={() => setHoveredNav(null)}
-            onClick={() => navigate('/reports')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
-              gap: 12,
-              padding: sidebarCollapsed ? '10px 0' : '9px 12px',
-              borderRadius: 6,
-              border: 'none',
-              background: hoveredNav === 'reports' ? 'rgba(255,255,255,0.08)' : 'transparent',
-              color: hoveredNav === 'reports' ? '#FFFFFF' : 'rgba(255,255,255,0.72)',
-              fontWeight: hoveredNav === 'reports' ? 600 : 500,
-              fontSize: 13,
-              cursor: 'pointer',
-              textAlign: 'left',
-              width: '100%',
-              transition: 'all 0.15s ease'
-            }}
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-              <line x1="18" y1="20" x2="18" y2="10"></line>
-              <line x1="12" y1="20" x2="12" y2="4"></line>
-              <line x1="6" y1="20" x2="6" y2="14"></line>
-            </svg>
-            {!sidebarCollapsed && <span>Reports & Analytics</span>}
-          </button>
-
           {/* 10. Public Careers */}
           <button
             type="button"

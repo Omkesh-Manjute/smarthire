@@ -227,7 +227,6 @@ function Navigation() {
     { title: 'Extension Sourcing', desc: 'Monster+ & Dice candidate pipeline', path: '/sourcing', color: '#7c3aed' },
     { title: 'SmartScreen Studio', desc: '1-way video & voice candidate screening', path: '/smartscreen', color: '#0284c7' },
     { title: 'Executive Console', desc: 'Command center & high-level stats', path: '/dashboard', color: '#2563eb', adminOnly: true },
-    { title: 'Intelligence Reports', desc: 'Conversion charts & hiring velocity', path: '/reports', color: '#059669', adminOnly: true },
     { title: 'LinkedIn Automation', desc: 'Auto-post openings & talent outreach', path: '/linkedin-posts', color: '#0284c7', adminOnly: true },
     { title: 'AI Branding Studio', desc: 'Social flyers, banners & marketing', path: '/branding', color: '#7c3aed', adminOnly: true },
     { title: 'Recruiter Inbox', desc: 'Direct 1-on-1 candidate messaging', path: '/inbox', color: '#ea580c' },
@@ -279,7 +278,6 @@ function Navigation() {
                         .filter((item) => {
                           if (item.adminOnly && !isSuperAdmin) return false
                           if (item.path === '/ats' && !isPageAllowed('ats')) return false
-                          if (item.path === '/reports' && !isPageAllowed('reports')) return false
                           if (item.path === '/dashboard' && !isPageAllowed('dashboard')) return false
                           return true
                         })
@@ -408,10 +406,6 @@ function Navigation() {
                         )}
                       </div>
                     )
-                  }] : []),
-                  ...(isPageAllowed('reports') ? [{
-                    label: 'Reports',
-                    to: '/reports'
                   }] : []),
                   ...(!isEmployee && isPageAllowed('jobs') ? [{
                     label: 'Careers',
@@ -729,11 +723,6 @@ function Navigation() {
                       <span>SmartScreen AI Studio</span>
                     </Link>
                   </>
-                )}
-                {isPageAllowed('reports') && (
-                  <Link to="/reports" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>
-                    <span>Intelligence & Reports</span>
-                  </Link>
                 )}
                 {isSuperAdmin && isPageAllowed('linkedin') && (
                   <Link to="/linkedin-posts" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>
