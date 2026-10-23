@@ -377,20 +377,13 @@ export default function PricingSection({ onAuthClick, isStandalonePage = false, 
     setPaymentError(null)
     setPaymentResult(null)
 
-    // Dynamically retrieve logged in user info (if any)
-    let savedUser = null
-    try {
-      const rawUser = localStorage.getItem('smarthire_user') || localStorage.getItem('currentUser')
-      if (rawUser) savedUser = JSON.parse(rawUser)
-    } catch (e) {}
-
     initiateRazorpayCheckout({
       amountInUnits,
       currency,
       planName: planName || 'SmartHire Subscription',
-      userEmail: savedUser?.email || '',
-      userName: savedUser?.name || '',
-      userPhone: savedUser?.phone || '',
+      userEmail: '',
+      userName: '',
+      userPhone: '',
       onSuccess: (data) => {
         setIsProcessingPayment(false)
         setPaymentResult(data)
@@ -842,61 +835,131 @@ export default function PricingSection({ onAuthClick, isStandalonePage = false, 
       {/* ── Razorpay Payment Success Notification ── */}
       {paymentResult && (
         <div style={{
-          background: '#ecfdf5',
-          border: '1.5px solid #6ee7b7',
-          borderRadius: '14px',
+          background: '#ffffff',
+          border: '1.5px solid #10b981',
+          borderRadius: '16px',
           padding: '24px 28px',
           maxWidth: '1020px',
           margin: '0 auto 32px',
-          boxShadow: '0 10px 25px -5px rgba(16, 185, 129, 0.15)'
+          boxShadow: '0 12px 30px -8px rgba(16, 185, 129, 0.18)'
         }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div style={{ width: '100%' }}>
-              <div style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                background: '#10b981',
-                color: '#ffffff',
-                fontSize: '11px',
-                fontWeight: 800,
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                padding: '3px 10px',
-                borderRadius: '20px',
-                marginBottom: '8px'
-              }}>
-                Payment Signature Verified (HMAC-SHA256 Match)
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                <span style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  background: '#dcfce7',
+                  color: '#15803d',
+                  fontSize: '11.5px',
+                  fontWeight: 800,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em',
+                  padding: '4px 10px',
+                  borderRadius: '20px',
+                  border: '1px solid #bbf7d0'
+                }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12" /></svg>
+                  Subscription Confirmed · Official Receipt
+                </span>
               </div>
-              <h3 style={{ fontSize: '20px', fontWeight: 800, color: '#065f46', margin: '4px 0 8px' }}>
-                Payment Successfully Completed & Verified!
+
+              <h3 style={{ fontSize: '22px', fontWeight: 800, color: '#0f172a', margin: '4px 0 6px', letterSpacing: '-0.02em' }}>
+                Subscription Activated Successfully!
               </h3>
-              <p style={{ fontSize: '14px', color: '#047857', margin: '0 0 16px', lineHeight: 1.5 }}>
-                Your Razorpay transaction was successfully captured and verified against the backend signature key.
+              <p style={{ fontSize: '14px', color: '#475569', margin: '0 0 18px', lineHeight: 1.55 }}>
+                Thank you for choosing SmartHire. Your subscription has been activated and your recruitment workspace is ready to use. An official invoice receipt has been recorded.
               </p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '12px', background: '#ffffff', border: '1px solid #a7f3d0', borderRadius: '10px', padding: '14px 18px' }}>
+
+              {/* Order Metadata Table */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+                gap: '12px',
+                background: '#f8fafc',
+                border: '1px solid #e2e8f0',
+                borderRadius: '10px',
+                padding: '14px 18px',
+                marginBottom: '18px'
+              }}>
                 <div>
-                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Payment ID</div>
-                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a', fontFamily: 'monospace' }}>{paymentResult.payment_id || paymentResult.razorpay_payment_id}</div>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Plan Subscribed</div>
+                  <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#0f172a', marginTop: '2px' }}>{paymentResult.planName || 'SmartHire Subscription'}</div>
                 </div>
                 <div>
-                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Order ID</div>
-                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a', fontFamily: 'monospace' }}>{paymentResult.order_id || paymentResult.razorpay_order_id}</div>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Status</div>
+                  <div style={{ fontSize: '12px', fontWeight: 800, color: '#16a34a', background: '#dcfce7', border: '1px solid #bbf7d0', padding: '2px 8px', borderRadius: '12px', display: 'inline-block', marginTop: '2px' }}>
+                    Active · Paid
+                  </div>
                 </div>
                 <div>
-                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Plan / Service</div>
-                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a' }}>{paymentResult.planName || 'SmartHire Subscription'}</div>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Payment Reference</div>
+                  <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#334155', fontFamily: 'monospace', marginTop: '2px' }}>{paymentResult.payment_id || paymentResult.razorpay_payment_id}</div>
                 </div>
                 <div>
-                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Verification Status</div>
-                  <div style={{ fontSize: '13px', fontWeight: 800, color: '#16a34a' }}>PAID & VERIFIED</div>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Order Reference</div>
+                  <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#334155', fontFamily: 'monospace', marginTop: '2px' }}>{paymentResult.order_id || paymentResult.razorpay_order_id}</div>
                 </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                <a
+                  href="/ats"
+                  style={{
+                    background: '#2563eb',
+                    color: '#ffffff',
+                    padding: '9px 18px',
+                    borderRadius: '8px',
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    textDecoration: 'none',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    boxShadow: '0 2px 8px rgba(37,99,235,0.3)'
+                  }}
+                >
+                  <span>Launch Recruiter Workspace</span>
+                  <span>➔</span>
+                </a>
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  style={{
+                    background: '#ffffff',
+                    color: '#334155',
+                    border: '1px solid #cbd5e1',
+                    padding: '9px 16px',
+                    borderRadius: '8px',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Print / Save Receipt
+                </button>
               </div>
             </div>
+
             <button
               type="button"
               onClick={() => setPaymentResult(null)}
-              style={{ background: 'none', border: 'none', fontSize: '18px', color: '#059669', cursor: 'pointer', padding: '4px' }}
+              title="Dismiss confirmation"
+              style={{
+                background: '#f1f5f9',
+                border: 'none',
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                fontSize: '15px',
+                color: '#64748b',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
             >
               ✕
             </button>
@@ -1082,13 +1145,15 @@ export default function PricingSection({ onAuthClick, isStandalonePage = false, 
                 <button
                   type="button"
                   onClick={() => handleCta(plan)}
+                  disabled={isProcessingPayment}
                   style={{
                     width: '100%',
                     padding: '12px 20px',
                     borderRadius: '6px',
                     fontSize: '14px',
                     fontWeight: '700',
-                    cursor: 'pointer',
+                    cursor: isProcessingPayment ? 'wait' : 'pointer',
+                    opacity: isProcessingPayment && paymentPlanName.startsWith(plan.name) ? 0.75 : 1,
                     transition: 'all 0.15s ease',
                     border: plan.popular ? 'none' : isEnterprise ? '1.5px solid #1D1C1D' : '1.5px solid #007A5A',
                     background: plan.popular ? '#007A5A' : '#ffffff',
@@ -1096,6 +1161,7 @@ export default function PricingSection({ onAuthClick, isStandalonePage = false, 
                     boxShadow: plan.popular ? '0 1px 3px rgba(0,0,0,0.12)' : 'none'
                   }}
                   onMouseEnter={(e) => {
+                    if (isProcessingPayment) return
                     if (plan.popular) e.currentTarget.style.backgroundColor = '#00674c'
                     else e.currentTarget.style.backgroundColor = isEnterprise ? '#F8FAFC' : '#F4FBF7'
                   }}
@@ -1104,7 +1170,7 @@ export default function PricingSection({ onAuthClick, isStandalonePage = false, 
                     else e.currentTarget.style.backgroundColor = '#ffffff'
                   }}
                 >
-                  {plan.ctaText || 'Upgrade'}
+                  {isProcessingPayment && paymentPlanName.startsWith(plan.name) ? 'Opening Checkout...' : (plan.ctaText || 'Upgrade')}
                 </button>
               </div>
 
