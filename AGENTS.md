@@ -66,7 +66,219 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
     - In resume views, every responsibility, project accomplishment, and contribution line must be formatted with an explicit bullet point (`•`) and proper indentation.
     - The engine must automatically detect responsibilities (lines following `Responsibilities:`, action verbs, or list items) even when converted from plain text or Word documents without literal Unicode bullets.
 
-### 2026-10-23 — Rohit Nagwani Recruiter Restoration, Elimination of B2B Client Resurrection & Permanent User Tombstone Engine
+### 2026-10-24 — Unbuilt Marketing Claims Purge ("Trained on 100s of Placed Resumes" & "Anti-Proxy Biometrics")
+- **Context & Objectives**:
+  - The user explicitly commanded: *"100 placed candidated train wala and anti proxy boimatrix wala bhi remove karo okay"* and *"bhai ismai abhi jo hum nahi kar rahe hai usko remove kar do ya update kar do fake news or feature nahi hona mujhe okay"*.
+  - Strict mandate: Eliminate all fabricated marketing claims regarding AI model "trained on 100s of placed candidate resumes", facial liveness detection, passport/driver's license OCR validation, biometric selfie matching, and social profile scrapers.
+  - Accurately describe what SmartHire *actually* does:
+    1. Automated semantic skill matching and JD gap analysis (0–100% objective fit scoring).
+    2. Continuous proctored video screening (single-take webcam and mic recording).
+    3. Browser focus and telemetry tracking (tab switch and window blur monitoring).
+    4. Device GPS and IP network telemetry.
+    5. SmartSign RTR electronic signatures with immutable audit timestamps.
+- **Architectural Implementations**:
+  1. *About Page (`About.jsx`)*:
+     - Hero Section: Updated headline from "Trained on 100s of Placed IT Resumes for Precision Staffing" to "High-Precision Semantic Matching for Enterprise Staffing"; updated subtitle to focus on automated JD semantic matching and continuous proctored video screening.
+     - Trust Metric: Replaced "500+ Placed Resume Benchmarks" with "180+ Active Tech Requisitions".
+     - Deep Dive Section: Changed "Why Generic Keyword ATS Fails vs Placement-Trained AI" to "vs Semantic Intelligence"; updated cards from "Placement-Trained AI" to "Semantic Recruitment Intelligence".
+     - Benchmark Comparison: Replaced "Generic ATS vs Placement-Trained AI" with "Generic ATS vs Semantic Intelligence".
+     - Feature Card: Replaced "Anti-Proxy Biometrics & OCR Verification" with "Continuous Proctored Video Screening" (single-take webcam recording + tab focus monitoring).
+     - FAQs: Replaced "How does SmartHire train its AI model with 100s of placed candidate resumes?" with "How does SmartHire match candidates with job requisitions accurately?"; replaced "What anti-proxy and biometric verification safeguards are built in?" with "What candidate proctoring and identity safeguards are built in for screening?".
+     - Inquiry Category: Replaced "Custom Placed-Resume AI Training" with "Enterprise ATS & Team Workflows".
+  2. *Homepage (`Homepage.jsx`)*:
+     - Task List: Replaced "Anti-Proxy Face Liveness Verification (PASSED 99.1%)" with "Proctored Video Screening Take (100% VERIFIED)".
+     - Subtitle: Updated "fully trained AI screening" to "autonomous proctored video screening".
+     - Feature 4: Removed "passports" from intake list.
+     - Feature 8: Replaced "Anti-Proxy Biometric & Identity Flow" (claiming facial liveness, OCR) with "Continuous Proctored Video Screening" (single-take webcam, tab focus tracking, geolocation telemetry).
+  3. *Candidate PDF Report Modal (`CandidatePdfReportModal.jsx`)*:
+     - Header description: Replaced facial recognition, passport OCR, and social cross-referencing with continuous proctored video screening, browser focus telemetry, and SmartSign RTR digital authorization.
+     - Table rows: Purged fake passport OCR, biometric selfie match, and LinkedIn cross-check; replaced with genuine checks: GPS Geolocation Telemetry (30 pts), IP Geolocation & Network Telemetry (25 pts), Proctored Video Screening (25 pts), Browser Focus Telemetry (10 pts), SmartSign RTR Digital Confirmation (10 pts). Clean corporate styling with zero Unicode emojis.
+  4. *Candidate Messenger & Recruiter Inbox (`CandidateMessengerWidget.jsx`, `RecruiterInbox.jsx`)*:
+     - Replaced "Driver's License OCR" and "Biometric Selfie Match" labels and status badges with authentic "SmartSign RTR Agreement" and "Proctored Video Screening".
+  5. *Privacy Policy (`PrivacyPolicy.jsx`)*:
+     - Updated Explainable AI trust card from "Unbiased matching trained on placed resumes" to "Unbiased semantic matching based purely on technical qualifications; no protected traits".
+- **Verification & Deployment Protocol**:
+  - Local production build in `smarthire-react`: 0 errors, 0 warnings (built in 4.60s).
+  - All 42 matching engine unit tests passed (0 failures).
+  - Git committed (`42ece86`) and pushed to GitHub `origin main`.
+  - Extracted production bundles to `/var/www/html/` and `/home/ubuntu/smarthire/dist/` on AWS Lightsail (`34.194.119.199`).
+  - Pruned old asset bundles, flushed PM2 logs, reloaded PM2 `smarthire-ats`.
+  - Live domain `https://smarthireus.com` HTTP 200 OK with bundle `assets/index-DMOtrDtl.js` and `About-C2PjhDC0.js`.
+  - Verified 0 occurrences of "biometric", "facial liveness", or "trained on 100s of placed resumes" across live website.
+  - Server disk space: 54% used, 8.5GB free (Rule 5 compliant).
+
+### 2026-10-24 — Authentic ATS Brand Hierarchy & Irrelevant Link Cleanup in Footer
+- **Context & Objectives**:
+  - The user rightfully pointed out: *"bhai tumne ismai praxmind ka logo add kiya and other also so ye sahi hai ya nahi batavo and jo link foter mai kam ki nahi hai maine image diya tumne as it is copy kiya so jo kam ka nahi hai ye page ke releted vo remove karo and ye rakhna cahiye ya nahi praximind ka logo or other think ye batavo"*.
+  - Putting Praximind as the primary logo causes Brand Identity Conflict (the site is SmartHire ATS, a SaaS product owned by parent entity Praximind Pvt. Ltd.).
+  - Additionally, verbatim copy elements from the educational site `praximinds.com` (such as `Student Dashboard`, `Refund Policy`, training programs slogan, etc.) are irrelevant to an enterprise recruitment ATS.
+- **Architectural Implementations (`Footer.jsx`, `footer.css`)**:
+  1. *Brand Hierarchy Alignment*:
+     - Primary Brand: **SmartHire ATS** with official corporate ATS/Briefcase icon in linear gradient blue.
+     - Corporate Endorsement: **A Product of Praximind Pvt. Ltd.** in bold corporate accent.
+     - Product Mission: "Enterprise applicant tracking, autonomous proctored video screening, and semantic talent intelligence for high-velocity recruiting teams."
+  2. *Purge of Irrelevant Links*:
+     - Removed `Student Dashboard`, `Refund Policy`, and `YouTube`.
+     - Replaced with genuine SmartHire ATS platform routes:
+       - **PLATFORM**: `SmartScreen AI` (`/smartscreen`), `Careers & Jobs` (`/jobs`), `SmartSign RTR` (`/sign-rtr`), `About Platform` (`/about`).
+       - **RESOURCES**: `Talent Insights Blog` (`/blog`), `Help & Support` (`/about#support`), `Privacy Policy` (`/privacy`), `Terms of Service` (`/terms`).
+       - **STAY CONNECTED**: Talent network updates newsletter input, orange `JOIN` button, and direct link to `support@praximinds.com`.
+       - **BOTTOM BAR**: `© 2026 Praximind Pvt. Ltd. All rights reserved. • SmartHire ATS`.
+- **Verification & Deployment Protocol**:
+  - Local production build in `smarthire-react`: 0 errors, 0 warnings (built in 3.04s).
+  - All 42 matching engine unit tests passed (0 failures).
+  - Git committed (`f35f80a`) and pushed to GitHub `origin main`.
+  - Extracted production bundles to `/var/www/html/` and `/home/ubuntu/smarthire/dist/` on AWS Lightsail (`34.194.119.199`).
+  - Pruned old asset bundles, flushed PM2 logs, reloaded PM2 `smarthire-ats`.
+  - Live domain `https://smarthireus.com` HTTP 200 OK with bundle `assets/index-CIQ2ccuP.js` and CSS `index-4pRX819H.css`.
+  - Verified 0 occurrences of "Student Dashboard" and confirmed authentic hierarchy.
+  - Server disk space: 54% used, 8.5GB free (Rule 5 compliant).
+
+### 2026-10-24 — Site-Wide Footer Redesign (Praximind Pvt. Ltd. Reference Layout & support@praximinds.com)
+- **Context & Objectives**:
+  - The user uploaded screenshots comparing the current SmartHire pill-button footer with the clean, corporate footer of `praximinds.com` and requested: *"bhai iska fotter sahi karo ye resferse ke liya add kiye hu maine us type se karo simple okay"*.
+  - Also asked to update all general/home page support emails to `support@praximinds.com` and reflect the registered parent company `Praximind Pvt. Ltd.`.
+- **Architectural Implementations**:
+  1. *Footer Component Re-architecture (`Footer.jsx`, `footer.css`)*:
+     - Replaced the bulky pill buttons and multi-layered cards with the clean, authentic 4-column layout from `praximinds.com`:
+       - **Col 1 (Brand & Mission)**: Rounded square dark badge with orange/blue `PM` initials, bold `PRAXIMIND` with orange `PVT LTD`, mission text ("Transforming businesses with AI-powered software, custom SaaS apps, and certified training programs."), and 3 circular social/contact buttons (LinkedIn, YouTube, Email envelope).
+       - **Col 2 (Company)**: `About Us`, `Products`, `Careers & Jobs`, `Contact Desk`.
+       - **Col 3 (Resources)**: `Blog Insights`, `Careers & Jobs`, `Student Dashboard`, `Privacy Policy`, `Terms of Service`.
+       - **Col 4 (Stay Connected)**: Newsletter input with bright orange `JOIN` action button, plus direct support text linking to `support@praximinds.com`.
+       - **Bottom Bar**: Clean copyright `© 2026 PRAXIMIND PVT LTD. All Rights Reserved.` on left, and `Privacy Policy`, `Terms of Service`, `Refund Policy` links on right.
+  2. *Site-Wide Email & Legal Entity Updates*:
+     - `SocialFlipButton.jsx`: Updated email envelope link to `mailto:support@praximinds.com`.
+     - `About.jsx`: Added direct link to `support@praximinds.com` for general & platform support inquiries.
+     - `Homepage.jsx`: Updated support contact modal note with `support@praximinds.com`.
+     - `Terms.jsx` & `PrivacyPolicy.jsx`: Set operating corporate entity to `Praximind Pvt. Ltd.` with support/DPO email `support@praximinds.com`.
+     - `WellfoundCareersView.jsx`: Updated copyright notice to `Praximind Pvt. Ltd. • SmartHire ATS`.
+- **Verification & Deployment Protocol**:
+  - Local production build in `smarthire-react`: 0 errors, 0 warnings (built in 3.05s).
+  - All 42 matching engine unit tests passed (0 failures).
+  - Git committed (`cbd11b0`) and pushed to GitHub `origin main`.
+  - Extracted production bundles to `/var/www/html/` and `/home/ubuntu/smarthire/dist/` on AWS Lightsail (`34.194.119.199`).
+  - Pruned old asset bundles, flushed PM2 logs, reloaded PM2 `smarthire-ats`.
+  - Live domain `https://smarthireus.com` HTTP 200 OK with bundle `assets/index-B87zefgL.js` and CSS `index-DjrZFXDI.css`.
+  - Server disk space: 54% used, 8.5GB free (Rule 5 compliant).
+
+### 2026-10-24 — Ultra-Clean Screening Completion View (Receipt Card Purge, Praximind Pvt. Ltd., & support@praximinds.com)
+- **Context & Objectives**:
+  - The user requested:
+    1. Remove "Technologies": Use `Praximind Pvt. Ltd.` only (not `Praximind Technologies Pvt. Ltd.`).
+    2. Correct support email: Set to `support@praximinds.com` instead of `support@smarthireus.com`.
+    3. Remove the `Candidate Submission Receipt & Status Updates` card completely for an ultra-clean, minimal SaaS completion view.
+- **Architectural Implementations (`CandidateChat.jsx`)**:
+  1. *Receipt Card Removal*:
+     - Removed the entire `Candidate Submission Receipt & Status Updates` card and section heading.
+     - Flow now moves cleanly from Hero Confirmation ➔ Session Dossier ➔ 4-Stage Hiring Process Timeline ➔ Discreet Platform Technical Support notice.
+  2. *Support Email Correction*:
+     - Updated all screening contact buttons and technical support links to `support@praximinds.com`.
+  3. *Praximind Pvt. Ltd. Footer Branding*:
+     - Footer line 1: `SmartHire ATS • A Product of Praximind Pvt. Ltd.`
+     - Footer line 2: `© 2026 Praximind Pvt. Ltd. All rights reserved. • Enterprise Proctored Asynchronous Video Intelligence`
+- **Verification & Deployment Protocol**:
+  - Local production build in `smarthire-react`: 0 errors, 0 warnings (built in 2.94s).
+  - All 42 matching engine unit tests passed (0 failures).
+  - Git committed (`d2e83f3` and `8e83a7f`) and pushed to GitHub `origin main`.
+  - Extracted production bundles to `/var/www/html/` and `/home/ubuntu/smarthire/dist/` on AWS Lightsail (`34.194.119.199`).
+  - Pruned old asset bundles, flushed PM2 logs, reloaded PM2 `smarthire-ats`.
+  - Live domain `https://smarthireus.com` HTTP 200 OK with bundle `assets/index-rX9uM2_J.js` and `CandidateChat-1tt6B4DW.js`.
+  - Verified 5 occurrences of `support@praximinds.com`, 2 occurrences of `Praximind Pvt. Ltd.`, 0 occurrences of `Candidate Submission Receipt`, `Praximind Technologies`, or `support@smarthireus.com`.
+  - Server disk space: 54% used, 8.5GB free (Rule 5 compliant).
+
+### 2026-10-24 — Candidate Receipt Card & Praximind Technologies Pvt. Ltd. Footer Branding
+- **Context & Objectives**:
+  - The user requested:
+    1. Remove "Assigned Talent Specialist · SmartHire Desk" card (it causes confusion for B2B client screening since clients use the platform directly and candidates applied to the client, not SmartHire desk).
+    2. Display the candidate's own registered email on the receipt so they know where official updates will be delivered.
+    3. Replaced the large recruiter support card with a discreet platform technical support notice.
+    4. Add legal parent entity branding in footer: `SmartHire ATS • A Product of Praximind Technologies Pvt. Ltd.` and `© 2026 Praximind Technologies Pvt. Ltd. All rights reserved.`
+- **Architectural Implementations (`CandidateChat.jsx`)**:
+  1. *Candidate Submission Receipt Card*:
+     - Replaced recruiter profile with `Candidate Submission Receipt & Status Updates`.
+     - Displays candidate initials avatar, candidate name, registered email address with email glyph, and `✓ Verified Candidate Submission` badge.
+     - Descriptive note: "Official interview evaluation feedback, hiring team review status, and follow-up round invitations will be delivered directly to [candidateEmail]. Please monitor your inbox and spam folder."
+  2. *Discreet Platform Technical Support*:
+     - Subtle centered text under receipt: "Facing an unexpected technical difficulty with your recorded take? Contact Platform Technical Support (support@smarthireus.com)".
+  3. *Enterprise Footer Legal Entity Branding*:
+     - Added `SmartHire ATS • A Product of Praximind Technologies Pvt. Ltd.`.
+     - Added `© 2026 Praximind Technologies Pvt. Ltd. All rights reserved. • Enterprise Proctored Asynchronous Video Intelligence`.
+- **Verification & Deployment Protocol**:
+  - Local production build in `smarthire-react`: 0 errors, 0 warnings (built in 3.97s).
+  - All 42 matching engine unit tests passed (0 failures).
+  - Git committed (`1b92696`) and pushed to GitHub `origin main`.
+  - Extracted production bundles to `/var/www/html/` and `/home/ubuntu/smarthire/dist/` on AWS Lightsail (`34.194.119.199`).
+  - Temporary archives deleted immediately, old bundles pruned, PM2 logs flushed (Rule 5).
+  - PM2 `smarthire-ats` reloaded and verified online.
+  - Live domain `https://smarthireus.com` HTTP 200 OK with bundle `assets/index-CgKZcWIB.js` and `CandidateChat-BtPuB04r.js`.
+  - Verified 0 occurrences of "Assigned Talent Specialist" and confirmed 2 occurrences of "Praximind Technologies Pvt. Ltd.".
+  - Server disk space: 54% used, 8.5GB free (Rule 5 compliant).
+
+### 2026-10-23 — Candidate Video Screening Completion Upgrade (Option A Enterprise Layout & Blog/Job Purge)
+- **Context & Objectives**:
+  - The user requested: *"okay so ye remove karo blog wala and jobs wala baki same rakho Option A: Pixel-Perfect SaaS Web Layout (Chrome Retina Render) ye wala image ka desing add karo and ismai na koi calaender wala na downlod ka dena hai pdf ka okay"*.
+  - Candidate video screening completion screen (`/screening/:sessionId`, Step 5 in `CandidateChat.jsx`) must provide an enterprise-grade B2B experience suitable for client candidates.
+  - Remove all blog articles/guides and "Browse Open Positions" / "Explore Career Blog" links across completion, expired, duplicate submission, and error states.
+  - Implement Option A design: green checkmark hero, 4-column Session Dossier box (Session ID, Submitted At, Position/Role, Recording Mode), 4-stage visual milestone stepper (Submission Captured, AI & Recruiter Screening, Hiring Manager Review, Final Round & Decision), and dedicated Talent Advisor & Direct Support cards.
+  - Negative constraints: No "Download Official Submission Receipt (PDF)" button and no "Add Follow-Up to Google Calendar" button.
+- **Architectural Implementations (`CandidateChat.jsx`)**:
+  1. *Complete Removal of External Ads/Blog/Job Links*:
+     - Removed the entire AdSense-style blog guide cards and open position links from Step 5.
+     - Replaced action buttons on expired links, duplicate submission locks, and generic error screens with direct support contact (`mailto:support@smarthireus.com`).
+  2. *Enterprise Option A Layout*:
+     - Clean green checkmark confirmation hero with candidate name and job title.
+     - Session Dossier card displaying monospace Session ID, formatted submission timestamp, job title, and green badge for `✓ Continuous Proctored Take`.
+     - 4-Stage visual milestone stepper displaying:
+       - 1. Submission Captured (`✓ Complete`, Recorded Just Now)
+       - 2. AI & Recruiter Screening (`2 In Review`, Estimated: 24–48 Hours)
+       - 3. Hiring Manager Review (`3 Upcoming`, Shortlist Evaluation)
+       - 4. Final Round & Decision (`4 Upcoming`, Official Email Notification)
+     - Dedicated Talent Advisor card showing recruiter avatar, name, and confirmation that email updates will be sent to candidate email, alongside direct support contact card.
+- **Verification & Deployment Protocol**:
+  - Local production build verified in `smarthire-react`: 0 errors, 0 warnings (built in 2.96s).
+  - All 42 matching engine unit tests passed (0 failures).
+  - Git committed (`b11e90a` and `18ee7bd`) and pushed to GitHub `origin main`.
+  - Extracted production bundles to `/var/www/html/` and `/home/ubuntu/smarthire/dist/` on AWS Lightsail (`34.194.119.199`).
+  - Temporary archives deleted immediately, old bundles pruned, PM2 logs flushed (Rule 5).
+  - PM2 `smarthire-ats` reloaded and verified online.
+  - Live domain `https://smarthireus.com` HTTP 200 OK with bundle `assets/index-3RPIk-f9.js` and `CandidateChat-vgRYqgRf.js`.
+  - Verified 0 blog links, 0 job ads, 0 calendar/pdf buttons in live bundle.
+  - Server disk space: 54% used, 8.5GB free (Rule 5 compliant).
+
+### 2026-10-23 — Public Careers Auto-Removal of Closed Requisitions & Resilient ATS Job Editing Engine
+- **Context & Objectives**:
+  - The user reported: *"bhai ye job site ka dekho update ho raha hai ya nahi closed wale auto remove ho jana cahiye and properly update hona cahiye check karo."* with a screenshot showing closed jobs with red "Closed" badges (e.g. Java Developer III, Public Health Program Director 1, Attorney, DBHDS - Data Governance Analyst) cluttering `https://smarthireus.com/jobs`.
+  - Requisitions that are closed or past their deadline must be automatically removed from the public careers site (`/jobs`) across all sections, categories, and counts.
+  - Updates made to jobs from ATS (status changes between Open/Active and Closed, updating submission deadlines, editing rates/titles/descriptions, deleting jobs) must properly reflect on both ATS and the public job portal.
+- **Root Cause & Architectural Implementations**:
+  1. *Public Careers Filtering Omission (`WellfoundCareersView.jsx`, `PublicCareers.jsx`)*:
+     - `WellfoundCareersView.jsx` computed `categorizedJobBuckets` (Trending, Engineering, Data & Analytics, Cloud, Management) using `jobs || []` raw without filtering for `!isJobExpired(j)`.
+     - In `PublicCareers.jsx`, `<WellfoundCareersView jobs={jobs} />` passed raw `jobs` (which contained closed jobs) instead of `activeOpenJobs`.
+     - `renderJobRow` displayed red `<span ...>Closed</span>` badges for expired jobs rather than omitting them.
+     - **Fix**:
+       - Defined `openJobs = useMemo(() => (jobs || []).filter(j => !isJobExpired || !isJobExpired(j)), [jobs, isJobExpired])` in `WellfoundCareersView.jsx` and used it across `categorizedJobBuckets`, `similarJobsList`, `All Requisitions ({openJobs.length})`, and the Page 2 sidebar list.
+       - Updated `renderJobRow` to immediately return `null` if expired, and eliminated red "Closed" badges from feeds.
+       - In `PublicCareers.jsx`, passed `jobs={activeOpenJobs}` to both `<WellfoundCareersView />` and `<SmartHireBotWidget />`.
+       - On Page 2 Job Dossier, direct URL access to closed jobs displays an enterprise warning banner ("This requisition is closed. This position has been filled or the deadline has passed. Applications are no longer accepted.") and disables "Apply Now" with "Position Closed".
+  2. *Server-Side Public Scoping & Resilient Updates (`server/index.js`)*:
+     - Updated `app.get('/api/jobs')` to accept `openOnly=true` (or `scope=careers` / `scope=public`) which strictly filters `finalJobs = finalJobs.filter(j => !isJobExpired(j))` and calculates counts based on active jobs, while retaining full 180-job visibility for ATS recruiters (`scope=ats`).
+     - Upgraded `isJobExpired(job)` to recognize `closed`, `expired`, `inactive`, `filled`, and `cancelled` alongside passed calendar deadlines.
+     - Fixed `PUT /api/jobs/:id` and `DELETE /api/jobs/:id` to use resilient ID matching (`j.id === targetId || j.reqId === targetId || cleanJId === cleanTarget`), ensuring edits made from ATS (or via prefix variations `J-` / `REQ-`) persist immediately to `jobs.json`.
+  3. *ATS Requisitions Management Upgrades (`JobsModule.jsx`)*:
+     - Added an editable `Requisition Status` dropdown (`Active`, `Open`, `Closed`), `Submission Deadline` date picker, and `Pay Rate / Budget` field into the Job Edit modal.
+     - Added a dedicated `Status` column in the ATS Requisitions table with green (Active) and red (Closed) badges so recruiters can monitor and toggle job statuses directly.
+- **Verification & Deployment Protocol**:
+  - Local production build verified in `smarthire-react`: 0 errors, 0 warnings (built in 3.42s).
+  - All 42 matching engine unit tests passed (0 failures).
+  - Git committed (`56d8678`) and pushed to GitHub `origin main`.
+  - Extracted production bundles to `/var/www/html/` and `/home/ubuntu/smarthire/dist/` on AWS Lightsail (`34.194.119.199`).
+  - Temporary archives deleted immediately, old bundles pruned, PM2 logs flushed (Rule 5).
+  - PM2 `smarthire-ats` reloaded and verified online.
+  - Live API verification:
+    - `GET https://smarthireus.com/api/jobs?openOnly=true&scope=careers` returns 175 open positions with exactly 0 closed jobs.
+    - Live domain `https://smarthireus.com/jobs` HTTP 200 OK with bundle `assets/index-72AwU15y.js`.
+    - Live `PUT /api/jobs/:id` tested on production server: successfully updated and verified disk persistence.
+    - Server disk space: 54% used, 8.5GB free (Rule 5 compliant).
 - **Context & Objectives**:
   - The user reported:
     1. Rohit Nagwani resurrection in B2B clients: *"bhai ye b2b mai mai rohit ka delte kiya to double se a gaya hai mai jab yaha se delete kar raha hu to usko sab dikhna cahiye as a recruiter maine ak bar only testing ke liye add kiya tha okay and maine koi bhi user ko delete kiye vo double return nahi ana cahiye user mai bana saka hu update kar sakta hu okay so update it / Infoorigin / Rohit nagwani / rohit.nagwani@infoorigin.com"*.
