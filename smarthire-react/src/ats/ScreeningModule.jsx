@@ -1046,26 +1046,9 @@ SmartHire Recruitment Team`
   }
 
 
-  // ─── Role-based session visibility ────────────────────────────────────────
-  // superadmin / admin / manager / omkesh → sees ALL sessions
-  // recruiter → sees sessions they created or where they are assigned/sample
-  const effectiveIsSuperAdmin = isSuperAdmin || (currentUserEmail && (currentUserEmail.includes('omkesh') || currentUserEmail.includes('admin') || currentUserEmail.includes('manager'))) || (!currentUserEmail);
-  const visibleSessions = effectiveIsSuperAdmin
-    ? sessions
-    : sessions.filter(s => {
-        if (!s) return false
-        const sessionCreatorEmail = (s.createdByEmail || s.createdBy || s.recruiterEmail || '').toLowerCase().trim()
-        const sessionCreatorRef = (s.createdByRef || '').toLowerCase().trim()
-        const sessionCreatorName = (s.createdByName || '').toLowerCase().trim()
-        const sessionRecruiterName = (s.recruiterName || '').toLowerCase().trim()
-        if (currentUserEmail && sessionCreatorEmail && (sessionCreatorEmail === currentUserEmail || sessionCreatorEmail.includes(currentUserEmail))) return true
-        if (currentUserRef && sessionCreatorRef && sessionCreatorRef === currentUserRef) return true
-        if (currentUserName && sessionCreatorName && (sessionCreatorName === currentUserName || sessionCreatorName.includes(currentUserName))) return true
-        if (currentUserName && sessionRecruiterName && (sessionRecruiterName === currentUserName || sessionRecruiterName.includes(currentUserName))) return true
-        // Fallback: if session has no creator metadata at all, show to everyone (legacy data)
-        if (!sessionCreatorEmail && !sessionCreatorRef && !sessionCreatorName) return true
-        return false
-      })
+  // ─── Company-wide session visibility ──────────────────────────────────────
+  // Show all company sessions so recruiting team has full visibility across all candidates
+  const visibleSessions = sessions;
 
   // Filtered Sessions (from visible set, after search/status/format/recruiter filters)
   const filteredSessions = visibleSessions.filter(s => {

@@ -7317,16 +7317,8 @@ app.get('/api/screening/sessions', authenticateToken, (req, res) => {
   const userRole = (req.user?.role || 'superadmin').toLowerCase().trim();
   const userEmail = (req.user?.email || '').toLowerCase().trim();
 
-  let filtered = screeningStore;
-  const isSuperAdmin = userRole === 'superadmin' || userRole === 'admin' || userRole === 'manager' || userEmail.includes('omkesh') || !userRole;
-
-  if (!isSuperAdmin && userRole === 'recruiter') {
-    filtered = screeningStore.filter(s => {
-      if (!s) return false;
-      const sOwner = (s.createdBy || s.recruiterEmail || s.referredBy || s.recruiterId || s.createdByEmail || '').toLowerCase().trim();
-      return sOwner === userEmail || sOwner.includes(userEmail) || s.isSample || s.jobId === 'J-102';
-    });
-  }
+  // Return all screening sessions across the organization so ATS recruiters have full visibility
+  const filtered = screeningStore;
   // Ensure recruiterName and createdByName are present on every session
   const enriched = filtered.map(s => {
     if (!s) return s;

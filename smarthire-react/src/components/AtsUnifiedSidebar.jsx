@@ -31,8 +31,8 @@ export const renderAtsIcon = (id, size = 16, color = 'currentColor') => {
     case 'screening':
       return (
         <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-          <circle cx="12" cy="12" r="10" />
-          <polygon points="12 8 8 12 12 16 16 12 12 8" />
+          <polygon points="23 7 16 12 23 17 23 7" />
+          <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
         </svg>
       )
     case 'submissions':
@@ -186,8 +186,6 @@ export default function AtsUnifiedSidebar({
       icon: 'pipeline',
       items: [
         { id: 'submissions', label: 'Visual Pipeline', tabId: 'submissions', path: '/ats?tab=pipeline' },
-        { id: 'screening', label: 'AI Video Screening', tabId: 'screening', path: '/ats?tab=screening' },
-        { id: 'smartscreen', label: 'SmartScreen Studio', path: '/smartscreen' },
       ]
     },
     {
@@ -213,36 +211,37 @@ export default function AtsUnifiedSidebar({
     },
   ]
 
-  // Determine initial group expansion based on activeItem
+  // Determine initial group expansion based on activeItem (Strict single-group accordion)
   const [navGroupsOpen, setNavGroupsOpen] = useState(() => {
-    const initial = {
-      talent: true,
-      sourcing: false,
-      evaluation: false,
-      comms: false,
-      admin: false
-    }
     for (const grp of NAV_GROUPS) {
       if (grp.items.some(it => it.id === activeItem)) {
-        initial[grp.id] = true
-        break
+        return { [grp.id]: true }
       }
     }
-    return initial
+    return { talent: true }
   })
 
-  // Auto-expand group when activeItem changes
+  // Auto-expand group when activeItem changes, auto-collapsing all other groups
   useEffect(() => {
+    let matchedGroup = null
     for (const grp of NAV_GROUPS) {
       if (grp.items.some(it => it.id === activeItem)) {
-        setNavGroupsOpen(prev => ({ ...prev, [grp.id]: true }))
+        matchedGroup = grp.id
         break
       }
+    }
+    if (matchedGroup) {
+      setNavGroupsOpen({ [matchedGroup]: true })
+    } else if (activeItem === 'home' || activeItem === 'screening') {
+      setNavGroupsOpen({})
     }
   }, [activeItem])
 
   const toggleNavGroup = (grpId) => {
-    setNavGroupsOpen(prev => ({ ...prev, [grpId]: !prev[grpId] }))
+    setNavGroupsOpen(prev => {
+      const isCurrentlyOpen = Boolean(prev[grpId])
+      return isCurrentlyOpen ? {} : { [grpId]: true }
+    })
   }
 
   const handleItemClick = (it) => {
@@ -368,10 +367,11 @@ export default function AtsUnifiedSidebar({
         </button>
       </div>
 
-      {/* Primary Upper Navigation (Home) */}
+      {/* Primary Upper Navigation (Home & AI Video Screening above Talent Hub) */}
       <div style={{ padding: '8px 8px 4px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
         {[
-          { id: 'home', label: 'Home', tabId: 'home', path: '/ats?tab=home' }
+          { id: 'home', label: 'Home', tabId: 'home', path: '/ats?tab=home' },
+          { id: 'screening', label: 'AI Video Screening', tabId: 'screening', path: '/ats?tab=screening' }
         ].map(item => {
           const isActive = activeItem === item.id
           return (
@@ -423,7 +423,7 @@ export default function AtsUnifiedSidebar({
                   onClick={() => {
                     if (sidebarCollapsed) {
                       if (setSidebarCollapsed) setSidebarCollapsed(false)
-                      setNavGroupsOpen(prev => ({ ...prev, [grp.id]: true }))
+                      setNavGroupsOpen({ [grp.id]: true })
                     } else {
                       toggleNavGroup(grp.id)
                     }
@@ -600,6 +600,73 @@ export default function AtsUnifiedSidebar({
           <span style={{ display: 'inline-flex', alignItems: 'center' }}>{renderAtsIcon('globe', 14, 'rgba(255,255,255,0.8)')}</span>
           {!sidebarCollapsed && <span>Public Careers (/jobs) ↗</span>}
         </div>
+      </div>
+
+      {/* Sidebar Pinned Quick Tools (Chats, Team, Settings) */}
+      <div style={{
+        padding: '7px 10px',
+        borderTop: '1px solid rgba(255,255,255,0.08)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: sidebarCollapsed ? 'center' : 'space-around',
+        color: 'rgba(255,255,255,0.7)',
+        fontSize: '11.5px',
+        background: '#350d36'
+      }}>
+        {!sidebarCollapsed ? (
+          <>
+            <div
+              onClick={() => {
+                if (onOpenChatModal) onOpenChatModal()
+                else navigate('/inbox')
+              }}
+              style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', padding: '4px 6px', borderRadius: '4px', transition: 'all 0.15s' }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = '#ffffff' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.7)' }}
+              title="Open Candidate Chat"
+            >
+              <span style={{ display: 'inline-flex', alignItems: 'center' }}>{renderAtsIcon('chat', 13, 'currentColor')}</span>
+              <span style={{ fontSize: '11px', fontWeight: '600' }}>Chats</span>
+            </div>
+            <div
+              onClick={() => {
+                if (onSelectInternalTab) onSelectInternalTab('users')
+                else navigate('/ats?tab=users')
+              }}
+              style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', padding: '4px 6px', borderRadius: '4px', transition: 'all 0.15s' }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = '#ffffff' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.7)' }}
+              title="Team Members"
+            >
+              <span style={{ display: 'inline-flex', alignItems: 'center' }}>{renderAtsIcon('users', 13, 'currentColor')}</span>
+              <span style={{ fontSize: '11px', fontWeight: '600' }}>Team</span>
+            </div>
+            <div
+              onClick={() => {
+                if (onSelectInternalTab) onSelectInternalTab('settings')
+                else navigate('/ats?tab=settings')
+              }}
+              style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', padding: '4px 6px', borderRadius: '4px', transition: 'all 0.15s' }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = '#ffffff' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.7)' }}
+              title="Workspace Settings"
+            >
+              <span style={{ display: 'inline-flex', alignItems: 'center' }}>{renderAtsIcon('settings', 13, 'currentColor')}</span>
+              <span style={{ fontSize: '11px', fontWeight: '600' }}>Settings</span>
+            </div>
+          </>
+        ) : (
+          <div
+            onClick={() => {
+              if (onOpenChatModal) onOpenChatModal()
+              else navigate('/inbox')
+            }}
+            style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', color: 'rgba(255,255,255,0.7)' }}
+            title="Candidate Chat"
+          >
+            {renderAtsIcon('chat', 15, 'currentColor')}
+          </div>
+        )}
       </div>
 
       {/* Recruiter Profile / Logout Footer */}
