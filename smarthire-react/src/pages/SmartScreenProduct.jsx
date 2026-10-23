@@ -399,7 +399,7 @@ export default function SmartScreenProduct() {
               </span>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5"><polyline points="20 6 9 17 4 12" /></svg>
-                Integrates with Any ATS (Webhooks + API)
+                Works with Any Workflow (Share Links + PDF)
               </span>
             </div>
           </div>
@@ -729,7 +729,7 @@ export default function SmartScreenProduct() {
                   Set Expiry & Send Link
                 </h3>
                 <p style={{ fontSize: '13.5px', color: '#64748b', lineHeight: '1.6', margin: 0 }}>
-                  Choose link validity (3 Days, 7 Days, or Custom Date). Paste into LinkedIn InMail, WhatsApp, or Bullhorn. Candidates click and complete on phone or desktop with zero app downloads.
+                  Choose link validity (3 Days, 7 Days, or Custom Date). Paste into LinkedIn InMail, WhatsApp, or email. Candidates click and complete on phone or desktop with zero app downloads.
                 </p>
               </div>
 
@@ -760,7 +760,7 @@ export default function SmartScreenProduct() {
                   Review Scorecards & Transcripts
                 </h3>
                 <p style={{ fontSize: '13.5px', color: '#64748b', lineHeight: '1.6', margin: 0 }}>
-                  Watch responses at 1.5x speed, inspect AI match scores (0–100), view anti-cheat audit logs, download branded PDF submittal dossiers, or auto-sync with your ATS via webhooks.
+                  Watch responses at 1.5x speed, inspect AI match scores (0–100), view anti-cheat audit logs, download branded PDF candidate reports, and share secure review links with clients.
                 </p>
               </div>
             </div>
@@ -825,17 +825,17 @@ export default function SmartScreenProduct() {
             <div className="reveal-on-scroll smartscreen-card-hover" style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '22px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
                 <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#2563eb' }} />
-                <h4 style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a', margin: 0 }}>Universal ATS Webhook Delivery</h4>
+                <h4 style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a', margin: 0 }}>Instant Shareable Client Links</h4>
               </div>
               <p style={{ fontSize: '13.5px', color: '#64748b', lineHeight: '1.5', margin: 0 }}>
-                Real-time JSON callbacks with HMAC SHA-256 signatures push scores, PDF dossiers, and video links straight into Bullhorn, Greenhouse, or Workday.
+                Generate secure, shareable candidate preview links so hiring managers can inspect video takes, scores, and transcripts without needing accounts.
               </p>
             </div>
 
             <div className="reveal-on-scroll smartscreen-card-hover" style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '22px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
                 <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#2563eb' }} />
-                <h4 style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a', margin: 0 }}>Branded Client PDF Dossiers</h4>
+                <h4 style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a', margin: 0 }}>Branded Client PDF Reports</h4>
               </div>
               <p style={{ fontSize: '13.5px', color: '#64748b', lineHeight: '1.5', margin: 0 }}>
                 One-click export compiles candidate answers, verbatim transcripts, and recruiter ratings into an agency-branded submittal coversheet for direct clients.
@@ -943,8 +943,8 @@ export default function SmartScreenProduct() {
                   answer: 'No. SmartScreen is 100% browser-based. Candidates open your secure link on any smartphone, tablet, or laptop running Chrome, Safari, Edge, or Firefox without downloading any third-party app or creating passwords.'
                 },
                 {
-                  question: 'Can SmartScreen integrate with our existing ATS (Bullhorn, Greenhouse, Lever)?',
-                  answer: 'Yes. SmartScreen includes universal webhooks and a REST API. When a candidate finishes their screening, we automatically send an HMAC SHA-256 signed JSON webhook to your ATS with the match score, PDF scorecard link, and video playback URL.'
+                  question: 'How do recruiters share candidate screenings with clients or external teams?',
+                  answer: 'SmartScreen generates a secure, shareable candidate review link and an instant 1-click downloadable PDF evaluation report with AI scores, answers, and playback links that recruiters can easily copy, email, or attach to any client submittal pack.'
                 },
                 {
                   question: 'How does the Anti-Cheat Single Continuous Take work?',

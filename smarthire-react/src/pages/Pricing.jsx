@@ -324,7 +324,7 @@ function Pricing() {
                     </svg>
                   ),
                   title: 'AI Video & Voice Screening',
-                  description: 'State-of-the-art AI transcribes real candidate speech and evaluates technical depth, communication, and role fit — per question, with a scored dossier PDF. Competitors charge $35,000/yr for this alone.',
+                  description: 'State-of-the-art AI transcribes real candidate speech and evaluates technical depth, communication, and role fit — per question, with a scored PDF evaluation report. Competitors charge $35,000/yr for this alone.',
                   badge: 'Replaces HireVue'
                 },
                 {

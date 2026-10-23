@@ -2013,7 +2013,7 @@ function Homepage() {
                       Push to Req #74921
                     </button>
                     <button type="button" className="tf-btn-action outline">
-                      ↗ Share Dossier
+                      ↗ Share Candidate Report
                     </button>
                   </div>
                 </div>
