@@ -2003,11 +2003,11 @@ export default function CandidateChat() {
                 </div>
               </div>
 
-              {/* Dedicated Talent Specialist & Support Section Title */}
+              {/* Submission Confirmed & Candidate Updates Section */}
               <div style={{
                 maxWidth: '780px',
                 margin: '0 auto 16px',
-                fontSize: '13.5px',
+                fontSize: '13px',
                 fontWeight: '800',
                 textTransform: 'uppercase',
                 letterSpacing: '0.05em',
@@ -2017,77 +2017,97 @@ export default function CandidateChat() {
                 gap: '10px',
                 textAlign: 'left'
               }}>
-                <span>Dedicated Talent Advisor & Support</span>
+                <span>Candidate Submission Receipt & Status Updates</span>
                 <div style={{ flex: 1, height: '1px', backgroundColor: '#E2E8F0' }} />
               </div>
 
-              {/* Dedicated Recruiter & Support Row */}
+              {/* Candidate Receipt Card */}
               <div style={{
                 maxWidth: '780px',
                 margin: '0 auto',
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-                gap: '16px',
-                textAlign: 'left'
+                background: '#F8FAFC',
+                border: '1px solid #E2E8F0',
+                borderRadius: '12px',
+                padding: '18px 22px',
+                textAlign: 'left',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px'
               }}>
                 <div style={{
-                  background: '#F8FAFC',
-                  border: '1px solid #E2E8F0',
-                  borderRadius: '12px',
-                  padding: '16px 20px',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '14px'
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: '12px',
+                  paddingBottom: '12px',
+                  borderBottom: '1px solid #E2E8F0'
                 }}>
-                  <div style={{
-                    width: '44px',
-                    height: '44px',
-                    borderRadius: '50%',
-                    background: 'linear-gradient(135deg, #1E293B, #475569)',
-                    color: '#FFFFFF',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontWeight: '800',
-                    fontSize: '15px',
-                    flexShrink: 0
-                  }}>
-                    {(session?.recruiterName || 'Omkesh Manjute').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
-                  </div>
-                  <div>
-                    <h5 style={{ margin: '0 0 2px', fontSize: '13.5px', fontWeight: '700', color: '#0F172A' }}>
-                      {session?.recruiterName || 'Omkesh Manjute'}
-                    </h5>
-                    <p style={{ margin: 0, fontSize: '12px', color: '#64748B' }}>
-                      Assigned Talent Specialist · SmartHire Desk
-                    </p>
-                    <div style={{ fontSize: '11px', fontWeight: '600', color: '#059669', display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '3px' }}>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                      Will email updates to {candidateEmail || 'your email'}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '50%',
+                      background: 'linear-gradient(135deg, #1E293B, #334155)',
+                      color: '#FFFFFF',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontWeight: '800',
+                      fontSize: '14px',
+                      flexShrink: 0
+                    }}>
+                      {(candidateName || 'C').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '14px', fontWeight: '800', color: '#0F172A' }}>
+                        {candidateName}
+                      </div>
+                      <div style={{ fontSize: '12.5px', color: '#475569', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                        <span>{candidateEmail || session?.candidateEmail || 'Registered Candidate Email'}</span>
+                      </div>
                     </div>
                   </div>
+                  <span style={{
+                    fontSize: '11px',
+                    fontWeight: '700',
+                    color: '#059669',
+                    background: '#DCFCE7',
+                    padding: '3px 9px',
+                    borderRadius: '5px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}>
+                    ✓ Verified Candidate Submission
+                  </span>
                 </div>
 
-                <div style={{
-                  background: '#F8FAFC',
-                  border: '1px solid #E2E8F0',
-                  borderRadius: '12px',
-                  padding: '16px 20px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'center',
-                  gap: '4px'
-                }}>
-                  <div style={{ fontSize: '12.5px', fontWeight: '700', color: '#0F172A' }}>
-                    Have Questions or Need Help?
-                  </div>
-                  <div style={{ fontSize: '11.5px', color: '#64748B' }}>
-                    Direct candidate support desk:
-                  </div>
-                  <a href="mailto:support@smarthireus.com" style={{ fontSize: '12px', fontWeight: '600', color: '#2563EB', textDecoration: 'none' }}>
-                    support@smarthireus.com
-                  </a>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '12px', color: '#64748B', lineHeight: 1.5 }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="2.5" style={{ flexShrink: 0, marginTop: '2px' }}><polyline points="20 6 9 17 4 12"/></svg>
+                  <span>
+                    Official interview evaluation feedback, hiring team review status, and follow-up round invitations will be delivered directly to <strong>{candidateEmail || session?.candidateEmail || 'your registered email'}</strong>. Please monitor your inbox and spam folder.
+                  </span>
                 </div>
+              </div>
+
+              {/* Discreet Platform Technical Support Link */}
+              <div style={{
+                maxWidth: '780px',
+                margin: '18px auto 0',
+                fontSize: '12px',
+                color: '#64748B',
+                textAlign: 'center',
+                lineHeight: 1.5
+              }}>
+                Facing an unexpected technical difficulty with your recorded take?{' '}
+                <a
+                  href="mailto:support@smarthireus.com?subject=Screening%20Technical%20Assistance"
+                  style={{ color: '#2563EB', fontWeight: '600', textDecoration: 'underline' }}
+                >
+                  Contact Platform Technical Support (support@smarthireus.com)
+                </a>
               </div>
             </div>
           </div>
@@ -2096,9 +2116,11 @@ export default function CandidateChat() {
 
       {/* FOOTER */}
       <footer style={styles.footer}>
-        <div>SmartHire ATS • Powered by SmartHire Asynchronous Video Intelligence</div>
+        <div style={{ fontWeight: '600', color: '#334155' }}>
+          SmartHire ATS • A Product of Praximind Technologies Pvt. Ltd.
+        </div>
         <div style={{ marginTop: '4px', fontSize: '11px', color: '#94a3b8' }}>
-          Secure end-to-end encryption • WebRTC Continuous Proctored Recording • GDPR & Privacy Compliant
+          © 2026 Praximind Technologies Pvt. Ltd. All rights reserved. • Enterprise Proctored Asynchronous Video Intelligence
         </div>
       </footer>
     </div>
