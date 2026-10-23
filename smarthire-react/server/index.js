@@ -11013,6 +11013,18 @@ app.post('/api/client/screening/create', express.json(), async (req, res) => {
 // Admin endpoints for client credit management
 app.get('/api/admin/client-credits/all', (req, res) => {
   loadClientCreditsFromDisk();
+  loadRecruitersFromDisk();
+
+  // Synchronize any users with role 'client' from recruitersMock into clientCreditsStore
+  (recruitersMock || []).forEach(r => {
+    if (r && r.role === 'client') {
+      const em = (r.email || '').toLowerCase().trim();
+      if (em && !clientCreditsStore[em]) {
+        getClientAccount(em);
+      }
+    }
+  });
+
   const list = Object.values(clientCreditsStore);
   res.json({
     success: true,
@@ -11022,6 +11034,94 @@ app.get('/api/admin/client-credits/all', (req, res) => {
     totalScreeningCompleted: list.reduce((a, c) => a + (c.usedScreeningCredits || 0), 0),
     totalAiCreditsAllocated: list.reduce((a, c) => a + (c.aiCredits || 0) + (c.usedAiCredits || 0), 0)
   });
+});
+
+app.post('/api/admin/client-credits/create', express.json(), async (req, res) => {
+  const { name, company, email, password, screeningCredits, aiCredits } = req.body;
+  if (!email || !name) {
+    return res.status(400).json({ success: false, message: 'Name and email are required.' });
+  }
+
+  const cleanEmail = String(email).toLowerCase().trim();
+  const cleanName = String(name).trim();
+  const cleanCompany = String(company || '').trim() || (cleanEmail.split('@')[1] ? cleanEmail.split('@')[1].split('.')[0].toUpperCase() : 'Partner Client');
+  const cleanPassword = String(password || 'client123').trim();
+  const initialScreening = typeof screeningCredits === 'number' ? screeningCredits : (parseInt(screeningCredits, 10) || 50);
+  const initialAi = typeof aiCredits === 'number' ? aiCredits : (parseInt(aiCredits, 10) || 300);
+
+  try {
+    // 1. Initialize in clientCreditsStore
+    loadClientCreditsFromDisk();
+    const client = getClientAccount(cleanEmail);
+    client.name = cleanName;
+    client.company = cleanCompany;
+    client.screeningCredits = initialScreening;
+    client.aiCredits = initialAi;
+    client.lastActive = new Date().toISOString();
+    clientCreditsStore[cleanEmail] = client;
+    saveClientCreditsToDisk();
+
+    // 2. Add or update in recruitersMock with role: 'client'
+    loadRecruitersFromDisk();
+    const existingIdx = recruitersMock.findIndex(r => (r.email || '').toLowerCase().trim() === cleanEmail);
+    if (existingIdx >= 0) {
+      recruitersMock[existingIdx] = {
+        ...recruitersMock[existingIdx],
+        name: cleanName,
+        company: cleanCompany,
+        password: cleanPassword,
+        role: 'client',
+        isActive: true
+      };
+    } else {
+      recruitersMock.unshift({
+        _id: 'cli-' + Date.now(),
+        name: cleanName,
+        email: cleanEmail,
+        password: cleanPassword,
+        role: 'client',
+        company: cleanCompany,
+        isActive: true,
+        createdAt: new Date().toISOString()
+      });
+    }
+    saveRecruitersToDisk();
+
+    // 3. Sync to Mongo if connected
+    if (isMongoConnected) {
+      try {
+        const emailRegex = new RegExp('^' + cleanEmail.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&') + '$', 'i');
+        let existing = await RecruiterDoc.findOne({ email: emailRegex });
+        if (existing) {
+          existing.name = cleanName;
+          existing.company = cleanCompany;
+          existing.password = cleanPassword;
+          existing.role = 'client';
+          existing.isActive = true;
+          await existing.save();
+        } else {
+          await RecruiterDoc.create({
+            name: cleanName,
+            email: cleanEmail,
+            password: cleanPassword,
+            role: 'client',
+            company: cleanCompany,
+            isActive: true
+          });
+        }
+      } catch (e) {
+        console.warn('⚠️ Failed to sync B2B client to MongoDB:', e.message);
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `Client ${cleanName} (${cleanCompany}) provisioned successfully with ${initialScreening} Screening Credits and ${initialAi} AI Credits.`,
+      client
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
 });
 
 app.post('/api/admin/client-credits/refill', express.json(), (req, res) => {
@@ -11050,6 +11150,22 @@ app.post('/api/admin/client-credits/refill', express.json(), (req, res) => {
     message: `Credits for ${client.name} (${client.company}) updated successfully!`,
     client
   });
+});
+
+app.post('/api/admin/client-credits/delete', express.json(), (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ success: false, message: 'Email is required' });
+  const clean = String(email).toLowerCase().trim();
+
+  loadClientCreditsFromDisk();
+  delete clientCreditsStore[clean];
+  saveClientCreditsToDisk();
+
+  loadRecruitersFromDisk();
+  recruitersMock = recruitersMock.filter(r => (r.email || '').toLowerCase().trim() !== clean);
+  saveRecruitersToDisk();
+
+  res.json({ success: true, message: `Client ${clean} removed successfully.` });
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════

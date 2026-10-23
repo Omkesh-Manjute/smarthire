@@ -61,6 +61,33 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
   const [refillAmount, setRefillAmount] = useState(100)
   const [isRefilling, setIsRefilling] = useState(false)
 
+  // ─── B2B Client Portals State ───────────────────────────────────────────
+  const [clients, setClients] = useState([])
+  const [loadingClients, setLoadingClients] = useState(false)
+  const [clientStats, setClientStats] = useState({
+    totalClients: 0,
+    totalScreeningCreditsAllocated: 0,
+    totalScreeningCompleted: 0,
+    totalAiCreditsAllocated: 0
+  })
+  const [clientSearchQuery, setClientSearchQuery] = useState('')
+  const [showAddClientModal, setShowAddClientModal] = useState(false)
+  const [newClientName, setNewClientName] = useState('')
+  const [newClientCompany, setNewClientCompany] = useState('')
+  const [newClientEmail, setNewClientEmail] = useState('')
+  const [newClientPassword, setNewClientPassword] = useState('client123')
+  const [newClientScreeningCredits, setNewClientScreeningCredits] = useState(50)
+  const [newClientAiCredits, setNewClientAiCredits] = useState(300)
+  const [isCreatingClient, setIsCreatingClient] = useState(false)
+
+  const [refillModalClient, setRefillModalClient] = useState(null)
+  const [refillScreeningAmount, setRefillScreeningAmount] = useState(25)
+  const [refillAiAmount, setRefillAiAmount] = useState(100)
+  const [refillClientMode, setRefillClientMode] = useState('add') // 'add' or 'set'
+  const [customSetScreening, setCustomSetScreening] = useState(50)
+  const [customSetAi, setCustomSetAi] = useState(300)
+  const [isRefillingClient, setIsRefillingClient] = useState(false)
+
   const [toastMessage, setToastMessage] = useState('')
   const [selectedCandidate, setSelectedCandidate] = useState(null)
 
@@ -177,8 +204,123 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
     }
   }
 
+  const fetchClients = async () => {
+    setLoadingClients(true)
+    try {
+      const res = await fetch('/api/admin/client-credits/all')
+      const data = await res.json()
+      if (data.success && Array.isArray(data.clients)) {
+        setClients(data.clients)
+        setClientStats({
+          totalClients: data.totalClients || data.clients.length,
+          totalScreeningCreditsAllocated: data.totalScreeningCreditsAllocated || 0,
+          totalScreeningCompleted: data.totalScreeningCompleted || 0,
+          totalAiCreditsAllocated: data.totalAiCreditsAllocated || 0
+        })
+      }
+    } catch (err) {
+      console.warn('Failed to fetch client portals:', err)
+    } finally {
+      setLoadingClients(false)
+    }
+  }
+
+  const handleCreateClient = async (e) => {
+    e.preventDefault()
+    if (!newClientName.trim() || !newClientEmail.trim()) {
+      showToast('Client name and email are required.')
+      return
+    }
+    setIsCreatingClient(true)
+    try {
+      const payload = {
+        name: newClientName.trim(),
+        company: newClientCompany.trim() || 'Partner Enterprise',
+        email: newClientEmail.trim().toLowerCase(),
+        password: newClientPassword.trim() || 'client123',
+        screeningCredits: parseInt(newClientScreeningCredits, 10) || 50,
+        aiCredits: parseInt(newClientAiCredits, 10) || 300
+      }
+      const res = await fetch('/api/admin/client-credits/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      const data = await res.json()
+      if (data.success) {
+        showToast(data.message || 'B2B Client account created!')
+        setShowAddClientModal(false)
+        setNewClientName('')
+        setNewClientCompany('')
+        setNewClientEmail('')
+        setNewClientPassword('client123')
+        setNewClientScreeningCredits(50)
+        setNewClientAiCredits(300)
+        fetchClients()
+      } else {
+        showToast(`Failed: ${data.message || 'Error creating client'}`)
+      }
+    } catch (err) {
+      showToast(`Error: ${err.message}`)
+    } finally {
+      setIsCreatingClient(false)
+    }
+  }
+
+  const handleRefillClientCredits = async () => {
+    if (!refillModalClient) return
+    setIsRefillingClient(true)
+    try {
+      const body = { email: refillModalClient.email }
+      if (refillClientMode === 'add') {
+        body.addScreeningCredits = parseInt(refillScreeningAmount, 10) || 0
+        body.addAiCredits = parseInt(refillAiAmount, 10) || 0
+      } else {
+        body.setScreeningCredits = parseInt(customSetScreening, 10) || 0
+        body.setAiCredits = parseInt(customSetAi, 10) || 0
+      }
+
+      const res = await fetch('/api/admin/client-credits/refill', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      })
+      const data = await res.json()
+      if (data.success) {
+        showToast(data.message || 'Client credits updated!')
+        setRefillModalClient(null)
+        fetchClients()
+      } else {
+        showToast(`Refill failed: ${data.message}`)
+      }
+    } catch (err) {
+      showToast(`Refill failed: ${err.message}`)
+    } finally {
+      setIsRefillingClient(false)
+    }
+  }
+
+  const handleDeleteClient = async (email, name) => {
+    if (!window.confirm(`Are you sure you want to remove client portal access for ${name} (${email})?`)) return
+    try {
+      const res = await fetch('/api/admin/client-credits/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      })
+      const data = await res.json()
+      if (data.success) {
+        showToast(`Client ${name} removed.`)
+        fetchClients()
+      }
+    } catch (err) {
+      showToast(`Failed: ${err.message}`)
+    }
+  }
+
   useEffect(() => {
     fetchRecruiters()
+    fetchClients()
   }, [])
 
   const showToast = (msg) => {
@@ -486,6 +628,18 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
             </button>
           </div>
         )}
+
+        {subTab === 'clients' && (
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button 
+              className="btn" 
+              onClick={() => setShowAddClientModal(true)} 
+              style={{ background: '#0284c7', color: '#ffffff', fontWeight: 'bold' }}
+            >
+              + Add B2B Client
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="subtabs-bar">
@@ -494,6 +648,12 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
           onClick={() => setSubTab('recruiters')}
         >
           Team & Hierarchy ({recruiters.length})
+        </button>
+        <button 
+          className={`subtab-btn ${subTab === 'clients' ? 'active' : ''}`}
+          onClick={() => { setSubTab('clients'); fetchClients(); }}
+        >
+          B2B Client Portals ({clients.length})
         </button>
         <button 
           className={`subtab-btn ${subTab === 'candidates' ? 'active' : ''}`}
@@ -966,6 +1126,226 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                   </table>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {subTab === 'clients' && (
+          <div>
+            {/* KPI Stat Cards */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '16px' }}>
+              <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '14px 16px', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}>
+                <div style={{ fontSize: '11px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>TOTAL CLIENT PORTALS</div>
+                <div style={{ fontSize: '22px', fontWeight: '700', color: '#0f172a', marginTop: '4px' }}>{clientStats.totalClients || clients.length}</div>
+                <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>Enterprise Client Workspaces</div>
+              </div>
+
+              <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '14px 16px', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}>
+                <div style={{ fontSize: '11px', fontWeight: '600', color: '#059669', textTransform: 'uppercase', letterSpacing: '0.05em' }}>INTERVIEWS COMPLETED</div>
+                <div style={{ fontSize: '22px', fontWeight: '700', color: '#059669', marginTop: '4px' }}>{clientStats.totalScreeningCompleted || 0}</div>
+                <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>AI Video Interviews Submitted</div>
+              </div>
+
+              <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '14px 16px', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}>
+                <div style={{ fontSize: '11px', fontWeight: '600', color: '#0284c7', textTransform: 'uppercase', letterSpacing: '0.05em' }}>SCREENING CREDITS POOL</div>
+                <div style={{ fontSize: '22px', fontWeight: '700', color: '#0284c7', marginTop: '4px' }}>
+                  {clients.reduce((a, c) => a + (c.screeningCredits || 0), 0)}
+                </div>
+                <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>Available Across All Clients</div>
+              </div>
+
+              <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '14px 16px', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}>
+                <div style={{ fontSize: '11px', fontWeight: '600', color: '#6366f1', textTransform: 'uppercase', letterSpacing: '0.05em' }}>AI QUESTION CREDITS</div>
+                <div style={{ fontSize: '22px', fontWeight: '700', color: '#6366f1', marginTop: '4px' }}>
+                  {clients.reduce((a, c) => a + (c.aiCredits || 0), 0)}
+                </div>
+                <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>JD Question Runs Available</div>
+              </div>
+            </div>
+
+            {/* Filter and Search Bar */}
+            <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px 16px', marginBottom: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: '260px' }}>
+                <input 
+                  type="text"
+                  placeholder="Search by company name, contact, or email..."
+                  value={clientSearchQuery}
+                  onChange={e => setClientSearchQuery(e.target.value)}
+                  style={{ width: '100%', maxWidth: '360px', padding: '7px 12px', fontSize: '12px', border: '1px solid #cbd5e1', borderRadius: '6px', outline: 'none' }}
+                />
+                <button
+                  type="button"
+                  onClick={fetchClients}
+                  style={{ background: '#f8fafc', border: '1px solid #cbd5e1', color: '#334155', padding: '7px 12px', fontSize: '12px', borderRadius: '6px', cursor: 'pointer', fontWeight: '600' }}
+                >
+                  {loadingClients ? 'Loading...' : 'Refresh List'}
+                </button>
+              </div>
+
+              <div style={{ fontSize: '12px', color: '#64748b' }}>
+                Showing <strong>{clients.filter(c => !clientSearchQuery.trim() || (c.name || '').toLowerCase().includes(clientSearchQuery.toLowerCase()) || (c.company || '').toLowerCase().includes(clientSearchQuery.toLowerCase()) || (c.email || '').toLowerCase().includes(clientSearchQuery.toLowerCase())).length}</strong> of <strong>{clients.length}</strong> B2B Clients
+              </div>
+            </div>
+
+            {/* Excel-Style Table (Rule 9) */}
+            <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #cbd5e1', fontSize: '12px', textAlign: 'left', background: '#ffffff' }}>
+                  <thead>
+                    <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #cbd5e1' }}>
+                      <th style={{ padding: '10px 12px', border: '1px solid #cbd5e1', fontWeight: '700', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.04em', color: '#334155', width: '50px', textAlign: 'center' }}>#</th>
+                      <th style={{ padding: '10px 14px', border: '1px solid #cbd5e1', fontWeight: '700', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.04em', color: '#334155' }}>COMPANY & CONTACT</th>
+                      <th style={{ padding: '10px 14px', border: '1px solid #cbd5e1', fontWeight: '700', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.04em', color: '#334155' }}>LOGIN EMAIL</th>
+                      <th style={{ padding: '10px 14px', border: '1px solid #cbd5e1', fontWeight: '700', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.04em', color: '#334155', textAlign: 'center' }}>SCREENING CREDITS</th>
+                      <th style={{ padding: '10px 14px', border: '1px solid #cbd5e1', fontWeight: '700', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.04em', color: '#334155', textAlign: 'center' }}>AI QUESTION CREDITS</th>
+                      <th style={{ padding: '10px 14px', border: '1px solid #cbd5e1', fontWeight: '700', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.04em', color: '#334155' }}>SENDER EMAIL</th>
+                      <th style={{ padding: '10px 14px', border: '1px solid #cbd5e1', fontWeight: '700', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.04em', color: '#334155' }}>LAST ACTIVE</th>
+                      <th style={{ padding: '10px 14px', border: '1px solid #cbd5e1', fontWeight: '700', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.04em', color: '#334155', textAlign: 'center' }}>ACTIONS</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {clients.length === 0 ? (
+                      <tr>
+                        <td colSpan="8" style={{ padding: '40px 16px', textAlign: 'center', color: '#64748b' }}>
+                          <div style={{ fontWeight: '700', fontSize: '14px', color: '#0f172a', marginBottom: '4px' }}>No External B2B Clients Found</div>
+                          <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '12px' }}>Click "+ Add B2B Client" to provision the first dedicated client video screening workspace.</div>
+                          <button 
+                            type="button" 
+                            onClick={() => setShowAddClientModal(true)} 
+                            style={{ background: '#0284c7', color: '#ffffff', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}
+                          >
+                            + Add B2B Client
+                          </button>
+                        </td>
+                      </tr>
+                    ) : (
+                      clients
+                        .filter(c => {
+                          if (!clientSearchQuery.trim()) return true
+                          const q = clientSearchQuery.toLowerCase().trim()
+                          return (c.name || '').toLowerCase().includes(q) || (c.company || '').toLowerCase().includes(q) || (c.email || '').toLowerCase().includes(q)
+                        })
+                        .map((c, idx) => {
+                          const scrLeft = c.screeningCredits ?? 0
+                          const scrUsed = c.usedScreeningCredits ?? 0
+                          const aiLeft = c.aiCredits ?? 300
+                          const aiUsed = c.usedAiCredits ?? 0
+
+                          let scrBadgeBg = '#ecfdf5'
+                          let scrBadgeColor = '#059669'
+                          let scrBadgeBorder = '#a7f3d0'
+                          if (scrLeft <= 0) {
+                            scrBadgeBg = '#fef2f2'
+                            scrBadgeColor = '#dc2626'
+                            scrBadgeBorder = '#fecaca'
+                          } else if (scrLeft <= 10) {
+                            scrBadgeBg = '#fffbeb'
+                            scrBadgeColor = '#b45309'
+                            scrBadgeBorder = '#fde68a'
+                          }
+
+                          return (
+                            <tr 
+                              key={c.email || idx}
+                              style={{ 
+                                background: idx % 2 === 0 ? '#ffffff' : '#f8fafc',
+                                borderBottom: '1px solid #cbd5e1',
+                                transition: 'background-color 0.15s ease'
+                              }}
+                              onMouseEnter={e => e.currentTarget.style.backgroundColor = '#eff6ff'}
+                              onMouseLeave={e => e.currentTarget.style.backgroundColor = idx % 2 === 0 ? '#ffffff' : '#f8fafc'}
+                            >
+                              <td style={{ padding: '8px 12px', border: '1px solid #cbd5e1', textAlign: 'center', color: '#64748b', fontWeight: '600' }}>
+                                {idx + 1}
+                              </td>
+
+                              <td style={{ padding: '8px 14px', border: '1px solid #cbd5e1' }}>
+                                <div style={{ fontWeight: '700', color: '#0f172a' }}>{c.company || 'Enterprise Partner'}</div>
+                                <div style={{ fontSize: '11px', color: '#64748b' }}>{c.name || 'Client Lead'}</div>
+                              </td>
+
+                              <td style={{ padding: '8px 14px', border: '1px solid #cbd5e1', fontFamily: 'monospace', color: '#334155' }}>
+                                {c.email}
+                              </td>
+
+                              <td style={{ padding: '8px 14px', border: '1px solid #cbd5e1', textAlign: 'center' }}>
+                                <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
+                                  <span style={{ background: scrBadgeBg, color: scrBadgeColor, border: `1px solid ${scrBadgeBorder}`, borderRadius: '12px', padding: '2px 8px', fontSize: '11px', fontWeight: '700' }}>
+                                    {scrLeft} Available
+                                  </span>
+                                  <span style={{ fontSize: '10px', color: '#64748b' }}>{scrUsed} Completed</span>
+                                </div>
+                              </td>
+
+                              <td style={{ padding: '8px 14px', border: '1px solid #cbd5e1', textAlign: 'center' }}>
+                                <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
+                                  <span style={{ background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', borderRadius: '12px', padding: '2px 8px', fontSize: '11px', fontWeight: '700' }}>
+                                    {aiLeft} Available
+                                  </span>
+                                  <span style={{ fontSize: '10px', color: '#64748b' }}>{aiUsed} Used</span>
+                                </div>
+                              </td>
+
+                              <td style={{ padding: '8px 14px', border: '1px solid #cbd5e1', fontSize: '11px' }}>
+                                {c.emailConfig?.smtpHost ? (
+                                  <div>
+                                    <span style={{ color: '#059669', fontWeight: '700' }}>Custom SMTP</span>
+                                    <div style={{ color: '#64748b', fontSize: '10.5px' }}>{c.emailConfig.fromEmail || c.email}</div>
+                                  </div>
+                                ) : (
+                                  <span style={{ color: '#64748b' }}>Default SmartHire</span>
+                                )}
+                              </td>
+
+                              <td style={{ padding: '8px 14px', border: '1px solid #cbd5e1', fontSize: '11px', color: '#64748b' }}>
+                                {c.lastActive ? new Date(c.lastActive).toLocaleDateString() : (c.createdAt ? new Date(c.createdAt).toLocaleDateString() : 'Active')}
+                              </td>
+
+                              <td style={{ padding: '8px 14px', border: '1px solid #cbd5e1', textAlign: 'center' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setRefillModalClient(c)
+                                      setRefillScreeningAmount(25)
+                                      setRefillAiAmount(100)
+                                      setCustomSetScreening(c.screeningCredits ?? 50)
+                                      setCustomSetAi(c.aiCredits ?? 300)
+                                      setRefillClientMode('add')
+                                    }}
+                                    style={{ background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', padding: '4px 9px', borderRadius: '5px', fontSize: '11px', fontWeight: '700', cursor: 'pointer' }}
+                                    title="Refill screening or AI credits"
+                                  >
+                                    + Refill
+                                  </button>
+
+                                  <a
+                                    href={`/client/screening?clientEmail=${encodeURIComponent(c.email)}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    style={{ background: '#f8fafc', color: '#334155', border: '1px solid #cbd5e1', padding: '4px 9px', borderRadius: '5px', fontSize: '11px', fontWeight: '600', textDecoration: 'none', display: 'inline-block' }}
+                                    title="Open client video screening workspace as admin"
+                                  >
+                                    View Portal
+                                  </a>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteClient(c.email, c.name)}
+                                    style={{ background: 'transparent', color: '#94a3b8', border: 'none', padding: '4px 6px', fontSize: '11px', cursor: 'pointer' }}
+                                    title="Remove client"
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          )
+                        })
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}
@@ -1513,6 +1893,350 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                 style={{ padding: '7px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#ffffff', fontSize: '12px', fontWeight: '600', color: '#475569', cursor: 'pointer' }}
               >
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── ADD B2B CLIENT MODAL ─────────────────────────────────────── */}
+      {showAddClientModal && (
+        <div className="modal-overlay" onClick={() => setShowAddClientModal(false)}>
+          <div className="modal-card" onClick={e => e.stopPropagation()} style={{ maxWidth: '520px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: '#0f172a' }}>
+                  Provision B2B Client Portal
+                </h3>
+                <p style={{ margin: '3px 0 0', fontSize: '12px', color: '#64748b' }}>
+                  Set up a dedicated video screening workspace with login access and credit quota.
+                </p>
+              </div>
+              <button 
+                onClick={() => setShowAddClientModal(false)}
+                style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#64748b' }}
+              >
+                &times;
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateClient}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '20px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#334155', marginBottom: '4px' }}>
+                    Client Contact / Hiring Lead Name *
+                  </label>
+                  <input 
+                    type="text"
+                    required
+                    placeholder="e.g. Sarah Jenkins"
+                    value={newClientName}
+                    onChange={e => setNewClientName(e.target.value)}
+                    style={{ width: '100%', padding: '8px 12px', fontSize: '13px', border: '1px solid #cbd5e1', borderRadius: '6px', boxSizing: 'border-box' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#334155', marginBottom: '4px' }}>
+                    Company / Organization Name *
+                  </label>
+                  <input 
+                    type="text"
+                    required
+                    placeholder="e.g. Apex Global Tech"
+                    value={newClientCompany}
+                    onChange={e => setNewClientCompany(e.target.value)}
+                    style={{ width: '100%', padding: '8px 12px', fontSize: '13px', border: '1px solid #cbd5e1', borderRadius: '6px', boxSizing: 'border-box' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#334155', marginBottom: '4px' }}>
+                    Login Corporate Email *
+                  </label>
+                  <input 
+                    type="email"
+                    required
+                    placeholder="e.g. sarah@apextech.com"
+                    value={newClientEmail}
+                    onChange={e => setNewClientEmail(e.target.value)}
+                    style={{ width: '100%', padding: '8px 12px', fontSize: '13px', border: '1px solid #cbd5e1', borderRadius: '6px', boxSizing: 'border-box' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#334155', marginBottom: '4px' }}>
+                    Initial Portal Password *
+                  </label>
+                  <input 
+                    type="text"
+                    required
+                    value={newClientPassword}
+                    onChange={e => setNewClientPassword(e.target.value)}
+                    style={{ width: '100%', padding: '8px 12px', fontSize: '13px', border: '1px solid #cbd5e1', borderRadius: '6px', boxSizing: 'border-box' }}
+                  />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#334155', marginBottom: '4px' }}>
+                      Screening Credits (Interviews)
+                    </label>
+                    <select
+                      value={newClientScreeningCredits}
+                      onChange={e => setNewClientScreeningCredits(parseInt(e.target.value, 10))}
+                      style={{ width: '100%', padding: '8px 12px', fontSize: '13px', border: '1px solid #cbd5e1', borderRadius: '6px', background: '#ffffff', boxSizing: 'border-box' }}
+                    >
+                      <option value="10">10 Interviews (Trial)</option>
+                      <option value="25">25 Interviews (Starter)</option>
+                      <option value="50">50 Interviews (Default)</option>
+                      <option value="100">100 Interviews (Growth)</option>
+                      <option value="250">250 Interviews (Enterprise)</option>
+                      <option value="500">500 Interviews (Custom Max)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#334155', marginBottom: '4px' }}>
+                      AI Question Credits
+                    </label>
+                    <select
+                      value={newClientAiCredits}
+                      onChange={e => setNewClientAiCredits(parseInt(e.target.value, 10))}
+                      style={{ width: '100%', padding: '8px 12px', fontSize: '13px', border: '1px solid #cbd5e1', borderRadius: '6px', background: '#ffffff', boxSizing: 'border-box' }}
+                    >
+                      <option value="50">50 AI Runs</option>
+                      <option value="100">100 AI Runs</option>
+                      <option value="300">300 AI Runs (Default)</option>
+                      <option value="500">500 AI Runs</option>
+                      <option value="1000">1,000 AI Runs</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '10px 12px', fontSize: '11.5px', color: '#64748b', lineHeight: '1.4' }}>
+                  <strong>Client Security Scoping:</strong> This client will only have access to their isolated Video Screening Portal at <code>/client/screening</code>. They will have zero access to your internal ATS requisitions, candidates, or recruiter team data.
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowAddClientModal(false)}
+                  style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#ffffff', fontSize: '12.5px', fontWeight: '600', color: '#475569', cursor: 'pointer' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isCreatingClient}
+                  style={{ padding: '8px 18px', borderRadius: '6px', border: 'none', background: '#0284c7', fontSize: '12.5px', fontWeight: '700', color: '#ffffff', cursor: 'pointer' }}
+                >
+                  {isCreatingClient ? 'Provisioning...' : 'Provision Client Portal'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ─── REFILL B2B CLIENT CREDITS MODAL ─────────────────────────── */}
+      {refillModalClient && (
+        <div className="modal-overlay" onClick={() => setRefillModalClient(null)}>
+          <div className="modal-card" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: '#0f172a' }}>
+                  Refill B2B Client Credits
+                </h3>
+                <p style={{ margin: '3px 0 0', fontSize: '12px', color: '#64748b' }}>
+                  Client: <strong>{refillModalClient.name}</strong> ({refillModalClient.company || ''} &bull; {refillModalClient.email})
+                </p>
+              </div>
+              <button 
+                onClick={() => setRefillModalClient(null)}
+                style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#64748b' }}
+              >
+                &times;
+              </button>
+            </div>
+
+            {/* Current Balance Display */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '16px' }}>
+              <div style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '8px', padding: '10px 14px' }}>
+                <div style={{ fontSize: '11px', fontWeight: '600', color: '#065f46', textTransform: 'uppercase' }}>Current Screenings</div>
+                <div style={{ fontSize: '18px', fontWeight: '800', color: '#059669', marginTop: '2px' }}>
+                  {refillModalClient.screeningCredits ?? 0} Available
+                </div>
+                <div style={{ fontSize: '10.5px', color: '#047857' }}>{refillModalClient.usedScreeningCredits ?? 0} Completed</div>
+              </div>
+
+              <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '10px 14px' }}>
+                <div style={{ fontSize: '11px', fontWeight: '600', color: '#1e40af', textTransform: 'uppercase' }}>Current AI Credits</div>
+                <div style={{ fontSize: '18px', fontWeight: '800', color: '#1d4ed8', marginTop: '2px' }}>
+                  {refillModalClient.aiCredits ?? 300} Available
+                </div>
+                <div style={{ fontSize: '10.5px', color: '#2563eb' }}>{refillModalClient.usedAiCredits ?? 0} Used</div>
+              </div>
+            </div>
+
+            {/* Mode Selector */}
+            <div style={{ display: 'flex', gap: '6px', background: '#f1f5f9', padding: '4px', borderRadius: '6px', marginBottom: '16px' }}>
+              <button
+                type="button"
+                onClick={() => setRefillClientMode('add')}
+                style={{
+                  flex: 1,
+                  padding: '6px 12px',
+                  borderRadius: '4px',
+                  border: 'none',
+                  fontSize: '12px',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  background: refillClientMode === 'add' ? '#ffffff' : 'transparent',
+                  color: refillClientMode === 'add' ? '#0f172a' : '#64748b',
+                  boxShadow: refillClientMode === 'add' ? '0 1px 2px rgba(0,0,0,0.06)' : 'none'
+                }}
+              >
+                + Add Additional Credits
+              </button>
+              <button
+                type="button"
+                onClick={() => setRefillClientMode('set')}
+                style={{
+                  flex: 1,
+                  padding: '6px 12px',
+                  borderRadius: '4px',
+                  border: 'none',
+                  fontSize: '12px',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  background: refillClientMode === 'set' ? '#ffffff' : 'transparent',
+                  color: refillClientMode === 'set' ? '#0f172a' : '#64748b',
+                  boxShadow: refillClientMode === 'set' ? '0 1px 2px rgba(0,0,0,0.06)' : 'none'
+                }}
+              >
+                Set Exact Balance (=)
+              </button>
+            </div>
+
+            {refillClientMode === 'add' ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '20px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#334155', marginBottom: '6px' }}>
+                    Add Video Screening Credits (Interviews):
+                  </label>
+                  <div style={{ display: 'flex', gap: '6px', marginBottom: '6px' }}>
+                    {[10, 25, 50, 100].map(amt => (
+                      <button
+                        key={amt}
+                        type="button"
+                        onClick={() => setRefillScreeningAmount(amt)}
+                        style={{
+                          flex: 1,
+                          padding: '6px 0',
+                          borderRadius: '5px',
+                          border: refillScreeningAmount === amt ? '1px solid #059669' : '1px solid #cbd5e1',
+                          background: refillScreeningAmount === amt ? '#ecfdf5' : '#ffffff',
+                          color: refillScreeningAmount === amt ? '#047857' : '#334155',
+                          fontSize: '11.5px',
+                          fontWeight: '700',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        +{amt}
+                      </button>
+                    ))}
+                  </div>
+                  <input 
+                    type="number"
+                    min="0"
+                    value={refillScreeningAmount}
+                    onChange={e => setRefillScreeningAmount(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                    style={{ width: '100%', padding: '7px 10px', fontSize: '12.5px', border: '1px solid #cbd5e1', borderRadius: '5px', boxSizing: 'border-box' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#334155', marginBottom: '6px' }}>
+                    Add AI Question Credits (JD Generator):
+                  </label>
+                  <div style={{ display: 'flex', gap: '6px', marginBottom: '6px' }}>
+                    {[50, 100, 300, 500].map(amt => (
+                      <button
+                        key={amt}
+                        type="button"
+                        onClick={() => setRefillAiAmount(amt)}
+                        style={{
+                          flex: 1,
+                          padding: '6px 0',
+                          borderRadius: '5px',
+                          border: refillAiAmount === amt ? '1px solid #2563eb' : '1px solid #cbd5e1',
+                          background: refillAiAmount === amt ? '#eff6ff' : '#ffffff',
+                          color: refillAiAmount === amt ? '#1d4ed8' : '#334155',
+                          fontSize: '11.5px',
+                          fontWeight: '700',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        +{amt}
+                      </button>
+                    ))}
+                  </div>
+                  <input 
+                    type="number"
+                    min="0"
+                    value={refillAiAmount}
+                    onChange={e => setRefillAiAmount(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                    style={{ width: '100%', padding: '7px 10px', fontSize: '12.5px', border: '1px solid #cbd5e1', borderRadius: '5px', boxSizing: 'border-box' }}
+                  />
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '20px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#334155', marginBottom: '6px' }}>
+                    Set Exact Screening Credits Balance:
+                  </label>
+                  <input 
+                    type="number"
+                    min="0"
+                    value={customSetScreening}
+                    onChange={e => setCustomSetScreening(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                    style={{ width: '100%', padding: '7px 10px', fontSize: '12.5px', border: '1px solid #cbd5e1', borderRadius: '5px', boxSizing: 'border-box' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#334155', marginBottom: '6px' }}>
+                    Set Exact AI Question Credits Balance:
+                  </label>
+                  <input 
+                    type="number"
+                    min="0"
+                    value={customSetAi}
+                    onChange={e => setCustomSetAi(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                    style={{ width: '100%', padding: '7px 10px', fontSize: '12.5px', border: '1px solid #cbd5e1', borderRadius: '5px', boxSizing: 'border-box' }}
+                  />
+                </div>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+              <button
+                type="button"
+                onClick={() => setRefillModalClient(null)}
+                style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#ffffff', fontSize: '12.5px', fontWeight: '600', color: '#475569', cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isRefillingClient}
+                onClick={handleRefillClientCredits}
+                style={{ padding: '8px 18px', borderRadius: '6px', border: 'none', background: '#0284c7', fontSize: '12.5px', fontWeight: '700', color: '#ffffff', cursor: 'pointer' }}
+              >
+                {isRefillingClient ? 'Updating...' : 'Save Credit Allocation'}
               </button>
             </div>
           </div>

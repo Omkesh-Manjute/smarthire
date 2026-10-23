@@ -82,7 +82,10 @@ export default function ClientScreeningPortal() {
     }
   }, [])
 
-  const userEmail = currentUser?.email || 'client@partner.com'
+  const searchParams = new URLSearchParams(window.location.search)
+  const clientQueryEmail = searchParams.get('clientEmail')
+  const isAdminPreview = Boolean((currentUser?.role === 'superadmin' || currentUser?.role === 'admin') && clientQueryEmail)
+  const userEmail = isAdminPreview ? clientQueryEmail : (currentUser?.email || 'client@partner.com')
 
   // Fetch client portal data (credits, profile, email config, sessions)
   const fetchPortalData = useCallback(async () => {
@@ -294,6 +297,26 @@ export default function ClientScreeningPortal() {
 
   return (
     <div style={clientStyles.pageContainer}>
+      {isAdminPreview && (
+        <div style={{
+          background: '#0f172a',
+          color: '#f8fafc',
+          padding: '8px 24px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          fontSize: '12px',
+          borderBottom: '1px solid #334155'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ background: '#2563eb', color: '#ffffff', padding: '2px 8px', borderRadius: '4px', fontWeight: '700', fontSize: '10px', letterSpacing: '0.04em' }}>ADMIN PREVIEW MODE</span>
+            <span>Managing Portal for <strong>{clientProfile?.name || 'Client'}</strong> ({clientProfile?.company || ''} &bull; {userEmail})</span>
+          </div>
+          <a href="/ats?tab=users" style={{ color: '#60a5fa', textDecoration: 'none', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            &larr; Return to ATS Users
+          </a>
+        </div>
+      )}
       {/* ─── CLIENT TOP NAVIGATION BAR ────────────────────────────────────── */}
       <header style={clientStyles.header}>
         <div style={clientStyles.headerInner}>
