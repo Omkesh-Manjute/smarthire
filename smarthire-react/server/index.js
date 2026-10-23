@@ -1268,6 +1268,72 @@ async function saveScreeningToDisk() {
   }
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// 7-DAY CLOUD RETENTION AUTO-CLEANUP WORKER
+// Preserves text transcripts, evaluation scorecards, and candidate metadata forever.
+// Purges heavy raw video/audio binaries (.webm, .mp4) older than 7 days from server disk.
+// ═══════════════════════════════════════════════════════════════════════════════
+function cleanupExpiredScreeningVideos() {
+  const RETENTION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days retention
+  const now = Date.now();
+  let purgedCount = 0;
+  let freedBytes = 0;
+
+  if (!Array.isArray(screeningStore) || screeningStore.length === 0) return;
+
+  screeningStore.forEach(session => {
+    if (!session) return;
+    const completionTimestamp = session.submittedAt 
+      ? new Date(session.submittedAt).getTime()
+      : (session.completedAt ? new Date(session.completedAt).getTime() : null);
+
+    if (completionTimestamp && (now - completionTimestamp > RETENTION_MS) && !session.videoPurged) {
+      const mediaUrls = [];
+      if (session.masterMediaUrl) mediaUrls.push(session.masterMediaUrl);
+      if (Array.isArray(session.responses)) {
+        session.responses.forEach(r => {
+          if (r.mediaUrl) mediaUrls.push(r.mediaUrl);
+        });
+      }
+
+      mediaUrls.forEach(url => {
+        try {
+          const fname = path.basename(url);
+          const possiblePaths = [
+            path.resolve(screeningUploadDir, fname),
+            path.resolve('/home/ubuntu/smarthire/smarthire-react/server/uploads/screening', fname),
+            path.resolve('/home/ubuntu/smarthire/server/uploads/screening', fname),
+            path.resolve(__dirname, 'uploads/screening', fname)
+          ];
+          for (const p of possiblePaths) {
+            if (fs.existsSync(p)) {
+              const sz = fs.statSync(p).size;
+              fs.unlinkSync(p);
+              freedBytes += sz;
+              purgedCount++;
+            }
+          }
+        } catch (e) {
+          console.warn('⚠️ Error purging expired video file:', e.message);
+        }
+      });
+
+      session.videoPurged = true;
+      session.videoPurgedAt = new Date().toISOString();
+    }
+  });
+
+  if (purgedCount > 0) {
+    const mbFreed = (freedBytes / (1024 * 1024)).toFixed(1);
+    console.log(`🧹 [Retention Auto-Cleanup] Purged ${purgedCount} expired video file(s) (>7 days old). Freed ~${mbFreed} MB of server disk space.`);
+    saveScreeningToDisk();
+  }
+}
+
+// Run video retention cleanup every 6 hours and 15s after startup
+setInterval(cleanupExpiredScreeningVideos, 6 * 60 * 60 * 1000);
+setTimeout(cleanupExpiredScreeningVideos, 15000);
+
 
 
 // ─── Middleware ────────────────────────────────────────────────────────────────
@@ -6253,7 +6319,7 @@ Return ONLY this JSON object. Do not include markdown code block syntax (like \`
 
 // Auto-generate interview questions from Job Requisition and Candidate Resume using Groq AI
 app.post('/api/screening/generate-questions', authenticateToken, async (req, res) => {
-  const { jobId, jobTitle, skills, resumeText, questionCount = 4 } = req.body;
+  const { jobId, jobTitle, skills, resumeText, jobDescription, jdText, questionCount = 4 } = req.body;
   
   let targetJob = null;
   if (jobId) {
@@ -6263,7 +6329,7 @@ app.post('/api/screening/generate-questions', authenticateToken, async (req, res
   const title = jobTitle || targetJob?.title || 'Software Engineer';
   const jobSkills = (skills && skills.length > 0) ? skills : (targetJob?.skills || []);
   const client = targetJob?.client || 'Enterprise Client';
-  const desc = targetJob?.description || '';
+  const rawJd = (jobDescription || jdText || targetJob?.description || '').trim();
 
   try {
     const groqApiKey = process.env.GROQ_API_KEY;
@@ -6275,13 +6341,13 @@ app.post('/api/screening/generate-questions', authenticateToken, async (req, res
 Your task is to generate ${questionCount} concise, sharp, high-signal asynchronous screening interview questions for the role: "${title}".
 Client Domain: ${client}.
 Key Skills Required: ${jobSkills.join(', ')}.
-Job Details: ${desc ? desc.slice(0, 500) : 'Enterprise IT role'}.
+Job Details & Description: ${rawJd ? rawJd.slice(0, 2500) : 'Enterprise IT role'}.
 ${resumeText ? `Candidate Resume Context:\n${resumeText.slice(0, 1500)}` : ''}
 
 Guidelines:
 1. Question 1 should be a punchy technical self-introduction assessing primary domain alignment.
 2. Question 2-3 should be deep technical problem-solving, architectural, or hands-on implementation scenarios focusing on core tools (${jobSkills.slice(0, 4).join(', ') || 'production architecture'}).
-${resumeText ? '3. Tailor questions to probe their listed resume claims or project gaps.' : '3. Focus on production debugging, scaling, or performance tuning.'}
+${resumeText ? '3. Tailor questions to probe their listed resume claims or project gaps.' : '3. Focus on production debugging, scaling, or performance tuning based on the job description.'}
 4. The final question should address availability, remote/relocation preference, work authorization, and rate expectations.
 
 Return a clean, valid JSON array containing exactly ${questionCount} question objects:
@@ -6327,14 +6393,24 @@ Output ONLY raw JSON array starting with '[' and ending with ']'.`;
 
 // Create a new screening session
 app.post('/api/screening/create', authenticateToken, (req, res) => {
-  const { jobId, targetPayRate, maxPayRate, questions, allowedFormats, maxDuration, campaignTitle, candidateName, candidateEmail } = req.body;
-  if (!jobId) {
-    return res.status(400).json({ success: false, message: 'jobId is required' });
-  }
-
-  const job = jobsStore.find(j => j.id === jobId);
+  const { jobId, jobTitle, targetPayRate, maxPayRate, questions, allowedFormats, maxDuration, campaignTitle, candidateName, candidateEmail, skills, jobSkills, jobDescription, clientName } = req.body;
+  
+  let job = jobId ? jobsStore.find(j => j.id === jobId) : null;
   if (!job) {
-    return res.status(404).json({ success: false, message: 'Job not found' });
+    if (jobTitle && String(jobTitle).trim()) {
+      // Dynamic job synthesized from custom client or recruiter role
+      job = {
+        id: jobId || ('CUSTOM-' + Date.now()),
+        title: String(jobTitle).trim(),
+        skills: Array.isArray(jobSkills) ? jobSkills : (Array.isArray(skills) ? skills : []),
+        client: clientName || req.user?.company || 'Direct Client',
+        location: req.body.jobLocation || 'Remote / Hybrid',
+        experience: req.body.experience || 'Experienced',
+        description: jobDescription || ''
+      };
+    } else {
+      return res.status(400).json({ success: false, message: 'jobId or jobTitle is required' });
+    }
   }
 
   const userEmail = (req.user?.email || '').toLowerCase().trim();
@@ -7913,6 +7989,15 @@ app.post('/api/screening/:sessionId/re-evaluate', async (req, res) => {
   const session = screeningStore.find(s => s.id === sessionId || s._id === sessionId || s.sessionId === sessionId);
   if (!session) {
     return res.status(404).json({ success: false, message: 'Screening session not found.' });
+  }
+
+  // Strict Guard: Prevent evaluating empty or pending sessions without genuine interview submissions
+  const hasSpokenResponses = (Array.isArray(session.responses) && session.responses.length > 0 && session.responses.some(r => r.transcript || r.response || r.mediaUrl));
+  if (!hasSpokenResponses && !session.masterMediaUrl) {
+    return res.status(400).json({ 
+      success: false, 
+      message: 'Cannot evaluate: Candidate has not submitted any interview responses yet. AI evaluation can only run once candidate submits video/audio answers.' 
+    });
   }
 
   try {
@@ -10535,6 +10620,410 @@ app.post('/api/admin/credits/refill', express.json(), (req, res) => {
     success: true,
     message: `Credits for ${rec.name} (${rec.email}) updated successfully! Remaining: ${rec.remainingCredits}`,
     credits: rec
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// FEATURE 1.5: B2B Client Screening & AI Credit Engine (Isolated Tenant Ledger)
+// ═══════════════════════════════════════════════════════════════════════════════
+const clientCreditsPath = path.resolve(__dirname, 'client_credits.json');
+let clientCreditsStore = {};
+
+function loadClientCreditsFromDisk() {
+  try {
+    if (fs.existsSync(clientCreditsPath)) {
+      clientCreditsStore = JSON.parse(fs.readFileSync(clientCreditsPath, 'utf8'));
+    } else {
+      clientCreditsStore = {};
+      saveClientCreditsToDisk();
+    }
+  } catch (err) {
+    clientCreditsStore = {};
+  }
+}
+loadClientCreditsFromDisk();
+
+function saveClientCreditsToDisk() {
+  try {
+    fs.writeFileSync(clientCreditsPath, JSON.stringify(clientCreditsStore, null, 2), 'utf8');
+  } catch (err) {
+    console.warn('⚠️ Failed to save client credits:', err.message);
+  }
+}
+
+function getClientAccount(email) {
+  if (!email) return null;
+  loadClientCreditsFromDisk();
+  const clean = String(email).toLowerCase().trim();
+  let client = clientCreditsStore[clean];
+
+  if (!client) {
+    // Check case-insensitive key
+    for (const [k, v] of Object.entries(clientCreditsStore)) {
+      if (k.toLowerCase().trim() === clean) { client = v; break; }
+    }
+  }
+
+  if (!client) {
+    // Check if user is registered in recruiter/user store with role: 'client'
+    loadRecruitersFromDisk();
+    const matched = (recruitersMock || []).find(r => (r.email || '').toLowerCase().trim() === clean);
+    client = {
+      email: clean,
+      name: matched ? (matched.name || clean.split('@')[0]) : clean.split('@')[0],
+      company: matched?.company || (clean.split('@')[1] ? clean.split('@')[1].split('.')[0].toUpperCase() : 'Partner Client'),
+      role: 'client',
+      screeningCredits: 50,
+      usedScreeningCredits: 0,
+      aiCredits: 300,
+      usedAiCredits: 0,
+      emailConfig: {
+        senderName: '',
+        fromEmail: clean,
+        smtpHost: '',
+        smtpPort: 465,
+        security: 'SSL',
+        appPassword: '',
+        signature: ''
+      },
+      createdAt: new Date().toISOString(),
+      lastActive: new Date().toISOString()
+    };
+    clientCreditsStore[clean] = client;
+    saveClientCreditsToDisk();
+  }
+
+  return client;
+}
+
+// GET Client portal data: profile, credits, email config, and strictly scoped sessions
+app.get('/api/client/portal-data', (req, res) => {
+  const email = (req.query.email || req.headers['x-client-email'] || req.user?.email || '').toLowerCase().trim();
+  if (!email) return res.status(400).json({ success: false, message: 'Email required' });
+
+  const client = getClientAccount(email);
+  loadScreeningFromDisk();
+
+  // Multi-tenant isolation: strictly return sessions created by or assigned to this client
+  const mySessions = (screeningStore || []).filter(s => {
+    if (!s) return false;
+    const cBy = (s.createdByEmail || s.createdBy || s.recruiterEmail || '').toLowerCase().trim();
+    const cClient = (s.clientEmail || '').toLowerCase().trim();
+    return cBy === email || cClient === email;
+  });
+
+  res.json({
+    success: true,
+    client: {
+      email: client.email,
+      name: client.name,
+      company: client.company,
+      role: client.role,
+      screeningCredits: client.screeningCredits,
+      usedScreeningCredits: client.usedScreeningCredits,
+      aiCredits: client.aiCredits,
+      usedAiCredits: client.usedAiCredits,
+      emailConfig: {
+        senderName: client.emailConfig?.senderName || client.name,
+        fromEmail: client.emailConfig?.fromEmail || client.email,
+        smtpHost: client.emailConfig?.smtpHost || '',
+        smtpPort: client.emailConfig?.smtpPort || 465,
+        security: client.emailConfig?.security || 'SSL',
+        hasPassword: Boolean(client.emailConfig?.appPassword),
+        signature: client.emailConfig?.signature || ''
+      }
+    },
+    sessions: mySessions
+  });
+});
+
+// POST update client email config
+app.post('/api/client/email-config', express.json(), (req, res) => {
+  const { email, senderName, fromEmail, smtpHost, smtpPort, security, appPassword, signature } = req.body;
+  if (!email) return res.status(400).json({ success: false, message: 'Client email is required' });
+
+  const client = getClientAccount(email);
+  if (!client.emailConfig) client.emailConfig = {};
+
+  if (senderName !== undefined) client.emailConfig.senderName = String(senderName).trim();
+  if (fromEmail !== undefined) client.emailConfig.fromEmail = String(fromEmail).toLowerCase().trim();
+  if (smtpHost !== undefined) client.emailConfig.smtpHost = String(smtpHost).trim();
+  if (smtpPort !== undefined) client.emailConfig.smtpPort = parseInt(smtpPort) || 465;
+  if (security !== undefined) client.emailConfig.security = security;
+  if (appPassword !== undefined && appPassword.trim() && !appPassword.includes('••••')) {
+    client.emailConfig.appPassword = appPassword.trim();
+  }
+  if (signature !== undefined) client.emailConfig.signature = signature;
+
+  client.lastActive = new Date().toISOString();
+  saveClientCreditsToDisk();
+
+  res.json({
+    success: true,
+    message: 'Email settings saved successfully',
+    emailConfig: {
+      senderName: client.emailConfig.senderName,
+      fromEmail: client.emailConfig.fromEmail,
+      smtpHost: client.emailConfig.smtpHost,
+      smtpPort: client.emailConfig.smtpPort,
+      security: client.emailConfig.security,
+      hasPassword: Boolean(client.emailConfig.appPassword),
+      signature: client.emailConfig.signature
+    }
+  });
+});
+
+// POST Client AI Question Generation (consumes 1 AI Credit)
+app.post('/api/client/ai/generate-questions', express.json(), async (req, res) => {
+  const { clientEmail, jobTitle, jobDescription, skills, questionCount = 4 } = req.body;
+  if (!clientEmail) return res.status(400).json({ success: false, message: 'clientEmail is required' });
+
+  const client = getClientAccount(clientEmail);
+  if (client.aiCredits < 1) {
+    return res.status(402).json({
+      success: false,
+      message: 'AI credits exhausted. Please contact Admin to refill your AI question generation credits.',
+      creditsExhausted: true,
+      remainingAiCredits: client.aiCredits
+    });
+  }
+
+  const title = (jobTitle || 'Software Professional').trim();
+  const rawJd = (jobDescription || '').trim();
+  const jobSkills = Array.isArray(skills) ? skills : [];
+
+  try {
+    const groqApiKey = process.env.GROQ_API_KEY;
+    if (!groqApiKey) {
+      return res.status(500).json({ success: false, message: 'AI Engine not configured on server' });
+    }
+
+    const systemPrompt = `You are a Principal Technical Interviewer and ATS Assessment Architect.
+Your task is to generate ${questionCount} concise, sharp, high-signal asynchronous screening interview questions for the role: "${title}".
+Company: ${client.company || 'Enterprise Partner'}.
+Key Skills Required: ${jobSkills.join(', ') || 'Core Technical Stack'}.
+Job Description Context:
+${rawJd ? rawJd.slice(0, 3000) : 'Standard enterprise engineering role'}.
+
+Guidelines:
+1. Question 1 should be a punchy technical self-introduction assessing primary domain alignment.
+2. Question 2-3 should be deep technical problem-solving, architectural, or hands-on implementation scenarios focusing on core competencies from the JD.
+3. The final question should address availability, remote/relocation preference, work authorization, and rate/salary expectations.
+
+Return a clean, valid JSON array containing exactly ${questionCount} question objects:
+[
+  {
+    "id": "q1",
+    "text": "Specific question text for candidate to answer in 60-90 seconds",
+    "description": "Short evaluation guideline or tip",
+    "allowedFormats": ["video", "audio", "text"],
+    "maxDuration": 120
+  }
+]
+Output ONLY raw JSON array starting with '[' and ending with ']'.`;
+
+    const raw = await callGroqAI(systemPrompt, `Generate ${questionCount} questions for ${title}`, true);
+    let parsed = [];
+    try {
+      parsed = JSON.parse(cleanJsonResponseText(raw));
+    } catch (e) {
+      const match = raw.match(/\[[\s\S]*\]/);
+      if (match) parsed = JSON.parse(match[0]);
+      else throw e;
+    }
+
+    if (!Array.isArray(parsed) || parsed.length === 0) {
+      throw new Error('Failed to parse generated questions');
+    }
+
+    // Deduct 1 AI credit on success
+    client.aiCredits -= 1;
+    client.usedAiCredits += 1;
+    client.lastActive = new Date().toISOString();
+    saveClientCreditsToDisk();
+
+    res.json({
+      success: true,
+      questions: parsed,
+      remainingAiCredits: client.aiCredits,
+      usedAiCredits: client.usedAiCredits
+    });
+  } catch (err) {
+    console.error('Client AI question generation error:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// POST Client Create Screening Invite (consumes 1 Screening Credit)
+app.post('/api/client/screening/create', express.json(), async (req, res) => {
+  const { clientEmail, jobTitle, candidateName, candidateEmail, questions, jobDescription, sendInviteEmail } = req.body;
+  if (!clientEmail || !jobTitle) {
+    return res.status(400).json({ success: false, message: 'clientEmail and jobTitle are required' });
+  }
+
+  const client = getClientAccount(clientEmail);
+  if (client.screeningCredits < 1) {
+    return res.status(402).json({
+      success: false,
+      message: 'Video screening credits exhausted. Please contact Admin to refill your interview credits.',
+      creditsExhausted: true,
+      remainingScreeningCredits: client.screeningCredits
+    });
+  }
+
+  const sessionId = 'SCR-CL-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+  const cleanCandName = (candidateName || '').trim();
+  const cleanCandEmail = (candidateEmail || '').trim().toLowerCase();
+
+  const defaultQuestions = [
+    {
+      id: 'q1',
+      text: `Give a 60-90 second introduction of your background, key technical skills, and recent work relevant to ${jobTitle}.`,
+      description: 'Summarize your core strengths, programming languages/frameworks, and recent client projects.',
+      allowedFormats: ['video', 'audio', 'text'],
+      maxDuration: 120
+    },
+    {
+      id: 'q2',
+      text: `Describe a recent challenging project or technical problem you solved in your field.`,
+      description: 'Explain the architecture, your contribution, and the final impact.',
+      allowedFormats: ['video', 'audio', 'text'],
+      maxDuration: 120
+    },
+    {
+      id: 'q3',
+      text: `What is your current work authorization status, earliest availability, and desired compensation?`,
+      description: 'Confirm current location, remote/relocation preference, and notice period.',
+      allowedFormats: ['video', 'audio', 'text'],
+      maxDuration: 90
+    }
+  ];
+
+  const resolvedQuestions = Array.isArray(questions) && questions.length > 0 ? questions : defaultQuestions;
+
+  // Set 7-day expiration
+  const expDate = new Date();
+  expDate.setDate(expDate.getDate() + 7);
+
+  const newSession = {
+    sessionId,
+    campaignTitle: `${jobTitle} Screening`,
+    jobId: 'CLIENT-' + Date.now(),
+    jobTitle: jobTitle.trim(),
+    jobClient: client.company || 'Client Partner',
+    clientEmail: client.email,
+    clientCompany: client.company,
+    createdBy: client.email,
+    createdByEmail: client.email,
+    createdByName: client.name,
+    recruiterEmail: client.email,
+    recruiterName: client.name,
+    questions: resolvedQuestions,
+    allowedFormats: ['video', 'audio', 'text'],
+    maxDuration: 120,
+    responses: [],
+    candidateName: cleanCandName || null,
+    candidateEmail: cleanCandEmail || null,
+    status: 'pending',
+    createdAt: new Date().toISOString(),
+    expiresAt: expDate.toISOString(),
+    isClientSession: true
+  };
+
+  screeningStore.unshift(newSession);
+  saveScreeningToDisk();
+
+  // Deduct 1 screening credit
+  client.screeningCredits -= 1;
+  client.usedScreeningCredits += 1;
+  client.lastActive = new Date().toISOString();
+  saveClientCreditsToDisk();
+
+  const screeningUrl = `https://smarthireus.com/candidate-chat/${sessionId}`;
+
+  // Optionally send email invite if email provided
+  let inviteEmailSent = false;
+  if (sendInviteEmail && cleanCandEmail) {
+    try {
+      const emailCfg = client.emailConfig || {};
+      const senderName = emailCfg.senderName || client.name || client.company || 'Talent Team';
+      const fromEmail = emailCfg.fromEmail || client.email;
+      const subject = `Invitation: AI Video Screening for ${jobTitle} at ${client.company || 'our company'}`;
+      const inviteBody = `Hello ${cleanCandName || 'Candidate'},\n\nYou have been invited to complete a 1-way asynchronous video screening interview for the role of ${jobTitle}.\n\nPlease click the link below using a desktop or mobile browser with a camera & microphone to record your responses:\n\n${screeningUrl}\n\nImportant: This interview link will expire in 7 days.\n\n${emailCfg.signature || `Best regards,\n${senderName}\n${client.company || ''}`}`;
+
+      if (emailCfg.appPassword && emailCfg.smtpHost) {
+        const nodemailer = await import('nodemailer').catch(() => null);
+        if (nodemailer) {
+          const transporter = nodemailer.createTransport({
+            host: emailCfg.smtpHost,
+            port: emailCfg.smtpPort || 465,
+            secure: emailCfg.security === 'SSL' || (emailCfg.smtpPort === 465),
+            auth: { user: fromEmail, pass: emailCfg.appPassword.replace(/\s+/g, '') }
+          });
+          await transporter.sendMail({
+            from: `"${senderName}" <${fromEmail}>`,
+            to: cleanCandEmail,
+            subject,
+            text: inviteBody
+          });
+          inviteEmailSent = true;
+        }
+      }
+    } catch (e) {
+      console.warn('⚠️ Failed to dispatch client invite email via SMTP:', e.message);
+    }
+  }
+
+  res.json({
+    success: true,
+    sessionId,
+    screeningUrl,
+    session: newSession,
+    remainingScreeningCredits: client.screeningCredits,
+    usedScreeningCredits: client.usedScreeningCredits,
+    inviteEmailSent
+  });
+});
+
+// Admin endpoints for client credit management
+app.get('/api/admin/client-credits/all', (req, res) => {
+  loadClientCreditsFromDisk();
+  const list = Object.values(clientCreditsStore);
+  res.json({
+    success: true,
+    clients: list,
+    totalClients: list.length,
+    totalScreeningCreditsAllocated: list.reduce((a, c) => a + (c.screeningCredits || 0) + (c.usedScreeningCredits || 0), 0),
+    totalScreeningCompleted: list.reduce((a, c) => a + (c.usedScreeningCredits || 0), 0),
+    totalAiCreditsAllocated: list.reduce((a, c) => a + (c.aiCredits || 0) + (c.usedAiCredits || 0), 0)
+  });
+});
+
+app.post('/api/admin/client-credits/refill', express.json(), (req, res) => {
+  const { email, addScreeningCredits, addAiCredits, setScreeningCredits, setAiCredits } = req.body;
+  if (!email) return res.status(400).json({ success: false, message: 'Email required' });
+
+  const client = getClientAccount(email);
+  if (typeof addScreeningCredits === 'number') {
+    client.screeningCredits += addScreeningCredits;
+  }
+  if (typeof addAiCredits === 'number') {
+    client.aiCredits += addAiCredits;
+  }
+  if (typeof setScreeningCredits === 'number') {
+    client.screeningCredits = setScreeningCredits;
+  }
+  if (typeof setAiCredits === 'number') {
+    client.aiCredits = setAiCredits;
+  }
+
+  client.lastActive = new Date().toISOString();
+  saveClientCreditsToDisk();
+
+  res.json({
+    success: true,
+    message: `Credits for ${client.name} (${client.company}) updated successfully!`,
+    client
   });
 });
 

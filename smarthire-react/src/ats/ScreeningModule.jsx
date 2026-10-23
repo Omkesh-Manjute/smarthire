@@ -171,6 +171,9 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [], cur
 
   // Campaign Builder Modal States
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [creationMode, setCreationMode] = useState('req') // 'req' or 'custom'
+  const [customJobTitle, setCustomJobTitle] = useState('')
+  const [pastedJd, setPastedJd] = useState('')
   const [selectedJobId, setSelectedJobId] = useState('')
   const [candidateNameInput, setCandidateNameInput] = useState('')
   const [candidateEmailInput, setCandidateEmailInput] = useState('')
@@ -251,6 +254,14 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [], cur
   const [isCreating, setIsCreating] = useState(false)
   const [createdLinkResult, setCreatedLinkResult] = useState(null)
   const [copySuccess, setCopySuccess] = useState(false)
+  const [copiedSessionId, setCopiedSessionId] = useState(null)
+
+  // Determine if candidate has submitted actual video/audio responses
+  const hasSubmittedResponses = Boolean(
+    reviewSession &&
+    reviewSession.status !== 'pending' &&
+    ((Array.isArray(reviewSession.responses) && reviewSession.responses.length > 0 && reviewSession.responses.some(r => r.transcript || r.response || r.mediaUrl)) || reviewSession.masterMediaUrl)
+  )
 
   // Direct Email Screening Invitation Modal States
   const [showSendEmailModal, setShowSendEmailModal] = useState(false)
@@ -475,15 +486,23 @@ SmartHire Recruitment Team`
 
   // Handle Create Campaign
   const handleCreateCampaign = async () => {
-    if (!selectedJobId) {
+    const job = jobsList.find(j => j.id === selectedJobId)
+    const effectiveJobId = creationMode === 'custom' ? undefined : selectedJobId
+    const effectiveJobTitle = creationMode === 'custom' 
+      ? customJobTitle.trim() 
+      : (job?.title || campaignTitle || 'Technical Role')
+
+    if (creationMode === 'req' && !selectedJobId) {
       alert('Please select a target Job Requisition.')
+      return
+    }
+    if (creationMode === 'custom' && !customJobTitle.trim()) {
+      alert('Please enter a target Job Position / Role title.')
       return
     }
 
     setIsCreating(true)
     try {
-      const job = jobsList.find(j => j.id === selectedJobId)
-
       let expiresAt = null
       if (expiryOption === '3days') {
         const d = new Date()
@@ -510,8 +529,10 @@ SmartHire Recruitment Team`
         method: 'POST',
         headers: getAuthHeaders(true),
         body: JSON.stringify({
-          jobId: selectedJobId,
-          campaignTitle,
+          jobId: effectiveJobId,
+          jobTitle: effectiveJobTitle,
+          jobDescription: pastedJd.trim() || undefined,
+          campaignTitle: campaignTitle || `${effectiveJobTitle} Screening`,
           candidateName: candidateNameInput.trim(),
           candidateEmail: candidateEmailInput.trim(),
           questions,
@@ -532,7 +553,7 @@ SmartHire Recruitment Team`
         setCreatedLinkResult({
           sessionId: data.sessionId,
           screeningUrl: fullLink,
-          jobTitle: job?.title || 'Open Position',
+          jobTitle: effectiveJobTitle,
           candidateName: candidateNameInput.trim(),
           candidateEmail: candidateEmailInput.trim(),
           expiresAt
@@ -627,19 +648,21 @@ SmartHire Recruitment Team`
 
   // Handle AI Question Auto-Generation from Requisition & Skills
   const handleGenerateAIQuestions = async () => {
-    if (!selectedJobId) {
-      alert('Please select a Job Requisition first so AI knows the target role & required skills.')
+    const job = jobsList.find(j => j.id === selectedJobId)
+    const effectiveTitle = creationMode === 'custom' ? customJobTitle.trim() : job?.title
+    if (!effectiveTitle && !selectedJobId) {
+      alert('Please select a Job Requisition or enter a target Role Title so AI knows the skills.')
       return
     }
-    const job = jobsList.find(j => j.id === selectedJobId)
     setIsGeneratingAIQuestions(true)
     try {
       const res = await fetch(`${API}/generate-questions`, {
         method: 'POST',
         headers: getAuthHeaders(true),
         body: JSON.stringify({
-          jobId: selectedJobId,
-          jobTitle: job?.title,
+          jobId: selectedJobId || undefined,
+          jobTitle: effectiveTitle,
+          jobDescription: pastedJd.trim() || undefined,
           skills: job?.skills || [],
           questionCount: 4
         })
@@ -647,7 +670,6 @@ SmartHire Recruitment Team`
       const data = await res.json()
       if (data.success && Array.isArray(data.questions) && data.questions.length > 0) {
         setQuestions(data.questions)
-        alert(`✨ Successfully generated ${data.questions.length} role-tailored technical questions using Groq AI!`)
       } else {
         alert(data.message || 'Failed to auto-generate interview questions.')
       }
@@ -659,7 +681,7 @@ SmartHire Recruitment Team`
     }
   }
 
-  // Handle PDF Screening Dossier Export
+  // Handle PDF Screening Report Export
   const handleExportPDFReport = (session) => {
     if (!session) return
 
@@ -689,7 +711,7 @@ SmartHire Recruitment Team`
 <html>
 <head>
   <meta charset="utf-8">
-  <title>SmartHire Screening Dossier - ${candidateName}</title>
+  <title>SmartHire Candidate Interview Report - ${candidateName}</title>
   <style>
     @media print {
       body { margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
@@ -887,7 +909,7 @@ SmartHire Recruitment Team`
 </head>
 <body>
   <div class="print-bar no-print">
-    <div style="font-weight: 700; font-size: 14px;">SmartHire ATS — Candidate Screening Dossier</div>
+    <div style="font-weight: 700; font-size: 14px;">SmartHire ATS — Candidate Interview Report</div>
     <div>
       <button class="print-btn" onclick="window.print()">Print / Save as PDF</button>
       <button class="print-btn" style="background: #475569; margin-left: 8px;" onclick="window.close()">Close</button>
@@ -897,7 +919,7 @@ SmartHire Recruitment Team`
   <div class="header">
     <div>
       <div class="brand-title">SmartHire ATS</div>
-      <div class="brand-sub">Asynchronous Video Screening & AI Proctoring Dossier</div>
+      <div class="brand-sub">Asynchronous Video Screening & AI Assessment Report</div>
     </div>
     <div class="report-meta">
       <div>Report ID: <strong>${session.sessionId || session.id || 'SCR-2026'}</strong></div>
@@ -1598,6 +1620,33 @@ SmartHire Recruitment Team`
                       {/* Actions */}
                       <td style={{ ...styles.td, textAlign: 'center' }}>
                         <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px', minHeight: '26px' }}>
+                          {session.status === 'pending' && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                const url = `${window.location.origin}/candidate-chat/${session.sessionId || session.id || session._id}`
+                                navigator.clipboard.writeText(url)
+                                setCopiedSessionId(session.sessionId || session.id)
+                                setTimeout(() => setCopiedSessionId(null), 2500)
+                              }}
+                              style={{
+                                padding: '3px 8px',
+                                background: copiedSessionId === (session.sessionId || session.id) ? '#ecfdf5' : '#f0f9ff',
+                                color: copiedSessionId === (session.sessionId || session.id) ? '#059669' : '#0284c7',
+                                border: '1px solid',
+                                borderColor: copiedSessionId === (session.sessionId || session.id) ? '#a7f3d0' : '#bae6fd',
+                                borderRadius: '5px',
+                                fontSize: '11px',
+                                fontWeight: '700',
+                                cursor: 'pointer',
+                                whiteSpace: 'nowrap'
+                              }}
+                              title="Copy candidate interview link"
+                            >
+                              {copiedSessionId === (session.sessionId || session.id) ? '✓ Copied' : 'Link'}
+                            </button>
+                          )}
                           {(session.status === 'submitted' || session.status === 'shortlisted' || session.status === 'reviewed' || (session.responses && session.responses.length > 0)) ? (
                             <button
                               type="button"
@@ -1606,7 +1655,7 @@ SmartHire Recruitment Team`
                                 handleExportPDFReport(session)
                               }}
                               style={styles.pdfReportTableBtn}
-                              title="Export PDF Candidate Screening Dossier"
+                              title="Export PDF Candidate Interview Report"
                             >
                               PDF
                             </button>
@@ -1698,29 +1747,109 @@ SmartHire Recruitment Team`
             <div style={styles.modalBody}>
               {!createdLinkResult ? (
                 <div>
-                  {/* Select Requisition */}
-                  <div style={styles.modalFormGroup}>
-                    <label style={styles.modalLabel}>Select Target Requisition *</label>
-                    <select
-                      value={selectedJobId}
-                      onChange={e => {
-                        const newJobId = e.target.value
-                        setSelectedJobId(newJobId)
-                        if (!campaignTitle) {
-                          const jobObj = jobsList.find(j => j.id === newJobId)
-                          if (jobObj) setCampaignTitle(`${jobObj.title} Screening`)
-                        }
+                  {/* Mode Selector: Choose from ATS Requisitions vs Custom Role & Paste JD */}
+                  <div style={{ display: 'flex', gap: '8px', marginBottom: '14px', background: '#f1f5f9', padding: '4px', borderRadius: '8px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setCreationMode('req')}
+                      style={{
+                        flex: 1,
+                        padding: '7px 12px',
+                        borderRadius: '6px',
+                        border: 'none',
+                        fontSize: '12.5px',
+                        fontWeight: '700',
+                        cursor: 'pointer',
+                        background: creationMode === 'req' ? '#ffffff' : 'transparent',
+                        color: creationMode === 'req' ? '#0f172a' : '#64748b',
+                        boxShadow: creationMode === 'req' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                        transition: 'all 0.15s ease'
                       }}
-                      style={styles.modalSelect}
                     >
-                      <option value="">-- Choose Job Opening --</option>
-                      {jobsList.map(j => (
-                        <option key={j.id} value={j.id}>
-                          Req #{String(j.id).replace(/^J-/, '')} • {j.title} ({j.client || 'Client'})
-                        </option>
-                      ))}
-                    </select>
+                      ATS Requisitions
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCreationMode('custom')}
+                      style={{
+                        flex: 1,
+                        padding: '7px 12px',
+                        borderRadius: '6px',
+                        border: 'none',
+                        fontSize: '12.5px',
+                        fontWeight: '700',
+                        cursor: 'pointer',
+                        background: creationMode === 'custom' ? '#ffffff' : 'transparent',
+                        color: creationMode === 'custom' ? '#0f172a' : '#64748b',
+                        boxShadow: creationMode === 'custom' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      Custom Role / Paste JD
+                    </button>
                   </div>
+
+                  {/* Mode A: Select Requisition */}
+                  {creationMode === 'req' ? (
+                    <div style={styles.modalFormGroup}>
+                      <label style={styles.modalLabel}>Select Target Requisition *</label>
+                      <select
+                        value={selectedJobId}
+                        onChange={e => {
+                          const newJobId = e.target.value
+                          setSelectedJobId(newJobId)
+                          if (!campaignTitle) {
+                            const jobObj = jobsList.find(j => j.id === newJobId)
+                            if (jobObj) setCampaignTitle(`${jobObj.title} Screening`)
+                          }
+                        }}
+                        style={styles.modalSelect}
+                      >
+                        <option value="">-- Choose Job Opening --</option>
+                        {jobsList.map(j => (
+                          <option key={j.id} value={j.id}>
+                            Req #{String(j.id).replace(/^J-/, '')} • {j.title} ({j.client || 'Client'})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  ) : (
+                    /* Mode B: Custom Role & Paste JD */
+                    <div>
+                      <div style={styles.modalFormGroup}>
+                        <label style={styles.modalLabel}>Job Position / Role Title *</label>
+                        <input
+                          type="text"
+                          value={customJobTitle}
+                          onChange={e => {
+                            setCustomJobTitle(e.target.value)
+                            if (!campaignTitle) setCampaignTitle(`${e.target.value} Screening`)
+                          }}
+                          placeholder="e.g. Senior Full Stack Engineer (React / Node.js)"
+                          style={styles.modalInput}
+                        />
+                      </div>
+                      <div style={styles.modalFormGroup}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                          <label style={styles.modalLabel}>Paste Job Description (JD) — Optional</label>
+                          <span style={{ fontSize: '11px', color: '#64748b' }}>AI will analyze JD to generate tailored questions</span>
+                        </div>
+                        <textarea
+                          rows={4}
+                          value={pastedJd}
+                          onChange={e => setPastedJd(e.target.value)}
+                          placeholder="Paste responsibilities, required skills, and qualification requirements here..."
+                          style={{
+                            ...styles.modalInput,
+                            minHeight: '80px',
+                            fontFamily: 'inherit',
+                            resize: 'vertical',
+                            lineHeight: 1.4
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
 
                   {/* Candidate Name & Email Inputs */}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
@@ -2179,42 +2308,48 @@ SmartHire Recruitment Team`
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                {/* PDF Screening Dossier Export */}
-                <button
-                  type="button"
-                  onClick={() => handleExportPDFReport(reviewSession)}
-                  style={styles.exportPdfTopBtn}
-                  title="Export candidate screening dossier to PDF or print"
-                >
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                    <polyline points="14 2 14 8 20 8"></polyline>
-                    <line x1="16" y1="13" x2="8" y2="13"></line>
-                    <line x1="16" y1="17" x2="8" y2="17"></line>
-                    <polyline points="10 9 9 9 8 9"></polyline>
-                  </svg>
-                  Export PDF Report
-                </button>
+                {/* PDF Screening Report Export - only when candidate submitted answers */}
+                {hasSubmittedResponses && (
+                  <button
+                    type="button"
+                    onClick={() => handleExportPDFReport(reviewSession)}
+                    style={styles.exportPdfTopBtn}
+                    title="Export candidate interview report to PDF or print"
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                      <polyline points="14 2 14 8 20 8"></polyline>
+                      <line x1="16" y1="13" x2="8" y2="13"></line>
+                      <line x1="16" y1="17" x2="8" y2="17"></line>
+                      <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                    Export PDF Report
+                  </button>
+                )}
 
-                {/* AI Re-evaluation & Transcription Button */}
-                <button
-                  type="button"
-                  onClick={() => handleReEvaluateSession(reviewSession.id || reviewSession._id || reviewSession.sessionId)}
-                  disabled={isReEvaluating}
-                  style={styles.reEvaluateTopBtn}
-                  title="Extract audio speech from candidate video, transcribe with Whisper AI, and re-evaluate technical fit"
-                >
-                  {isReEvaluating ? 'Transcribing & Evaluating...' : '⚡ AI Transcribe & Evaluate'}
-                </button>
+                {/* AI Re-evaluation & Transcription Button - only when candidate submitted answers */}
+                {hasSubmittedResponses && (
+                  <button
+                    type="button"
+                    onClick={() => handleReEvaluateSession(reviewSession.id || reviewSession._id || reviewSession.sessionId)}
+                    disabled={isReEvaluating}
+                    style={styles.reEvaluateTopBtn}
+                    title="Extract audio speech from candidate video, transcribe with Whisper AI, and re-evaluate technical fit"
+                  >
+                    {isReEvaluating ? 'Transcribing & Evaluating...' : '⚡ AI Transcribe & Evaluate'}
+                  </button>
+                )}
 
-                <button
-                  type="button"
-                  onClick={() => handleSaveReview('shortlisted')}
-                  disabled={isSavingReview}
-                  style={styles.shortlistTopBtn}
-                >
-                  Shortlist Candidate
-                </button>
+                {hasSubmittedResponses && (
+                  <button
+                    type="button"
+                    onClick={() => handleSaveReview('shortlisted')}
+                    disabled={isSavingReview}
+                    style={styles.shortlistTopBtn}
+                  >
+                    Shortlist Candidate
+                  </button>
+                )}
                 {isSuperAdmin && (
                   <button
                     type="button"
@@ -2382,65 +2517,80 @@ SmartHire Recruitment Team`
                 <div style={styles.reviewSideCard}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div style={styles.sideCardHeading}>AI Match & Insights</div>
-                    <button
-                      type="button"
-                      onClick={() => handleReEvaluateSession(reviewSession.id || reviewSession._id || reviewSession.sessionId)}
-                      disabled={isReEvaluating}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        color: '#2563eb',
-                        fontSize: '11px',
-                        fontWeight: '700',
-                        cursor: 'pointer',
-                        padding: '2px 4px'
-                      }}
-                      title="Re-run AI evaluation on candidate speech"
-                    >
-                      {isReEvaluating ? 'Evaluating...' : '↻ Re-evaluate'}
-                    </button>
+                    {hasSubmittedResponses && (
+                      <button
+                        type="button"
+                        onClick={() => handleReEvaluateSession(reviewSession.id || reviewSession._id || reviewSession.sessionId)}
+                        disabled={isReEvaluating}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#2563eb',
+                          fontSize: '11px',
+                          fontWeight: '700',
+                          cursor: 'pointer',
+                          padding: '2px 4px'
+                        }}
+                        title="Re-run AI evaluation on candidate speech"
+                      >
+                        {isReEvaluating ? 'Evaluating...' : '↻ Re-evaluate'}
+                      </button>
+                    )}
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '8px 0 12px' }}>
-                    <div style={{
-                      ...styles.aiMatchScoreCircle,
-                      ...(reviewSession.aiScore >= 85 ? { background: '#ecfdf5', color: '#047857', borderColor: '#a7f3d0' } :
-                          reviewSession.aiScore >= 70 ? { background: '#eff6ff', color: '#1d4ed8', borderColor: '#bfdbfe' } :
-                          reviewSession.aiScore >= 50 ? { background: '#fffbeb', color: '#b45309', borderColor: '#fde68a' } :
-                          { background: '#fff1f2', color: '#be123c', borderColor: '#fecdd3' })
-                    }}>
-                      {reviewSession.aiScore || 85}%
-                    </div>
-                    <div>
-                      <div style={{
-                        display: 'inline-block',
-                        padding: '2px 8px',
-                        borderRadius: '6px',
-                        fontSize: '12px',
-                        fontWeight: '800',
-                        background: reviewSession.aiScore >= 85 ? '#ecfdf5' : reviewSession.aiScore >= 70 ? '#eff6ff' : '#fffbeb',
-                        color: reviewSession.aiScore >= 85 ? '#047857' : reviewSession.aiScore >= 70 ? '#1d4ed8' : '#b45309'
-                      }}>
-                        {reviewSession.recommendation || 'Strong Match'}
+                  {hasSubmittedResponses && reviewSession.aiScore ? (
+                    <>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '8px 0 12px' }}>
+                        <div style={{
+                          ...styles.aiMatchScoreCircle,
+                          ...(reviewSession.aiScore >= 85 ? { background: '#ecfdf5', color: '#047857', borderColor: '#a7f3d0' } :
+                              reviewSession.aiScore >= 70 ? { background: '#eff6ff', color: '#1d4ed8', borderColor: '#bfdbfe' } :
+                              reviewSession.aiScore >= 50 ? { background: '#fffbeb', color: '#b45309', borderColor: '#fde68a' } :
+                              { background: '#fff1f2', color: '#be123c', borderColor: '#fecdd3' })
+                        }}>
+                          {reviewSession.aiScore}%
+                        </div>
+                        <div>
+                          <div style={{
+                            display: 'inline-block',
+                            padding: '2px 8px',
+                            borderRadius: '6px',
+                            fontSize: '12px',
+                            fontWeight: '800',
+                            background: reviewSession.aiScore >= 85 ? '#ecfdf5' : reviewSession.aiScore >= 70 ? '#eff6ff' : '#fffbeb',
+                            color: reviewSession.aiScore >= 85 ? '#047857' : reviewSession.aiScore >= 70 ? '#1d4ed8' : '#b45309'
+                          }}>
+                            {reviewSession.recommendation || 'Strong Match'}
+                          </div>
+                          <div style={{ fontSize: '11px', color: '#64748b', marginTop: '3px' }}>
+                            Evaluated against Requisition
+                          </div>
+                        </div>
                       </div>
-                      <div style={{ fontSize: '11px', color: '#64748b', marginTop: '3px' }}>
-                        Evaluated against Requisition
-                      </div>
-                    </div>
-                  </div>
 
-                  {Array.isArray(reviewSession.aiSummary) && reviewSession.aiSummary.length > 0 ? (
-                    <ul style={styles.aiSummaryList}>
-                      {reviewSession.aiSummary.map((pt, pIdx) => (
-                        <li key={pIdx} style={styles.aiSummaryItem}>
-                          {pt}
-                        </li>
-                      ))}
-                    </ul>
+                      {Array.isArray(reviewSession.aiSummary) && reviewSession.aiSummary.length > 0 ? (
+                        <ul style={styles.aiSummaryList}>
+                          {reviewSession.aiSummary.map((pt, pIdx) => (
+                            <li key={pIdx} style={styles.aiSummaryItem}>
+                              {pt}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p style={{ fontSize: '12px', color: '#475569', lineHeight: 1.4, margin: 0 }}>
+                          {reviewSession.keyTakeaways || 'Candidate presented clear, well-structured technical answers.'}
+                        </p>
+                      )}
+                    </>
                   ) : (
-                    <p style={{ fontSize: '12px', color: '#475569', lineHeight: 1.4, margin: 0 }}>
-                      {reviewSession.keyTakeaways || 'Candidate presented clear, well-structured technical answers.'}
-                    </p>
+                    <div style={{ padding: '16px 0', textAlign: 'center' }}>
+                      <div style={{ fontSize: '13px', fontWeight: '700', color: '#334155', marginBottom: '6px' }}>
+                        Interview Pending
+                      </div>
+                      <p style={{ fontSize: '12px', color: '#64748b', lineHeight: 1.5, margin: 0 }}>
+                        Awaiting candidate submission. AI evaluation, match score, and technical insights will appear here once the candidate completes and submits their video interview.
+                      </p>
+                    </div>
                   )}
                 </div>
 
@@ -2723,8 +2873,130 @@ SmartHire Recruitment Team`
                     )
                   })()
                 ) : (
-                  <div style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>
-                    No responses recorded for this session.
+                  <div style={{ padding: '40px 24px', maxWidth: '620px', margin: '0 auto', textAlign: 'center' }}>
+                    <div style={{
+                      width: '52px',
+                      height: '52px',
+                      borderRadius: '50%',
+                      background: '#f8fafc',
+                      color: '#2563eb',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      margin: '0 auto 16px',
+                      border: '1px solid #e2e8f0'
+                    }}>
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polygon points="23 7 16 12 23 17 23 7" />
+                        <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+                      </svg>
+                    </div>
+
+                    <h3 style={{ fontSize: '17px', fontWeight: '800', color: '#0f172a', margin: '0 0 8px' }}>
+                      Candidate Video Interview Pending
+                    </h3>
+                    <p style={{ fontSize: '13px', color: '#64748b', lineHeight: 1.6, margin: '0 0 24px' }}>
+                      The candidate has been invited for this asynchronous screening session. Video recordings, AI transcripts, and the evaluation scorecard will activate automatically as soon as the candidate submits their responses.
+                    </p>
+
+                    <div style={{
+                      background: '#f8fafc',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '8px',
+                      padding: '16px',
+                      textAlign: 'left',
+                      marginBottom: '20px'
+                    }}>
+                      <div style={{ fontSize: '11px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px' }}>
+                        Candidate Screening Invite Link
+                      </div>
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        background: '#ffffff',
+                        border: '1px solid #cbd5e1',
+                        borderRadius: '6px',
+                        padding: '6px 10px'
+                      }}>
+                        <input
+                          type="text"
+                          readOnly
+                          value={`${window.location.origin}/candidate-chat/${reviewSession.sessionId || reviewSession.id || reviewSession._id}`}
+                          style={{
+                            flex: 1,
+                            border: 'none',
+                            outline: 'none',
+                            fontSize: '12px',
+                            color: '#334155',
+                            background: 'transparent'
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const url = `${window.location.origin}/candidate-chat/${reviewSession.sessionId || reviewSession.id || reviewSession._id}`
+                            navigator.clipboard.writeText(url)
+                            setCopiedSessionId(reviewSession.sessionId || reviewSession.id)
+                            setTimeout(() => setCopiedSessionId(null), 3000)
+                          }}
+                          style={{
+                            padding: '6px 14px',
+                            background: copiedSessionId === (reviewSession.sessionId || reviewSession.id) ? '#059669' : '#2563eb',
+                            color: '#ffffff',
+                            border: 'none',
+                            borderRadius: '5px',
+                            fontSize: '12px',
+                            fontWeight: '700',
+                            cursor: 'pointer',
+                            whiteSpace: 'nowrap',
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          {copiedSessionId === (reviewSession.sessionId || reviewSession.id) ? '✓ Copied' : 'Copy Link'}
+                        </button>
+                      </div>
+                      <div style={{ fontSize: '11.5px', color: '#94a3b8', marginTop: '8px', display: 'flex', justifyContent: 'space-between' }}>
+                        <span>Session: {reviewSession.sessionId || reviewSession.id}</span>
+                        <span>{reviewSession.expiresAt ? `Valid until ${new Date(reviewSession.expiresAt).toLocaleDateString()}` : '7-Day Cloud Retention Active'}</span>
+                      </div>
+                    </div>
+
+                    {reviewSession.candidateEmail && (
+                      <div style={{ display: 'flex', justifyContent: 'center', gap: '10px' }}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const inviteUrl = `${window.location.origin}/candidate-chat/${reviewSession.sessionId || reviewSession.id || reviewSession._id}`
+                            handleOpenEmailModal({
+                              jobTitle: reviewSession.jobTitle,
+                              screeningUrl: inviteUrl,
+                              candidateName: reviewSession.candidateName,
+                              candidateEmail: reviewSession.candidateEmail
+                            })
+                          }}
+                          style={{
+                            padding: '8px 18px',
+                            background: '#ffffff',
+                            color: '#2563eb',
+                            border: '1px solid #bfdbfe',
+                            borderRadius: '6px',
+                            fontSize: '12.5px',
+                            fontWeight: '700',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px'
+                          }}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                            <polyline points="22,6 12,13 2,6" />
+                          </svg>
+                          Resend Invitation Email
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
                 </div>

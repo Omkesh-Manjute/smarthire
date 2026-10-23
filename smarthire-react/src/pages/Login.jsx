@@ -70,7 +70,11 @@ function Login() {
     localStorage.setItem('smarthire_active_role', u.role)
     localStorage.setItem('smarthire_token', token || ('mock-token-' + (u.id || u._id || 'session')))
 
-    window.location.href = '/dashboard'
+    if (u.role === 'client') {
+      window.location.href = '/client/screening'
+    } else {
+      window.location.href = '/dashboard'
+    }
   }
 
   // Google OAuth 1-Click Sign-In

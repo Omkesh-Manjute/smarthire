@@ -50,6 +50,7 @@ const Blog = lazyWithRetry(() => import('./pages/Blog'))
 const SmartSignRtrPage = lazyWithRetry(() => import('./pages/SmartSignRtrPage'))
 const SubmittalPackPage = lazyWithRetry(() => import('./pages/SubmittalPackPage'))
 const SmartScreenProduct = lazyWithRetry(() => import('./pages/SmartScreenProduct'))
+const ClientScreeningPortal = lazyWithRetry(() => import('./pages/ClientScreeningPortal'))
 import InfinityLoader from './components/InfinityLoader'
 
 const PageFallback = () => (
@@ -60,6 +61,23 @@ function ProtectedRoute({ children }) {
   const isAuth = localStorage.getItem('verifyhire_authenticated') === 'true' || localStorage.getItem('smarthire_authenticated') === 'true'
   if (!isAuth) {
     return <Navigate to="/" replace />
+  }
+  const userStr = localStorage.getItem('smarthire_user') || localStorage.getItem('verifyhire_user')
+  if (userStr) {
+    try {
+      const u = JSON.parse(userStr)
+      if (u.role === 'client') {
+        return <Navigate to="/client/screening" replace />
+      }
+    } catch (_) {}
+  }
+  return children
+}
+
+function ClientRoute({ children }) {
+  const isAuth = localStorage.getItem('verifyhire_authenticated') === 'true' || localStorage.getItem('smarthire_authenticated') === 'true'
+  if (!isAuth) {
+    return <Navigate to="/login" replace />
   }
   return children
 }
@@ -117,6 +135,9 @@ function App() {
           <Route path="/submittal-pack" element={<ProtectedRoute><SubmittalPackPage /></ProtectedRoute>} />
           <Route path="/sign-rtr/:token" element={<SmartSignRtrPage />} />
           <Route path="/sign-rtr" element={<SmartSignRtrPage />} />
+          <Route path="/client/screening" element={<ClientRoute><ClientScreeningPortal /></ClientRoute>} />
+          <Route path="/client" element={<Navigate to="/client/screening" replace />} />
+          <Route path="/client-portal" element={<Navigate to="/client/screening" replace />} />
           <Route path="/smartscreen" element={<SmartScreenProduct />} />
           <Route path="/video-screening" element={<Navigate to="/smartscreen" replace />} />
           <Route path="/video-interview" element={<Navigate to="/smartscreen" replace />} />

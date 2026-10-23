@@ -263,7 +263,11 @@ function Homepage() {
     localStorage.setItem('smarthire_token', token || ('token-' + userPayload.uid))
 
     setShowLoginModal(false)
-    window.location.href = '/ats'
+    if (userPayload.role === 'client') {
+      window.location.href = '/client/screening'
+    } else {
+      window.location.href = '/ats'
+    }
   }
 
   // Google 1-Click Sign-In
