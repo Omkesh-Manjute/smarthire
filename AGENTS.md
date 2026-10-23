@@ -66,6 +66,80 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
     - In resume views, every responsibility, project accomplishment, and contribution line must be formatted with an explicit bullet point (`•`) and proper indentation.
     - The engine must automatically detect responsibilities (lines following `Responsibilities:`, action verbs, or list items) even when converted from plain text or Word documents without literal Unicode bullets.
 
+### 2026-10-23 — B2B Client Video Screening Portal, JD AI Question Generator, 7-Day Auto-Retention, Fake Score Guard & Dossier Elimination
+- **Context & Objectives**:
+  - The user reported:
+    1. Screenshot `media_1792708471457_d2792642.png` showing pending candidate `Cleophas Williams`:
+       - "⚡ AI Transcribe & Evaluate" button visible despite candidate not having taken the interview.
+       - "AI MATCH & INSIGHTS" showing a fake `55% Follow-up Needed` score and AI bullets before interview completion.
+       - "Export PDF Report" button showing for pending candidates.
+       - The word "Dossier" appearing in reports/titles ("Dossier likha accha nahi lagta profesnal nahi lagta").
+    2. Architecture for external B2B clients who only need AI Video Screening:
+       - Dedicated portal `/client/screening` with `role: 'client'` (full internal ATS navigation completely hidden).
+       - Custom Job Title + Paste JD with Groq AI question generator (1 AI credit per run), hiding the internal ATS requisition dropdown.
+       - Client company sender email configuration (custom SMTP / display name / signature).
+       - Billing/Credit ledger: 1 credit per completed interview, bundled free AI credits (e.g. 300 AI credits).
+       - 7-Day Cloud Retention Policy with 1-click offline video download (.webm); automated server disk purging after 7 days to protect disk space (Rule 5).
+    3. User directive: "do it without any error ke".
+- **Root Cause & Architectural Implementations**:
+  1. *Fake Score Prevention & Pending Candidate Card State (`ScreeningModule.jsx` & `server/index.js`)*:
+     - Root cause: Running "⚡ AI Transcribe & Evaluate" on a pending row sent empty candidate responses to Groq AI, which returned a 55% fit evaluation ("No technical details provided").
+     - Backend: Strictly guards `POST /api/screening/:sessionId/re-evaluate` to reject sessions when `responses` is empty. Reset `Cleophas Williams` invalid score to `null`.
+     - Frontend: Replaced all occurrences of "Dossier" with "Candidate Interview Report" / "Candidate Evaluation Report".
+     - Derived `hasSubmittedResponses`: strictly hide "Export PDF Report", "⚡ AI Transcribe & Evaluate", and "Shortlist Candidate" buttons when no interview responses exist.
+     - Left column displays clean message ("Interview Pending — Awaiting candidate completion. AI evaluation, match score, and technical insights will appear here once submitted.") instead of fake score or low-fit bullets.
+     - Right column replaces empty video player with dedicated "Candidate Video Interview Pending & Invitation Card" with 1-click "Copy Link" and "Resend Invitation Email".
+     - Table rows include 1-click "Copy Link" for pending candidates.
+  2. *B2B Client Video Screening Portal (`ClientScreeningPortal.jsx` & `App.jsx`)*:
+     - Dedicated portal `/client/screening` with role protection (`ClientRoute`). Bounces `role === 'client'` away from internal ATS routes.
+     - Fully isolated, modern B2B interface with zero internal ATS menus or requisitions.
+     - Authentic Excel-Style Spreadsheet (Rule 9) with compact 38px rows, zebra striping, blue hover `#EFF6FF`.
+     - Real-time Credit Badges: `Screening Credits: X / Y` and `AI Generator Credits: X / Y`.
+     - "Send Candidate Invite" modal: custom Job Title + Paste Job Description + Groq AI Question Generator (deducts 1 AI credit).
+     - Sender Email Settings modal: allows client to configure their own SMTP credentials, display name, and signature.
+     - Candidate Video Review drawer: instant video playback, transcript, AI strengths & gap analysis, and 1-click offline `.webm` video download.
+  3. *7-Day Automated Cloud Video Retention Policy (`server/index.js`)*:
+     - Implemented `cleanupExpiredScreeningVideos()` running every 6 hours.
+     - Automatically purges raw `.webm` binaries older than 7 days from `/uploads/screening/`, freeing disk space while preserving textual interview transcripts and AI evaluations.
+     - On first startup, freed ~442.5 MB of server disk space.
+  4. *Multi-Tenant Client Credit Ledger (`server/client_credits.json` & APIs)*:
+     - Durable JSON database tracking client screening credits, used screening credits, AI credits, and email configs.
+     - `GET /api/client/portal-data`, `POST /api/client/email-config`, `POST /api/client/ai/generate-questions`, `POST /api/client/screening/create`.
+     - Admin refill endpoints: `GET /api/admin/client-credits/all` and `POST /api/admin/client-credits/refill`.
+- **Verification & Deployment Protocol**:
+  - Local production build verified in `smarthire-react`: 0 errors, 0 warnings (Rule 2).
+  - All 42 matching engine unit tests passed (0 failures).
+  - Git committed (`834d727`) and pushed to GitHub `origin main`.
+  - Deployed production bundle and backend files to AWS Lightsail (`34.194.119.199`), cleared temporary archives, verified disk space (46% free, 8.6GB available, complying with Rule 5).
+  - PM2 `smarthire-ats` restarted and verified `online`.
+  - Live domain `https://smarthireus.com` verified HTTP 200 OK.
+  - Live client endpoints verified (`GET /api/client/portal-data`).
+
+### 2026-10-22 — Yahoo Bizmail Bulk SMTP Connection Pooling, Rate Throttling & Zero Auth Lockout
+- **Context & Objectives**:
+  - The user reported: `✗ [10/20] Failed for Aman Khan: Failed to send: Invalid login: 535 5.7.0 (#AUTH005) Too many bad auth attempts.` during bulk outreach to 20 candidates from `omkesh@coolsofttech.com`.
+  - The user asked whether they needed to update the extension.
+- **Root Cause & Architectural Implementations**:
+  1. *Yahoo Anti-Abuse Rapid Auth Handshake Throttling*:
+     - Previously, `/api/recruiter/send-email` created a fresh `nodemailer.createTransport` instance per candidate request with `pool: false`.
+     - When dispatching 20 candidates with 350ms delays, 10 separate TLS handshakes & SMTP authentications occurred in ~3 seconds.
+     - Yahoo Bizmail (`smtp.bizmail.yahoo.com:465`) flagged the rapid auth spike and threw `535 5.7.0 (#AUTH005) Too many bad auth attempts` after the 9th message.
+  2. *Backend SMTP Connection Pooling (`server/index.js`)*:
+     - Implemented `recruiterSmtpTransporterPool` Map and `getPooledRecruiterTransporter(config)`:
+       - Configured `pool: true`, `maxConnections: 1`, `maxMessages: 100`, `rateDelta: 1000`, `rateLimit: 2`.
+       - Reuses the single authenticated TLS connection for up to 100 messages, eliminating repetitive authentication handshakes.
+       - Gracefully clears pooled transporter on connection close or fatal authentication error.
+  3. *Extension Dispatch Spacing & Auto-Retry (`injected_dock.js` & `popup.js`)*:
+     - Adjusted inter-candidate email delay from `350ms` to `1200ms` (1.2s).
+     - Added 1-time automatic retry with 2.5s backoff if a transient error or rate limit is encountered.
+  4. *Live Verification & Deployment Protocol*:
+     - Successfully sent live test messages via Yahoo SMTP confirming credentials and delivery.
+     - All 42 matching engine unit tests passed. Local production build verified (0 errors, 0 warnings).
+     - Repackaged `smarthire-extension.zip` v4.4.0 (`Content-Length: 687667`).
+     - Git committed (`0da2cba`) and pushed to GitHub `origin main`.
+     - Deployed backend and production bundle to AWS Lightsail server (`34.194.119.199`), cleared temporary archives, verified disk space (44% free), and reloaded PM2 `smarthire-ats`.
+     - Live domain `https://smarthireus.com` verified HTTP 200.
+
 ### 2026-10-22 — Recruiter Usage Telemetry, Credit Management System, Single & Bulk Email Quotas & Extension v4.4.0 Release
 - **Context & Objectives**:
   - The user requested:
