@@ -3142,7 +3142,7 @@ function Homepage() {
               ) : (
                 <div style={{ padding: '20px 24px' }}>
                   <p style={{ fontSize: 13.5, color: '#64748b', margin: '0 0 16px', lineHeight: 1.5 }}>
-                    Need help configuring private recruiter vaults, setting custom AI screening questions, or custom pricing plans? Fill out the details below:
+                    Need help configuring private recruiter vaults, setting custom AI screening questions, or custom pricing plans? Fill out the details below or email directly to <a href="mailto:support@praximinds.com" style={{ color: '#2563eb', fontWeight: 600, textDecoration: 'none' }}>support@praximinds.com</a>:
                   </p>
 
                   <form onSubmit={handleContactSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>

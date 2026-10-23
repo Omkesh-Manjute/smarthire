@@ -3496,7 +3496,7 @@ export default function WellfoundCareersView({
             color: colors.textMuted
           }}>
             <div>
-              Copyright © 2026 SmartHire LLC. All rights reserved. <span style={{ marginLeft: 8, cursor: 'pointer', textDecoration: 'underline' }}>Cookie Preferences</span>
+              Copyright © 2026 Praximind Pvt. Ltd. • SmartHire ATS. All rights reserved. <span style={{ marginLeft: 8, cursor: 'pointer', textDecoration: 'underline' }}>Cookie Preferences</span>
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
               <span>Browse by:</span>

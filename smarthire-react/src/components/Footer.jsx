@@ -1,128 +1,149 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 import './footer.css'
 
 function Footer() {
+  const [newsletterEmail, setNewsletterEmail] = useState('')
+  const [newsletterJoined, setNewsletterJoined] = useState(false)
+
+  const handleNewsletterSubmit = (e) => {
+    e.preventDefault()
+    if (!newsletterEmail.trim() || !newsletterEmail.includes('@')) return
+    setNewsletterJoined(true)
+    setTimeout(() => {
+      setNewsletterEmail('')
+      setNewsletterJoined(false)
+    }, 4000)
+  }
+
   return (
-    <footer className="site-footer site-footer-enterprise">
-      <div className="site-footer-container">
-        {/* Top Header Row: Brand Identity & Live Operational Status */}
-        <div className="site-footer-header">
-          <div className="site-footer-brand">
-            <div className="site-footer-logo-icon">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
-                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
-              </svg>
-            </div>
-            <div className="site-footer-brand-text">
-              <h3 className="site-footer-brand-title">
-                SmartHire ATS
-                <span className="site-footer-brand-badge">Enterprise Edition</span>
-              </h3>
-              <p className="site-footer-brand-sub">
-                Autonomous Talent Intelligence, Semantic Resume Sourcing &amp; SmartSign RTR
-              </p>
+    <footer className="praximind-footer">
+      <div className="praximind-footer-container">
+        {/* Main 4-Column Grid matching Praximind Reference */}
+        <div className="praximind-footer-grid">
+          
+          {/* Column 1: Brand & About */}
+          <div className="praximind-footer-brand-col">
+            <Link to="/" className="praximind-footer-logo-link">
+              <div className="praximind-footer-logo-box">
+                <span className="pm-p">P</span>
+                <span className="pm-m">M</span>
+              </div>
+              <div className="praximind-footer-logo-text">
+                <span className="pm-name">PRAXIMIND</span>
+                <span className="pm-sub">PVT LTD</span>
+              </div>
+            </Link>
+
+            <p className="praximind-footer-desc">
+              Transforming businesses with AI-powered software, custom SaaS apps, and certified training programs.
+            </p>
+
+            {/* Social / Contact Icons */}
+            <div className="praximind-footer-socials">
+              <a
+                href="https://www.linkedin.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="pm-social-btn"
+                title="LinkedIn"
+                aria-label="LinkedIn"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z"/>
+                </svg>
+              </a>
+
+              <a
+                href="https://www.youtube.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="pm-social-btn"
+                title="YouTube"
+                aria-label="YouTube"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                </svg>
+              </a>
+
+              <a
+                href="mailto:support@praximinds.com"
+                className="pm-social-btn"
+                title="Contact Support (support@praximinds.com)"
+                aria-label="Email Support"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                  <polyline points="22,6 12,13 2,6"/>
+                </svg>
+              </a>
             </div>
           </div>
 
-          <div className="site-footer-status-badge">
-            <span className="status-beacon-dot" />
-            <span>Systems Operational &bull; v2.6.4</span>
+          {/* Column 2: COMPANY */}
+          <div className="praximind-footer-col">
+            <h4 className="pm-col-title">COMPANY</h4>
+            <ul className="pm-links-list">
+              <li><Link to="/about">About Us</Link></li>
+              <li><Link to="/smartscreen">Products</Link></li>
+              <li><Link to="/jobs">Careers &amp; Jobs</Link></li>
+              <li><Link to="/about#inquiry">Contact Desk</Link></li>
+            </ul>
           </div>
+
+          {/* Column 3: RESOURCES */}
+          <div className="praximind-footer-col">
+            <h4 className="pm-col-title">RESOURCES</h4>
+            <ul className="pm-links-list">
+              <li><Link to="/blog">Blog Insights</Link></li>
+              <li><Link to="/jobs">Careers &amp; Jobs</Link></li>
+              <li><Link to="/about#support">Student Dashboard</Link></li>
+              <li><Link to="/privacy">Privacy Policy</Link></li>
+              <li><Link to="/terms">Terms of Service</Link></li>
+            </ul>
+          </div>
+
+          {/* Column 4: STAY CONNECTED */}
+          <div className="praximind-footer-col praximind-footer-connect-col">
+            <h4 className="pm-col-title">STAY CONNECTED</h4>
+            <p className="pm-connect-text">
+              Join our newsletter to receive the latest tech &amp; automation updates.
+            </p>
+
+            <form onSubmit={handleNewsletterSubmit} className="pm-newsletter-form">
+              <input
+                type="email"
+                required
+                placeholder="Email Address"
+                value={newsletterEmail}
+                onChange={(e) => setNewsletterEmail(e.target.value)}
+                className="pm-newsletter-input"
+              />
+              <button type="submit" className="pm-newsletter-btn">
+                {newsletterJoined ? '✓' : 'JOIN'}
+              </button>
+            </form>
+
+            <div className="pm-direct-support-text">
+              Direct Support:{' '}
+              <a href="mailto:support@praximinds.com" className="pm-support-email-link">
+                support@praximinds.com
+              </a>
+            </div>
+          </div>
+
         </div>
 
-        {/* Middle Row: Interactive Pill Navigation Buttons */}
-        <nav className="site-footer-nav-grid" aria-label="Footer navigation">
-          <Link to="/smartscreen" className="footer-pill-btn">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/>
-            </svg>
-            SmartScreen AI
-          </Link>
-
-          <Link to="/jobs" className="footer-pill-btn">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <rect width="20" height="14" x="2" y="7" rx="2"/>
-              <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
-            </svg>
-            Careers Portal
-          </Link>
-
-          <Link to="/blog" className="footer-pill-btn">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/>
-              <path d="M6 6h10"/>
-              <path d="M6 10h10"/>
-            </svg>
-            Talent Insights Blog
-          </Link>
-
-          <Link to="/about#support" className="footer-pill-btn">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10"/>
-              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
-              <path d="M12 17h.01"/>
-            </svg>
-            Help &amp; Support
-          </Link>
-
-          <Link to="/privacy" className="footer-pill-btn">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/>
-              <path d="m9 12 2 2 4-4"/>
-            </svg>
-            Privacy Policy
-          </Link>
-
-          <Link to="/terms" className="footer-pill-btn">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-              <polyline points="14 2 14 8 20 8"/>
-              <line x1="16" y1="13" x2="8" y2="13"/>
-              <line x1="16" y1="17" x2="8" y2="17"/>
-              <polyline points="10 9 9 9 8 9"/>
-            </svg>
-            Terms of Service
-          </Link>
-
-          <Link to="/about" className="footer-pill-btn">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <rect width="20" height="16" x="2" y="4" rx="2"/>
-              <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
-            </svg>
-            Contact Enterprise Sales
-          </Link>
-        </nav>
-
-        {/* Bottom Row: Copyright & Enterprise Compliance Badges */}
-        <div className="site-footer-bottom">
-          <p className="site-footer-copyright">
-            &copy; {new Date().getFullYear()} SmartHire Enterprise ATS. All rights reserved.
-          </p>
-
-          <div className="site-footer-compliance-row">
-            <span className="compliance-badge-item">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
-                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-              </svg>
-              SOC-2 Type II
-            </span>
-            <span className="compliance-badge-item">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/>
-              </svg>
-              EEOC &amp; FCRA Compliant
-            </span>
-            <span className="compliance-badge-item">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10"/>
-                <line x1="2" y1="12" x2="22" y2="12"/>
-                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-              </svg>
-              256-Bit SSL
-            </span>
+        {/* Bottom Bar */}
+        <div className="praximind-footer-bottom">
+          <div className="pm-bottom-copy">
+            &copy; {new Date().getFullYear()} PRAXIMIND PVT LTD. All Rights Reserved.
+          </div>
+          <div className="pm-bottom-links">
+            <Link to="/privacy">Privacy Policy</Link>
+            <Link to="/terms">Terms of Service</Link>
+            <Link to="/about#support">Refund Policy</Link>
           </div>
         </div>
       </div>

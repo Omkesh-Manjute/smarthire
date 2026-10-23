@@ -366,7 +366,7 @@ function Terms() {
             }}>
               <span><strong>Effective Date:</strong> August 26, 2026</span>
               <span><strong>MSA Ref:</strong> SH-ENT-2026-V3</span>
-              <span><strong>Entity:</strong> SmartHire Enterprise Inc.</span>
+              <span><strong>Entity:</strong> Praximind Pvt. Ltd. (SmartHire ATS)</span>
             </div>
 
             {/* 4 Quick Highlights */}
@@ -572,8 +572,8 @@ function Terms() {
                 </p>
                 <div className="tf-callout-card">
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13.5px' }}>
-                    <div><strong>SmartHire Enterprise Inc.</strong> — Legal & Regulatory Division</div>
-                    <div><strong>Contracts & Compliance:</strong> Official Corporate Legal Desk</div>
+                    <div><strong>Praximind Pvt. Ltd.</strong> — SmartHire ATS Legal & Regulatory Division</div>
+                    <div><strong>Contracts & Compliance:</strong> Official Corporate Legal Desk (<a href="mailto:support@praximinds.com" style={{ color: '#2563eb', fontWeight: 600 }}>support@praximinds.com</a>)</div>
                     <div style={{ color: '#64748b' }}>For enterprise MSAs, customized SLA amendments, or formal service notices, submit via:</div>
                     <div>
                       <Link to="/about#inquiry" className="tf-btn-support">

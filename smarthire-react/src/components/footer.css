@@ -1,233 +1,271 @@
 /* =========================================================================
-   SMARTHIRE ENTERPRISE ATS FOOTER STYLES
+   PRAXIMIND PVT LTD / SMARTHIRE ATS CLEAN REFERENCE FOOTER
    ========================================================================= */
 
-.site-footer-enterprise {
-  border-top: 1px solid #e2e8f0;
-  background: #ffffff;
-  padding: 36px 0 28px;
-  position: relative;
+.praximind-footer {
+  background-color: #ffffff;
+  border-top: 1px solid #e5e7eb;
+  padding: 64px 0 32px;
   width: 100%;
   color: #334155;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
-.site-footer-container {
+.praximind-footer-container {
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 24px;
+}
+
+/* 4-column Grid */
+.praximind-footer-grid {
+  display: grid;
+  grid-template-columns: 2.2fr 1fr 1.2fr 1.8fr;
+  gap: 48px;
+  align-items: start;
+}
+
+@media (max-width: 960px) {
+  .praximind-footer-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 36px;
+  }
+}
+
+@media (max-width: 600px) {
+  .praximind-footer-grid {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+}
+
+/* Brand Column */
+.praximind-footer-brand-col {
   display: flex;
   flex-direction: column;
-  gap: 22px;
 }
 
-/* Header row with brand & system status */
-.site-footer-header {
-  display: flex;
+.praximind-footer-logo-link {
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 16px;
-  padding-bottom: 18px;
-  border-bottom: 1px solid #f1f5f9;
+  gap: 12px;
+  text-decoration: none;
 }
 
-.site-footer-brand {
+.praximind-footer-logo-box {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  background-color: #0f172a;
   display: flex;
   align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.15);
+}
+
+.pm-p {
+  color: #f97316;
+  font-weight: 900;
+  font-size: 17px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Plus Jakarta Sans', sans-serif;
+  letter-spacing: -0.5px;
+}
+
+.pm-m {
+  color: #38bdf8;
+  font-weight: 900;
+  font-size: 17px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Plus Jakarta Sans', sans-serif;
+  letter-spacing: -0.5px;
+}
+
+.praximind-footer-logo-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.pm-name {
+  font-size: 17px;
+  font-weight: 900;
+  color: #0f172a;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+}
+
+.pm-sub {
+  font-size: 10px;
+  font-weight: 800;
+  color: #f97316;
+  letter-spacing: 0.08em;
+}
+
+.praximind-footer-desc {
+  font-size: 13.5px;
+  color: #64748b;
+  line-height: 1.6;
+  margin: 16px 0 20px;
+  max-width: 320px;
+}
+
+/* Social Icon Circles */
+.praximind-footer-socials {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pm-social-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.pm-social-btn:hover {
+  background-color: #eff6ff;
+  border-color: #bfdbfe;
+  color: #2563eb;
+  transform: translateY(-1px);
+}
+
+/* Column Headings & Links */
+.pm-col-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin: 0 0 18px 0;
+}
+
+.pm-links-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
   gap: 12px;
 }
 
-.site-footer-logo-icon {
-  width: 32px;
-  height: 32px;
-  background: linear-gradient(135deg, #2563eb, #1d4ed8);
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #ffffff;
-  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
-  flex-shrink: 0;
-}
-
-.site-footer-brand-text {
-  display: flex;
-  flex-direction: column;
-}
-
-.site-footer-brand-title {
-  font-size: 15px;
-  font-weight: 800;
-  color: #0f172a;
-  letter-spacing: -0.01em;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin: 0;
-}
-
-.site-footer-brand-badge {
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  background: #eff6ff;
-  color: #2563eb;
-  border: 1px solid #bfdbfe;
-  padding: 2px 7px;
-  border-radius: 9999px;
-}
-
-.site-footer-brand-sub {
-  font-size: 12px;
+.pm-links-list li a {
+  font-size: 13.5px;
   color: #64748b;
-  margin: 2px 0 0 0;
-}
-
-/* System operational badge */
-.site-footer-status-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 14px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 9999px;
-  font-size: 12px;
-  font-weight: 600;
-  color: #334155;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.02);
-}
-
-.status-beacon-dot {
-  width: 8px;
-  height: 8px;
-  background-color: #10b981;
-  border-radius: 50%;
-  position: relative;
-  display: inline-block;
-  flex-shrink: 0;
-}
-
-.status-beacon-dot::after {
-  content: "";
-  position: absolute;
-  top: -2px;
-  left: -2px;
-  right: -2px;
-  bottom: -2px;
-  border-radius: 50%;
-  border: 2px solid #10b981;
-  animation: footerBeaconPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-@keyframes footerBeaconPulse {
-  0% { transform: scale(0.95); opacity: 0.8; }
-  50% { transform: scale(1.6); opacity: 0; }
-  100% { transform: scale(0.95); opacity: 0; }
-}
-
-/* Interactive Pill Navigation Links */
-.site-footer-nav-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
-  justify-content: center;
-  padding: 4px 0;
-}
-
-.footer-pill-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 8px 16px;
-  font-size: 13px;
-  font-weight: 600;
-  color: #475569;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 9999px;
   text-decoration: none;
-  cursor: pointer;
-  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
-  user-select: none;
+  transition: color 0.15s ease;
 }
 
-.footer-pill-btn svg {
+.pm-links-list li a:hover {
+  color: #0f172a;
+}
+
+/* Connect Column */
+.pm-connect-text {
+  font-size: 13.5px;
   color: #64748b;
-  transition: color 0.22s ease, transform 0.22s ease;
-  flex-shrink: 0;
+  line-height: 1.5;
+  margin: 0 0 16px 0;
 }
 
-.footer-pill-btn:hover {
-  color: #1d4ed8;
-  background: #eff6ff;
-  border-color: #93c5fd;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.12);
-}
-
-.footer-pill-btn:hover svg {
-  color: #2563eb;
-  transform: scale(1.08);
-}
-
-.footer-pill-btn:active {
-  transform: translateY(0) scale(0.98);
-}
-
-/* Bottom bar & compliance badges */
-.site-footer-bottom {
+.pm-newsletter-form {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 16px;
-  padding-top: 18px;
-  border-top: 1px solid #f1f5f9;
+  gap: 8px;
+  margin-bottom: 12px;
 }
 
-.site-footer-copyright {
+.pm-newsletter-input {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 14px;
+  font-size: 13.5px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  outline: none;
+  color: #0f172a;
+  background-color: #ffffff;
+  transition: border-color 0.15s;
+}
+
+.pm-newsletter-input:focus {
+  border-color: #f97316;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+}
+
+.pm-newsletter-btn {
+  background-color: #ea580c;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: background-color 0.15s, transform 0.1s;
+}
+
+.pm-newsletter-btn:hover {
+  background-color: #c2410c;
+}
+
+.pm-newsletter-btn:active {
+  transform: scale(0.98);
+}
+
+.pm-direct-support-text {
   font-size: 12.5px;
   color: #64748b;
-  margin: 0;
 }
 
-.site-footer-compliance-row {
+.pm-support-email-link {
+  color: #2563eb;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.pm-support-email-link:hover {
+  text-decoration: underline;
+}
+
+/* Bottom Bar */
+.praximind-footer-bottom {
+  margin-top: 50px;
+  padding-top: 24px;
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 12.5px;
+  color: #94a3b8;
+}
+
+.pm-bottom-copy {
+  color: #64748b;
+  font-size: 12.5px;
+}
+
+.pm-bottom-links {
   display: flex;
   align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
+  gap: 20px;
 }
 
-.compliance-badge-item {
-  font-size: 11px;
-  font-weight: 600;
+.pm-bottom-links a {
   color: #64748b;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  padding: 3px 8px;
-  border-radius: 6px;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
+  text-decoration: none;
+  font-size: 12.5px;
+  transition: color 0.15s;
 }
 
-@media (max-width: 768px) {
-  .site-footer-header,
-  .site-footer-bottom {
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-  }
-  .site-footer-brand {
-    flex-direction: column;
-    text-align: center;
-  }
-  .site-footer-compliance-row {
-    justify-content: center;
-  }
+.pm-bottom-links a:hover {
+  color: #0f172a;
 }

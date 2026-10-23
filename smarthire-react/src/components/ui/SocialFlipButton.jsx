@@ -18,7 +18,7 @@ const defaultItems = [
   { letter: 'N', icon: <FaLinkedin />, label: 'LinkedIn', href: 'https://linkedin.com', variant: 'linkedin' },
   { letter: 'T', icon: <FaInstagram />, label: 'Instagram', href: 'https://instagram.com', variant: 'instagram' },
   { letter: 'A', icon: <FaFacebook />, label: 'Facebook', href: 'https://facebook.com', variant: 'facebook' },
-  { letter: 'C', icon: <FaEnvelope />, label: 'Email Support', href: 'mailto:support@smarthireus.com', variant: 'email' },
+  { letter: 'C', icon: <FaEnvelope />, label: 'Email Support', href: 'mailto:support@praximinds.com', variant: 'email' },
   { letter: 'T', icon: <FaDiscord />, label: 'Community Discord', href: 'https://discord.com', variant: 'discord' },
 ]
 

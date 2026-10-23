@@ -438,7 +438,7 @@ function PrivacyPolicy() {
               <section id="overview" className="tf-legal-section">
                 <h2 className="tf-section-heading">1. Overview & Scope</h2>
                 <p>
-                  This Privacy Policy applies to the <strong>SmartHire</strong> candidate relationship management (CRM), applicant tracking system (ATS), vendor management system (VMS), and AI candidate screening platform operated by SmartHire Enterprise Inc. (collectively, "SmartHire", "we", "our", or "us").
+                  This Privacy Policy applies to the <strong>SmartHire</strong> candidate relationship management (CRM), applicant tracking system (ATS), vendor management system (VMS), and AI candidate screening platform operated by Praximind Pvt. Ltd. (collectively, "SmartHire", "we", "our", or "us").
                 </p>
                 <p>
                   By accessing or using our recruitment portal, job application pages, candidate verification tools, or related APIs, you acknowledge that you have read and understood this Privacy Policy. This policy explains how we collect, store, process, protect, and disclose personal and professional candidate and enterprise user data.
@@ -589,8 +589,8 @@ function PrivacyPolicy() {
                 </p>
                 <div className="tf-callout-card">
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13.5px' }}>
-                    <div><strong>SmartHire Enterprise Inc.</strong> — Privacy & Compliance Division</div>
-                    <div><strong>Data Protection Officer:</strong> DPO & Legal Affairs</div>
+                    <div><strong>Praximind Pvt. Ltd.</strong> — SmartHire ATS Privacy & Compliance Division</div>
+                    <div><strong>Data Protection Officer:</strong> DPO & Legal Affairs (<a href="mailto:support@praximinds.com" style={{ color: '#2563eb', fontWeight: 600 }}>support@praximinds.com</a>)</div>
                     <div style={{ color: '#64748b' }}>Submit all DSARs, data deletion, and privacy requests directly via our secure inquiry portal:</div>
                     <div>
                       <Link to="/about#inquiry" className="tf-btn-support">
