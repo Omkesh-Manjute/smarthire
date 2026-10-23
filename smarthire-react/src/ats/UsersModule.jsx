@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import AuditActivityLogModule from './AuditActivityLogModule'
-import { saveTeamUsersFirestore, getTeamUsersFirestore } from '../lib/atsFirestore'
+import { saveTeamUsersFirestore, getTeamUsersFirestore, deleteTeamUserFirestore, getCareerApplications } from '../lib/atsFirestore'
 import InfinityLoader from '../components/InfinityLoader'
 
 const DEFAULT_RECRUITERS = [
@@ -12,7 +12,6 @@ const DEFAULT_RECRUITERS = [
     refCode: 'omkesh',
     company: 'SmartHire LLC',
     isActive: true,
-    password: 'admin',
     lastLogin: '2026-08-27T18:45:00.000Z',
     createdAt: '2026-01-10T10:00:00.000Z'
   }
@@ -25,7 +24,9 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
       const saved = localStorage.getItem('smarthire_recruiters')
       if (saved) {
         const parsed = JSON.parse(saved)
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.filter(u => u && u.role !== 'client' && (u.email || '').toLowerCase().trim() !== 'omkeshmanjute1@gmail.com')
+        }
       }
     } catch (e) {}
     return DEFAULT_RECRUITERS
@@ -44,7 +45,6 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
   const [newRecCompany, setNewRecCompany] = useState('SmartHire LLC')
   const [newRecRef, setNewRecRef] = useState('')
   const [newRecRole, setNewRecRole] = useState('recruiter')
-  const [newRecPassword, setNewRecPassword] = useState('recruiter123')
   const [newRecParent, setNewRecParent] = useState('')
 
   const [editRecruiter, setEditRecruiter] = useState(null)
@@ -53,7 +53,6 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
   const [editRecCompany, setEditRecCompany] = useState('')
   const [editRecRef, setEditRecRef] = useState('')
   const [editRecRole, setEditRecRole] = useState('recruiter')
-  const [editRecPassword, setEditRecPassword] = useState('')
   const [editRecParent, setEditRecParent] = useState('')
 
   const [newRecCredits, setNewRecCredits] = useState('100')
@@ -75,7 +74,6 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
   const [newClientName, setNewClientName] = useState('')
   const [newClientCompany, setNewClientCompany] = useState('')
   const [newClientEmail, setNewClientEmail] = useState('')
-  const [newClientPassword, setNewClientPassword] = useState('client123')
   const [newClientScreeningCredits, setNewClientScreeningCredits] = useState(50)
   const [newClientAiCredits, setNewClientAiCredits] = useState(300)
   const [isCreatingClient, setIsCreatingClient] = useState(false)
@@ -88,16 +86,21 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
   const [customSetAi, setCustomSetAi] = useState(300)
   const [isRefillingClient, setIsRefillingClient] = useState(false)
 
+  // ─── Candidate Users State (Genuine Job Site Applicants) ───────────────────
+  const [portalCandidates, setPortalCandidates] = useState([])
+  const [loadingPortalCandidates, setLoadingPortalCandidates] = useState(false)
+
   const [toastMessage, setToastMessage] = useState('')
   const [selectedCandidate, setSelectedCandidate] = useState(null)
 
   const saveRecruiters = (newList, notifyMsg = null) => {
     setRecruiters(newList)
     try {
-      // Strip heavy base64 avatars before saving to localStorage to prevent lag
+      // Strip heavy base64 avatars and passwords before saving to localStorage
       const sanitized = newList.map(u => {
         const copy = { ...u }
         delete copy.avatar
+        delete copy.password
         return copy
       })
       localStorage.setItem('smarthire_recruiters', JSON.stringify(sanitized))
@@ -119,45 +122,114 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
         fetch('/api/admin/recruiters').then(r => r.json())
       ])
 
-      setRecruiters(prev => {
-        const map = new Map()
-        prev.forEach(u => {
-          if (u && (u.email || u.id)) map.set((u.email || u.id).toLowerCase(), u)
+      const hasAuthoritative = (backendRes.status === 'fulfilled' && backendRes.value?.success && Array.isArray(backendRes.value.recruiters)) ||
+                               (firestoreRes.status === 'fulfilled' && Array.isArray(firestoreRes.value))
+
+      if (hasAuthoritative) {
+        setRecruiters(prev => {
+          const map = new Map()
+
+          // 1. Authoritative Backend recruiters
+          if (backendRes.status === 'fulfilled' && backendRes.value?.success && Array.isArray(backendRes.value.recruiters)) {
+            backendRes.value.recruiters.forEach(u => {
+              const emailKey = (u?.email || '').toLowerCase().trim()
+              if (emailKey && u.role !== 'client' && emailKey !== 'omkeshmanjute1@gmail.com') {
+                map.set(emailKey, u)
+              }
+            })
+          }
+
+          // 2. Authoritative Firestore recruiters
+          if (firestoreRes.status === 'fulfilled' && Array.isArray(firestoreRes.value)) {
+            firestoreRes.value.forEach(u => {
+              const emailKey = (u?.email || '').toLowerCase().trim()
+              if (emailKey && u.role !== 'client' && emailKey !== 'omkeshmanjute1@gmail.com') {
+                const existing = map.get(emailKey) || {}
+                map.set(emailKey, { ...existing, ...u })
+              }
+            })
+          }
+
+          const merged = Array.from(map.values())
+          try {
+            const sanitized = merged.map(u => {
+              const copy = { ...u }
+              delete copy.avatar
+              delete copy.password
+              return copy
+            })
+            localStorage.setItem('smarthire_recruiters', JSON.stringify(sanitized))
+          } catch (e) {}
+          return merged
         })
-
-        if (firestoreRes.status === 'fulfilled' && Array.isArray(firestoreRes.value)) {
-          firestoreRes.value.forEach(u => {
-            if (u && (u.email || u.id)) {
-              const existing = map.get((u.email || u.id).toLowerCase()) || {}
-              map.set((u.email || u.id).toLowerCase(), { ...existing, ...u })
-            }
-          })
-        }
-
-        if (backendRes.status === 'fulfilled' && backendRes.value?.success && Array.isArray(backendRes.value.recruiters)) {
-          backendRes.value.recruiters.forEach(u => {
-            if (u && (u.email || u.id)) {
-              const existing = map.get((u.email || u.id).toLowerCase()) || {}
-              map.set((u.email || u.id).toLowerCase(), { ...existing, ...u })
-            }
-          })
-        }
-
-        const merged = Array.from(map.values())
-        try {
-          const sanitized = merged.map(u => {
-            const copy = { ...u }
-            delete copy.avatar
-            return copy
-          })
-          localStorage.setItem('smarthire_recruiters', JSON.stringify(sanitized))
-        } catch (e) {}
-        return merged
-      })
+      }
     } catch (err) {
       console.warn('Recruiter sync notice:', err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchPortalCandidates = async () => {
+    setLoadingPortalCandidates(true)
+    try {
+      // 1. Fetch career applications from Firestore
+      const apps = await getCareerApplications({ forceRefresh: true })
+
+      // 2. Also check if any candidate in allCandidates was genuinely sourced via Job Site
+      const jobSiteCandidates = Array.isArray(allCandidates)
+        ? allCandidates.filter(c => {
+            if (!c) return false
+            const src = String(c.source || c.sourceCategory || c.sourceLabel || c.appliedFrom || '').toLowerCase()
+            return src.includes('job site') || src.includes('careers_portal') || src.includes('career')
+          })
+        : []
+
+      // 3. Deduplicate and merge by email / id
+      const candMap = new Map()
+      if (Array.isArray(apps)) {
+        apps.forEach(a => {
+          const key = (a.email || a.id || '').toLowerCase().trim()
+          if (key) {
+            candMap.set(key, {
+              id: a.id || a.appId,
+              name: a.name || a.candidateName || 'Portal Applicant',
+              email: a.email,
+              phone: a.phone || '—',
+              jobTitle: a.jobTitle || a.role || 'Job Site Applicant',
+              status: a.status || 'Applied',
+              source: 'Job Site Portal',
+              appliedDate: a.appliedDate || a.createdAt,
+              resumeUrl: a.resumeUrl || a.resumeStorageUrl,
+              comments: a.comments || a.notes || 'Applied via Careers Job Site'
+            })
+          }
+        })
+      }
+
+      jobSiteCandidates.forEach(c => {
+        const key = (c.email || c.id || '').toLowerCase().trim()
+        if (key && !candMap.has(key)) {
+          candMap.set(key, {
+            id: c.id || c._id,
+            name: c.name,
+            email: c.email,
+            phone: c.phone || '—',
+            jobTitle: c.jobTitle || c.role || 'Job Site Applicant',
+            status: c.status || 'Applied',
+            source: 'Job Site Portal',
+            appliedDate: c.appliedDate || c.assignedOn || c.createdAt,
+            resumeUrl: c.resumeUrl || c.legalDocs?.resume?.storageUrl,
+            comments: c.statusComments || c.notes || 'Applied via Careers Job Site'
+          })
+        }
+      })
+
+      setPortalCandidates(Array.from(candMap.values()))
+    } catch (err) {
+      console.warn('Failed to fetch portal candidates:', err)
+    } finally {
+      setLoadingPortalCandidates(false)
     }
   }
 
@@ -237,7 +309,6 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
         name: newClientName.trim(),
         company: newClientCompany.trim() || 'Partner Enterprise',
         email: newClientEmail.trim().toLowerCase(),
-        password: newClientPassword.trim() || 'client123',
         screeningCredits: parseInt(newClientScreeningCredits, 10) || 50,
         aiCredits: parseInt(newClientAiCredits, 10) || 300
       }
@@ -253,7 +324,6 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
         setNewClientName('')
         setNewClientCompany('')
         setNewClientEmail('')
-        setNewClientPassword('client123')
         setNewClientScreeningCredits(50)
         setNewClientAiCredits(300)
         fetchClients()
@@ -321,6 +391,7 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
   useEffect(() => {
     fetchRecruiters()
     fetchClients()
+    fetchPortalCandidates()
   }, [])
 
   const showToast = (msg) => {
@@ -417,7 +488,6 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
     setNewRecCompany('SmartHire')
     setNewRecRef('')
     setNewRecRole(presetParent ? 'employee' : 'recruiter')
-    setNewRecPassword('recruiter123')
     setNewRecParent(presetParent || '')
     setNewRecCredits('100')
     setShowAddModal(true)
@@ -425,8 +495,8 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
 
   const handleAddRecruiter = async (e) => {
     e.preventDefault()
-    if (!newRecName.trim() || !newRecEmail.trim() || !newRecPassword.trim()) {
-      alert('Name, Email, and Password are required fields.')
+    if (!newRecName.trim() || !newRecEmail.trim()) {
+      alert('Name and Email are required fields.')
       return
     }
 
@@ -445,7 +515,6 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
       role: newRecRole,
       refCode: newRefCode,
       company: newRecCompany.trim() || 'SmartHire',
-      password: newRecPassword.trim(),
       parentRecruiterName: newRecRole === 'employee' ? newRecParent : '',
       isActive: true,
       initialCredits: credNum,
@@ -478,14 +547,13 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
     setEditRecCompany(rec.company || 'SmartHire')
     setEditRecRef(rec.refCode || '')
     setEditRecRole(rec.role || 'recruiter')
-    setEditRecPassword(rec.password || '••••••••')
     setEditRecParent(rec.parentRecruiterName || '')
   }
 
   const handleUpdateRecruiter = async (e) => {
     e.preventDefault()
-    if (!editRecName.trim() || !editRecEmail.trim() || !editRecPassword.trim()) {
-      alert('Name, Email, and Password are required fields.')
+    if (!editRecName.trim() || !editRecEmail.trim()) {
+      alert('Name and Email are required fields.')
       return
     }
 
@@ -495,16 +563,17 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
 
     const updated = recruiters.map(r => {
       if (r.id === editRecruiter.id || r._id === editRecruiter.id) {
-        return {
+        const copy = {
           ...r,
           name: editRecName.trim(),
           email: editRecEmail.trim().toLowerCase(),
           role: editRecRole,
           refCode: finalRefCode,
           company: editRecCompany.trim() || 'SmartHire',
-          password: editRecPassword.trim(),
           parentRecruiterName: editRecRole === 'employee' ? editRecParent : ''
         }
+        delete copy.password
+        return copy
       }
       return r
     })
@@ -522,27 +591,44 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
           role: editRecRole,
           refCode: finalRefCode,
           company: editRecCompany.trim() || 'SmartHire',
-          password: editRecPassword.trim(),
           parentRecruiterName: editRecRole === 'employee' ? editRecParent : ''
         })
       }).catch(() => {})
     } catch (err) {}
   }
 
-  const handleDeleteRecruiter = async (id, name) => {
+  const handleDeleteRecruiter = async (id, name, email = '') => {
     if (window.confirm(`Are you sure you want to delete user "${name}"?`)) {
       const targetName = (name || '').toLowerCase().trim()
       const targetId = String(id || '')
+      const targetEmail = (email || '').toLowerCase().trim()
       const updated = recruiters.filter(r => {
         const thisId = String(r.id || r._id || '')
         const thisName = (r.name || '').toLowerCase().trim()
-        return thisId !== targetId && thisName !== targetName
+        const thisEmail = (r.email || '').toLowerCase().trim()
+        if (targetEmail && thisEmail === targetEmail) return false
+        if (targetId && thisId === targetId) return false
+        if (targetName && thisName === targetName) return false
+        return true
       })
       saveRecruiters(updated, `User "${name}" account deleted.`)
       window.dispatchEvent(new CustomEvent('smarthire_recruiters_updated', { detail: updated }))
 
+      // 1. Delete permanently from Firestore
       try {
-        await fetch(`/api/admin/recruiters/${encodeURIComponent(targetId || targetName)}`, { method: 'DELETE' })
+        await deleteTeamUserFirestore(targetId, targetEmail)
+      } catch (e) {
+        console.warn('Firestore delete note:', e)
+      }
+
+      // 2. Delete permanently from backend server (MongoDB, disk, credits store)
+      try {
+        await fetch('/api/admin/recruiters/delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: targetId, email: targetEmail, name: targetName })
+        })
+        await fetch(`/api/admin/recruiters/${encodeURIComponent(targetId || targetEmail || targetName)}?email=${encodeURIComponent(targetEmail)}`, { method: 'DELETE' })
         await fetch('/api/admin/recruiters/sync', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -657,9 +743,9 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
         </button>
         <button 
           className={`subtab-btn ${subTab === 'candidates' ? 'active' : ''}`}
-          onClick={() => setSubTab('candidates')}
+          onClick={() => { setSubTab('candidates'); fetchPortalCandidates(); }}
         >
-          Candidate Users ({allCandidates?.length || 0})
+          Candidate Users ({portalCandidates.length})
         </button>
         <button 
           className={`subtab-btn ${subTab === 'audit' ? 'active' : ''}`}
@@ -1009,7 +1095,7 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                                       <button 
                                         type="button"
                                         style={{ background: '#fff1f2', color: '#e11d48', border: '1px solid #fecdd3', padding: '3px 8px', fontSize: '11.5px', fontWeight: '600', borderRadius: '4px', cursor: 'pointer' }}
-                                        onClick={() => handleDeleteRecruiter(rec.id || rec._id, rec.name)}
+                                        onClick={() => handleDeleteRecruiter(rec.id || rec._id, rec.name, rec.email)}
                                         title="Permanently delete user"
                                       >
                                         Delete
@@ -1103,7 +1189,7 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                                                 </button>
                                                 <button
                                                   type="button"
-                                                  onClick={() => handleDeleteRecruiter(subEmp.id || subEmp._id, subEmp.name)}
+                                                  onClick={() => handleDeleteRecruiter(subEmp.id || subEmp._id, subEmp.name, subEmp.email)}
                                                   style={{ background: '#fff1f2', border: '1px solid #fecdd3', padding: '3px 8px', fontSize: '11px', borderRadius: '4px', cursor: 'pointer', color: '#e11d48', fontWeight: '600' }}
                                                 >
                                                   Delete
@@ -1351,54 +1437,75 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
         )}
 
         {subTab === 'candidates' && (
-          <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+          <div style={{ background: '#ffffff', border: '1px solid #CBD5E1', borderRadius: '4px', overflow: 'hidden' }}>
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left', background: '#ffffff', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
                 <thead>
-                  <tr style={{ background: '#f8fafc', color: '#475569', borderBottom: '1px solid #e2e8f0' }}>
-                    <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>CANDIDATE NAME</th>
-                    <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>ROLE / SKILL</th>
-                    <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>EMAIL ADDRESS</th>
-                    <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>SOURCED BY</th>
-                    <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.05em' }}>SCREENING TRUST</th>
-                    <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>STATUS</th>
-                    <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textAlign: 'center', width: '110px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>ACTIONS</th>
+                  <tr style={{ background: '#F1F5F9', borderBottom: '1px solid #CBD5E1' }}>
+                    <th style={{ padding: '8px 10px', fontWeight: '700', fontSize: '11px', color: '#334155', textTransform: 'uppercase', letterSpacing: '0.05em', borderRight: '1px solid #CBD5E1', width: '40px', textAlign: 'center' }}>#</th>
+                    <th style={{ padding: '8px 12px', fontWeight: '700', fontSize: '11px', color: '#334155', textTransform: 'uppercase', letterSpacing: '0.05em', borderRight: '1px solid #CBD5E1' }}>CANDIDATE NAME</th>
+                    <th style={{ padding: '8px 12px', fontWeight: '700', fontSize: '11px', color: '#334155', textTransform: 'uppercase', letterSpacing: '0.05em', borderRight: '1px solid #CBD5E1' }}>EMAIL ADDRESS</th>
+                    <th style={{ padding: '8px 12px', fontWeight: '700', fontSize: '11px', color: '#334155', textTransform: 'uppercase', letterSpacing: '0.05em', borderRight: '1px solid #CBD5E1' }}>PHONE</th>
+                    <th style={{ padding: '8px 12px', fontWeight: '700', fontSize: '11px', color: '#334155', textTransform: 'uppercase', letterSpacing: '0.05em', borderRight: '1px solid #CBD5E1' }}>APPLIED ROLE / JOB TITLE</th>
+                    <th style={{ padding: '8px 12px', fontWeight: '700', fontSize: '11px', color: '#334155', textTransform: 'uppercase', letterSpacing: '0.05em', borderRight: '1px solid #CBD5E1' }}>SOURCE</th>
+                    <th style={{ padding: '8px 12px', fontWeight: '700', fontSize: '11px', color: '#334155', textTransform: 'uppercase', letterSpacing: '0.05em', borderRight: '1px solid #CBD5E1' }}>APPLIED DATE</th>
+                    <th style={{ padding: '8px 12px', fontWeight: '700', fontSize: '11px', color: '#334155', textTransform: 'uppercase', letterSpacing: '0.05em', borderRight: '1px solid #CBD5E1' }}>APPLICATION STATUS</th>
+                    <th style={{ padding: '8px 10px', fontWeight: '700', fontSize: '11px', color: '#334155', textAlign: 'center', width: '90px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>ACTIONS</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {allCandidates && allCandidates.length > 0 ? (
-                    allCandidates.map(cand => (
+                  {loadingPortalCandidates ? (
+                    <tr>
+                      <td colSpan="9" style={{ textAlign: 'center', padding: '30px 0', color: '#64748B' }}>
+                        Loading job site applicants...
+                      </td>
+                    </tr>
+                  ) : portalCandidates && portalCandidates.length > 0 ? (
+                    portalCandidates.map((cand, idx) => (
                       <tr
-                        key={cand.id || cand._id}
-                        style={{ borderBottom: '1px solid #f1f5f9', background: '#ffffff', transition: 'background-color 0.12s' }}
-                        onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f8fafc'}
-                        onMouseLeave={e => e.currentTarget.style.backgroundColor = '#ffffff'}
+                        key={cand.id || cand._id || idx}
+                        style={{
+                          background: idx % 2 === 0 ? '#FFFFFF' : '#F8FAFC',
+                          borderBottom: '1px solid #E2E8F0',
+                          height: '38px',
+                          transition: 'background-color 0.1s'
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.backgroundColor = '#EFF6FF'}
+                        onMouseLeave={e => e.currentTarget.style.backgroundColor = (idx % 2 === 0 ? '#FFFFFF' : '#F8FAFC')}
                       >
-                        <td style={{ padding: '10px 14px' }}>
-                          <strong style={{ color: '#0f172a', fontSize: '12.5px', fontWeight: '600' }}>{cand.name}</strong>
+                        <td style={{ padding: '6px 10px', textAlign: 'center', fontSize: '11px', color: '#64748B', borderRight: '1px solid #E2E8F0', fontWeight: '600' }}>
+                          {idx + 1}
                         </td>
-                        <td style={{ padding: '10px 14px', color: '#475569' }}>{cand.role || 'Software Consultant'}</td>
-                        <td style={{ padding: '10px 14px', color: '#64748b', fontSize: '11.5px' }}>{cand.email}</td>
-                        <td style={{ padding: '10px 14px' }}>
-                          <span style={{ background: '#eff6ff', color: '#1d4ed8', padding: '3px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: '600', border: '1px solid #bfdbfe' }}>
-                            {cand.referredByRecruiterName || cand.recruiter || 'Direct'}
+                        <td style={{ padding: '6px 12px', borderRight: '1px solid #E2E8F0' }}>
+                          <strong style={{ color: '#0F172A', fontSize: '12px', fontWeight: '600' }}>{cand.name}</strong>
+                        </td>
+                        <td style={{ padding: '6px 12px', color: '#475569', fontSize: '11.5px', borderRight: '1px solid #E2E8F0' }}>
+                          {cand.email}
+                        </td>
+                        <td style={{ padding: '6px 12px', color: '#64748B', fontSize: '11.5px', borderRight: '1px solid #E2E8F0' }}>
+                          {cand.phone || '—'}
+                        </td>
+                        <td style={{ padding: '6px 12px', color: '#334155', fontSize: '12px', fontWeight: '500', borderRight: '1px solid #E2E8F0' }}>
+                          {cand.jobTitle || cand.role || 'Job Site Applicant'}
+                        </td>
+                        <td style={{ padding: '6px 12px', borderRight: '1px solid #E2E8F0' }}>
+                          <span style={{ background: '#F1F5F9', color: '#334155', padding: '2px 7px', borderRadius: '3px', fontSize: '10.5px', fontWeight: '600', border: '1px solid #CBD5E1' }}>
+                            Job Site Portal
                           </span>
                         </td>
-                        <td style={{ padding: '10px 14px', textAlign: 'center' }}>
-                          <span style={{ background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: '700' }}>
-                            {cand.trustScore || '88'}%
+                        <td style={{ padding: '6px 12px', color: '#64748B', fontSize: '11px', borderRight: '1px solid #E2E8F0' }}>
+                          {formatDate(cand.appliedDate)}
+                        </td>
+                        <td style={{ padding: '6px 12px', borderRight: '1px solid #E2E8F0' }}>
+                          <span style={{ background: '#EFF6FF', color: '#1D4ED8', border: '1px solid #BFDBFE', fontSize: '10.5px', padding: '2px 7px', borderRadius: '3px', fontWeight: '600' }}>
+                            {cand.status || 'Applied'}
                           </span>
                         </td>
-                        <td style={{ padding: '10px 14px' }}>
-                          <span style={{ background: '#f8fafc', color: '#334155', border: '1px solid #e2e8f0', fontSize: '11px', padding: '3px 8px', borderRadius: '4px', fontWeight: '600' }}>
-                            {cand.status || 'Screened'}
-                          </span>
-                        </td>
-                        <td style={{ padding: '10px 14px', textAlign: 'center' }}>
-                          <button 
+                        <td style={{ padding: '6px 10px', textAlign: 'center' }}>
+                          <button
                             type="button"
                             onClick={() => setSelectedCandidate(cand)}
-                            style={{ background: '#ffffff', color: '#334155', border: '1px solid #cbd5e1', padding: '3px 9px', fontSize: '11.5px', fontWeight: '600', borderRadius: '4px', cursor: 'pointer' }}
+                            style={{ background: '#FFFFFF', color: '#334155', border: '1px solid #CBD5E1', padding: '3px 8px', fontSize: '11px', fontWeight: '600', borderRadius: '3px', cursor: 'pointer' }}
                           >
                             Details
                           </button>
@@ -1407,8 +1514,9 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="7" style={{ textAlign: 'center', padding: '40px 0', color: '#64748b' }}>
-                        No candidates have applied yet.
+                      <td colSpan="9" style={{ textAlign: 'center', padding: '40px 16px', color: '#64748B', fontSize: '13px' }}>
+                        <div style={{ fontWeight: '600', color: '#334155', marginBottom: '4px' }}>No Job Site Applicants Registered Yet</div>
+                        <div>Candidates who register or apply directly from the Careers Job Site (/jobs) will appear here.</div>
                       </td>
                     </tr>
                   )}
@@ -1538,15 +1646,9 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                 />
               </div>
 
-              <div className="form-group">
-                <label>Password *</label>
-                <input 
-                  type="password" 
-                  required 
-                  placeholder="Minimum 6 characters" 
-                  value={newRecPassword}
-                  onChange={e => setNewRecPassword(e.target.value)}
-                />
+              <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '10px 12px', marginBottom: '14px', fontSize: '12px', color: '#475569' }}>
+                <div style={{ fontWeight: '700', color: '#0f172a', marginBottom: '2px' }}>Authentication & Password Setup</div>
+                Passwordless setup. The user sets their own secure password via "Forgot Password" on the login screen, or signs in using Google OAuth.
               </div>
 
               <div className="form-group">
@@ -1669,15 +1771,9 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                 />
               </div>
 
-              <div className="form-group">
-                <label>Password *</label>
-                <input 
-                  type="text" 
-                  required 
-                  placeholder="Update account password" 
-                  value={editRecPassword}
-                  onChange={e => setEditRecPassword(e.target.value)}
-                />
+              <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '10px 12px', marginBottom: '14px', fontSize: '12px', color: '#475569' }}>
+                <div style={{ fontWeight: '700', color: '#0f172a', marginBottom: '2px' }}>Password Security</div>
+                Passwords are encrypted and never shown. The user can reset or update their password anytime using "Forgot Password" on the login portal.
               </div>
 
               <div className="form-group">
@@ -1772,9 +1868,12 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
       {/* CANDIDATE DETAILS MODAL */}
       {selectedCandidate && (
         <div className="modal-overlay" onClick={() => setSelectedCandidate(null)}>
-          <div className="modal-card" style={{ maxWidth: 600 }} onClick={e => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>Candidate User Profile Audit</h3>
+          <div className="modal-card" style={{ maxWidth: 580 }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: '#0F172A' }}>Job Site Applicant Profile</h3>
+                <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#64748B' }}>Verified candidate application from Careers Job Site</p>
+              </div>
               <button 
                 onClick={() => setSelectedCandidate(null)}
                 style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: 'var(--ink-soft)' }}
@@ -1783,36 +1882,47 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
               </button>
             </div>
 
-            <div className="cand-audit-grid">
-              <div className="cand-audit-section">
-                <strong>Personal Information</strong>
-                <p><strong>Name:</strong> {selectedCandidate.name}</p>
-                <p><strong>Email:</strong> {selectedCandidate.email}</p>
-                <p><strong>Phone:</strong> {selectedCandidate.phone || 'Not provided'}</p>
-                <p><strong>Location:</strong> {selectedCandidate.location || 'Not provided'}</p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '16px' }}>
+              <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '6px', padding: '12px' }}>
+                <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', marginBottom: '6px' }}>Personal Information</div>
+                <p style={{ margin: '4px 0', fontSize: '12.5px' }}><strong>Name:</strong> {selectedCandidate.name}</p>
+                <p style={{ margin: '4px 0', fontSize: '12.5px' }}><strong>Email:</strong> {selectedCandidate.email}</p>
+                <p style={{ margin: '4px 0', fontSize: '12.5px' }}><strong>Phone:</strong> {selectedCandidate.phone || '—'}</p>
+                <p style={{ margin: '4px 0', fontSize: '12.5px' }}><strong>Location:</strong> {selectedCandidate.location || '—'}</p>
               </div>
 
-              <div className="cand-audit-section">
-                <strong>Application Details</strong>
-                <p><strong>Position:</strong> {selectedCandidate.role || 'Unspecified'}</p>
-                <p><strong>Applied Via:</strong> {selectedCandidate.recruiterRefCode ? `Recruiter (Code: ${selectedCandidate.recruiterRefCode})` : 'Direct Portal'}</p>
-                <p><strong>Employment Preference:</strong> {selectedCandidate.contractType || 'W2/C2C'}</p>
-                <p><strong>Visa / Work Auth:</strong> {selectedCandidate.visaStatus || 'US Citizen'}</p>
-              </div>
-              
-              <div className="cand-audit-section" style={{ gridColumn: 'span 2' }}>
-                <strong>Verification & Background Screening</strong>
-                <p><strong>Hiring Status:</strong> <span className={`pill-status status-${(selectedCandidate.status || 'new').toLowerCase().replace(' ', '-')}`}>{selectedCandidate.status}</span></p>
-                <p><strong>AI Trust Score:</strong> <span style={{ fontWeight: 800, color: 'var(--brand)' }}>{selectedCandidate.trustScore || 'N/A'}%</span></p>
-                {selectedCandidate.experienceSummary && (
-                  <p><strong>Experience Summary:</strong> {selectedCandidate.experienceSummary}</p>
-                )}
+              <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '6px', padding: '12px' }}>
+                <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', marginBottom: '6px' }}>Application Record</div>
+                <p style={{ margin: '4px 0', fontSize: '12.5px' }}><strong>Applied Role:</strong> {selectedCandidate.jobTitle || selectedCandidate.role || 'Job Site Applicant'}</p>
+                <p style={{ margin: '4px 0', fontSize: '12.5px' }}><strong>Source:</strong> Job Site Portal</p>
+                <p style={{ margin: '4px 0', fontSize: '12.5px' }}><strong>Status:</strong> <span style={{ background: '#EFF6FF', color: '#1D4ED8', padding: '2px 6px', borderRadius: '3px', fontSize: '11px', fontWeight: '600' }}>{selectedCandidate.status || 'Applied'}</span></p>
+                <p style={{ margin: '4px 0', fontSize: '12.5px' }}><strong>Applied Date:</strong> {formatDate(selectedCandidate.appliedDate)}</p>
               </div>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 24 }}>
-              <button className="btn" onClick={() => setSelectedCandidate(null)}>
-                Close Audit
+            {selectedCandidate.comments && (
+              <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '6px', padding: '12px', marginBottom: '16px' }}>
+                <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', marginBottom: '4px' }}>Candidate Notes / Comments</div>
+                <div style={{ fontSize: '12px', color: '#334155' }}>{selectedCandidate.comments}</div>
+              </div>
+            )}
+
+            {selectedCandidate.resumeUrl && (
+              <div style={{ marginBottom: '16px' }}>
+                <a
+                  href={selectedCandidate.resumeUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#2563EB', color: '#FFFFFF', padding: '6px 12px', borderRadius: '4px', fontSize: '12px', fontWeight: '600', textDecoration: 'none' }}
+                >
+                  Download Submitted Resume
+                </a>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
+              <button className="btn" onClick={() => setSelectedCandidate(null)} style={{ background: '#334155', color: '#FFFFFF', fontSize: '12px', padding: '6px 14px' }}>
+                Close
               </button>
             </div>
           </div>
@@ -1964,17 +2074,9 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                   />
                 </div>
 
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#334155', marginBottom: '4px' }}>
-                    Initial Portal Password *
-                  </label>
-                  <input 
-                    type="text"
-                    required
-                    value={newClientPassword}
-                    onChange={e => setNewClientPassword(e.target.value)}
-                    style={{ width: '100%', padding: '8px 12px', fontSize: '13px', border: '1px solid #cbd5e1', borderRadius: '6px', boxSizing: 'border-box' }}
-                  />
+                <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: '6px', padding: '10px 12px', fontSize: '12px', color: '#0369a1' }}>
+                  <div style={{ fontWeight: '700', color: '#0c4a6e', marginBottom: '2px' }}>Client Access & Sign-In</div>
+                  Clients sign in securely with their corporate email using Google OAuth, or set their initial password via "Forgot Password" on the login screen.
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>

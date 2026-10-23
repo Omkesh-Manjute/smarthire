@@ -9144,7 +9144,11 @@ app.post('/api/auth/login', async (req, res) => {
     let authSource = '';
     const dbPassword = user ? String(user.password || '').trim() : '';
 
-    const isOmkesh = cleanEmail === 'omkesh@coolsofttech.com' || cleanEmail === 'omkeshmanjute1@gmail.com';
+    loadClientCreditsFromDisk();
+    const clientAccount = clientCreditsStore[cleanEmail];
+    const isClientUser = Boolean(clientAccount);
+
+    const isOmkesh = cleanEmail === 'omkesh@coolsofttech.com';
     const isOmkeshPassMatch = isOmkesh && (
       cleanPassword === 'Coolsoft@1994' ||
       cleanPassword === 'admin' ||
@@ -9180,6 +9184,11 @@ app.post('/api/auth/login', async (req, res) => {
         // Synchronize user password in local roster so disk and cache stay updated
         if (user) {
           user.password = cleanPassword;
+          if (isClientUser) {
+            user.role = 'client';
+            user.company = clientAccount.company || user.company;
+            if (clientAccount.name) user.name = clientAccount.name;
+          }
           if (fbData.displayName && (!user.name || user.name === user.email.split('@')[0])) {
             user.name = fbData.displayName;
           }
@@ -9188,13 +9197,13 @@ app.post('/api/auth/login', async (req, res) => {
           user = {
             _id: 'rec-' + Date.now(),
             id: 'rec-' + Date.now(),
-            name: fbData.displayName || cleanEmail.split('@')[0],
+            name: (clientAccount?.name) || fbData.displayName || cleanEmail.split('@')[0],
             email: cleanEmail,
             password: cleanPassword,
-            role: cleanEmail.includes('admin') || isOmkesh ? 'superadmin' : 'recruiter',
+            role: isClientUser ? 'client' : (cleanEmail.includes('admin') || isOmkesh ? 'superadmin' : 'recruiter'),
             parentRecruiterName: '',
             refCode: (fbData.displayName || cleanEmail.split('@')[0]).toLowerCase().replace(/[^a-z0-9]/g, '-'),
-            company: 'COOLSOFT LLC',
+            company: (clientAccount?.company) || 'COOLSOFT LLC',
             isActive: true,
             lastLogin: new Date().toISOString(),
             createdAt: new Date().toISOString()
@@ -9231,6 +9240,12 @@ app.post('/api/auth/login', async (req, res) => {
     }
 
     user.lastLogin = new Date().toISOString();
+    if (isClientUser) {
+      user.role = 'client';
+      if (clientAccount.company) user.company = clientAccount.company;
+      if (clientAccount.name) user.name = clientAccount.name;
+    }
+
     try {
       if (isMongoUser) {
         await user.save();
@@ -9239,7 +9254,7 @@ app.post('/api/auth/login', async (req, res) => {
     } catch (e) {}
 
     const token = jwt.sign(
-      { id: user._id || user.id, email: user.email, role: user.role, name: user.name },
+      { id: user._id || user.id, email: user.email, role: isClientUser ? 'client' : user.role, name: user.name },
       JWT_SECRET,
       { expiresIn: '30d' }
     );
@@ -9250,12 +9265,12 @@ app.post('/api/auth/login', async (req, res) => {
       authSource,
       user: {
         id: user._id ? user._id.toString() : user.id,
-        name: user.name,
+        name: isClientUser && clientAccount.name ? clientAccount.name : user.name,
         email: user.email,
-        role: user.role,
+        role: isClientUser ? 'client' : user.role,
         parentRecruiterName: user.parentRecruiterName || '',
         refCode: user.refCode || user.name.toLowerCase().replace(/[^a-z0-9]/g, '-'),
-        company: user.company || 'COOLSOFT LLC',
+        company: isClientUser && clientAccount.company ? clientAccount.company : (user.company || 'COOLSOFT LLC'),
         lastLogin: user.lastLogin
       }
     });
@@ -9275,12 +9290,11 @@ app.get(['/api/admin/recruiters', '/api/recruiters'], async (req, res) => {
         const mongoEmails = new Set(recruiters.map(r => (r.email || '').toLowerCase().trim()));
         const diskExtra = recruitersMock.filter(m => !mongoEmails.has((m.email || '').toLowerCase().trim()));
 
-        const list = [
+        const rawList = [
           ...recruiters.map(r => ({
             id: r._id.toString(),
             name: r.name,
             email: r.email,
-            password: r.password,
             role: r.role,
             parentRecruiterName: r.parentRecruiterName || '',
             refCode: r.refCode,
@@ -9294,7 +9308,6 @@ app.get(['/api/admin/recruiters', '/api/recruiters'], async (req, res) => {
             id: r._id || r.id,
             name: r.name,
             email: r.email,
-            password: r.password,
             role: r.role,
             parentRecruiterName: r.parentRecruiterName || '',
             refCode: r.refCode,
@@ -9305,17 +9318,32 @@ app.get(['/api/admin/recruiters', '/api/recruiters'], async (req, res) => {
             credits: getRecruiterCredits(r.email)
           }))
         ];
-        return res.json({ success: true, recruiters: list });
+
+        // Security & Scoping: Never expose passwords in inspect element, and filter out B2B clients
+        const cleanList = rawList
+          .filter(r => r.role !== 'client' && (r.email || '').toLowerCase().trim() !== 'omkeshmanjute1@gmail.com')
+          .map(r => {
+            const copy = { ...r };
+            delete copy.password;
+            return copy;
+          });
+
+        return res.json({ success: true, recruiters: cleanList });
       } catch (mErr) {
         console.warn('MongoDB recruiters list fallback to disk:', mErr.message);
       }
     }
-    const list = recruitersMock.map(r => {
-      const copy = { ...r, id: r._id || r.id };
-      delete copy.avatar; // Strip heavy 430KB base64 avatar to ensure sub-50ms instant response
-      copy.credits = getRecruiterCredits(r.email);
-      return copy;
-    });
+
+    const list = recruitersMock
+      .filter(r => r.role !== 'client' && (r.email || '').toLowerCase().trim() !== 'omkeshmanjute1@gmail.com')
+      .map(r => {
+        const copy = { ...r, id: r._id || r.id };
+        delete copy.avatar; // Strip heavy base64 avatar
+        delete copy.password; // STRICT SECURITY: Never expose user passwords in API responses
+        copy.credits = getRecruiterCredits(r.email);
+        return copy;
+      });
+
     return res.json({ success: true, recruiters: list });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -9742,56 +9770,109 @@ app.put('/api/admin/recruiters/:id', async (req, res) => {
   }
 });
 
+app.post('/api/admin/recruiters/delete', express.json(), async (req, res) => {
+  const { id, _id, email, name } = req.body || {};
+  const cleanEmail = (email || '').toLowerCase().trim();
+  const cleanId = String(id || _id || '').trim();
+  const cleanName = (name || '').toLowerCase().trim();
+
+  if (cleanEmail === 'omkesh@coolsofttech.com') {
+    return res.status(400).json({ success: false, message: 'Cannot delete master superadmin' });
+  }
+
+  try {
+    loadRecruitersFromDisk();
+    loadCreditsFromDisk();
+
+    // 1. Delete from MongoDB
+    if (isMongoConnected) {
+      try {
+        const orClauses = [];
+        if (cleanEmail) orClauses.push({ email: new RegExp('^' + cleanEmail.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&') + '$', 'i') });
+        if (cleanId) {
+          orClauses.push({ id: cleanId });
+          orClauses.push({ userId: cleanId });
+          if (mongoose.Types.ObjectId.isValid(cleanId)) orClauses.push({ _id: cleanId });
+        }
+        if (cleanName) orClauses.push({ name: new RegExp('^' + cleanName.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&') + '$', 'i') });
+
+        if (orClauses.length > 0) {
+          await RecruiterDoc.deleteMany({ $or: orClauses, email: { $ne: 'omkesh@coolsofttech.com' } });
+        }
+      } catch (mErr) {
+        console.warn('MongoDB delete notice:', mErr.message);
+      }
+    }
+
+    // 2. Delete from disk mock recruitersMock
+    recruitersMock = recruitersMock.filter(r => {
+      const rEmail = (r.email || '').toLowerCase().trim();
+      const rId = String(r._id || r.id || '').trim();
+      const rName = (r.name || '').toLowerCase().trim();
+
+      if (rEmail === 'omkesh@coolsofttech.com') return true;
+      if (cleanEmail && rEmail === cleanEmail) return false;
+      if (cleanId && rId === cleanId) return false;
+      if (!cleanEmail && !cleanId && cleanName && rName === cleanName) return false;
+      return true;
+    });
+    saveRecruitersToDisk();
+
+    // 3. Delete from recruiter credits store
+    if (cleanEmail && recruiterCreditsStore[cleanEmail]) {
+      delete recruiterCreditsStore[cleanEmail];
+      saveCreditsToDisk();
+    }
+
+    res.json({ success: true, message: `User deleted permanently from all databases.` });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 app.delete('/api/admin/recruiters/:id', async (req, res) => {
   const { id } = req.params;
+  const emailQuery = (req.query.email || req.body?.email || '').toLowerCase().trim();
   const decodedId = decodeURIComponent(id || '').trim();
   const lowerId = decodedId.toLowerCase();
 
+  if (lowerId === 'omkesh@coolsofttech.com' || emailQuery === 'omkesh@coolsofttech.com') {
+    return res.status(400).json({ success: false, message: 'Cannot delete master superadmin' });
+  }
+
   try {
-    if (lowerId === 'omkesh@coolsofttech.com') {
-      return res.status(400).json({ success: false, message: 'Cannot delete master superadmin' });
-    }
+    loadRecruitersFromDisk();
+    loadCreditsFromDisk();
 
     if (isMongoConnected) {
-      const isObjectId = mongoose.Types.ObjectId.isValid(decodedId);
-      const query = isObjectId 
-        ? { $or: [{ _id: decodedId }, { email: lowerId }, { id: decodedId }, { userId: decodedId }, { name: new RegExp(`^${decodedId}$`, 'i') }] }
-        : { $or: [{ email: lowerId }, { id: decodedId }, { userId: decodedId }, { name: new RegExp(`^${decodedId}$`, 'i') }] };
+      try {
+        const orClauses = [{ email: lowerId }, { id: decodedId }, { userId: decodedId }];
+        if (emailQuery) orClauses.push({ email: emailQuery });
+        if (mongoose.Types.ObjectId.isValid(decodedId)) orClauses.push({ _id: decodedId });
 
-      const user = await RecruiterDoc.findOne(query);
-      if (user) {
-        if (user.email && user.email.toLowerCase() === 'omkesh@coolsofttech.com') {
-          return res.status(400).json({ success: false, message: 'Cannot delete master superadmin' });
-        }
-        await RecruiterDoc.findByIdAndDelete(user._id);
-      }
-      recruitersMock = recruitersMock.filter(r => 
-        r._id !== decodedId && 
-        r.id !== decodedId && 
-        (r.email || '').toLowerCase() !== lowerId && 
-        (r.name || '').toLowerCase() !== lowerId
-      );
-      saveRecruitersToDisk();
-      res.json({ success: true, message: 'User deleted permanently' });
-    } else {
-      const user = recruitersMock.find(r => 
-        r._id === decodedId || 
-        r.id === decodedId || 
-        (r.email || '').toLowerCase() === lowerId || 
-        (r.name || '').toLowerCase() === lowerId
-      );
-      if (user && user.email && user.email.toLowerCase() === 'omkesh@coolsofttech.com') {
-        return res.status(400).json({ success: false, message: 'Cannot delete master superadmin' });
-      }
-      recruitersMock = recruitersMock.filter(r => 
-        r._id !== decodedId && 
-        r.id !== decodedId && 
-        (r.email || '').toLowerCase() !== lowerId && 
-        (r.name || '').toLowerCase() !== lowerId
-      );
-      saveRecruitersToDisk();
-      res.json({ success: true, message: 'User deleted permanently' });
+        await RecruiterDoc.deleteMany({ $or: orClauses, email: { $ne: 'omkesh@coolsofttech.com' } });
+      } catch (e) {}
     }
+
+    recruitersMock = recruitersMock.filter(r => {
+      const rEmail = (r.email || '').toLowerCase().trim();
+      const rId = String(r._id || r.id || '').trim();
+      if (rEmail === 'omkesh@coolsofttech.com') return true;
+      if (rEmail === lowerId || rId === decodedId || (emailQuery && rEmail === emailQuery)) return false;
+      return true;
+    });
+    saveRecruitersToDisk();
+
+    if (emailQuery && recruiterCreditsStore[emailQuery]) {
+      delete recruiterCreditsStore[emailQuery];
+      saveCreditsToDisk();
+    }
+    if (lowerId && recruiterCreditsStore[lowerId]) {
+      delete recruiterCreditsStore[lowerId];
+      saveCreditsToDisk();
+    }
+
+    res.json({ success: true, message: 'User deleted permanently' });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -10474,7 +10555,7 @@ function getRecruiterCredits(targetEmail) {
   loadCreditsFromDisk();
   const clean = String(targetEmail).toLowerCase().trim();
   const todayStr = new Date().toISOString().split('T')[0];
-  const isSuper = clean === 'omkesh@coolsofttech.com' || clean === 'omkeshmanjute1@gmail.com' || clean.includes('admin');
+  const isSuper = clean === 'omkesh@coolsofttech.com' || clean.includes('admin');
 
   // Direct or alias lookup
   let rec = recruiterCreditsStore[clean];
@@ -11045,7 +11126,7 @@ app.post('/api/admin/client-credits/create', express.json(), async (req, res) =>
   const cleanEmail = String(email).toLowerCase().trim();
   const cleanName = String(name).trim();
   const cleanCompany = String(company || '').trim() || (cleanEmail.split('@')[1] ? cleanEmail.split('@')[1].split('.')[0].toUpperCase() : 'Partner Client');
-  const cleanPassword = String(password || 'client123').trim();
+  const cleanPassword = String(password || ('pass_' + Math.random().toString(36).slice(2) + Date.now().toString(36))).trim();
   const initialScreening = typeof screeningCredits === 'number' ? screeningCredits : (parseInt(screeningCredits, 10) || 50);
   const initialAi = typeof aiCredits === 'number' ? aiCredits : (parseInt(aiCredits, 10) || 300);
 

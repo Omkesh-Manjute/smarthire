@@ -644,6 +644,62 @@ export async function saveTeamUsersFirestore(usersList) {
 }
 
 /**
+ * Permanently delete a team user from Firestore by ID and Email
+ */
+export async function deleteTeamUserFirestore(userId, email) {
+  try {
+    const cleanEmail = (email || '').toLowerCase().trim()
+    const cleanId = String(userId || '').trim()
+
+    // 1. Delete by direct doc ID derivations
+    const candidateDocIds = new Set()
+    if (cleanId) {
+      candidateDocIds.add(cleanId)
+      candidateDocIds.add(cleanId.replace(/[^a-zA-Z0-9]/g, '_'))
+    }
+    if (cleanEmail) {
+      candidateDocIds.add(cleanEmail.replace(/[^a-zA-Z0-9]/g, '_'))
+      candidateDocIds.add(cleanEmail)
+    }
+
+    for (const dId of candidateDocIds) {
+      if (dId) {
+        try {
+          await deleteDoc(doc(db, USERS_COLLECTION, dId))
+        } catch (_) {}
+      }
+    }
+
+    // 2. Query Firestore by email and delete any matched documents
+    if (cleanEmail) {
+      try {
+        const qEmail = query(collection(db, USERS_COLLECTION), where('email', '==', cleanEmail))
+        const snapEmail = await getDocs(qEmail)
+        snapEmail.forEach(async (dSnap) => {
+          try {
+            await deleteDoc(doc(db, USERS_COLLECTION, dSnap.id))
+          } catch (_) {}
+        })
+      } catch (_) {}
+    }
+
+    // 3. Clear cache
+    if (usersCache.data) {
+      usersCache.data = usersCache.data.filter(u => {
+        const uEmail = (u.email || '').toLowerCase().trim()
+        const uId = String(u.id || u._id || '').trim()
+        return uEmail !== cleanEmail && uId !== cleanId
+      })
+      usersCache.timestamp = Date.now()
+    }
+    return true
+  } catch (err) {
+    console.warn('Failed to delete team user from Firestore:', err)
+    return false
+  }
+}
+
+/**
  * Fetch team users from Firestore with caching
  */
 export async function getTeamUsersFirestore(opts = {}) {
@@ -659,7 +715,10 @@ export async function getTeamUsersFirestore(opts = {}) {
     snap.forEach(docSnap => {
       const data = docSnap.data() || {}
       delete data.password // Defensive: never expose password
-      users.push({ id: docSnap.id, ...data })
+      // Filter out client accounts from internal team roster
+      if (data.role !== 'client') {
+        users.push({ id: docSnap.id, ...data })
+      }
     })
 
     usersCache.data = users

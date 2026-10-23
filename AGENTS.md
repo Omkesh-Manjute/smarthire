@@ -66,6 +66,36 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
     - In resume views, every responsibility, project accomplishment, and contribution line must be formatted with an explicit bullet point (`•`) and proper indentation.
     - The engine must automatically detect responsibilities (lines following `Responsibilities:`, action verbs, or list items) even when converted from plain text or Word documents without literal Unicode bullets.
 
+### 2026-10-23 — Permanent Recruiter Deletion, Complete Password Removal from DOM/Network, Client Access Isolation & Job Site Candidate Roster Filtering
+- **Context & Objectives**:
+  - The user reported:
+    1. Recruiter deletion failure & resurrection on reload: Deleting `omkeshmanjute1@gmail.com` (and other users) failed to persist. When logging in or resetting password, the full internal ATS recruiter workspace was still displayed instead of the B2B Client Video Screening Portal.
+    2. Elimination of Passwords in UI & DevTools (Inspect Element): Remove password inputs from Add Recruiter, Edit Recruiter, and Add Client modals. Stop returning plain passwords in `/api/admin/recruiters` network payloads. Users must set their own passwords via Firebase "Forgot Password" or sign in via Google OAuth.
+    3. Candidate Users Tab 171 Clean Up: "Candidate Users" tab was dumping all 171 internal talent pool candidates with fake 88% screening trust scores and fake "Screened" statuses. The user requested: only candidates who registered or applied through the public Job Site (`/jobs`) should be shown; remove the fake 88% trust column and fake statuses; if none have applied, show 0.
+- **Root Cause & Architectural Implementations**:
+  1. *Permanent Recruiter Deletion & No Resurrection (`atsFirestore.js`, `UsersModule.jsx`, `server/index.js`)*:
+     - Root cause 1: `handleDeleteRecruiter` in `UsersModule.jsx` previously only updated Firestore via `saveTeamUsersFirestore()`, which merged the remaining users with `setDoc(..., { merge: true })` but never deleted the removed document from Firestore. On page refresh, `getTeamUsersFirestore()` read Firestore, found the old user, and merged them back into state.
+     - Root cause 2: `fetchRecruiters()` used `prev` (stale localStorage) as the base map and only layered server results on top.
+     - Root cause 3: In `server/index.js`, `isOmkesh` had hardcoded `omkeshmanjute1@gmail.com` as superadmin.
+     - Fix: Implemented and exported `deleteTeamUserFirestore(userId, email)` in `atsFirestore.js` to delete from Firestore by doc ID derivations and email queries. Added `POST /api/admin/recruiters/delete` and query param email deletion in backend Express router. Updated `fetchRecruiters()` to treat server and Firestore as the authoritative list, purging deleted entries from `localStorage`. Removed `omkeshmanjute1@gmail.com` from `isOmkesh` and `isSuper`.
+  2. *B2B Client Portal Dedicated Authentication Routing (`server/index.js` & `Login.jsx`)*:
+     - Check `clientCreditsStore` upon login in `/api/auth/login`, `handleGoogleSignIn`, and `handleDemoSubmit`.
+     - When `omkeshmanjute1@gmail.com` (or any client email) logs in, forcefully sets `role: 'client'` and redirects directly to `/client/screening`.
+  3. *Complete Password Elimination from UI & Network Inspection (`UsersModule.jsx` & `server/index.js`)*:
+     - Removed password input fields from "+ Add Team Member", "Edit Team Member", and "+ Add B2B Client" modals.
+     - Added clean informational alerts informing users that authentication is passwordless via Google OAuth or self-service "Forgot Password".
+     - Stripped `delete copy.password` across `saveRecruiters()`, `fetchRecruiters()`, and `handleUpdateRecruiter()`.
+     - Backend `/api/admin/recruiters` unconditionally deletes `password` property from both MongoDB and disk mock responses, completely blocking DevTools network inspection.
+  4. *Job Site Candidate Users Excel-Style Grid & Fake Score Elimination (`UsersModule.jsx`)*:
+     - Replaced raw 171 ATS talent pool array with `fetchPortalCandidates()` fetching genuine applications from Firestore `atsApplications` (`getCareerApplications()`) and filtering for `source: 'Job Site'`.
+     - Completely removed the fake "Screening Trust 88%" column and fake "Screened" badges.
+     - Implemented authentic Excel-style spreadsheet grid (Rule 9) with compact 38px rows, zebra striping, and genuine application fields (`#`, `Candidate Name`, `Email Address`, `Phone`, `Applied Role / Job Title`, `Source`, `Applied Date`, `Application Status`, `Actions`).
+     - Tab count reflects accurate genuine applicant count (e.g. 0 when no web applications exist).
+- **Verification & Deployment Protocol**:
+  - Verified local production build (`npm run build`) in `smarthire-react`: 0 errors, 0 warnings (built in 2.98s).
+  - All 42 matching engine unit tests passed (0 failures).
+  - Production build synced to root `/dist` and `/api` via `node build.js`.
+
 ### 2026-10-23 — Screening TDZ Initialization Fix, Manage Users 99% Speedup & In-Table Extension Credit Refills
 - **Context & Objectives**:
   - The user shared screenshot `media_1792742368458_a973c6b8.png` showing `Cannot access 'o' before initialization` caught by ErrorBoundary on `/ats?tab=users`.

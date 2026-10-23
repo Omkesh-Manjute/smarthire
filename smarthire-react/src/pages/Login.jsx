@@ -85,6 +85,30 @@ function Login() {
       const gUser = await loginWithGoogle()
       const emailClean = (gUser.email || '').toLowerCase().trim()
 
+      // Check if user is a B2B Video Screening Client first
+      let isB2bClient = false
+      let b2bClientData = null
+      try {
+        const clientRes = await fetch(`/api/client/portal-data?email=${encodeURIComponent(emailClean)}`)
+        const clientJson = await clientRes.json()
+        if (clientJson.success && clientJson.client) {
+          isB2bClient = true
+          b2bClientData = clientJson.client
+        }
+      } catch (_) {}
+
+      if (isB2bClient && b2bClientData) {
+        const clientProfile = {
+          id: 'cli-' + Date.now(),
+          name: b2bClientData.name || emailClean.split('@')[0],
+          email: emailClean,
+          role: 'client',
+          company: b2bClientData.company || 'Enterprise Partner'
+        }
+        setLoginSession(clientProfile, gUser.idToken || 'client-token')
+        return
+      }
+
       // Look up user role and hierarchy from Firestore or team roster
       const firestoreUser = await getUserProfileByEmailFirestore(emailClean)
       let matched = firestoreUser
@@ -170,6 +194,30 @@ function Login() {
       }
 
       if (firebaseUser) {
+        // Check if user is a B2B Video Screening Client first
+        let isB2bClient = false
+        let b2bClientData = null
+        try {
+          const clientRes = await fetch(`/api/client/portal-data?email=${encodeURIComponent(inputEmail)}`)
+          const clientJson = await clientRes.json()
+          if (clientJson.success && clientJson.client) {
+            isB2bClient = true
+            b2bClientData = clientJson.client
+          }
+        } catch (_) {}
+
+        if (isB2bClient && b2bClientData) {
+          const clientProfile = {
+            id: 'cli-' + Date.now(),
+            name: b2bClientData.name || inputEmail.split('@')[0],
+            email: inputEmail,
+            role: 'client',
+            company: b2bClientData.company || 'Enterprise Partner'
+          }
+          setLoginSession(clientProfile, firebaseUser.idToken || 'client-token')
+          return
+        }
+
         // Look up role and hierarchy from Firestore or local cache
         const firestoreProfile = await getUserProfileByEmailFirestore(inputEmail)
         let matched = firestoreProfile
