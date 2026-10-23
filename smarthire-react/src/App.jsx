@@ -2,6 +2,7 @@ import React, { Suspense, lazy } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import Homepage from './pages/Homepage'
 import Login from './pages/Login'
+import InfinityLoader from './components/InfinityLoader'
 
 function lazyWithRetry(componentImport) {
   return lazy(async () => {
@@ -51,7 +52,6 @@ const SmartSignRtrPage = lazyWithRetry(() => import('./pages/SmartSignRtrPage'))
 const SubmittalPackPage = lazyWithRetry(() => import('./pages/SubmittalPackPage'))
 const SmartScreenProduct = lazyWithRetry(() => import('./pages/SmartScreenProduct'))
 const ClientScreeningPortal = lazyWithRetry(() => import('./pages/ClientScreeningPortal'))
-import InfinityLoader from './components/InfinityLoader'
 
 const PageFallback = () => (
   <InfinityLoader text="" showBrand={false} minHeight="85vh" />

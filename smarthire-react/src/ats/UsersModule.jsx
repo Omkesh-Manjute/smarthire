@@ -56,13 +56,24 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
   const [editRecPassword, setEditRecPassword] = useState('')
   const [editRecParent, setEditRecParent] = useState('')
 
+  const [newRecCredits, setNewRecCredits] = useState('100')
+  const [refillModalRecruiter, setRefillModalRecruiter] = useState(null)
+  const [refillAmount, setRefillAmount] = useState(100)
+  const [isRefilling, setIsRefilling] = useState(false)
+
   const [toastMessage, setToastMessage] = useState('')
   const [selectedCandidate, setSelectedCandidate] = useState(null)
 
   const saveRecruiters = (newList, notifyMsg = null) => {
     setRecruiters(newList)
     try {
-      localStorage.setItem('smarthire_recruiters', JSON.stringify(newList))
+      // Strip heavy base64 avatars before saving to localStorage to prevent lag
+      const sanitized = newList.map(u => {
+        const copy = { ...u }
+        delete copy.avatar
+        return copy
+      })
+      localStorage.setItem('smarthire_recruiters', JSON.stringify(sanitized))
     } catch (e) {}
     // Sync to Firestore
     saveTeamUsersFirestore(newList).catch(() => {})
@@ -70,38 +81,99 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
   }
 
   const fetchRecruiters = async () => {
-    setLoading(true)
+    // Only show full-screen spinner if we do not already have cached recruiters in state
+    if (!recruiters || recruiters.length === 0) {
+      setLoading(true)
+    }
     try {
-      // 1. Fetch from Firestore
-      const firestoreUsers = await getTeamUsersFirestore()
-      if (Array.isArray(firestoreUsers) && firestoreUsers.length > 0) {
-        setRecruiters(prev => {
-          const map = new Map()
-          prev.forEach(u => { if (u && (u.email || u.id)) map.set((u.email || u.id).toLowerCase(), u) })
-          firestoreUsers.forEach(u => {
+      // Concurrently fetch from Firestore and Backend server
+      const [firestoreRes, backendRes] = await Promise.allSettled([
+        getTeamUsersFirestore(),
+        fetch('/api/admin/recruiters').then(r => r.json())
+      ])
+
+      setRecruiters(prev => {
+        const map = new Map()
+        prev.forEach(u => {
+          if (u && (u.email || u.id)) map.set((u.email || u.id).toLowerCase(), u)
+        })
+
+        if (firestoreRes.status === 'fulfilled' && Array.isArray(firestoreRes.value)) {
+          firestoreRes.value.forEach(u => {
             if (u && (u.email || u.id)) {
               const existing = map.get((u.email || u.id).toLowerCase()) || {}
               map.set((u.email || u.id).toLowerCase(), { ...existing, ...u })
             }
           })
-          const merged = Array.from(map.values())
-          try { localStorage.setItem('smarthire_recruiters', JSON.stringify(merged)) } catch (e) {}
-          return merged
-        })
-      }
-
-      // 2. Fetch from Backend Server
-      const res = await fetch('/api/admin/recruiters')
-      const data = await res.json()
-      if (res.ok && data.success && Array.isArray(data.recruiters)) {
-        if (data.recruiters.length > 0) {
-          saveRecruiters(data.recruiters)
         }
-      }
+
+        if (backendRes.status === 'fulfilled' && backendRes.value?.success && Array.isArray(backendRes.value.recruiters)) {
+          backendRes.value.recruiters.forEach(u => {
+            if (u && (u.email || u.id)) {
+              const existing = map.get((u.email || u.id).toLowerCase()) || {}
+              map.set((u.email || u.id).toLowerCase(), { ...existing, ...u })
+            }
+          })
+        }
+
+        const merged = Array.from(map.values())
+        try {
+          const sanitized = merged.map(u => {
+            const copy = { ...u }
+            delete copy.avatar
+            return copy
+          })
+          localStorage.setItem('smarthire_recruiters', JSON.stringify(sanitized))
+        } catch (e) {}
+        return merged
+      })
     } catch (err) {
       console.warn('Recruiter sync notice:', err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleRefillCredits = async (email, amount, isUnlimited = false, mode = 'add') => {
+    if (!email) return
+    setIsRefilling(true)
+    try {
+      const res = await fetch('/api/admin/credits/refill', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          addCredits: isUnlimited ? undefined : amount,
+          isUnlimited,
+          mode: isUnlimited ? 'unlimited' : mode,
+          setQuota: mode === 'set' ? amount : undefined
+        })
+      })
+      const data = await res.json()
+      if (data.success) {
+        showToast(`Credits updated for ${email}!`)
+        setRecruiters(prev => prev.map(r => {
+          if ((r.email || '').toLowerCase().trim() === email.toLowerCase().trim()) {
+            return {
+              ...r,
+              credits: data.credits || {
+                ...r.credits,
+                remainingCredits: isUnlimited ? 999999 : ((r.credits?.remainingCredits || 0) + (amount || 0)),
+                dailyQuota: isUnlimited ? 999999 : (mode === 'set' ? amount : (r.credits?.dailyQuota || 100)),
+                isUnlimited
+              }
+            }
+          }
+          return r
+        }))
+        setRefillModalRecruiter(null)
+      } else {
+        alert(data.message || 'Failed to refill credits.')
+      }
+    } catch (err) {
+      alert('Error updating credits: ' + err.message)
+    } finally {
+      setIsRefilling(false)
     }
   }
 
@@ -205,6 +277,7 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
     setNewRecRole(presetParent ? 'employee' : 'recruiter')
     setNewRecPassword('recruiter123')
     setNewRecParent(presetParent || '')
+    setNewRecCredits('100')
     setShowAddModal(true)
   }
 
@@ -220,6 +293,9 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
       : newRecName.trim().toLowerCase().replace(/[^a-z0-9]/g, '-')
 
     const newId = `rec-${Date.now().toString().slice(-4)}`
+    const isUnlim = newRecCredits === 'unlimited' || newRecRole === 'superadmin'
+    const credNum = isUnlim ? 999999 : parseInt(newRecCredits, 10) || 100
+
     const payload = {
       id: newId,
       name: newRecName.trim(),
@@ -230,11 +306,18 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
       password: newRecPassword.trim(),
       parentRecruiterName: newRecRole === 'employee' ? newRecParent : '',
       isActive: true,
+      initialCredits: credNum,
+      isUnlimited: isUnlim,
+      credits: {
+        remainingCredits: credNum,
+        dailyQuota: credNum,
+        isUnlimited: isUnlim
+      },
       createdAt: new Date().toISOString()
     }
 
     const updated = [payload, ...recruiters]
-    saveRecruiters(updated, `User account created for "${payload.name}" (${payload.role})!`)
+    saveRecruiters(updated, `User account created for "${payload.name}" (${payload.role}) with ${isUnlim ? 'Unlimited' : credNum} credits!`)
     setShowAddModal(false)
 
     try {
@@ -511,6 +594,15 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
               </div>
             </div>
 
+            <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '12px 16px', marginBottom: '14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#2563eb' }} />
+                <div style={{ fontSize: '12px', color: '#1e3a8a', lineHeight: '1.4' }}>
+                  <strong>Team Credits Policy:</strong> Recruiters use Extension Credits for Candidate Ingestion (1 credit) and Email Outreach (2 credits). Admins can refill credits instantly or set Unlimited quota using the <strong>+ Refill</strong> button in any row below.
+                </div>
+              </div>
+            </div>
+
             <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
               {loading ? (
                 <div style={{ textAlign: 'center', padding: '30px 0' }}>
@@ -526,6 +618,7 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                         <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>TEAM HIERARCHY / REPORTING</th>
                         <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>COMPANY & REF</th>
                         <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.05em' }}>SOURCED</th>
+                        <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.05em' }}>EXTENSION CREDITS</th>
                         <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>ACCOUNT STATUS</th>
                         <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>LAST ACTIVE</th>
                         <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textAlign: 'center', width: '150px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>ACTIONS</th>
@@ -534,7 +627,7 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                     <tbody>
                       {filteredRecruiters.length === 0 ? (
                         <tr>
-                          <td colSpan="8" style={{ padding: '36px 20px', textAlign: 'center', color: '#64748b' }}>
+                          <td colSpan="9" style={{ padding: '36px 20px', textAlign: 'center', color: '#64748b' }}>
                             No team members found matching your filter criteria.
                           </td>
                         </tr>
@@ -665,6 +758,40 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                                   <span style={{ fontWeight: '700', color: count > 0 ? '#0f172a' : '#94a3b8', fontSize: '12px' }}>{count}</span>
                                 </td>
 
+                                {/* Extension Credits */}
+                                <td style={{ padding: '10px 14px', textAlign: 'center' }}>
+                                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                                    {rec.role === 'superadmin' || rec.credits?.isUnlimited ? (
+                                      <span style={{
+                                        background: '#ecfdf5', color: '#059669', border: '1px solid #a7f3d0',
+                                        borderRadius: '12px', padding: '2px 8px', fontSize: '11px', fontWeight: '700'
+                                      }}>
+                                        Unlimited
+                                      </span>
+                                    ) : (
+                                      <span style={{
+                                        background: (rec.credits?.remainingCredits ?? 100) > 20 ? '#eff6ff' : '#fef2f2',
+                                        color: (rec.credits?.remainingCredits ?? 100) > 20 ? '#1d4ed8' : '#dc2626',
+                                        border: `1px solid ${(rec.credits?.remainingCredits ?? 100) > 20 ? '#bfdbfe' : '#fecaca'}`,
+                                        borderRadius: '12px', padding: '2px 8px', fontSize: '11px', fontWeight: '700'
+                                      }}>
+                                        {rec.credits?.remainingCredits ?? 100} / {rec.credits?.dailyQuota ?? 100}
+                                      </span>
+                                    )}
+                                    <button
+                                      type="button"
+                                      onClick={() => setRefillModalRecruiter(rec)}
+                                      style={{
+                                        background: '#f8fafc', color: '#0f172a', border: '1px solid #cbd5e1',
+                                        borderRadius: '4px', padding: '2px 6px', fontSize: '10.5px', fontWeight: '700', cursor: 'pointer'
+                                      }}
+                                      title="Refill or modify sourcing extension credits"
+                                    >
+                                      + Refill
+                                    </button>
+                                  </div>
+                                </td>
+
                                 {/* Account Status */}
                                 <td style={{ padding: '10px 14px' }}>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -734,7 +861,7 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
 
                               {isExpanded && (
                                 <tr style={{ background: '#f8fafc' }}>
-                                  <td colSpan="8" style={{ padding: '12px 18px', borderBottom: '1px solid #e2e8f0' }}>
+                                  <td colSpan="9" style={{ padding: '12px 18px', borderBottom: '1px solid #e2e8f0' }}>
                                     <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '12px 16px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
                                       
                                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', borderBottom: '1px solid #f1f5f9', paddingBottom: '8px' }}>
@@ -763,7 +890,7 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                                               key={subEmp.id || subEmp._id || index}
                                               style={{
                                                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                                background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '8px 12px', fontSize: '11.5px'
+                                                background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '8px 12px', fontSize: '11.5px', flexWrap: 'wrap', gap: '8px'
                                               }}
                                             >
                                               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -785,8 +912,26 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                                                 </span>
                                               </div>
 
-                                              <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                                                <span style={{ fontSize: '11px', color: '#94a3b8', marginRight: '6px' }}>
+                                              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                                {/* Subordinate Credits */}
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                                  {subEmp.credits?.isUnlimited ? (
+                                                    <span style={{ background: '#ecfdf5', color: '#059669', border: '1px solid #a7f3d0', padding: '2px 7px', borderRadius: '12px', fontSize: '10.5px', fontWeight: '700' }}>Unlimited</span>
+                                                  ) : (
+                                                    <span style={{ background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', padding: '2px 7px', borderRadius: '12px', fontSize: '10.5px', fontWeight: '700' }}>
+                                                      {subEmp.credits?.remainingCredits ?? 100} / {subEmp.credits?.dailyQuota ?? 100} credits
+                                                    </span>
+                                                  )}
+                                                  <button
+                                                    type="button"
+                                                    onClick={() => setRefillModalRecruiter(subEmp)}
+                                                    style={{ background: '#ffffff', color: '#0f172a', border: '1px solid #cbd5e1', borderRadius: '3px', padding: '1px 6px', fontSize: '10.5px', fontWeight: '700', cursor: 'pointer' }}
+                                                  >
+                                                    + Refill
+                                                  </button>
+                                                </div>
+
+                                                <span style={{ fontSize: '11px', color: '#94a3b8' }}>
                                                   Last login: {formatDate(subEmp.lastLogin)}
                                                 </span>
                                                 <button
@@ -1078,6 +1223,24 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                 </div>
               )}
 
+              <div className="form-group" style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '10px 12px' }}>
+                <label style={{ fontWeight: 'bold', color: '#1e293b' }}>Extension Sourcing & Email Credits</label>
+                <select 
+                  value={newRecCredits} 
+                  onChange={e => setNewRecCredits(e.target.value)}
+                  style={{ background: '#ffffff', fontWeight: 'bold', marginTop: '4px' }}
+                >
+                  <option value="100">100 Credits (Standard Starter)</option>
+                  <option value="250">250 Credits (Active Recruiter)</option>
+                  <option value="500">500 Credits (High Volume)</option>
+                  <option value="1000">1,000 Credits (Power Sourcing)</option>
+                  <option value="unlimited">Unlimited Credits (Super Admin / No Quota)</option>
+                </select>
+                <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>
+                  Used by Chrome Extension: 1 credit per candidate scrape, 2 credits per candidate email outreach.
+                </div>
+              </div>
+
               <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 24 }}>
                 <button type="button" className="btn btn-ghost" onClick={() => setShowAddModal(false)}>
                   Cancel
@@ -1191,6 +1354,28 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                 </div>
               )}
 
+              <div className="form-group" style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '10px 12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <label style={{ fontWeight: 'bold', color: '#1e293b' }}>Extension Sourcing Credits</label>
+                    <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
+                      Balance: <strong>{editRecruiter?.credits?.isUnlimited ? 'Unlimited' : `${editRecruiter?.credits?.remainingCredits ?? 100} / ${editRecruiter?.credits?.dailyQuota ?? 100}`}</strong>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const recToRefill = editRecruiter;
+                      setEditRecruiter(null);
+                      setRefillModalRecruiter(recToRefill);
+                    }}
+                    style={{ background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', borderRadius: '4px', padding: '4px 10px', fontSize: '11.5px', fontWeight: '700', cursor: 'pointer' }}
+                  >
+                    + Refill Credits
+                  </button>
+                </div>
+              </div>
+
               <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 24 }}>
                 <button type="button" className="btn btn-ghost" onClick={() => setEditRecruiter(null)}>
                   Cancel
@@ -1248,6 +1433,86 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 24 }}>
               <button className="btn" onClick={() => setSelectedCandidate(null)}>
                 Close Audit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {refillModalRecruiter && (
+        <div className="modal-overlay" onClick={() => setRefillModalRecruiter(null)}>
+          <div className="modal-card" onClick={e => e.stopPropagation()} style={{ maxWidth: '480px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: '#0f172a' }}>
+                  Refill Sourcing Credits
+                </h3>
+                <p style={{ margin: '3px 0 0', fontSize: '12px', color: '#64748b' }}>
+                  User: <strong>{refillModalRecruiter.name}</strong> ({refillModalRecruiter.email})
+                </p>
+              </div>
+              <button 
+                onClick={() => setRefillModalRecruiter(null)}
+                style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#64748b' }}
+              >
+                &times;
+              </button>
+            </div>
+
+            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px 14px', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '12px', color: '#64748b' }}>Current Balance:</span>
+                <span style={{ fontSize: '14px', fontWeight: '800', color: refillModalRecruiter.credits?.isUnlimited ? '#059669' : '#1d4ed8' }}>
+                  {refillModalRecruiter.credits?.isUnlimited ? 'Unlimited Credits' : `${refillModalRecruiter.credits?.remainingCredits ?? 100} / ${refillModalRecruiter.credits?.dailyQuota ?? 100} credits`}
+                </span>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
+              <label style={{ fontSize: '12px', fontWeight: '700', color: '#334155' }}>Select Refill Action:</label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                <button
+                  type="button"
+                  disabled={isRefilling}
+                  onClick={() => handleRefillCredits(refillModalRecruiter.email, 50, false, 'add')}
+                  style={{ padding: '9px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#ffffff', fontSize: '12.5px', fontWeight: '700', color: '#0f172a', cursor: 'pointer' }}
+                >
+                  {isRefilling ? 'Updating...' : '+50 Credits'}
+                </button>
+                <button
+                  type="button"
+                  disabled={isRefilling}
+                  onClick={() => handleRefillCredits(refillModalRecruiter.email, 100, false, 'add')}
+                  style={{ padding: '9px 12px', borderRadius: '6px', border: '1px solid #2563eb', background: '#eff6ff', fontSize: '12.5px', fontWeight: '700', color: '#1d4ed8', cursor: 'pointer' }}
+                >
+                  {isRefilling ? 'Updating...' : '+100 Credits'}
+                </button>
+                <button
+                  type="button"
+                  disabled={isRefilling}
+                  onClick={() => handleRefillCredits(refillModalRecruiter.email, 250, false, 'add')}
+                  style={{ padding: '9px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#ffffff', fontSize: '12.5px', fontWeight: '700', color: '#0f172a', cursor: 'pointer' }}
+                >
+                  {isRefilling ? 'Updating...' : '+250 Credits'}
+                </button>
+                <button
+                  type="button"
+                  disabled={isRefilling}
+                  onClick={() => handleRefillCredits(refillModalRecruiter.email, 999999, true, 'unlimited')}
+                  style={{ padding: '9px 12px', borderRadius: '6px', border: '1px solid #059669', background: '#ecfdf5', fontSize: '12.5px', fontWeight: '700', color: '#047857', cursor: 'pointer' }}
+                >
+                  {isRefilling ? 'Updating...' : 'Make Unlimited'}
+                </button>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={() => setRefillModalRecruiter(null)}
+                style={{ padding: '7px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#ffffff', fontSize: '12px', fontWeight: '600', color: '#475569', cursor: 'pointer' }}
+              >
+                Close
               </button>
             </div>
           </div>

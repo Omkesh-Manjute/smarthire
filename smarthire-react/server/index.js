@@ -9268,6 +9268,7 @@ app.post('/api/auth/login', async (req, res) => {
 app.get(['/api/admin/recruiters', '/api/recruiters'], async (req, res) => {
   try {
     loadRecruitersFromDisk();
+    loadCreditsFromDisk();
     if (isMongoConnected) {
       try {
         const recruiters = await RecruiterDoc.find().sort({ createdAt: -1 });
@@ -9286,7 +9287,8 @@ app.get(['/api/admin/recruiters', '/api/recruiters'], async (req, res) => {
             company: r.company,
             isActive: r.isActive !== false,
             lastLogin: r.lastLogin,
-            createdAt: r.createdAt
+            createdAt: r.createdAt,
+            credits: getRecruiterCredits(r.email)
           })),
           ...diskExtra.map(r => ({
             id: r._id || r.id,
@@ -9299,7 +9301,8 @@ app.get(['/api/admin/recruiters', '/api/recruiters'], async (req, res) => {
             company: r.company,
             isActive: r.isActive !== false,
             lastLogin: r.lastLogin,
-            createdAt: r.createdAt
+            createdAt: r.createdAt,
+            credits: getRecruiterCredits(r.email)
           }))
         ];
         return res.json({ success: true, recruiters: list });
@@ -9307,7 +9310,12 @@ app.get(['/api/admin/recruiters', '/api/recruiters'], async (req, res) => {
         console.warn('MongoDB recruiters list fallback to disk:', mErr.message);
       }
     }
-    const list = recruitersMock.map(r => ({ ...r, id: r._id || r.id }));
+    const list = recruitersMock.map(r => {
+      const copy = { ...r, id: r._id || r.id };
+      delete copy.avatar; // Strip heavy 430KB base64 avatar to ensure sub-50ms instant response
+      copy.credits = getRecruiterCredits(r.email);
+      return copy;
+    });
     return res.json({ success: true, recruiters: list });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -9449,7 +9457,7 @@ app.get(['/api/analytics/recruiter-leaderboard', '/api/recruiter-leaderboard'], 
 });
 
 app.post('/api/admin/recruiters', async (req, res) => {
-  const { name, email, password, role, refCode, company, parentRecruiterName, isActive } = req.body;
+  const { name, email, password, role, refCode, company, parentRecruiterName, isActive, initialCredits, isUnlimited } = req.body;
   if (!name || !email) {
     return res.status(400).json({ success: false, message: 'Name and email are required.' });
   }
@@ -9463,6 +9471,23 @@ app.post('/api/admin/recruiters', async (req, res) => {
 
   try {
     loadRecruitersFromDisk();
+    loadCreditsFromDisk();
+
+    // 0. Synchronize initial credits into ledger
+    const recCreds = getRecruiterCredits(cleanEmail);
+    if (recCreds) {
+      if (isUnlimited === true || cleanRole === 'superadmin') {
+        recCreds.isUnlimited = true;
+        recCreds.remainingCredits = 999999;
+        recCreds.dailyQuota = 999999;
+      } else if (typeof initialCredits === 'number' && initialCredits > 0) {
+        recCreds.isUnlimited = false;
+        recCreds.remainingCredits = initialCredits;
+        recCreds.dailyQuota = initialCredits;
+        recCreds.totalCredits = initialCredits;
+      }
+      saveCreditsToDisk();
+    }
 
     // 1. Update memory / disk mock roster
     const existingIdx = recruitersMock.findIndex(r => (r.email || '').toLowerCase().trim() === cleanEmail);

@@ -256,13 +256,6 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [], cur
   const [copySuccess, setCopySuccess] = useState(false)
   const [copiedSessionId, setCopiedSessionId] = useState(null)
 
-  // Determine if candidate has submitted actual video/audio responses
-  const hasSubmittedResponses = Boolean(
-    reviewSession &&
-    reviewSession.status !== 'pending' &&
-    ((Array.isArray(reviewSession.responses) && reviewSession.responses.length > 0 && reviewSession.responses.some(r => r.transcript || r.response || r.mediaUrl)) || reviewSession.masterMediaUrl)
-  )
-
   // Direct Email Screening Invitation Modal States
   const [showSendEmailModal, setShowSendEmailModal] = useState(false)
   const [emailModalTo, setEmailModalTo] = useState('')
@@ -355,6 +348,13 @@ SmartHire Recruitment Team`
   const [playbackSpeed, setPlaybackSpeed] = useState(1)
   const [isReEvaluating, setIsReEvaluating] = useState(false)
   const [isGeneratingAIQuestions, setIsGeneratingAIQuestions] = useState(false)
+
+  // Determine if candidate has submitted actual video/audio responses (declared strictly after reviewSession state)
+  const hasSubmittedResponses = Boolean(
+    reviewSession &&
+    reviewSession.status !== 'pending' &&
+    ((Array.isArray(reviewSession.responses) && reviewSession.responses.length > 0 && reviewSession.responses.some(r => r.transcript || r.response || r.mediaUrl)) || reviewSession.masterMediaUrl)
+  )
 
   // Auto-fill campaign title & questions when job is selected
   useEffect(() => {
