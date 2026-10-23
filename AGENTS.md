@@ -66,6 +66,44 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
     - In resume views, every responsibility, project accomplishment, and contribution line must be formatted with an explicit bullet point (`•`) and proper indentation.
     - The engine must automatically detect responsibilities (lines following `Responsibilities:`, action verbs, or list items) even when converted from plain text or Word documents without literal Unicode bullets.
 
+### 2026-10-23 — Rohit Nagwani Recruiter Restoration, Elimination of B2B Client Resurrection & Permanent User Tombstone Engine
+- **Context & Objectives**:
+  - The user reported:
+    1. Rohit Nagwani resurrection in B2B clients: *"bhai ye b2b mai mai rohit ka delte kiya to double se a gaya hai mai jab yaha se delete kar raha hu to usko sab dikhna cahiye as a recruiter maine ak bar only testing ke liye add kiya tha okay and maine koi bhi user ko delete kiye vo double return nahi ana cahiye user mai bana saka hu update kar sakta hu okay so update it / Infoorigin / Rohit nagwani / rohit.nagwani@infoorigin.com"*.
+    2. Rohit Nagwani was only added to B2B clients once for testing and must have full ATS recruiter visibility with 100 extension credits.
+    3. When ANY user (team member or B2B client) is deleted by an admin, they must be permanently deleted and NEVER reappear/resurrect on reload, while retaining the admin's ability to cleanly create and update users.
+- **Root Cause & Architectural Implementations**:
+  1. *Root Cause 1: Auto-Creation on Read Bug in `getClientAccount` (`server/index.js`)*:
+     - `getClientAccount(email)` had a fallback that synthesized a client account with 50 screening credits and wrote it to `client_credits.json` whenever any request looked up an email via `/api/client/portal-data` or during login checks.
+     - Deleting Rohit from B2B clients removed his record, but the next page load or login check called `/api/client/portal-data`, which auto-created him back into `client_credits.json` ("double se a gaya").
+     - **Fix**: Removed auto-creation entirely from `getClientAccount`. It now strictly looks up existing accounts in `clientCreditsStore` and returns `null` if not found. `/api/client/portal-data` returns HTTP 404 if the client is not found.
+  2. *Root Cause 2: Inverted Login Priority & Recruiter Hijacking (`Login.jsx`, `server/index.js`)*:
+     - `Login.jsx` previously checked `/api/client/portal-data` *before* checking the internal ATS staff roster. Any recruiter who had a client credit entry was forced into `role: 'client'` and redirected to `/client/screening`.
+     - In `/api/auth/login`, `isClientUser` was applied unconditionally, overwriting recruiter roles.
+     - **Fix**: Re-architected `Login.jsx` (Google Sign-In and email/password login) to verify internal staff roster (`getUserProfileByEmailFirestore`, `smarthire_recruiters`, `defaultRecs`) first. Internal staff members are logged in with their ATS role and never redirected to the client portal. In `server/index.js`, `isClientUser` is only applied if `user.role === 'client'`. Added Rohit Nagwani to `defaultRecs`.
+  3. *Root Cause 3: Overzealous Client Deletion Purging Recruiters (`server/index.js`)*:
+     - `POST /api/admin/client-credits/delete` previously filtered `recruitersMock` by `r.email !== clean`, which deleted internal team members if their email was removed from client credits.
+     - **Fix**: Updated `POST /api/admin/client-credits/delete` to NEVER delete team members from `recruitersMock`. If their role in `recruitersMock` was `client`, it reverts it to `recruiter`. Explicitly preserved and restored Rohit Nagwani as an active recruiter with `company: 'Infoorigin'`.
+  4. *Persistent Tombstone Protection Engine (`deleted_clients.json`, `deleted_recruiters.json`, `UsersModule.jsx`)*:
+     - Implemented persistent disk tombstone files `deleted_clients.json` and `deleted_recruiters.json` in `server/index.js`.
+     - When an admin deletes a client or recruiter, their email is recorded in the respective tombstone set.
+     - `GET /api/admin/recruiters` and `GET /api/admin/client-credits/all` strictly filter out any emails in the tombstone sets, guaranteeing zero resurrection.
+     - When an admin explicitly creates or updates a user (`POST /api/admin/recruiters`, `PUT /api/admin/recruiters/:id`, `POST /api/admin/client-credits/create`), the email is unrecorded from the tombstone set so admins can create, re-invite, and update users smoothly.
+     - In `UsersModule.jsx`, updated `fetchRecruiters` so that authoritative backend responses prevent stale Firestore or local caches from reviving deleted users. In `handleDeleteClient`, state is filtered immediately and both client and recruiter rosters re-sync.
+- **Verification & Deployment Protocol**:
+  - Local production build verified in `smarthire-react`: 0 errors, 0 warnings (built in 3.44s).
+  - All 42 matching engine unit tests passed (0 failures).
+  - Git committed (`2c2476f` and `c86e40c`) and pushed to GitHub `origin main`.
+  - Production bundles extracted to `/var/www/html/` and `/home/ubuntu/smarthire/dist/` on AWS Lightsail (`34.194.119.199`).
+  - Temporary archives deleted immediately, old bundles pruned, PM2 logs flushed (Rule 5).
+  - PM2 `smarthire-ats` reloaded and verified online.
+  - Live verification:
+    - `GET https://smarthireus.com/api/admin/client-credits/all` returns exactly 2 clients (`demo@client.com`, `client@partner.com`) with Rohit permanently removed.
+    - `GET https://smarthireus.com/api/client/portal-data?email=rohit.nagwani@infoorigin.com` returns HTTP 404 (no auto-creation).
+    - `GET https://smarthireus.com/api/admin/recruiters` returns all 16 recruiters with Rohit Nagwani (`rohit.nagwani@infoorigin.com`, `Infoorigin`, `role: 'recruiter'`, 100 credits) fully active.
+    - Live domain `https://smarthireus.com` HTTP 200 OK with bundle `assets/index-uMi_9Utg.js`.
+    - Server disk space: 54% used, 8.5GB free (Rule 5 compliant).
+
 ### 2026-10-23 — 50 Master Screening Candidates Full Recovery (Oct 21-22 Invites & Submissions)
 - **Context & Objectives**:
   - The user reported: *"bhai ye pura nahi aya return dekho tody data kay hai and kab ka aya ye so please return lavo kal ka bahut candidate ko bheja gaya tha"* with screenshot showing only the older 16 records.
