@@ -66,6 +66,48 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
     - In resume views, every responsibility, project accomplishment, and contribution line must be formatted with an explicit bullet point (`•`) and proper indentation.
     - The engine must automatically detect responsibilities (lines following `Responsibilities:`, action verbs, or list items) even when converted from plain text or Word documents without literal Unicode bullets.
 
+### 2026-10-24 — Pricing Plans Overhaul (15-Day Storage, Dossier Purge, & Unbuilt Features Cleanup)
+- **Context & Objectives**:
+  - The user commanded: *"ha hata do ismai 15 days ka interview colod data karo and dosser word hata do ye sahi nahi lagta hai so do it bro scrning wala ka plan alag hai vaha bhi karna hai abhi isko to karo fir uska karte hai"*.
+  - Strict objectives:
+    1. Purge all unbuilt features from Pricing (`PricingSection.jsx`, `SmartScreenProduct.jsx`, `Homepage.jsx`, `Pricing.jsx`):
+       - Universal ATS webhooks (Bullhorn, Greenhouse, Lever, Workday)
+       - Sub-15ms REST API access / link generation
+       - HMAC SHA-256 webhooks & iframe studio
+       - AI audio text-to-speech reading questions aloud
+       - AI driver's license / visa OCR verification
+       - Daily automated direct client radar
+       - Okta / SAML 2.0 SSO
+    2. Set Starter Screen & Starter Combo cloud retention to **15-Day Cloud Video & Interview Storage** (instead of 30-day).
+    3. Purge the awkward word **"dossier"** site-wide and replace with clear corporate terms: **"Candidate Evaluation Report"** or **"Candidate PDF Scorecard"**.
+- **Architectural Implementations**:
+  1. *Pricing Component (`PricingSection.jsx`)*:
+     - **Starter Screen**: Updated to `15-Day Cloud Video & Interview Storage`. Replaced unbuilt exclusions with clean tier limits.
+     - **Growth Screen**: Removed Bullhorn/Greenhouse webhook and REST API claims; replaced with `Shareable Client Review Links` and `SmartSign RTR & Rate Lock Intake`. Replaced "dossier" with `Client-ready candidate evaluation report`. Replaced TTS with `Timed Question Prompts with Countdown Controls`. Set retention to 45 days.
+     - **Commercial Unlimited Screen**: Removed HMAC webhooks and iframe studio; replaced with `Multi-Recruiter Pipeline & Team Tracking`, `Verified Geolocation & Network Telemetry`, and `Bulk Candidate Invite Dispatch`. Set retention to 90 days.
+     - **ATS & Bundle Plans**: Replaced fake AI DL/Visa OCR with `SmartSign RTR & Document Intake Locker`. Replaced fake direct client discovery with `Automated Requisition Sync & JD Parsing`. Replaced Okta SSO with `Corporate Identity & Role-Based Access Control`.
+     - **Subtitle**: Replaced Bullhorn/Greenhouse/Lever webhook text with `Deploy asynchronous AI video, voice, and proctored candidate evaluations to qualify talent 10x faster.`
+  2. *SmartScreen Product Page (`SmartScreenProduct.jsx`)*:
+     - Top pill: Replaced `Integrates with Any ATS (Webhooks + API)` with `Works with Any Workflow (Share Links + PDF)`.
+     - Step 2: Changed `Bullhorn` to `email`.
+     - Step 3: Replaced `branded PDF submittal dossiers` with `branded PDF candidate reports`.
+     - Feature Grid: Replaced `Universal ATS Webhook Delivery` with `Instant Shareable Client Links`.
+     - Feature Card: Replaced `Branded Client PDF Dossiers` with `Branded Client PDF Reports`.
+     - FAQ: Replaced Bullhorn/Greenhouse HMAC webhook FAQ with how recruiters share candidate screenings via secure preview links and 1-click PDF evaluation reports.
+  3. *Homepage & Pricing Pages (`Homepage.jsx`, `Pricing.jsx`)*:
+     - `Homepage.jsx`: Replaced `↗ Share Dossier` button with `↗ Share Candidate Report`.
+     - `Pricing.jsx`: Replaced `scored dossier PDF` with `scored PDF evaluation report`.
+- **Verification & Deployment Protocol**:
+  - Local production build in `smarthire-react`: 0 errors, 0 warnings (built in 3.05s).
+  - All 42 matching engine unit tests passed (0 failures).
+  - Git committed (`3b14d8d`) and pushed to GitHub `origin main`.
+  - Extracted production bundles to `/var/www/html/` and `/home/ubuntu/smarthire/dist/` on AWS Lightsail (`34.194.119.199`).
+  - Pruned old asset bundles, flushed PM2 logs, reloaded PM2 `smarthire-ats`.
+  - Live domain `https://smarthireus.com` HTTP 200 OK with bundle `assets/index-Bias1k1L.js` and `SmartScreenProduct-v87e_YqA.js`.
+  - Verified 0 occurrences of "dossier" across live pricing and screening components.
+  - Verified `15-Day Cloud Video & Interview Storage` on live site.
+  - Server disk space: 54% used, 8.5GB free (Rule 5 compliant).
+
 ### 2026-10-24 — Unbuilt Marketing Claims Purge ("Trained on 100s of Placed Resumes" & "Anti-Proxy Biometrics")
 - **Context & Objectives**:
   - The user explicitly commanded: *"100 placed candidated train wala and anti proxy boimatrix wala bhi remove karo okay"* and *"bhai ismai abhi jo hum nahi kar rahe hai usko remove kar do ya update kar do fake news or feature nahi hona mujhe okay"*.
