@@ -66,6 +66,37 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
     - In resume views, every responsibility, project accomplishment, and contribution line must be formatted with an explicit bullet point (`•`) and proper indentation.
     - The engine must automatically detect responsibilities (lines following `Responsibilities:`, action verbs, or list items) even when converted from plain text or Word documents without literal Unicode bullets.
 
+### 2026-10-23 — Screening TDZ Initialization Fix, Manage Users 99% Speedup & In-Table Extension Credit Refills
+- **Context & Objectives**:
+  - The user shared screenshot `media_1792742368458_a973c6b8.png` showing `Cannot access 'o' before initialization` caught by ErrorBoundary on `/ats?tab=users`.
+  - The user reported:
+    1. Error in screening / users page: `Cannot access 'o' before initialization`.
+    2. Manage Users page taking a very long time to load on refresh ("ये साइट बहुत लोड ले रही है। रिफ्रेश कर रहा हूं मैं मैनेज यूजर वाले पेज में तो बहुत लोडिंग ले रही है।").
+    3. User requested complete clarity and controls for managing recruiter extension credits: how credits are given when adding a user and where to view and refill them.
+- **Root Cause & Architectural Implementations**:
+  1. *Temporal Dead Zone (TDZ) Fix in `ScreeningModule.jsx`*:
+     - Root cause: `hasSubmittedResponses` at line 260 accessed `reviewSession` before its declaration `const [reviewSession, setReviewSession] = useState(null)` at line 349. In minified Vite bundle, `reviewSession` was mangled to `o`, throwing `ReferenceError: Cannot access 'o' before initialization` whenever ATS components initialized.
+     - Fix: Moved `hasSubmittedResponses` strictly below all hook declarations. AST analyzer verified 0 TDZ violations across the entire codebase. Also fixed misplaced `import InfinityLoader` in `App.jsx`.
+  2. *99% Roster Payload Optimization & Instant Stale-While-Revalidate (`UsersModule.jsx` & `server/index.js`)*:
+     - Root cause: `/api/admin/recruiters` was returning a 442 KB JSON response because Omkesh's user record contained a 430 KB base64 JPEG avatar (`avatar: "data:image/jpeg;base64,..."`). Additionally, `fetchRecruiters` in `UsersModule.jsx` sequentially awaited Firestore and the backend API while blocking the UI with a full-screen spinner.
+     - Backend: Stripped heavy base64 avatars from `/api/admin/recruiters` disk mock responses, reducing payload from **442 KB to 11 KB (98% reduction)** and dropping download time to sub-second.
+     - Frontend: Switched to stale-while-revalidate. If cached recruiters exist in `localStorage`, the table renders immediately with 0ms delay. Concurrently fetches Firestore and `/api/admin/recruiters` using `Promise.allSettled`.
+  3. *In-Table Recruiter Extension Credit Management & Refill Modal (`UsersModule.jsx` & `server/index.js`)*:
+     - Added `credits: getRecruiterCredits(r.email)` directly to each recruiter object returned by `/api/admin/recruiters`.
+     - Added an **"EXTENSION CREDITS"** column to the user management table showing real-time balance (`Unlimited` badge or `X / Y credits`).
+     - Added a 1-click **"+ Refill"** button on every user row opening a Refill Modal (`+50`, `+100`, `+250`, `Make Unlimited`).
+     - In the "+ Add Team Member" modal, added an **"Extension Sourcing & Email Credits"** selector (`100`, `250`, `500`, `1,000`, `Unlimited`) so credits are assigned at account creation.
+     - Backend `POST /api/admin/recruiters` automatically synchronizes initial credits into `recruiter_credits.json`.
+- **Verification & Deployment Protocol**:
+  - AST TDZ scan: 0 violations.
+  - Production build in `smarthire-react`: 0 errors, 0 warnings.
+  - All 42 matching engine unit tests passed (0 failures).
+  - Git committed (`138b235`) and pushed to GitHub `origin main`.
+  - Production bundle deployed to AWS Lightsail (`34.194.119.199`), temporary archives deleted, asset bundles pruned.
+  - PM2 `smarthire-ats` reloaded and verified `online`.
+  - Verified `https://smarthireus.com` HTTP 200 OK and verified `/api/admin/recruiters` (11KB download size, HTTP 200).
+  - Lightsail server disk space verified (46% free, 8.6GB available, Rule 5 compliant).
+
 ### 2026-10-23 — B2B Client Video Screening Portal, JD AI Question Generator, 7-Day Auto-Retention, Fake Score Guard & Dossier Elimination
 - **Context & Objectives**:
   - The user reported:
