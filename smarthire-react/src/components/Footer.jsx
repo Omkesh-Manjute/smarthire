@@ -19,34 +19,36 @@ function Footer() {
   return (
     <footer className="praximind-footer">
       <div className="praximind-footer-container">
-        {/* Main 4-Column Grid matching Praximind Reference */}
+        {/* Main 4-Column Layout */}
         <div className="praximind-footer-grid">
           
-          {/* Column 1: Brand & About */}
+          {/* Column 1: Brand & Parent Company */}
           <div className="praximind-footer-brand-col">
             <Link to="/" className="praximind-footer-logo-link">
-              <div className="praximind-footer-logo-box">
-                <span className="pm-p">P</span>
-                <span className="pm-m">M</span>
+              <div className="smarthire-footer-logo-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+                  <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                </svg>
               </div>
               <div className="praximind-footer-logo-text">
-                <span className="pm-name">PRAXIMIND</span>
-                <span className="pm-sub">PVT LTD</span>
+                <span className="pm-brand-name">SmartHire ATS</span>
+                <span className="pm-parent-badge">A Product of Praximind Pvt. Ltd.</span>
               </div>
             </Link>
 
             <p className="praximind-footer-desc">
-              Transforming businesses with AI-powered software, custom SaaS apps, and certified training programs.
+              Enterprise applicant tracking, autonomous proctored video screening, and semantic talent intelligence for high-velocity recruiting teams.
             </p>
 
-            {/* Social / Contact Icons */}
+            {/* Social / Direct Support Buttons */}
             <div className="praximind-footer-socials">
               <a
                 href="https://www.linkedin.com"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="pm-social-btn"
-                title="LinkedIn"
+                title="SmartHire on LinkedIn"
                 aria-label="LinkedIn"
               >
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
@@ -55,22 +57,9 @@ function Footer() {
               </a>
 
               <a
-                href="https://www.youtube.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="pm-social-btn"
-                title="YouTube"
-                aria-label="YouTube"
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-                </svg>
-              </a>
-
-              <a
                 href="mailto:support@praximinds.com"
                 className="pm-social-btn"
-                title="Contact Support (support@praximinds.com)"
+                title="Direct Support Desk (support@praximinds.com)"
                 aria-label="Email Support"
               >
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -81,24 +70,23 @@ function Footer() {
             </div>
           </div>
 
-          {/* Column 2: COMPANY */}
+          {/* Column 2: PLATFORM (Actual ATS Features) */}
           <div className="praximind-footer-col">
-            <h4 className="pm-col-title">COMPANY</h4>
+            <h4 className="pm-col-title">PLATFORM</h4>
             <ul className="pm-links-list">
-              <li><Link to="/about">About Us</Link></li>
-              <li><Link to="/smartscreen">Products</Link></li>
+              <li><Link to="/smartscreen">SmartScreen AI</Link></li>
               <li><Link to="/jobs">Careers &amp; Jobs</Link></li>
-              <li><Link to="/about#inquiry">Contact Desk</Link></li>
+              <li><Link to="/sign-rtr">SmartSign RTR</Link></li>
+              <li><Link to="/about">About Platform</Link></li>
             </ul>
           </div>
 
-          {/* Column 3: RESOURCES */}
+          {/* Column 3: RESOURCES (Real ATS Pages) */}
           <div className="praximind-footer-col">
             <h4 className="pm-col-title">RESOURCES</h4>
             <ul className="pm-links-list">
-              <li><Link to="/blog">Blog Insights</Link></li>
-              <li><Link to="/jobs">Careers &amp; Jobs</Link></li>
-              <li><Link to="/about#support">Student Dashboard</Link></li>
+              <li><Link to="/blog">Talent Insights Blog</Link></li>
+              <li><Link to="/about#support">Help &amp; Support</Link></li>
               <li><Link to="/privacy">Privacy Policy</Link></li>
               <li><Link to="/terms">Terms of Service</Link></li>
             </ul>
@@ -108,7 +96,7 @@ function Footer() {
           <div className="praximind-footer-col praximind-footer-connect-col">
             <h4 className="pm-col-title">STAY CONNECTED</h4>
             <p className="pm-connect-text">
-              Join our newsletter to receive the latest tech &amp; automation updates.
+              Join our talent network to receive the latest hiring intelligence &amp; ATS feature updates.
             </p>
 
             <form onSubmit={handleNewsletterSubmit} className="pm-newsletter-form">
@@ -135,15 +123,15 @@ function Footer() {
 
         </div>
 
-        {/* Bottom Bar */}
+        {/* Bottom Bar: Copyright & Compliance */}
         <div className="praximind-footer-bottom">
           <div className="pm-bottom-copy">
-            &copy; {new Date().getFullYear()} PRAXIMIND PVT LTD. All Rights Reserved.
+            &copy; {new Date().getFullYear()} Praximind Pvt. Ltd. All rights reserved. &bull; SmartHire ATS
           </div>
           <div className="pm-bottom-links">
             <Link to="/privacy">Privacy Policy</Link>
             <Link to="/terms">Terms of Service</Link>
-            <Link to="/about#support">Refund Policy</Link>
+            <Link to="/about#support">Support Desk</Link>
           </div>
         </div>
       </div>
