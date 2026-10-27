@@ -168,6 +168,8 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [], cur
   const [filterFormat, setFilterFormat] = useState('all') // 'all', 'video', 'audio', 'text'
   const [filterRecruiter, setFilterRecruiter] = useState('all') // 'all' or specific recruiter
   const [searchQuery, setSearchQuery] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
 
   // Campaign Builder Modal States
   const [showCreateModal, setShowCreateModal] = useState(false)
@@ -1089,6 +1091,18 @@ SmartHire Recruitment Team`
     return true
   })
 
+  // Reset pagination when any filter or page size changes
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchQuery, filterStatus, filterFormat, filterRecruiter, pageSize])
+
+  const totalPages = Math.max(1, Math.ceil(filteredSessions.length / pageSize))
+  const safeCurrentPage = Math.min(Math.max(1, currentPage), totalPages)
+  const startIndex = (safeCurrentPage - 1) * pageSize
+  const paginatedSessions = filteredSessions.slice(startIndex, startIndex + pageSize)
+  const startItem = filteredSessions.length === 0 ? 0 : startIndex + 1
+  const endItem = Math.min(startIndex + pageSize, filteredSessions.length)
+
   // KPI Metrics (scoped to visibleSessions so each recruiter sees their own stats)
   const totalSubmissions = visibleSessions.filter(s => s.status === 'submitted' || s.status === 'shortlisted' || s.screeningComplete).length
   const videoSubmissions = visibleSessions.filter(s => (s.responses || []).some(r => r.format === 'video')).length
@@ -1326,7 +1340,8 @@ SmartHire Recruitment Team`
             </button>
           </div>
         ) : (
-          <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+          <>
+            <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
             <table style={{ ...styles.table, tableLayout: 'fixed', width: '100%' }}>
               <colgroup>
                 <col style={{ width: '24%' }} />
@@ -1351,7 +1366,7 @@ SmartHire Recruitment Team`
                 </tr>
               </thead>
               <tbody>
-                {filteredSessions.map(session => {
+                {paginatedSessions.map(session => {
                   const responses = session.responses || []
                   const hasVideo = responses.some(r => r.format === 'video')
                   const hasAudio = responses.some(r => r.format === 'audio')
@@ -1702,7 +1717,108 @@ SmartHire Recruitment Team`
               </tbody>
             </table>
           </div>
-        )}
+
+          {/* Table Pagination Controls */}
+          {filteredSessions.length > 0 && (
+            <div style={styles.paginationBar}>
+              <div style={styles.paginationLeft}>
+                <span>
+                  Showing <strong style={{ color: '#0f172a' }}>{startItem}</strong>–<strong style={{ color: '#0f172a' }}>{endItem}</strong> of <strong style={{ color: '#0f172a' }}>{filteredSessions.length}</strong> candidates
+                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '12px' }}>
+                  <span style={{ fontSize: '12px', color: '#64748b' }}>Per page:</span>
+                  <select
+                    value={pageSize}
+                    onChange={e => {
+                      setPageSize(Number(e.target.value))
+                      setCurrentPage(1)
+                    }}
+                    style={styles.pageSizeSelect}
+                  >
+                    <option value={10}>10</option>
+                    <option value={15}>15</option>
+                    <option value={20}>20</option>
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={styles.paginationRight}>
+                <button
+                  type="button"
+                  disabled={safeCurrentPage <= 1}
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  style={{
+                    ...styles.pageNavBtn,
+                    opacity: safeCurrentPage <= 1 ? 0.45 : 1,
+                    cursor: safeCurrentPage <= 1 ? 'not-allowed' : 'pointer',
+                    background: safeCurrentPage <= 1 ? '#f8fafc' : '#ffffff'
+                  }}
+                  title="Previous Page"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="15 18 9 12 15 6" />
+                  </svg>
+                  <span>Prev</span>
+                </button>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', margin: '0 4px' }}>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter(p => p === 1 || p === totalPages || Math.abs(p - safeCurrentPage) <= 1)
+                    .reduce((acc, p, idx, arr) => {
+                      if (idx > 0 && p - arr[idx - 1] > 1) {
+                        acc.push(-1)
+                      }
+                      acc.push(p)
+                      return acc
+                    }, [])
+                    .map((p, idx) => {
+                      if (p === -1) {
+                        return <span key={`ellipsis-${idx}`} style={{ padding: '0 4px', color: '#94a3b8' }}>…</span>
+                      }
+                      const isActive = p === safeCurrentPage
+                      return (
+                        <button
+                          key={p}
+                          type="button"
+                          onClick={() => setCurrentPage(p)}
+                          style={{
+                            ...styles.pageNumBtn,
+                            background: isActive ? '#2563eb' : 'transparent',
+                            color: isActive ? '#ffffff' : '#334155',
+                            borderColor: isActive ? '#2563eb' : 'transparent',
+                            fontWeight: isActive ? '700' : '600'
+                          }}
+                        >
+                          {p}
+                        </button>
+                      )
+                    })}
+                </div>
+
+                <button
+                  type="button"
+                  disabled={safeCurrentPage >= totalPages}
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  style={{
+                    ...styles.pageNavBtn,
+                    opacity: safeCurrentPage >= totalPages ? 0.45 : 1,
+                    cursor: safeCurrentPage >= totalPages ? 'not-allowed' : 'pointer',
+                    background: safeCurrentPage >= totalPages ? '#f8fafc' : '#ffffff'
+                  }}
+                  title="Next Page"
+                >
+                  <span>Next</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="9 18 15 12 9 6" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
       </div>
 
       {/* ─── CREATE CAMPAIGN MODAL ────────────────────────────────────────── */}
@@ -3193,8 +3309,8 @@ const styles = {
     borderBottom: '1px solid #e2e8f0'
   },
   th: {
-    padding: '12px 16px',
-    fontSize: '11.5px',
+    padding: '10px 14px',
+    fontSize: '11px',
     fontWeight: '800',
     color: '#64748b',
     textTransform: 'uppercase',
@@ -3206,8 +3322,64 @@ const styles = {
     transition: 'background 0.15s ease'
   },
   td: {
-    padding: '14px 16px',
+    padding: '10px 14px',
     verticalAlign: 'middle'
+  },
+  paginationBar: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '12px 18px',
+    borderTop: '1px solid #e2e8f0',
+    background: '#ffffff',
+    fontSize: '13px',
+    color: '#475569',
+    flexWrap: 'wrap',
+    gap: '12px'
+  },
+  paginationLeft: {
+    display: 'flex',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: '8px'
+  },
+  paginationRight: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px'
+  },
+  pageSizeSelect: {
+    padding: '4px 8px',
+    fontSize: '12px',
+    fontWeight: '600',
+    color: '#0f172a',
+    background: '#f8fafc',
+    border: '1px solid #cbd5e1',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    outline: 'none'
+  },
+  pageNavBtn: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '6px',
+    padding: '6px 12px',
+    fontSize: '12px',
+    fontWeight: '700',
+    borderRadius: '6px',
+    border: '1px solid #cbd5e1',
+    color: '#1e293b',
+    transition: 'all 0.15s ease'
+  },
+  pageNumBtn: {
+    minWidth: '28px',
+    height: '28px',
+    padding: '0 6px',
+    borderRadius: '6px',
+    border: '1px solid transparent',
+    fontSize: '12px',
+    cursor: 'pointer',
+    transition: 'all 0.15s ease'
   },
   avatarCircle: {
     width: '36px',
