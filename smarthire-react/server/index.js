@@ -7977,32 +7977,7 @@ Dispatched from ${fromEmail}`;
         html
       });
       sentSuccess = true;
-      console.log(`[SmartScreen] Screening completion email dispatched via Hostinger SMTP (${smtpHost}) to ${to} (CC: ${cc || 'none'})`);
-
-      // Also send candidate receipt confirmation if candidate email is valid
-      if (candidateEmail && candidateEmail.includes('@') && candidateEmail !== 'N/A') {
-        try {
-          await transporter.sendMail({
-            from: `"${senderDisplayName}" <${fromEmail}>`,
-            to: candidateEmail,
-            replyTo: primarySender,
-            subject: `Interview Submitted: ${jobTitle} at ${jobClient}`,
-            text: `Hello ${candidateName},\n\nThank you for completing your video screening interview for the role of ${jobTitle} at ${jobClient}.\n\nYour responses have been successfully submitted to our recruitment team for review. We will evaluate your submission and reach out regarding next steps.\n\nBest regards,\nSmartHire Support Team\nsupport@praximinds.com`,
-            html: `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 580px; margin: 20px auto; padding: 24px; border: 1px solid #E2E8F0; border-radius: 10px; background: #FFFFFF;">
-              <div style="font-size: 18px; font-weight: 800; color: #0F172A; margin-bottom: 12px;">Interview Submitted Successfully</div>
-              <p style="font-size: 14px; color: #334155; line-height: 1.6;">Hello <strong>${candidateName}</strong>,</p>
-              <p style="font-size: 14px; color: #334155; line-height: 1.6;">Thank you for completing your video screening interview for the role of <strong>${jobTitle}</strong> (${jobClient}).</p>
-              <p style="font-size: 14px; color: #334155; line-height: 1.6;">Your responses have been successfully recorded and delivered to the hiring team for evaluation. We will review your submission and contact you regarding the next steps in the process.</p>
-              <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #E2E8F0; font-size: 12px; color: #64748B;">
-                Best regards,<br/><strong>SmartHire Support Team</strong><br/>support@praximinds.com
-              </div>
-            </div>`
-          });
-          console.log(`[SmartScreen] Candidate receipt confirmation sent to ${candidateEmail}`);
-        } catch (cErr) {
-          console.warn(`[SmartScreen] Candidate confirmation notice:`, cErr.message);
-        }
-      }
+      console.log(`[SmartScreen] Screening completion email dispatched via Hostinger SMTP (${smtpHost}) to recruiter ${to} (CC: ${cc || 'none'})`);
     } catch (primaryErr) {
       console.warn(`[SmartScreen] Hostinger dispatch failed (${fromEmail} via ${smtpHost}):`, primaryErr.message);
       // Secondary fallback to Omkesh's Yahoo SMTP if Hostinger failed
