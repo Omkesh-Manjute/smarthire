@@ -11742,6 +11742,37 @@ function getPooledRecruiterTransporter(nodemailer, host, port, isSecure, user, p
 }
 
 // POST send email via recruiter's configured SMTP (with automatic fallback to default support@praximinds.com)
+function formatFallbackEmailContent(origText, origHtml, recName, recEmail) {
+  let fText = origText || '';
+  let fHtml = origHtml || '';
+  const cleanName = (recName || '').trim();
+  const escapeRegex = (s) => s.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
+
+  if (cleanName) {
+    // 1. In plain text: remove "With Regards,\n<recName>\n"
+    const withRegardsNameRegex = new RegExp('(With Regards,?\\s*\\r?\\n)\\s*' + escapeRegex(cleanName) + '\\s*\\r?\\n', 'gi');
+    fText = fText.replace(withRegardsNameRegex, '$1');
+
+    const nameBeforeTeamRegex = new RegExp('^\\s*' + escapeRegex(cleanName) + '\\s*\\r?\\n(?=SmartHire Team)', 'gim');
+    fText = fText.replace(nameBeforeTeamRegex, '');
+
+    // 2. In HTML: remove <p> or <div> containing strictly recruiter's name
+    const htmlPRegex = new RegExp('<p[^>]*>\\s*' + escapeRegex(cleanName) + '\\s*<\\/p>', 'gi');
+    fHtml = fHtml.replace(htmlPRegex, '');
+
+    const htmlDivRegex = new RegExp('<div[^>]*>\\s*' + escapeRegex(cleanName) + '\\s*<\\/div>', 'gi');
+    fHtml = fHtml.replace(htmlDivRegex, '');
+  }
+
+  // Also remove generic single line name directly between With Regards and SmartHire Team
+  fText = fText.replace(/(With Regards,?\s*\r?\n)[^\r\n]+\r?\n(?=SmartHire Team)/gi, '$1');
+
+  // Remove role subtitles in HTML
+  fHtml = fHtml.replace(/<div[^>]*>\s*Technical Recruiting Specialist\s*<\/div>/gi, '');
+
+  return { fText, fHtml };
+}
+
 app.post('/api/recruiter/send-email', express.json(), async (req, res) => {
   const { recruiterEmail, to, subject, body, html, replyTo, recruiterName } = req.body;
   if (!recruiterEmail || !to || !subject) return res.json({ success: false, message: 'recruiterEmail, to, and subject required' });
@@ -11861,6 +11892,14 @@ app.post('/api/recruiter/send-email', express.json(), async (req, res) => {
     }
 
     // 2. If recruiter has no config or their SMTP failed, dispatch via default fallback support@praximinds.com
+    // Fallback sends strictly as "SmartHire Team" and formats signature without recruiter individual name
+    const { fText: fallbackBody, fHtml: fallbackHtml } = formatFallbackEmailContent(
+      (body || '') + emailSignature,
+      html ? (html + htmlSignature) : '',
+      recruiterName || cfg.displayName,
+      actualReplyTo
+    );
+
     if (!sentSuccessfully && defaultHostingerPass) {
       try {
         console.log(`[RecruiterEmail] Dispatching via default Hostinger SMTP (${defaultHostingerHost}:${defaultHostingerPort}) for ${cleanRecruiterEmail}...`);
@@ -11877,18 +11916,18 @@ app.post('/api/recruiter/send-email', express.json(), async (req, res) => {
         });
 
         await fallbackTransporter.sendMail({
-          from: `"${senderDisplayName} (SmartHire)" <${defaultSenderEmail}>`,
+          from: `"SmartHire Team" <${defaultSenderEmail}>`,
           to: toRecipient,
           replyTo: actualReplyTo,
           subject,
-          text: (body || '') + emailSignature,
-          html: html ? (html + htmlSignature) : undefined
+          text: fallbackBody,
+          html: fallbackHtml ? fallbackHtml : undefined
         });
 
         sentSuccessfully = true;
         dispatchedFrom = defaultSenderEmail;
         usingFallback = true;
-        console.log(`[RecruiterEmail] Successfully dispatched email to ${toRecipient} via default ${defaultSenderEmail}`);
+        console.log(`[RecruiterEmail] Successfully dispatched email to ${toRecipient} via default ${defaultSenderEmail} (SmartHire Team)`);
       } catch (hostingerErr) {
         console.warn(`[RecruiterEmail] Default Hostinger fallback failed (${hostingerErr.message}). Trying secondary fallback...`);
         lastErrorMsg = hostingerErr.message;
@@ -11910,18 +11949,18 @@ app.post('/api/recruiter/send-email', express.json(), async (req, res) => {
         });
 
         await secondaryTransporter.sendMail({
-          from: `"${senderDisplayName} (SmartHire)" <${secondarySenderEmail}>`,
+          from: `"SmartHire Team" <${secondarySenderEmail}>`,
           to: toRecipient,
           replyTo: actualReplyTo,
           subject,
-          text: (body || '') + emailSignature,
-          html: html ? (html + htmlSignature) : undefined
+          text: fallbackBody,
+          html: fallbackHtml ? fallbackHtml : undefined
         });
 
         sentSuccessfully = true;
         dispatchedFrom = secondarySenderEmail;
         usingFallback = true;
-        console.log(`[RecruiterEmail] Successfully dispatched email to ${toRecipient} via secondary ${secondarySenderEmail}`);
+        console.log(`[RecruiterEmail] Successfully dispatched email to ${toRecipient} via secondary ${secondarySenderEmail} (SmartHire Team)`);
       } catch (secondaryErr) {
         console.error(`[RecruiterEmail] Secondary fallback also failed: ${secondaryErr.message}`);
         lastErrorMsg = secondaryErr.message;
@@ -13860,9 +13899,8 @@ app.post('/api/recruiter/send-direct-email', express.json(), async (req, res) =>
     ${rawHtml.includes(senderEmail) || rawHtml.includes('Regards') ? '' : `
       <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #475569; font-family: Verdana, Geneva, sans-serif;">
         <p style="margin: 0; font-weight: bold; color: #0f172a;">${senderName}</p>
-        <p style="margin: 2px 0 0 0; color: #64748B;">COOLSOFT LLC | Talent Acquisition</p>
+        <p style="margin: 2px 0 0 0; color: #64748B;">SmartHire Team | <a href="https://smarthireus.com" style="color: #2563EB; text-decoration: underline;">https://smarthireus.com</a></p>
         <p style="margin: 2px 0 0 0; color: #2563EB;">Email: <a href="mailto:${senderEmail}" style="color: #2563EB; text-decoration: underline;">${senderEmail}</a></p>
-        <p style="margin: 2px 0 0 0; color: #64748B;">Web: <a href="https://www.coolsofttech.com" style="color: #2563EB; text-decoration: underline;">www.coolsofttech.com</a></p>
       </div>
     `}
   </div>
