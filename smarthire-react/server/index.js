@@ -11770,6 +11770,18 @@ function formatFallbackEmailContent(origText, origHtml, recName, recEmail) {
   // Remove role subtitles in HTML
   fHtml = fHtml.replace(/<div[^>]*>\s*Technical Recruiting Specialist\s*<\/div>/gi, '');
 
+  // Remove recruiter email line from fallback signature in text and HTML
+  const cleanEmail = (recEmail || '').trim();
+  if (cleanEmail) {
+    const emailRegex = new RegExp('\\r?\\n\\s*Email:\\s*' + escapeRegex(cleanEmail) + '\\.?', 'gi');
+    fText = fText.replace(emailRegex, '');
+  }
+  fText = fText.replace(/(SmartHire Team[^\r\n]*)\r?\n\s*Email:[^\r\n]+/gi, '$1');
+
+  // Remove Email line in HTML
+  fHtml = fHtml.replace(/<p[^>]*>\s*Email:[^<]*(?:<a[^>]*>[^<]*<\/a>[^<]*)?<\/p>/gi, '');
+  fHtml = fHtml.replace(/<div[^>]*>\s*Email:[^<]*(?:<a[^>]*>[^<]*<\/a>[^<]*)?<\/div>/gi, '');
+
   return { fText, fHtml };
 }
 
