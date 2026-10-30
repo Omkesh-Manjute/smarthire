@@ -804,6 +804,20 @@ function formatTime(iso) {
   return d.toLocaleDateString([], { month: 'short', day: 'numeric' })
 }
 
+function formatTimeAgo(iso) {
+  if (!iso) return ''
+  const str = String(iso).trim()
+  if (str.includes('ago') || str.includes('Yesterday') || str === 'Just now') return str
+  const d = new Date(str)
+  if (isNaN(d.getTime())) return str
+  const diffSec = Math.floor((Date.now() - d.getTime()) / 1000)
+  if (diffSec < 60) return 'Just now'
+  if (diffSec < 3600) return `${Math.floor(diffSec / 60)}m ago`
+  if (diffSec < 86400) return `${Math.floor(diffSec / 3600)}h ago`
+  if (diffSec < 172800) return 'Yesterday'
+  return d.toLocaleDateString([], { month: 'short', day: 'numeric' })
+}
+
 function Avatar({ name, size = 40, style = {} }) {
   const bg = getAvatarColor(name)
   return (
@@ -1895,6 +1909,8 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
   const [emailSyncToast, setEmailSyncToast] = useState('')
 
   // Linear / Slack Messages Workspace state
+  const [chatTab, setChatTab] = useState('signal') // 'signal', 'general' (HotJPT pill tabs)
+  const [chatFilterMode, setChatFilterMode] = useState('all') // 'all', 'active', 'unread'
   const [messageCategoryTab, setMessageCategoryTab] = useState('all') // 'all', 'candidates', 'clients', 'team'
   const [messageSortOrder, setMessageSortOrder] = useState('newest') // 'newest', 'oldest', 'unread'
   const [messagesSearchQuery, setMessagesSearchQuery] = useState('')
@@ -2315,7 +2331,7 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
   const storedInboxMode = (() => {
     try { return sessionStorage.getItem('smarthire_inbox_view_mode') } catch (_) { return null }
   })()
-  const isChatRoute = window.location.pathname.includes('/messages') || tabParam === 'chat' || tabParam === 'messages' || viewParam === 'chat' || defaultViewMode === 'chat'
+  const isChatRoute = window.location.pathname.includes('/messages') || window.location.pathname.includes('/chats') || tabParam === 'chat' || tabParam === 'chats' || tabParam === 'messages' || viewParam === 'chat' || viewParam === 'chats' || defaultViewMode === 'chat'
   const initialInboxMode = isChatRoute
     ? 'chat'
     : (tabParam === 'candidates')
@@ -2490,7 +2506,7 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
       setInboxViewMode('monster')
     } else if (tab === 'hotlist' || tab === 'hotlists' || view === 'hotlists' || view === 'hotlist') {
       setInboxViewMode('hotlists')
-    } else if (tab === 'chat' || tab === 'messages' || view === 'chat') {
+    } else if (tab === 'chat' || tab === 'chats' || tab === 'messages' || view === 'chat' || view === 'chats') {
       setInboxViewMode('chat')
     } else if (tab === 'leaderboard' || view === 'leaderboard') {
       setInboxViewMode('leaderboard')
@@ -4794,24 +4810,21 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
     return tRef === target || tRef.includes(target) || tEmail.includes(target) || tName.includes(target) || target.includes(tRef)
   })
 
-  const filteredThreads = visibleThreads.map(t => {
-    if (t.isTeamMember || t.isLeadChannel) return t
-    const resolvedName = resolveCandidateDisplayName(t, streamCandidates)
-    return resolvedName !== t.candidateName ? { ...t, candidateName: resolvedName } : t
-  }).filter(t => {
-    // 1. Category Tab Filter ('all', 'candidates', 'clients', 'team')
-    if (messageCategoryTab === 'candidates') {
-      if (t.category !== 'candidates' && (t.isTeamMember || t.isLeadChannel || t.category === 'clients' || t.category === 'team')) return false
-    } else if (messageCategoryTab === 'clients') {
-      if (t.category !== 'clients') return false
-    } else if (messageCategoryTab === 'team') {
-      if (t.category !== 'team' && !t.isTeamMember && !t.isLeadChannel && !String(t.candidateId || '').startsWith('team-')) return false
-    }
+  const filteredThreads = visibleThreads.filter(t => {
+    if (!t) return false
+    // STRICT USER REQUIREMENT: "canidate ke remove kar dena"
+    // Exclude candidates completely from the chat list; keep only team members and recruiters
+    const isTeam = t.isTeamMember || t.isLeadChannel || t.category === 'team' || String(t.candidateId || '').startsWith('team-') || t.isColleague
+    if (!isTeam) return false
 
-    // 2. Search Filter
+    // Dropdown status filter: active, unread, all
+    if (chatFilterMode === 'active' && !t.isOnline && t.status !== 'online') return false
+    if (chatFilterMode === 'unread' && !(t.unreadCount > 0)) return false
+
+    // Search Filter
     const q = (messagesSearchQuery || searchQuery).toLowerCase().trim()
     if (q) {
-      const nameMatch = (t.candidateName || '').toLowerCase().includes(q)
+      const nameMatch = (t.candidateName || t.name || '').toLowerCase().includes(q)
       const jobMatch = (t.jobTitle || '').toLowerCase().includes(q)
       const roleMatch = (t.role || '').toLowerCase().includes(q)
       const compMatch = (t.company || '').toLowerCase().includes(q)
@@ -4821,7 +4834,7 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
     }
     return true
   }).sort((a, b) => {
-    if (messageSortOrder === 'unread') {
+    if (chatFilterMode === 'unread' || messageSortOrder === 'unread') {
       const diff = (b.unreadCount || 0) - (a.unreadCount || 0)
       if (diff !== 0) return diff
     }
@@ -4830,9 +4843,16 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
     if (messageSortOrder === 'oldest') {
       return timeA - timeB
     }
-    // Default: Newest first (most recent message or email strictly on top)
+    // Default: Newest first (most recent message on top)
     return timeB - timeA
   })
+
+  // Auto-select first thread when entering chat mode if none selected
+  useEffect(() => {
+    if (inboxViewMode === 'chat' && !activeThread && filteredThreads.length > 0) {
+      selectThread(filteredThreads[0])
+    }
+  }, [inboxViewMode, activeThread, filteredThreads, selectThread])
 
   const totalUnread = threads.reduce((sum, t) => sum + (t.unreadCount || 0), 0)
   const candidateName = resolveCandidateDisplayName(activeThread, streamCandidates)
@@ -7467,7 +7487,7 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
             <span>{inboxViewMode === 'chat' ? 'Workspace' : (inboxViewMode === 'hotlists' ? 'Vendor Hotlists' : (inboxViewMode === 'monster' ? 'Universal Search' : 'Candidates'))}</span>
             <span style={{ color: '#CBD5E1' }}>/</span>
             <span style={{ color: C.textPrimary, fontWeight: 700 }}>
-              {inboxViewMode === 'chat' ? 'Messages & Team Collab' : (inboxViewMode === 'hotlists' ? 'Bench Ingestion Hub' : (inboxViewMode === 'monster' ? 'Universal Search • Cross-Channel Talent Database' : (filterSource === 'mobile' ? 'Mobile App Submissions' : filterSource === 'careers' ? 'Job Sites Portal' : 'Talent Cloud')))}
+              {inboxViewMode === 'chat' ? 'Chats' : (inboxViewMode === 'hotlists' ? 'Bench Ingestion Hub' : (inboxViewMode === 'monster' ? 'Universal Search • Cross-Channel Talent Database' : (filterSource === 'mobile' ? 'Mobile App Submissions' : filterSource === 'careers' ? 'Job Sites Portal' : 'Talent Cloud')))}
             </span>
           </div>
 
@@ -12572,381 +12592,242 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
       )}
 
       {/* ========================================================================= */}
-      {/* REDESIGNED MESSAGES PAGE (Linear / Slack / Notion Premium SaaS UX)        */}
-      {/* Matching User Screenshot media_1789074147680.png                          */}
+      {/* REDESIGNED CHATS PAGE (Clean HotJPT-Style 2-Column Responsive UX)        */}
       {/* ========================================================================= */}
       {inboxViewMode === 'chat' && (
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', backgroundColor: isLight ? '#F8F9FA' : '#141A21' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', backgroundColor: isLight ? '#F8FAFC' : '#141A21' }}>
           
-          {/* 1. Page Header (Full Width with Clean Top Title and Unified Filter Toolbar) */}
+          {/* Top Page Header (HotJPT Design) */}
           <div style={{
-            padding: '16px 24px 0 24px',
+            padding: '20px 28px 14px 28px',
             backgroundColor: C.surface,
             borderBottom: `1px solid ${C.border}`,
             flexShrink: 0
           }}>
-            {/* Top: Clean Title Area */}
-            <div style={{ marginBottom: 12 }}>
-              <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: C.textPrimary, letterSpacing: '-0.02em' }}>
-                Messages
-              </h1>
-              <p style={{ margin: '3px 0 0', fontSize: 13, color: C.textSecondary }}>
-                Stay connected with candidates, clients and your team
-              </p>
-            </div>
-
-            {/* Clean Aligned Filter Row: Left has Category Tabs (All, Candidates, Clients, Team), Right has Filter / Sort / Search */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 16,
-              flexWrap: 'wrap',
-              borderTop: `1px solid ${isLight ? '#F1F5F9' : 'rgba(255,255,255,0.06)'}`,
-              paddingTop: 4
-            }}>
-              {/* Left Sub-Tabs */}
-              <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
-                {[
-                  { id: 'all', label: 'All', count: threads.length },
-                  { id: 'candidates', label: 'Candidates', count: threads.filter(t => !t.isTeamMember && !t.isLeadChannel && t.category !== 'clients' && t.category !== 'team').length },
-                  { id: 'clients', label: 'Clients', count: threads.filter(t => t.category === 'clients').length },
-                  { id: 'team', label: 'Team', count: threads.filter(t => t.isTeamMember || t.isLeadChannel || t.category === 'team').length }
-                ].map(tab => {
-                  const isActive = messageCategoryTab === tab.id
-                  return (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      onClick={() => setMessageCategoryTab(tab.id)}
-                      style={{
-                        background: 'transparent',
-                        border: 'none',
-                        borderBottom: isActive ? '2px solid #2563EB' : '2px solid transparent',
-                        padding: '10px 4px 12px 4px',
-                        fontSize: 13.5,
-                        fontWeight: isActive ? 700 : 500,
-                        color: isActive ? '#2563EB' : C.textSecondary,
-                        cursor: 'pointer',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 6,
-                        transition: 'all 0.15s',
-                        marginBottom: -1
-                      }}
-                    >
-                      <span>{tab.label}</span>
-                      {tab.count > 0 && (
-                        <span style={{
-                          background: isActive ? '#EFF6FF' : (isLight ? '#F1F5F9' : '#334155'),
-                          color: isActive ? '#2563EB' : C.textSecondary,
-                          border: isActive ? '1px solid #BFDBFE' : '1px solid transparent',
-                          borderRadius: 10,
-                          padding: '1px 7px',
-                          fontSize: 11,
-                          fontWeight: 700
-                        }}>
-                          {tab.count}
-                        </span>
-                      )}
-                    </button>
-                  )
-                })}
-              </div>
-
-              {/* Right Filter Actions: Filter, Sort: Newest, Search messages */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingBottom: 6 }}>
-                {/* Filter button */}
-                <button
-                  type="button"
-                  onClick={() => setRecruiterFilter(f => f === 'all' ? (currentUser?.refCode || 'omkesh') : 'all')}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    background: recruiterFilter !== 'all' ? '#EFF6FF' : C.surface,
-                    border: `1px solid ${recruiterFilter !== 'all' ? '#BFDBFE' : C.border}`,
-                    borderRadius: 8,
-                    padding: '6px 12px',
-                    fontSize: 12.5,
-                    fontWeight: 600,
-                    color: recruiterFilter !== 'all' ? '#2563EB' : C.textPrimary,
-                    cursor: 'pointer',
-                    boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
-                  }}
-                >
-                  <IconFilter /> <span>{recruiterFilter !== 'all' ? `Filtered (${recruiterFilter})` : 'Filter'}</span>
-                </button>
-
-                {/* Sort dropdown */}
-                <div style={{ position: 'relative' }}>
-                  <select
-                    value={messageSortOrder}
-                    onChange={e => setMessageSortOrder(e.target.value)}
-                    style={{
-                      background: C.surface,
-                      border: `1px solid ${C.border}`,
-                      borderRadius: 8,
-                      padding: '6px 26px 6px 12px',
-                      fontSize: 12.5,
-                      fontWeight: 600,
-                      color: C.textPrimary,
-                      cursor: 'pointer',
-                      outline: 'none',
-                      appearance: 'none',
-                      boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
-                    }}
-                  >
-                    <option value="newest">Newest ▾</option>
-                    <option value="oldest">Oldest ▾</option>
-                    <option value="unread">Unread First ▾</option>
-                  </select>
-                  <span style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: C.textSecondary, display: 'flex' }}>
-                    <IconChevronDown />
-                  </span>
-                </div>
-
-                {/* Search messages input */}
-                <div style={{ position: 'relative', width: 220 }}>
-                  <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: C.textSecondary, display: 'flex', pointerEvents: 'none' }}>
-                    <IconSearch />
-                  </span>
-                  <input
-                    type="text"
-                    placeholder="Search messages..."
-                    value={messagesSearchQuery}
-                    onChange={e => setMessagesSearchQuery(e.target.value)}
-                    style={{
-                      width: '100%',
-                      background: C.surface,
-                      border: `1px solid ${C.border}`,
-                      borderRadius: 8,
-                      padding: '6px 10px 6px 32px',
-                      fontSize: 12.5,
-                      color: C.textPrimary,
-                      outline: 'none',
-                      boxSizing: 'border-box',
-                      boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
+            <h1 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: C.textPrimary, letterSpacing: '-0.02em' }}>
+              Chats
+            </h1>
+            <p style={{ margin: '4px 0 0', fontSize: 13, color: C.textSecondary }}>
+              Signal chats stay tied to a match. General chats are for connected people.
+            </p>
           </div>
 
-          {/* 2. 3-Column Messaging Canvas */}
+          {/* 2-Column HotJPT Messaging Canvas (List on Left, Chat Thread Dominant on Right) */}
           <div style={{
             flex: 1,
             display: 'flex',
-            gap: 16,
-            padding: '16px 24px 20px 24px',
-            overflow: 'hidden'
+            gap: 18,
+            padding: '18px 24px 22px 24px',
+            overflow: 'hidden',
+            backgroundColor: isLight ? '#F8FAFC' : '#141A21'
           }}>
             
-            {/* COLUMN 1: Conversation List (~25% width, Clean Modern Surface) */}
+            {/* COLUMN 1: Conversation Cards (~370px, HotJPT Card Style) */}
             <div style={{
-              width: 320,
-              minWidth: 290,
-              maxWidth: 340,
+              width: 370,
+              minWidth: 330,
+              maxWidth: 410,
               backgroundColor: C.surface,
               borderRadius: 14,
               border: `1px solid ${C.border}`,
               display: 'flex',
               flexDirection: 'column',
+              padding: '14px',
               overflow: 'hidden',
               flexShrink: 0,
-              boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
+              boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
             }}>
-              {/* Column 1 Title & Quick Action */}
+              {/* HotJPT Pill Tabs (Signal Chats vs General Chats) */}
               <div style={{
-                padding: '10px 14px',
-                borderBottom: `1px solid ${C.border}`,
                 display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                backgroundColor: isLight ? '#F8FAFC' : '#1C252E'
+                backgroundColor: isLight ? '#F1F5F9' : '#1E293B',
+                padding: 3,
+                borderRadius: 24,
+                marginBottom: 12
               }}>
-                <span style={{ fontSize: 13, fontWeight: 800, color: C.textPrimary }}>
-                  {messageCategoryTab === 'team' ? 'Team Collab' : 'Conversations'}
-                </span>
                 <button
                   type="button"
-                  onClick={() => {
-                    setMessageCategoryTab('team')
-                    const firstTeam = threads.find(t => t.isTeamMember || t.category === 'team')
-                    if (firstTeam) selectThread(firstTeam)
-                  }}
+                  onClick={() => setChatTab('signal')}
                   style={{
-                    background: '#2563EB',
-                    color: '#FFF',
+                    flex: 1,
                     border: 'none',
-                    borderRadius: 6,
-                    padding: '4px 10px',
-                    fontSize: 11.5,
-                    fontWeight: 700,
+                    borderRadius: 20,
+                    padding: '8px 12px',
+                    fontSize: 13,
+                    fontWeight: chatTab === 'signal' ? 700 : 500,
+                    backgroundColor: chatTab === 'signal' ? (isLight ? '#FFFFFF' : '#334155') : 'transparent',
+                    color: chatTab === 'signal' ? (isLight ? '#0F172A' : '#FFFFFF') : C.textSecondary,
+                    boxShadow: chatTab === 'signal' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
                     cursor: 'pointer',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 4
+                    transition: 'all 0.15s ease'
                   }}
-                  title="View and message team colleagues"
                 >
-                  <span>+ Team Chat</span>
+                  Signal Chats
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setChatTab('general')}
+                  style={{
+                    flex: 1,
+                    border: 'none',
+                    borderRadius: 20,
+                    padding: '8px 12px',
+                    fontSize: 13,
+                    fontWeight: chatTab === 'general' ? 700 : 500,
+                    backgroundColor: chatTab === 'general' ? (isLight ? '#FFFFFF' : '#334155') : 'transparent',
+                    color: chatTab === 'general' ? (isLight ? '#0F172A' : '#FFFFFF') : C.textSecondary,
+                    boxShadow: chatTab === 'general' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  General Chats
                 </button>
               </div>
 
-              {/* Recruiter Filter Dropdown for Admins / Leads */}
-              {!isReportee && (
-                <div style={{ padding: '10px 12px', borderBottom: `1px solid ${C.border}`, backgroundColor: isLight ? '#F8FAFC' : '#1C252E' }}>
-                  <select
-                    value={recruiterFilter}
-                    onChange={e => setRecruiterFilter(e.target.value)}
+              {/* HotJPT Search & Filter Input Row */}
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 12 }}>
+                <div style={{ position: 'relative', flex: 1 }}>
+                  <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: C.textSecondary, display: 'flex', pointerEvents: 'none' }}>
+                    <IconSearch />
+                  </span>
+                  <input
+                    type="text"
+                    placeholder="Search by name or company.."
+                    value={messagesSearchQuery}
+                    onChange={e => setMessagesSearchQuery(e.target.value)}
                     style={{
                       width: '100%',
-                      background: C.surface,
-                      border: `1px solid ${C.border}`,
+                      padding: '8px 10px 8px 32px',
                       borderRadius: 8,
-                      padding: '7px 10px',
-                      fontSize: 12,
-                      fontWeight: 700,
-                      color: C.textPrimary,
+                      border: `1px solid ${C.border}`,
+                      fontSize: 12.5,
                       outline: 'none',
-                      cursor: 'pointer'
+                      backgroundColor: C.surface,
+                      color: C.textPrimary,
+                      boxSizing: 'border-box'
                     }}
-                  >
-                    <option value="all">All Recruiters & Channels ({threads.length})</option>
-                    {ALL_SMARTHIRE_RECRUITERS.map(r => (
-                      <option key={r.refCode} value={r.refCode}>{r.name}</option>
-                    ))}
-                  </select>
+                  />
                 </div>
-              )}
+                <select
+                  value={chatFilterMode}
+                  onChange={e => setChatFilterMode(e.target.value)}
+                  style={{
+                    border: `1px solid ${C.border}`,
+                    borderRadius: 8,
+                    padding: '8px 10px',
+                    fontSize: 12.5,
+                    fontWeight: 600,
+                    backgroundColor: C.surface,
+                    color: C.textPrimary,
+                    outline: 'none',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <option value="all">Chats ▾</option>
+                  <option value="active">Active ▾</option>
+                  <option value="unread">Unread ▾</option>
+                </select>
+              </div>
 
-              {/* Conversations Rows (Clean Modern Item Style) */}
-              <div style={{ flex: 1, overflowY: 'auto' }}>
+              {/* HotJPT Conversation Cards List */}
+              <div style={{ flex: 1, overflowY: 'auto', paddingRight: 2 }}>
                 {filteredThreads.length === 0 ? (
-                  <div style={{ padding: '60px 20px', textAlign: 'center', color: C.textSecondary }}>
+                  <div style={{ padding: '60px 16px', textAlign: 'center', color: C.textSecondary }}>
                     <div style={{ marginBottom: 10, display: 'flex', justifyContent: 'center' }}><IconChat /></div>
-                    <p style={{ fontSize: 13, margin: 0, fontWeight: 600 }}>No conversations found</p>
-                    <p style={{ fontSize: 11.5, margin: '4px 0 0' }}>Try switching tabs or adjusting search query.</p>
+                    <p style={{ fontSize: 13.5, margin: 0, fontWeight: 700, color: C.textPrimary }}>No chats found</p>
+                    <p style={{ fontSize: 12, margin: '4px 0 0' }}>All recruiter & team communications will appear here.</p>
                   </div>
                 ) : (
                   filteredThreads.map(thread => {
                     const isSelected = activeThread?.candidateId === thread.candidateId
-                    const isActiveNow = Boolean(thread.isOnline || thread.status === 'online')
-                    const isHovered = hoveredThreadId === thread.candidateId
+                    const cleanName = (thread.candidateName || thread.name || 'Team Member').replace(/\s*\([^)]*\)/g, '').trim()
+                    const role = thread.role || (thread.isLeadChannel ? 'Lead Recruiter' : 'Recruiter')
+                    const company = thread.company || 'SmartHire ATS'
+                    const initials = cleanName.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() || 'TM'
+                    const avatarColor = getAvatarColor(cleanName)
+                    const timeText = formatTimeAgo(thread.lastMessageTime || thread.timestamp)
+
                     return (
                       <div
                         key={thread.candidateId}
                         onClick={() => selectThread(thread)}
-                        onMouseEnter={() => setHoveredThreadId(thread.candidateId)}
-                        onMouseLeave={() => setHoveredThreadId(null)}
                         style={{
                           display: 'flex',
-                          alignItems: 'flex-start',
-                          gap: 10,
-                          padding: '11px 14px',
+                          alignItems: 'center',
+                          gap: 12,
+                          padding: '12px 14px',
+                          borderRadius: 10,
+                          border: isSelected ? '1px solid #BAE6FD' : `1px solid ${isLight ? '#E2E8F0' : 'rgba(255,255,255,0.08)'}`,
+                          backgroundColor: isSelected ? (isLight ? '#F0F9FF' : 'rgba(2,132,199,0.15)') : C.surface,
+                          marginBottom: 8,
                           cursor: 'pointer',
-                          backgroundColor: isSelected ? (isLight ? '#EFF6FF' : 'rgba(37, 99, 235, 0.15)') : (isHovered ? (isLight ? '#F8FAFC' : 'rgba(255, 255, 255, 0.04)') : 'transparent'),
-                          borderLeft: isSelected ? '3.5px solid #2563EB' : '3.5px solid transparent',
-                          borderBottom: `1px solid ${isLight ? '#F1F5F9' : 'rgba(255, 255, 255, 0.05)'}`,
-                          transition: 'all 0.12s ease'
+                          transition: 'all 0.15s ease',
+                          boxShadow: isSelected ? '0 1px 3px rgba(2,132,199,0.06)' : 'none'
+                        }}
+                        onMouseEnter={e => {
+                          if (!isSelected) {
+                            e.currentTarget.style.backgroundColor = isLight ? '#F8FAFC' : 'rgba(255,255,255,0.03)'
+                          }
+                        }}
+                        onMouseLeave={e => {
+                          if (!isSelected) {
+                            e.currentTarget.style.backgroundColor = C.surface
+                          }
                         }}
                       >
-                        {/* Presence Dot */}
-                        <div style={{ paddingTop: 4, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <span style={{
-                            width: 8,
-                            height: 8,
+                        {/* 44px Circular Avatar with presence badge */}
+                        <div style={{ position: 'relative', flexShrink: 0 }}>
+                          <div style={{
+                            width: 44,
+                            height: 44,
                             borderRadius: '50%',
-                            backgroundColor: isActiveNow ? '#10B981' : (isLight ? '#CBD5E1' : '#475569'),
-                            boxShadow: isActiveNow ? '0 0 6px #10B981' : 'none'
-                          }} />
+                            backgroundColor: avatarColor,
+                            color: '#FFFFFF',
+                            fontWeight: 700,
+                            fontSize: 15,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}>
+                            {initials}
+                          </div>
+                          {Boolean(thread.isOnline || thread.status === 'online') && (
+                            <span style={{
+                              position: 'absolute',
+                              bottom: 0,
+                              right: 0,
+                              width: 10,
+                              height: 10,
+                              borderRadius: '50%',
+                              backgroundColor: '#10B981',
+                              border: `2px solid ${C.surface}`
+                            }} />
+                          )}
                         </div>
 
-                        {/* Content */}
+                        {/* Center Details */}
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          {/* Row 1: Name + Time + Delete Action */}
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
-                            <span style={{
-                              fontSize: 13,
-                              fontWeight: isSelected ? 800 : 700,
-                              color: isSelected ? '#1D4ED8' : C.textPrimary,
-                              whiteSpace: 'nowrap',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              maxWidth: isHovered || isSelected ? 120 : 155
-                            }}>
-                              {thread.candidateName}
+                            <span style={{ fontSize: 14.5, fontWeight: 700, color: C.textPrimary, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {cleanName}
                             </span>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                              <span style={{ fontSize: 10.5, color: isSelected ? '#2563EB' : C.textSecondary, flexShrink: 0, fontWeight: 500 }}>
-                                {formatTime(thread.lastMessageTime || thread.timestamp)}
-                              </span>
-                              {(isHovered || isSelected) && (
-                                <button
-                                  type="button"
-                                  onClick={(e) => handleDeleteThread(e, thread.candidateId || thread.id || thread.email)}
-                                  title="Delete conversation"
-                                  style={{
-                                    background: 'transparent',
-                                    border: 'none',
-                                    color: C.textSecondary,
-                                    cursor: 'pointer',
-                                    padding: '0 2px',
-                                    borderRadius: 4,
-                                    display: 'flex',
-                                    alignItems: 'center'
-                                  }}
-                                  onMouseEnter={e => e.currentTarget.style.color = '#EF4444'}
-                                  onMouseLeave={e => e.currentTarget.style.color = C.textSecondary}
-                                >
-                                  <IconTrash />
-                                </button>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Row 2: Subtitle / Role / Company */}
-                          <div style={{
-                            fontSize: 11,
-                            color: C.textSecondary,
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            marginBottom: 2
-                          }}>
-                            {String(thread.subtitle || thread.jobTitle || 'Team Member • SmartHire ATS').replace(/â€¦/g, '...')}
-                          </div>
-
-                          {/* Row 3: Last message preview + Unread badge */}
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <span style={{
-                              fontSize: 11.5,
-                              color: isSelected ? '#2563EB' : (isLight ? '#475569' : '#94A3B8'),
-                              fontWeight: thread.unreadCount > 0 ? 700 : 400,
-                              whiteSpace: 'nowrap',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              maxWidth: 170
-                            }}>
-                              {String(thread.lastMessage || '').replace(/â€¦/g, '...')}
-                            </span>
-                            {thread.unreadCount > 0 && (
-                              <span style={{
-                                backgroundColor: '#E01E5A',
-                                color: '#FFFFFF',
-                                borderRadius: 10,
-                                padding: '1px 6px',
-                                fontSize: 10,
-                                fontWeight: 800,
-                                flexShrink: 0
-                              }}>
-                                {thread.unreadCount}
+                            {timeText && (
+                              <span style={{ fontSize: 11, color: C.textSecondary, flexShrink: 0 }}>
+                                {timeText}
                               </span>
                             )}
                           </div>
+                          <div style={{ fontSize: 12, color: C.textSecondary, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: 3 }}>
+                            {role} · <span style={{ color: '#0284C7', fontWeight: 600 }}>{company}</span>
+                          </div>
+                          <div style={{ fontSize: 12, color: isSelected ? '#0284C7' : C.textSecondary, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {thread.lastMessage || 'No messages yet'}
+                          </div>
                         </div>
+
+                        {/* Right Chevron > */}
+                        <span style={{ color: isLight ? '#CBD5E1' : '#64748B', fontSize: 18, fontWeight: 600, flexShrink: 0 }}>›</span>
                       </div>
                     )
                   })
@@ -12954,7 +12835,7 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
               </div>
             </div>
 
-            {/* COLUMN 2: Chat Area (Dominant Center Section, flex 1) */}
+            {/* COLUMN 2: Chat Area (Dominant Center Section, flex 1, Zero-Waste Width) */}
             <div style={{
               flex: 1,
               minWidth: 0,
@@ -12964,161 +12845,125 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
               display: 'flex',
               flexDirection: 'column',
               overflow: 'hidden',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
+              boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
             }}>
               {activeThread ? (
                 <>
-                  {/* Chat Header */}
+                  {/* Chat Header (Matching HotJPT Design) */}
                   <div style={{
                     height: 64,
                     padding: '0 20px',
                     borderBottom: `1px solid ${C.border}`,
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'space-between',
+                    gap: 12,
                     flexShrink: 0,
                     backgroundColor: C.surface
                   }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      {/* Presence Indicator */}
-                      <span style={{
-                        width: 9,
-                        height: 9,
-                        borderRadius: '50%',
-                        backgroundColor: activeThread.isOnline ? '#10B981' : '#94A3B8',
-                        boxShadow: activeThread.isOnline ? '0 0 8px rgba(16,185,129,0.5)' : 'none',
-                        flexShrink: 0
-                      }} />
-                      <div>
-                        <div style={{ fontSize: 15, fontWeight: 800, color: C.textPrimary, lineHeight: 1.2 }}>
-                          {activeThread.candidateName}
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 3 }}>
-                          <span style={{ fontSize: 12, color: C.textSecondary }}>
-                            {activeThread.subtitle || activeThread.jobTitle || 'Team Member • SmartHire ATS'}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
+                    {/* Back arrow */}
+                    <button
+                      type="button"
+                      style={{
+                        background: 'transparent',
+                        border: `1px solid ${C.border}`,
+                        borderRadius: 8,
+                        width: 32,
+                        height: 32,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: C.textSecondary,
+                        cursor: 'pointer',
+                        fontSize: 14
+                      }}
+                      title="Back"
+                    >
+                      ‹
+                    </button>
 
-                    {/* Header Actions: Call, Video, Delete, More */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setActiveCallModal('audio')
-                          setMessageToast(`Calling ${activeThread.candidateName}...`)
-                          setTimeout(() => setMessageToast(''), 4000)
-                        }}
-                        style={{
-                          background: 'transparent',
-                          border: 'none',
-                          padding: 8,
-                          borderRadius: 8,
-                          color: C.textSecondary,
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center'
-                        }}
-                        title="Voice Call"
-                      >
-                        <IconPhoneCall />
-                      </button>
+                    {/* Active Avatar */}
+                    {(() => {
+                      const activeCleanName = (activeThread.candidateName || activeThread.name || 'Team Member').replace(/\s*\([^)]*\)/g, '').trim()
+                      const activeRole = activeThread.role || (activeThread.isLeadChannel ? 'Lead Recruiter' : 'Recruiter')
+                      const activeCompany = activeThread.company || 'SmartHire ATS'
+                      const activeInitials = activeCleanName.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() || 'TM'
+                      const isOnlineNow = Boolean(activeThread.isOnline || activeThread.status === 'online')
 
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setActiveCallModal('video')
-                          setMessageToast(`Starting video meeting with ${activeThread.candidateName}...`)
-                          setTimeout(() => setMessageToast(''), 4000)
-                        }}
-                        style={{
-                          background: 'transparent',
-                          border: 'none',
-                          padding: 8,
-                          borderRadius: 8,
-                          color: C.textSecondary,
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center'
-                        }}
-                        title="Video Meeting"
-                      >
-                        <IconVideo />
-                      </button>
+                      return (
+                        <>
+                          <div style={{ position: 'relative', flexShrink: 0 }}>
+                            <div style={{
+                              width: 40,
+                              height: 40,
+                              borderRadius: '50%',
+                              backgroundColor: getAvatarColor(activeCleanName),
+                              color: '#FFFFFF',
+                              fontWeight: 700,
+                              fontSize: 14,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
+                            }}>
+                              {activeInitials}
+                            </div>
+                            {isOnlineNow && (
+                              <span style={{
+                                position: 'absolute',
+                                bottom: 0,
+                                right: 0,
+                                width: 10,
+                                height: 10,
+                                borderRadius: '50%',
+                                backgroundColor: '#10B981',
+                                border: `2px solid ${C.surface}`
+                              }} />
+                            )}
+                          </div>
 
-                      <button
-                        type="button"
-                        onClick={(e) => handleDeleteThread(e, activeThread.candidateId || activeThread.id || activeThread.email)}
-                        style={{
-                          background: 'transparent',
-                          border: 'none',
-                          padding: 8,
-                          borderRadius: 8,
-                          color: '#EF4444',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center'
-                        }}
-                        title="Delete Conversation Thread"
-                      >
-                        <IconTrash />
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => setRightPanelCollapsed(c => !c)}
-                        style={{
-                          background: 'transparent',
-                          border: 'none',
-                          padding: 8,
-                          borderRadius: 8,
-                          color: C.textSecondary,
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center'
-                        }}
-                        title={rightPanelCollapsed ? 'Show Details Panel' : 'Hide Details Panel'}
-                      >
-                        <IconDots />
-                      </button>
-                    </div>
+                          <div>
+                            <div style={{ fontSize: 15.5, fontWeight: 700, color: C.textPrimary, lineHeight: 1.2 }}>
+                              {activeCleanName}
+                            </div>
+                            <div style={{ fontSize: 12, color: C.textSecondary, marginTop: 2 }}>
+                              {activeRole} · <span style={{ color: '#0284C7', fontWeight: 600 }}>{activeCompany}</span>
+                            </div>
+                          </div>
+                        </>
+                      )
+                    })()}
                   </div>
 
-                  {/* Message Stream */}
+                  {/* Message Stream (HotJPT Design: Centered Date Divider, Grey Inbound, Blue Outbound) */}
                   <div style={{
                     flex: 1,
                     overflowY: 'auto',
-                    padding: '18px 24px',
-                    backgroundColor: isLight ? '#FAFBFC' : '#161D26',
+                    padding: '24px 32px',
+                    backgroundColor: isLight ? '#FFFFFF' : '#141A21',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: 10
+                    gap: 16
                   }}>
-                    {/* Centered Date Divider */}
-                    {messages.length > 0 && (
-                      <div style={{ textAlign: 'center', margin: '4px 0 8px' }}>
-                        <span style={{
-                          backgroundColor: C.surface,
-                          border: `1px solid ${C.border}`,
-                          color: C.textSecondary,
-                          fontSize: 11.5,
-                          fontWeight: 600,
-                          padding: '4px 14px',
-                          borderRadius: 14,
-                          boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
-                        }}>
-                          {new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
-                        </span>
-                      </div>
-                    )}
+                    {/* Centered Date Divider: ── FRIDAY 30 OCT ── */}
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 16,
+                      margin: '4px 0 12px'
+                    }}>
+                      <div style={{ flex: 1, height: 1, backgroundColor: isLight ? '#E2E8F0' : 'rgba(255,255,255,0.08)' }} />
+                      <span style={{ fontSize: 11, fontWeight: 700, color: isLight ? '#94A3B8' : '#64748B', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                        {new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'short' }).toUpperCase()}
+                      </span>
+                      <div style={{ flex: 1, height: 1, backgroundColor: isLight ? '#E2E8F0' : 'rgba(255,255,255,0.08)' }} />
+                    </div>
 
                     {/* Messages Loop */}
                     {messages.length === 0 ? (
                       <div style={{ textAlign: 'center', padding: '60px 20px', color: C.textSecondary }}>
                         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}><IconChat /></div>
-                        <p style={{ fontWeight: 700, fontSize: 14, color: C.textPrimary, margin: '0 0 4px' }}>Start a new conversation</p>
-                        <p style={{ fontSize: 12.5, margin: 0 }}>Send candidate updates, schedule interviews, or discuss open requisitions.</p>
+                        <p style={{ fontWeight: 700, fontSize: 14, color: C.textPrimary, margin: '0 0 4px' }}>Start a conversation</p>
+                        <p style={{ fontSize: 12.5, margin: 0 }}>Send candidate updates, discuss requisitions, or share sourcing matches.</p>
                       </div>
                     ) : (
                       messages.map((msg, idx) => {
@@ -13128,167 +12973,80 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                                      (msg.senderEmail && myEmail && msg.senderEmail.toLowerCase() === myEmail) ||
                                      (!isReportee && msg.sender !== 'other' && msg.sender !== 'candidate')
 
-                        const timeDisplay = msg.timeStr || (msg.timestamp ? formatTime(msg.timestamp) : '')
-                        const isInquiry = (msg.text || '').includes('New Client Demo') || (msg.text || '').includes('Contact Inquiry') || (msg.text || '').includes('Demo Request')
+                        const timeDisplay = msg.timeStr || (msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '')
+                        const activeCleanName = (activeThread.candidateName || activeThread.name || 'Team Member').replace(/\s*\([^)]*\)/g, '').trim()
 
-                        if (isInquiry) {
+                        if (isMe) {
+                          // Outgoing Bubble: Right Aligned, Vibrant Blue #0284C7
                           return (
-                            <div
-                              key={msg.id || idx}
-                              style={{
-                                width: '100%',
-                                padding: '12px 16px',
-                                borderRadius: 8,
-                                backgroundColor: isLight ? '#F8FAFC' : '#1E293B',
-                                border: `1px solid ${C.border}`,
-                                borderLeft: '4px solid #1164A3',
-                                boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-                                margin: '4px 0'
-                              }}
-                            >
-                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                  <span style={{ fontSize: 11, fontWeight: 800, color: '#1164A3', background: '#EFF6FF', padding: '2px 8px', borderRadius: 4, textTransform: 'uppercase' }}>
-                                    SmartHire Inbound Inquiry
-                                  </span>
-                                  <span style={{ fontSize: 12, color: C.textSecondary }}>{timeDisplay}</span>
+                            <div key={msg.id || idx} style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                              <div style={{
+                                backgroundColor: '#0284C7',
+                                color: '#FFFFFF',
+                                borderRadius: '14px 14px 4px 14px',
+                                padding: '10px 16px',
+                                maxWidth: '65%',
+                                boxShadow: '0 1px 3px rgba(2,132,199,0.2)'
+                              }}>
+                                <div style={{ fontSize: 13.5, lineHeight: 1.5, whiteSpace: 'pre-line', wordBreak: 'break-word' }}>
+                                  {String(msg.text || '').replace(/â€¦/g, '...').replace(/&hellip;/g, '...')}
                                 </div>
-                                <button
-                                  type="button"
-                                  onClick={(e) => handleDeleteThread(e, activeThread.candidateId || activeThread.id || activeThread.email)}
-                                  style={{
-                                    background: 'transparent',
-                                    border: 'none',
-                                    color: '#EF4444',
-                                    fontSize: 11.5,
-                                    fontWeight: 700,
-                                    cursor: 'pointer',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: 4
-                                  }}
-                                >
-                                  <IconTrash /> <span>Delete Inquiry</span>
-                                </button>
+                                {timeDisplay && (
+                                  <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.75)', textAlign: 'right', marginTop: 4 }}>
+                                    {timeDisplay}
+                                  </div>
+                                )}
                               </div>
-                              <div style={{ fontSize: 13.5, color: C.textPrimary, lineHeight: 1.55, whiteSpace: 'pre-line' }}>
-                                {String(msg.text || '').replace(/â€¦/g, '...').replace(/&hellip;/g, '...')}
+                            </div>
+                          )
+                        } else {
+                          // Incoming Bubble: Left Aligned, Soft Grey Card #F1F5F9 with Sender Name above
+                          return (
+                            <div key={msg.id || idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                              <div style={{ fontSize: 12, fontWeight: 600, color: C.textSecondary, marginBottom: 4, paddingLeft: 4 }}>
+                                {msg.senderName || activeCleanName}
+                              </div>
+                              <div style={{
+                                backgroundColor: isLight ? '#F1F5F9' : '#1E293B',
+                                border: `1px solid ${isLight ? '#E2E8F0' : 'rgba(255,255,255,0.08)'}`,
+                                color: C.textPrimary,
+                                borderRadius: '14px 14px 14px 4px',
+                                padding: '10px 16px',
+                                maxWidth: '65%'
+                              }}>
+                                <div style={{ fontSize: 13.5, lineHeight: 1.5, whiteSpace: 'pre-line', wordBreak: 'break-word' }}>
+                                  {String(msg.text || '').replace(/â€¦/g, '...').replace(/&hellip;/g, '...')}
+                                </div>
+                                {timeDisplay && (
+                                  <div style={{ fontSize: 10.5, color: C.textSecondary, marginTop: 4 }}>
+                                    {timeDisplay}
+                                  </div>
+                                )}
                               </div>
                             </div>
                           )
                         }
-
-                        return (
-                          <div
-                            key={msg.id || idx}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'flex-start',
-                              gap: 12,
-                              padding: '8px 12px',
-                              borderRadius: 8,
-                              backgroundColor: 'transparent',
-                              transition: 'background 0.15s ease'
-                            }}
-                            onMouseEnter={e => e.currentTarget.style.backgroundColor = isLight ? 'rgba(0,0,0,0.025)' : 'rgba(255,255,255,0.03)'}
-                            onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
-                          >
-                            {/* Presence dot */}
-                            <div style={{ paddingTop: 6, flexShrink: 0 }}>
-                              <span style={{
-                                display: 'block',
-                                width: 8,
-                                height: 8,
-                                borderRadius: '50%',
-                                backgroundColor: isMe ? '#2563EB' : '#10B981'
-                              }} />
-                            </div>
-
-                            {/* Message Content */}
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 2 }}>
-                                <span style={{ fontSize: 13.5, fontWeight: 800, color: isMe ? '#2563EB' : C.textPrimary }}>
-                                  {isMe ? 'You' : (msg.senderName || activeThread.candidateName)}
-                                </span>
-                                <span style={{ fontSize: 11.5, color: C.textSecondary, fontWeight: 500 }}>
-                                  {timeDisplay}
-                                </span>
-                                {isMe && <IconCheckCheck color="#2563EB" />}
-                              </div>
-                              {(() => {
-                                const textContent = String(msg.text || '').replace(/â€¦/g, '...').replace(/&hellip;/g, '...')
-                                return (
-                                  <div>
-                                    <div style={{
-                                      fontSize: 14,
-                                      color: C.textPrimary,
-                                      lineHeight: 1.5,
-                                      whiteSpace: 'pre-line',
-                                      wordBreak: 'break-word'
-                                    }}>
-                                      {textContent}
-                                    </div>
-                                    {Array.isArray(msg.attachments) && msg.attachments.length > 0 && (
-                                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
-                                        {msg.attachments.map((att, attIdx) => (
-                                          <a
-                                            key={attIdx}
-                                            href={att.dataUrl || '#'}
-                                            download={att.name || 'attachment'}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            style={{
-                                              display: 'inline-flex',
-                                              alignItems: 'center',
-                                              gap: 8,
-                                              padding: '6px 12px',
-                                              borderRadius: 8,
-                                              backgroundColor: isLight ? '#F1F5F9' : '#1E293B',
-                                              border: `1px solid ${C.border}`,
-                                              color: '#2563EB',
-                                              textDecoration: 'none',
-                                              fontSize: 12.5,
-                                              fontWeight: 600,
-                                              maxWidth: 320,
-                                              overflow: 'hidden',
-                                              textOverflow: 'ellipsis',
-                                              whiteSpace: 'nowrap'
-                                            }}
-                                          >
-                                            <IconPaperclip />
-                                            <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}>{att.name}</span>
-                                            {att.size && <span style={{ fontSize: 11, color: C.textSecondary, fontWeight: 500 }}>({att.size})</span>}
-                                          </a>
-                                        ))}
-                                      </div>
-                                    )}
-                                  </div>
-                                )
-                              })()}
-                            </div>
-                          </div>
-                        )
                       })
                     )}
                     <div ref={messagesEndRef} />
                   </div>
 
-                  {/* Message Composer (Linear / Slack UX) */}
+                  {/* HotJPT Input Composer (Clean floating rounded card at bottom) */}
                   <div style={{
-                    borderTop: `1px solid ${C.border}`,
-                    padding: '12px 18px',
+                    padding: '16px 20px',
                     backgroundColor: C.surface,
+                    borderTop: `1px solid ${C.border}`,
                     flexShrink: 0
                   }}>
-                    {/* Emoji Bar Picker (Quick Toggle) */}
+                    {/* Emoji Quick Picker */}
                     {emojiPickerOpen && (
                       <div style={{
                         display: 'flex',
                         alignItems: 'center',
                         gap: 8,
                         padding: '6px 12px',
-                        marginBottom: 8,
-                        backgroundColor: isLight ? '#F9FAFB' : '#1C252E',
+                        marginBottom: 10,
+                        backgroundColor: isLight ? '#F8FAFC' : '#1C252E',
                         borderRadius: 8,
                         border: `1px solid ${C.border}`
                       }}>
@@ -13297,7 +13055,7 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                             key={phrase}
                             type="button"
                             onClick={() => { setInputText(t => t ? t + ' ' + phrase : phrase); setEmojiPickerOpen(false); inputRef.current?.focus(); }}
-                            style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 12, fontSize: 11, fontWeight: 700, color: '#1D4ED8', cursor: 'pointer', padding: '3px 9px' }}
+                            style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 12, fontSize: 11.5, fontWeight: 700, color: '#0284C7', cursor: 'pointer', padding: '3px 9px' }}
                           >
                             {phrase}
                           </button>
@@ -13317,7 +13075,7 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                               gap: 6,
                               fontSize: 11.5,
                               background: '#EFF6FF',
-                              color: '#1D4ED8',
+                              color: '#0284C7',
                               border: '1px solid #BFDBFE',
                               padding: '3px 8px',
                               borderRadius: 6
@@ -13327,7 +13085,7 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                             <button
                               type="button"
                               onClick={() => setAttachedFiles(fs => fs.filter((_, idx) => idx !== i))}
-                              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1D4ED8', fontWeight: 800 }}
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#0284C7', fontWeight: 800 }}
                             >
                               ×
                             </button>
@@ -13336,18 +13094,18 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                       </div>
                     )}
 
-                    {/* Input Container Box */}
+                    {/* Input Container Box (HotJPT Rounded Bar) */}
                     <div style={{
-                      border: `1px solid ${C.inputBorder || C.border}`,
-                      borderRadius: 12,
-                      padding: '6px 10px',
-                      backgroundColor: C.surface,
                       display: 'flex',
                       alignItems: 'center',
-                      gap: 8,
+                      gap: 10,
+                      padding: '8px 14px',
+                      backgroundColor: C.surface,
+                      borderRadius: 10,
+                      border: `1px solid ${isLight ? '#CBD5E1' : '#334155'}`,
                       boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
                     }}>
-                      {/* Hidden File Input for Real Uploads */}
+                      {/* Hidden File Input */}
                       <input
                         type="file"
                         ref={chatFileInputRef}
@@ -13356,7 +13114,25 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                         style={{ display: 'none' }}
                       />
 
-                      {/* Attachment Clip Button */}
+                      {/* Emoji Icon Button */}
+                      <button
+                        type="button"
+                        onClick={() => setEmojiPickerOpen(o => !o)}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: emojiPickerOpen ? '#0284C7' : C.textSecondary,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          padding: 2
+                        }}
+                        title="Add emoji"
+                      >
+                        <IconSmile />
+                      </button>
+
+                      {/* Paperclip Button */}
                       <button
                         type="button"
                         onClick={() => chatFileInputRef.current?.click()}
@@ -13367,7 +13143,7 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                           cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
-                          padding: 4
+                          padding: 2
                         }}
                         title="Attach file from computer"
                       >
@@ -13375,9 +13151,9 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                       </button>
 
                       {/* Text Input */}
-                      <textarea
-                        rows={1}
-                        placeholder="Type a message..."
+                      <input
+                        type="text"
+                        placeholder="Type a message.. (Enter to send, Shift+Enter for new line)"
                         value={inputText}
                         onChange={e => setInputText(e.target.value)}
                         onKeyDown={handleKeyDown}
@@ -13389,55 +13165,11 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                           fontSize: 13.5,
                           color: C.textPrimary,
                           backgroundColor: 'transparent',
-                          resize: 'none',
-                          fontFamily: 'inherit',
-                          padding: '6px 4px',
-                          boxSizing: 'border-box',
-                          lineHeight: 1.4
+                          fontFamily: 'inherit'
                         }}
                       />
 
-                      {/* Emoji Icon Button */}
-                      <button
-                        type="button"
-                        onClick={() => setEmojiPickerOpen(o => !o)}
-                        style={{
-                          background: 'transparent',
-                          border: 'none',
-                          color: emojiPickerOpen ? '#2065D1' : C.textSecondary,
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          padding: 4
-                        }}
-                        title="Add emoji"
-                      >
-                        <IconSmile />
-                      </button>
-
-                      {/* Mention Icon Button */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const mentionName = (activeThread.name || activeThread.candidateName || 'team').split(' ')[0]
-                          setInputText(t => (t ? t + ' ' : '') + `@${mentionName} `)
-                          inputRef.current?.focus()
-                        }}
-                        style={{
-                          background: 'transparent',
-                          border: 'none',
-                          color: C.textSecondary,
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          padding: 4
-                        }}
-                        title="Mention user"
-                      >
-                        <IconAtSign />
-                      </button>
-
-                      {/* Send Button: Solid Primary Blue with Airplane */}
+                      {/* Send Button (HotJPT Airplane Blue) */}
                       <button
                         type="button"
                         onClick={() => handleSend()}
@@ -13445,105 +13177,28 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                         style={{
                           width: 36,
                           height: 36,
-                          borderRadius: 10,
-                          backgroundColor: '#2065D1',
+                          borderRadius: 8,
+                          backgroundColor: '#0284C7',
                           color: '#FFFFFF',
                           border: 'none',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
                           cursor: (!inputText.trim() && attachedFiles.length === 0) ? 'not-allowed' : 'pointer',
-                          opacity: (!inputText.trim() && attachedFiles.length === 0) ? 0.5 : 1,
-                          boxShadow: '0 2px 6px rgba(32,101,209,0.3)',
+                          opacity: (!inputText.trim() && attachedFiles.length === 0) ? 0.45 : 1,
+                          boxShadow: '0 2px 6px rgba(2,132,199,0.3)',
                           flexShrink: 0
                         }}
-                        title="Send Message (Enter)"
+                        title="Send Message"
                       >
                         <IconPaperAirplane />
-                      </button>
-                    </div>
-
-                    {/* Lightweight Action Toolbar below composer */}
-                    <div style={{
-                      marginTop: 10,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 8,
-                      flexWrap: 'wrap'
-                    }}>
-                      {/* Write with AI */}
-                      <button
-                        type="button"
-                        onClick={() => setShowAiWriteModal(true)}
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 6,
-                          backgroundColor: isLight ? '#F5F3FF' : 'rgba(121,40,202,0.15)',
-                          color: '#7C3AED',
-                          border: `1px solid ${isLight ? '#DDD6FE' : 'rgba(121,40,202,0.3)'}`,
-                          borderRadius: 8,
-                          padding: '5px 11px',
-                          fontSize: 12,
-                          fontWeight: 700,
-                          cursor: 'pointer'
-                        }}
-                      >
-                        <IconSparkles /> <span>Write with AI</span>
-                      </button>
-
-                      {/* Schedule Meeting */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const candFirst = (activeThread.name || activeThread.candidateName || 'there').split(' ')[0]
-                          setInputText(`Hi ${candFirst}, let's schedule a quick sync tomorrow at 11:00 AM EST to review candidate submissions.`)
-                          inputRef.current?.focus()
-                        }}
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 6,
-                          backgroundColor: C.surface,
-                          color: C.textPrimary,
-                          border: `1px solid ${C.border}`,
-                          borderRadius: 8,
-                          padding: '5px 11px',
-                          fontSize: 12,
-                          fontWeight: 600,
-                          cursor: 'pointer'
-                        }}
-                      >
-                        <IconCalendar /> <span>Schedule Meeting</span>
-                      </button>
-
-                      {/* Attach File */}
-                      <button
-                        type="button"
-                        onClick={() => chatFileInputRef.current?.click()}
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 6,
-                          backgroundColor: C.surface,
-                          color: C.textPrimary,
-                          border: `1px solid ${C.border}`,
-                          borderRadius: 8,
-                          padding: '5px 11px',
-                          fontSize: 12,
-                          fontWeight: 600,
-                          cursor: 'pointer'
-                        }}
-                        title="Upload file from device"
-                      >
-                        <IconPaperclip /> <span>Attach File</span>
                       </button>
                     </div>
                   </div>
                 </>
               ) : (
                 <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', color: C.textSecondary, padding: 40 }}>
-                  <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#EFF6FF', color: '#2065D1', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
+                  <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#EFF6FF', color: '#0284C7', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
                     <IconChat />
                   </div>
                   <h3 style={{ fontSize: 18, fontWeight: 800, color: C.textPrimary, margin: '0 0 6px' }}>No Conversation Selected</h3>
@@ -13551,389 +13206,6 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                 </div>
               )}
             </div>
-
-            {/* COLUMN 3: Right Context Panel (~310px, Information-Rich) */}
-            {!rightPanelCollapsed && activeThread && (
-              <div style={{
-                width: 310,
-                minWidth: 290,
-                maxWidth: 330,
-                backgroundColor: C.surface,
-                borderRadius: 14,
-                border: `1px solid ${C.border}`,
-                display: 'flex',
-                flexDirection: 'column',
-                padding: '20px 18px',
-                overflowY: 'auto',
-                flexShrink: 0,
-                gap: 18,
-                boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
-              }}>
-                {/* Profile Header */}
-                <div style={{ position: 'relative', textAlign: 'center' }}>
-                  <button
-                    type="button"
-                    onClick={() => setRightPanelCollapsed(true)}
-                    style={{
-                      position: 'absolute',
-                      top: 0,
-                      right: 0,
-                      background: 'transparent',
-                      border: 'none',
-                      color: C.textSecondary,
-                      cursor: 'pointer',
-                      padding: 4
-                    }}
-                    title="Collapse Context Drawer"
-                  >
-                    <IconExpand />
-                  </button>
-
-                  {/* Slack Contact Icon */}
-                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}>
-                    <div style={{
-                      width: 44,
-                      height: 44,
-                      borderRadius: 12,
-                      backgroundColor: '#1164A3',
-                      color: '#FFFFFF',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      boxShadow: '0 4px 12px rgba(17,100,163,0.2)'
-                    }}>
-                      <IconChat />
-                    </div>
-                  </div>
-
-                  <div style={{ fontSize: 16, fontWeight: 800, color: C.textPrimary, lineHeight: 1.25 }}>
-                    {activeThread.candidateName}
-                  </div>
-                  <div style={{ fontSize: 12, color: C.textSecondary, marginTop: 4 }}>
-                    {activeThread.subtitle || activeThread.jobTitle || 'Direct Reportee • SmartHire LLC'}
-                  </div>
-
-                  {/* Online Status Indicator (Only when genuinely online) */}
-                  {Boolean(activeThread.isOnline) && (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 8 }}>
-                      <span style={{
-                        fontSize: 11,
-                        backgroundColor: '#ECFDF5',
-                        color: '#059669',
-                        border: '1px solid #A7F3D0',
-                        padding: '2px 8px',
-                        borderRadius: 12,
-                        fontWeight: 700,
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 4
-                      }}>
-                        <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#10B981' }} />
-                        Online
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                {/* 4-Button Quick Action Row: Call, Video, Email, More */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMessageToast(`Calling ${activeThread.candidateName}...`)
-                      setTimeout(() => setMessageToast(''), 3000)
-                    }}
-                    style={{
-                      background: isLight ? '#F9FAFB' : '#1C252E',
-                      border: `1px solid ${C.border}`,
-                      borderRadius: 8,
-                      padding: '8px 4px',
-                      textAlign: 'center',
-                      fontSize: 11.5,
-                      fontWeight: 600,
-                      color: C.textPrimary,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      gap: 4
-                    }}
-                  >
-                    <IconPhone />
-                    <span>Call</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMessageToast(`Starting video meeting with ${activeThread.candidateName}...`)
-                      setTimeout(() => setMessageToast(''), 3000)
-                    }}
-                    style={{
-                      background: isLight ? '#F9FAFB' : '#1C252E',
-                      border: `1px solid ${C.border}`,
-                      borderRadius: 8,
-                      padding: '8px 4px',
-                      textAlign: 'center',
-                      fontSize: 11.5,
-                      fontWeight: 600,
-                      color: C.textPrimary,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      gap: 4
-                    }}
-                  >
-                    <IconVideo />
-                    <span>Video</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const contactName = activeThread.candidateName || activeThread.name || 'Candidate'
-                      setEmailModalCandidate({
-                        name: contactName,
-                        email: activeThread.email || '',
-                        targetReqId: activeThread.targetReqId || openJobsList[0]?.id || '',
-                        matchedJobTitle: activeThread.jobTitle || 'Active Requisition',
-                        matchedJobClient: activeThread.company || 'Client'
-                      })
-                      setEmailTo(activeThread.email || '')
-                      setEmailSubject(`Application Update: Next Steps | SmartHire Team`)
-                      setEmailBody(`Hi ${contactName.split(' ')[0]},\n\nSharing the latest updates for your review.\n\nWith Regards,\n${currentUser?.name || 'Omkesh Manjute'}\nSmartHire Team | https://smarthireus.com`)
-                    }}
-                    style={{
-                      background: isLight ? '#F9FAFB' : '#1C252E',
-                      border: `1px solid ${C.border}`,
-                      borderRadius: 8,
-                      padding: '8px 4px',
-                      textAlign: 'center',
-                      fontSize: 11.5,
-                      fontWeight: 600,
-                      color: C.textPrimary,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      gap: 4
-                    }}
-                  >
-                    <IconMail />
-                    <span>Email</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={(e) => handleDeleteThread(e, activeThread.candidateId || activeThread.id || activeThread.email)}
-                    style={{
-                      background: isLight ? '#FEF2F2' : 'rgba(239, 68, 68, 0.1)',
-                      border: `1px solid ${isLight ? '#FCA5A5' : 'rgba(239, 68, 68, 0.25)'}`,
-                      borderRadius: 8,
-                      padding: '8px 4px',
-                      textAlign: 'center',
-                      fontSize: 11.5,
-                      fontWeight: 600,
-                      color: '#EF4444',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      gap: 4
-                    }}
-                    title="Delete Conversation Thread"
-                  >
-                    <IconTrash />
-                    <span>Delete</span>
-                  </button>
-                </div>
-
-                {/* About Section */}
-                <div>
-                  <div style={{ fontSize: 12.5, fontWeight: 800, color: C.textPrimary, marginBottom: 8, letterSpacing: '0.02em' }}>
-                    About
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-                    {activeThread.role && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
-                        <span style={{ color: C.textSecondary, flexShrink: 0 }}><IconUser /></span>
-                        <span style={{ color: C.textPrimary, fontWeight: 500 }}>{activeThread.role}</span>
-                      </div>
-                    )}
-
-                    {activeThread.company && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
-                        <span style={{ color: C.textSecondary, flexShrink: 0 }}><IconBriefcase /></span>
-                        <span style={{ color: C.textPrimary, fontWeight: 500 }}>{activeThread.company}</span>
-                      </div>
-                    )}
-
-                    {activeThread.email && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
-                        <span style={{ color: C.textSecondary, flexShrink: 0 }}><IconMail /></span>
-                        <a
-                          href={`mailto:${activeThread.email}`}
-                          style={{ color: '#2065D1', textDecoration: 'none', fontWeight: 600, wordBreak: 'break-all' }}
-                        >
-                          {activeThread.email}
-                        </a>
-                      </div>
-                    )}
-
-                    {activeThread.phone && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
-                        <span style={{ color: C.textSecondary, flexShrink: 0 }}><IconPhone /></span>
-                        <a
-                          href={`tel:${activeThread.phone}`}
-                          style={{ color: C.textPrimary, textDecoration: 'none', fontWeight: 500 }}
-                        >
-                          {activeThread.phone}
-                        </a>
-                      </div>
-                    )}
-
-                    {activeThread.location && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
-                        <span style={{ color: C.textSecondary, flexShrink: 0 }}><IconLocation /></span>
-                        <span style={{ color: C.textPrimary, fontWeight: 500 }}>{activeThread.location}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Attached Files Section — Only render if real files exist */}
-                {activeThread.recentFiles && activeThread.recentFiles.length > 0 && (
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                      <div style={{ fontSize: 12.5, fontWeight: 800, color: C.textPrimary, letterSpacing: '0.02em' }}>
-                        Attached Files
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                      {activeThread.recentFiles.map((file, idx) => (
-                        <div
-                          key={idx}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 10,
-                            padding: '6px 8px',
-                            borderRadius: 8,
-                            backgroundColor: isLight ? '#F9FAFB' : '#1C252E',
-                            border: `1px solid ${C.border}`,
-                            cursor: 'pointer'
-                          }}
-                          onClick={() => {
-                            setMessageToast(`Opening ${file.name}...`)
-                            setTimeout(() => setMessageToast(''), 3000)
-                          }}
-                        >
-                          {file.type === 'excel' ? <IconFileExcel /> : file.type === 'word' ? <IconFileWord /> : <IconFilePdf />}
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 12, fontWeight: 700, color: C.textPrimary, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                              {file.name}
-                            </div>
-                            <div style={{ fontSize: 10.5, color: C.textSecondary }}>
-                              {file.size} {file.date ? `• ${file.date}` : ''}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Quick Actions Section */}
-                <div>
-                  <div style={{ fontSize: 12.5, fontWeight: 800, color: C.textPrimary, marginBottom: 8, letterSpacing: '0.02em' }}>
-                    Quick Actions
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    <button
-                      type="button"
-                      onClick={() => setShowFullProfileModal(true)}
-                      style={{
-                        width: '100%',
-                        backgroundColor: isLight ? '#F9FAFB' : '#1C252E',
-                        border: `1px solid ${C.border}`,
-                        borderRadius: 8,
-                        padding: '8px 12px',
-                        fontSize: 12,
-                        fontWeight: 700,
-                        color: C.textPrimary,
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 8,
-                        transition: 'background 0.15s'
-                      }}
-                    >
-                      <span>➔</span> <span>View Full Profile</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const first = (activeThread.name || activeThread.candidateName || 'there').split(' ')[0]
-                        setInputText(`Hi ${first}, could you share your availability for a 30-minute interview sync this week?`)
-                        inputRef.current?.focus()
-                      }}
-                      style={{
-                        width: '100%',
-                        backgroundColor: isLight ? '#F9FAFB' : '#1C252E',
-                        border: `1px solid ${C.border}`,
-                        borderRadius: 8,
-                        padding: '8px 12px',
-                        fontSize: 12,
-                        fontWeight: 700,
-                        color: C.textPrimary,
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 8,
-                        transition: 'background 0.15s'
-                      }}
-                    >
-                      <IconClock /> <span>Suggest Interview Time</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const note = prompt(`Add internal recruiter note for ${activeThread.candidateName}:`)
-                        if (note) {
-                          setMessageToast(`✓ Internal note added for ${activeThread.candidateName}`)
-                          setTimeout(() => setMessageToast(''), 3000)
-                        }
-                      }}
-                      style={{
-                        width: '100%',
-                        backgroundColor: isLight ? '#F9FAFB' : '#1C252E',
-                        border: `1px solid ${C.border}`,
-                        borderRadius: 8,
-                        padding: '8px 12px',
-                        fontSize: 12,
-                        fontWeight: 700,
-                        color: C.textPrimary,
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 8,
-                        transition: 'background 0.15s'
-                      }}
-                    >
-                      <IconPencil /> <span>Add Note</span>
-                    </button>
-                  </div>
-                </div>
-
-              </div>
-            )}
 
           </div>
 

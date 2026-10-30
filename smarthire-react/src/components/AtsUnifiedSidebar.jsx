@@ -193,7 +193,7 @@ export default function AtsUnifiedSidebar({
       label: 'Outreach & Comms',
       icon: 'inbox',
       items: [
-        { id: 'inbox', label: 'Recruiter Inbox', path: '/inbox?tab=candidates' },
+        { id: 'chats', label: 'Chats', path: '/inbox?tab=chat' },
         { id: 'inquiries', label: 'Client Inquiries', tabId: 'inquiries', path: '/ats?tab=inquiries', count: customCounts.inquiries },
       ]
     },
@@ -626,12 +626,12 @@ export default function AtsUnifiedSidebar({
             <div
               onClick={() => {
                 if (onOpenChatModal) onOpenChatModal()
-                else navigate('/inbox')
+                else navigate('/inbox?tab=chat')
               }}
               style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', padding: '4px 6px', borderRadius: '4px', transition: 'all 0.15s' }}
               onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = '#ffffff' }}
               onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.7)' }}
-              title="Open Candidate Chat"
+              title="Open Team Chats"
             >
               <span style={{ display: 'inline-flex', alignItems: 'center' }}>{renderAtsIcon('chat', 13, 'currentColor')}</span>
               <span style={{ fontSize: '11px', fontWeight: '600' }}>Chats</span>

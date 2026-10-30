@@ -138,6 +138,7 @@ function App() {
           <Route path="/sourcing" element={<ProtectedRoute><RecruiterInbox defaultTableCategory="extension_sourced" /></ProtectedRoute>} />
           <Route path="/extension-sourced" element={<ProtectedRoute><RecruiterInbox defaultTableCategory="extension_sourced" /></ProtectedRoute>} />
           <Route path="/messages" element={<ProtectedRoute><RecruiterInbox defaultViewMode="chat" /></ProtectedRoute>} />
+          <Route path="/chats" element={<ProtectedRoute><RecruiterInbox defaultViewMode="chat" /></ProtectedRoute>} />
           <Route path="/linkedin-posts" element={<SuperAdminRoute><LinkedInPosts /></SuperAdminRoute>} />
           <Route path="/submittal-pack" element={<ProtectedRoute><SubmittalPackPage /></ProtectedRoute>} />
           <Route path="/sign-rtr/:token" element={<SmartSignRtrPage />} />
