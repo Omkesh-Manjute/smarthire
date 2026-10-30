@@ -66,6 +66,18 @@ function Login() {
     localStorage.setItem('smarthire_active_role', u.role)
     localStorage.setItem('smarthire_token', token || ('mock-token-' + (u.id || u._id || 'session')))
 
+    let redirectUrl = ''
+    try {
+      const urlParams = new URLSearchParams(window.location.search)
+      redirectUrl = urlParams.get('redirect') || sessionStorage.getItem('smarthire_redirect_after_login') || ''
+      if (redirectUrl) sessionStorage.removeItem('smarthire_redirect_after_login')
+    } catch (e) {}
+
+    if (redirectUrl && !redirectUrl.startsWith('/login') && redirectUrl !== '/') {
+      window.location.href = redirectUrl
+      return
+    }
+
     if (u.role === 'client') {
       window.location.href = '/client/screening'
     } else {

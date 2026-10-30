@@ -168,6 +168,7 @@ Email: ${myEmail}
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         recruiterEmail: myEmail,
+        recruiterName: myName,
         to: candEmail,
         subject,
         html: htmlBody,

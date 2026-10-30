@@ -1,5 +1,5 @@
 import React, { Suspense, lazy } from 'react'
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import Homepage from './pages/Homepage'
 import Login from './pages/Login'
 import InfinityLoader from './components/InfinityLoader'
@@ -57,8 +57,16 @@ const PageFallback = () => (
 )
 
 function ProtectedRoute({ children }) {
+  const location = useLocation()
   const isAuth = localStorage.getItem('verifyhire_authenticated') === 'true' || localStorage.getItem('smarthire_authenticated') === 'true'
   if (!isAuth) {
+    const targetUrl = (location.pathname || '') + (location.search || '')
+    if (targetUrl && targetUrl !== '/' && targetUrl !== '/login') {
+      try {
+        sessionStorage.setItem('smarthire_redirect_after_login', targetUrl)
+      } catch (e) {}
+      return <Navigate to={`/login?redirect=${encodeURIComponent(targetUrl)}`} replace />
+    }
     return <Navigate to="/" replace />
   }
   const userStr = localStorage.getItem('smarthire_user') || localStorage.getItem('verifyhire_user')

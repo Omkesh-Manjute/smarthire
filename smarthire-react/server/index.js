@@ -7777,9 +7777,9 @@ async function sendScreeningCompletedNotificationEmail(session) {
     // Always CC Omkesh so he has full visibility of candidate submissions across all recruiters
     const cc = (recruiterEmail !== defaultSender) ? defaultSender : undefined;
 
-    // Direct ATS Candidate Review Link
-    const atsDashboardUrl = `https://smarthireus.com/dashboard?candidate=${encodeURIComponent(candidateName)}&session=${session.sessionId}`;
-    const candidateChatUrl = `https://smarthireus.com/candidate-chat/${session.sessionId}`;
+    // Direct ATS Candidate Review Link (pointing to AI Screening scorecard)
+    const atsDashboardUrl = `https://smarthireus.com/ats?tab=screening&session=${encodeURIComponent(session.sessionId)}&candidate=${encodeURIComponent(candidateName)}`;
+    const candidateChatUrl = atsDashboardUrl;
 
     const scoreColor = aiScore >= 80 ? '#10B981' : aiScore >= 65 ? '#2563EB' : '#F59E0B';
 
@@ -7801,9 +7801,6 @@ ${keyTakeaways ? `- Key Takeaways: ${keyTakeaways}\n` : ''}- Proctoring: ${viola
 
 Review Candidate Scorecard & Full Recording in ATS:
 ${atsDashboardUrl}
-
-Direct Session Link:
-${candidateChatUrl}
 
 --
 SmartHire ATS AI Screening Suite
@@ -7928,7 +7925,7 @@ Dispatched from ${fromEmail}`;
       </div>
 
       <div style="text-align: center; font-size: 12px; color: #64748B;">
-        Or open candidate interview portal: <a href="${candidateChatUrl}" style="color: #2563EB; text-decoration: underline;">${candidateChatUrl}</a>
+        Direct ATS Scorecard Link: <a href="${atsDashboardUrl}" style="color: #2563EB; text-decoration: underline;">${atsDashboardUrl}</a>
       </div>
 
     </div>
@@ -11742,7 +11739,7 @@ function getPooledRecruiterTransporter(nodemailer, host, port, isSecure, user, p
   return transporter;
 }
 
-// POST send email via recruiter's configured SMTP
+// POST send email via recruiter's configured SMTP (with automatic fallback to default support@praximinds.com)
 app.post('/api/recruiter/send-email', express.json(), async (req, res) => {
   const { recruiterEmail, to, subject, body, html, replyTo, recruiterName } = req.body;
   if (!recruiterEmail || !to || !subject) return res.json({ success: false, message: 'recruiterEmail, to, and subject required' });
@@ -11758,21 +11755,6 @@ app.post('/api/recruiter/send-email', express.json(), async (req, res) => {
   }
   recentEmailSendsMap.set(dedupKey, now);
 
-  const cfg = getRecruiterEmailConfig(cleanRecruiterEmail) || {};
-  const fromEmail = cfg.fromEmail || cleanRecruiterEmail;
-  const cleanedPass = (cfg.appPassword || (cleanRecruiterEmail === 'omkesh@coolsofttech.com' ? (process.env.EMAIL_PASS || process.env.SMTP_PASS || '') : '')).replace(/\s+/g, '');
-  const smtpHost = cfg.smtpHost || (fromEmail.includes('coolsofttech.com') ? 'smtp.mail.yahoo.com' : 'smtp.bizmail.yahoo.com');
-  const port = parseInt(cfg.smtpPort || '465');
-  const isSecure = cfg.security === 'SSL' || port === 465;
-
-  if (!cleanedPass) {
-    recentEmailSendsMap.delete(dedupKey);
-    return res.json({ 
-      success: false, 
-      message: `No active App Password found for ${cleanRecruiterEmail}. Please configure your Yahoo App Password in SmartHire ATS Settings -> Email & Monster Config.` 
-    });
-  }
-
   // Enforce Recruiter Credits check
   const creditStatus = getRecruiterCredits(cleanRecruiterEmail);
   if (creditStatus && !creditStatus.isUnlimited && creditStatus.remainingCredits < 2) {
@@ -11785,68 +11767,189 @@ app.post('/api/recruiter/send-email', express.json(), async (req, res) => {
     });
   }
 
-  const poolKey = `${fromEmail}:${smtpHost}:${port}:${cleanedPass}`;
+  loadEmailConfigs();
+  const cfg = getRecruiterEmailConfig(cleanRecruiterEmail) || {};
+  const cleanedRecruiterPass = (cfg.appPassword || (cleanRecruiterEmail === 'omkesh@coolsofttech.com' ? (process.env.EMAIL_PASS || process.env.SMTP_PASS || '') : '')).replace(/\s+/g, '');
+
+  // Default fallback credentials: support@praximinds.com via Hostinger (smtp.hostinger.com:465 SSL)
+  const defaultSenderEmail = 'support@praximinds.com';
+  const defaultHostingerCfg = (typeof emailConfigsStore !== 'undefined' && emailConfigsStore[defaultSenderEmail]) ? emailConfigsStore[defaultSenderEmail] : null;
+  const defaultHostingerPass = (defaultHostingerCfg?.appPassword || process.env.SUPPORT_EMAIL_PASS || process.env.HOSTINGER_PASS || 'Praximinds@1994').replace(/\s+/g, '');
+  const defaultHostingerHost = defaultHostingerCfg?.smtpHost || process.env.SUPPORT_SMTP_HOST || 'smtp.hostinger.com';
+  const defaultHostingerPort = parseInt(defaultHostingerCfg?.smtpPort || process.env.SUPPORT_SMTP_PORT || '465');
+  const defaultHostingerSecure = defaultHostingerCfg?.security === 'SSL' || defaultHostingerPort === 465;
+
+  // Secondary fallback credentials: omkesh@coolsofttech.com via Yahoo
+  const secondarySenderEmail = 'omkesh@coolsofttech.com';
+  const secondaryCfg = (typeof emailConfigsStore !== 'undefined' && emailConfigsStore[secondarySenderEmail]) ? emailConfigsStore[secondarySenderEmail] : null;
+  const secondaryPass = (secondaryCfg?.appPassword || process.env.EMAIL_PASS || process.env.COOLSOFT_PASS || 'ykbmemlfgywcjrbo').replace(/\s+/g, '');
+
+  const senderDisplayName = recruiterName 
+    ? `${recruiterName}` 
+    : (cfg.displayName ? `${cfg.displayName}` : 'COOLSOFT Recruiting Team');
+  const defaultCoolsoftSig = `With Regards,\n${recruiterName || cfg.displayName || 'Technical Recruiter'}\nCOOLSOFT LLC | http://www.coolsofttech.com`;
+  const activeSig = cfg.signature || defaultCoolsoftSig;
+  const bodyAlreadyHasSig = (body || '').includes('Regards') || (body || '').includes('COOLSOFT');
+  const emailSignature = (!bodyAlreadyHasSig && activeSig) ? `\n\n--\n${activeSig}` : '';
+
+  const htmlAlreadyHasSig = (html || '').includes('Regards') || (html || '').includes('COOLSOFT');
+  const htmlSignature = (!htmlAlreadyHasSig && activeSig) ? `<br><br>--<br>${activeSig.replace(/\n/g, '<br>')}` : '';
+
+  const actualReplyTo = replyTo || cleanRecruiterEmail;
+  const toRecipient = Array.isArray(to) ? to.join(', ') : to;
+
+  let sentSuccessfully = false;
+  let dispatchedFrom = '';
+  let usingFallback = false;
+  let lastErrorMsg = '';
 
   try {
     const nodemailer = await import('nodemailer').catch(() => null);
-    if (!nodemailer) return res.json({ success: false, message: 'Email service not available on this server' });
+    if (!nodemailer) {
+      recentEmailSendsMap.delete(dedupKey);
+      return res.json({ success: false, message: 'Email service not available on this server' });
+    }
 
-    // Use pooled persistent connection to avoid repeated authentication floods
-    const transporter = getPooledRecruiterTransporter(nodemailer, smtpHost, port, isSecure, fromEmail, cleanedPass);
+    // 1. Attempt using recruiter's own configured SMTP credentials if available
+    if (cleanedRecruiterPass) {
+      const fromEmail = cfg.fromEmail || cleanRecruiterEmail;
+      const smtpHost = cfg.smtpHost || (fromEmail.includes('coolsofttech.com') ? 'smtp.mail.yahoo.com' : 'smtp.bizmail.yahoo.com');
+      const port = parseInt(cfg.smtpPort || '465');
+      const isSecure = cfg.security === 'SSL' || port === 465;
+      const poolKey = `${fromEmail}:${smtpHost}:${port}:${cleanedRecruiterPass}`;
 
-    const senderDisplayName = recruiterName 
-      ? `${recruiterName} (COOLSOFT LLC)` 
-      : (cfg.displayName ? `${cfg.displayName} (COOLSOFT LLC)` : 'COOLSOFT Recruiting Team');
-    const defaultCoolsoftSig = `With Regards,\n${recruiterName || cfg.displayName || 'Technical Recruiter'}\nCOOLSOFT LLC | http://www.coolsofttech.com`;
-    const activeSig = cfg.signature || defaultCoolsoftSig;
-    const bodyAlreadyHasSig = (body || '').includes('Regards') || (body || '').includes('COOLSOFT');
-    const emailSignature = (!bodyAlreadyHasSig && activeSig) ? `\n\n--\n${activeSig}` : '';
+      try {
+        const transporter = getPooledRecruiterTransporter(nodemailer, smtpHost, port, isSecure, fromEmail, cleanedRecruiterPass);
+        await transporter.sendMail({
+          from: `"${senderDisplayName} (COOLSOFT LLC)" <${fromEmail}>`,
+          to: toRecipient,
+          replyTo: actualReplyTo,
+          subject,
+          text: (body || '') + emailSignature,
+          html: html ? (html + htmlSignature) : undefined
+        });
 
-    const htmlAlreadyHasSig = (html || '').includes('Regards') || (html || '').includes('COOLSOFT');
-    const htmlSignature = (!htmlAlreadyHasSig && activeSig) ? `<br><br>--<br>${activeSig.replace(/\n/g, '<br>')}` : '';
+        sentSuccessfully = true;
+        dispatchedFrom = fromEmail;
 
-    const actualReplyTo = replyTo || cleanRecruiterEmail || fromEmail;
+        // Automatically append to Yahoo IMAP "Sent" folder in background so it appears in Yahoo webmail
+        import('./jobs-ingestion/email-imap-scraper.js').then(({ appendEmailToSentFolder }) => {
+          appendEmailToSentFolder({
+            host: cfg.imapHost || 'imap.mail.yahoo.com',
+            port: parseInt(cfg.imapPort) || 993,
+            user: fromEmail,
+            password: cleanedRecruiterPass,
+            from: `"${senderDisplayName}" <${fromEmail}>`,
+            to,
+            subject,
+            text: (body || '') + emailSignature,
+            html: html ? (html + htmlSignature) : undefined
+          }).catch(e => console.warn('Background append to Sent notice:', e.message));
+        }).catch(() => {});
+      } catch (recruiterErr) {
+        console.warn(`[RecruiterEmail] Failed sending via recruiter ${cleanRecruiterEmail}: ${recruiterErr.message}. Automatically falling back to default ${defaultSenderEmail}...`);
+        lastErrorMsg = recruiterErr.message;
+        if (recruiterSmtpTransporterPool.has(poolKey)) {
+          try { recruiterSmtpTransporterPool.get(poolKey).close(); } catch (_) {}
+          recruiterSmtpTransporterPool.delete(poolKey);
+        }
+      }
+    } else {
+      console.log(`[RecruiterEmail] Recruiter ${cleanRecruiterEmail} has not configured SMTP credentials. Routing automatically through default ${defaultSenderEmail}...`);
+    }
 
-    await transporter.sendMail({
-      from: `"${senderDisplayName}" <${fromEmail}>`,
-      to: Array.isArray(to) ? to.join(', ') : to,
-      replyTo: actualReplyTo,
-      subject,
-      text: (body || '') + emailSignature,
-      html: html ? (html + htmlSignature) : undefined
-    });
+    // 2. If recruiter has no config or their SMTP failed, dispatch via default fallback support@praximinds.com
+    if (!sentSuccessfully && defaultHostingerPass) {
+      try {
+        console.log(`[RecruiterEmail] Dispatching via default Hostinger SMTP (${defaultHostingerHost}:${defaultHostingerPort}) for ${cleanRecruiterEmail}...`);
+        const createTransport = nodemailer.default?.createTransport || nodemailer.createTransport;
+        const fallbackTransporter = createTransport({
+          host: defaultHostingerHost,
+          port: defaultHostingerPort,
+          secure: defaultHostingerSecure,
+          auth: { user: defaultSenderEmail, pass: defaultHostingerPass },
+          tls: { rejectUnauthorized: false, minVersion: 'TLSv1.2' },
+          connectionTimeout: 10000,
+          greetingTimeout: 10000,
+          socketTimeout: 15000
+        });
 
-    // Automatically append to Yahoo IMAP "Sent" folder in background so it appears in Yahoo webmail
-    import('./jobs-ingestion/email-imap-scraper.js').then(({ appendEmailToSentFolder }) => {
-      appendEmailToSentFolder({
-        host: cfg.imapHost || 'imap.mail.yahoo.com',
-        port: parseInt(cfg.imapPort) || 993,
-        user: fromEmail,
-        password: cleanedPass,
-        from: `"${senderDisplayName}" <${fromEmail}>`,
-        to,
-        subject,
-        text: (body || '') + emailSignature,
-        html: html ? (html + htmlSignature) : undefined
-      }).catch(e => console.warn('Background append to Sent notice:', e.message));
-    }).catch(() => {});
+        await fallbackTransporter.sendMail({
+          from: `"${senderDisplayName} (SmartHire)" <${defaultSenderEmail}>`,
+          to: toRecipient,
+          replyTo: actualReplyTo,
+          subject,
+          text: (body || '') + emailSignature,
+          html: html ? (html + htmlSignature) : undefined
+        });
 
-    // Deduct 2 credits for successful email delivery & update telemetry
-    deductRecruiterCredits(cleanRecruiterEmail, 'SEND_SINGLE_EMAIL', 1);
-    const updatedCredits = getRecruiterCredits(cleanRecruiterEmail);
+        sentSuccessfully = true;
+        dispatchedFrom = defaultSenderEmail;
+        usingFallback = true;
+        console.log(`[RecruiterEmail] Successfully dispatched email to ${toRecipient} via default ${defaultSenderEmail}`);
+      } catch (hostingerErr) {
+        console.warn(`[RecruiterEmail] Default Hostinger fallback failed (${hostingerErr.message}). Trying secondary fallback...`);
+        lastErrorMsg = hostingerErr.message;
+      }
+    }
 
-    res.json({ 
-      success: true, 
-      message: `Email sent successfully from ${fromEmail}`,
-      remainingCredits: updatedCredits?.remainingCredits ?? 999999
-    });
+    // 3. Secondary fallback to Yahoo (omkesh@coolsofttech.com) if Hostinger had an issue
+    if (!sentSuccessfully && secondaryPass) {
+      try {
+        console.log(`[RecruiterEmail] Dispatching via secondary Yahoo SMTP for ${cleanRecruiterEmail}...`);
+        const createTransport = nodemailer.default?.createTransport || nodemailer.createTransport;
+        const secondaryTransporter = createTransport({
+          host: 'smtp.bizmail.yahoo.com',
+          port: 465,
+          secure: true,
+          auth: { user: secondarySenderEmail, pass: secondaryPass },
+          tls: { rejectUnauthorized: false, minVersion: 'TLSv1.2' },
+          connectionTimeout: 10000
+        });
+
+        await secondaryTransporter.sendMail({
+          from: `"${senderDisplayName} (SmartHire)" <${secondarySenderEmail}>`,
+          to: toRecipient,
+          replyTo: actualReplyTo,
+          subject,
+          text: (body || '') + emailSignature,
+          html: html ? (html + htmlSignature) : undefined
+        });
+
+        sentSuccessfully = true;
+        dispatchedFrom = secondarySenderEmail;
+        usingFallback = true;
+        console.log(`[RecruiterEmail] Successfully dispatched email to ${toRecipient} via secondary ${secondarySenderEmail}`);
+      } catch (secondaryErr) {
+        console.error(`[RecruiterEmail] Secondary fallback also failed: ${secondaryErr.message}`);
+        lastErrorMsg = secondaryErr.message;
+      }
+    }
+
+    if (sentSuccessfully) {
+      // Deduct 2 credits for successful email delivery & update telemetry
+      deductRecruiterCredits(cleanRecruiterEmail, 'SEND_SINGLE_EMAIL', 1);
+      const updatedCredits = getRecruiterCredits(cleanRecruiterEmail);
+
+      return res.json({ 
+        success: true, 
+        message: usingFallback
+          ? `Job Description sent successfully to ${toRecipient} (dispatched via support@praximinds.com)`
+          : `Email sent successfully from ${dispatchedFrom}`,
+        dispatchedFrom,
+        usingFallback,
+        remainingCredits: updatedCredits?.remainingCredits ?? 999999
+      });
+    } else {
+      recentEmailSendsMap.delete(dedupKey);
+      return res.json({ 
+        success: false, 
+        message: `Failed to deliver email: ${lastErrorMsg || 'All SMTP dispatch channels failed.'}` 
+      });
+    }
   } catch(err) {
     console.error('Email send error:', err.message);
-    // Invalidate pool on connection/auth drop so next attempt reconnects cleanly
-    if (recruiterSmtpTransporterPool.has(poolKey)) {
-      try { recruiterSmtpTransporterPool.get(poolKey).close(); } catch (_) {}
-      recruiterSmtpTransporterPool.delete(poolKey);
-    }
+    recentEmailSendsMap.delete(dedupKey);
     res.json({ success: false, message: `Failed to send: ${err.message}` });
   }
 });

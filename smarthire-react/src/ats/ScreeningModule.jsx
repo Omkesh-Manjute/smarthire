@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import InfinityLoader from '../components/InfinityLoader'
 import PopButton from '../components/ui/PopButton'
 
@@ -434,6 +434,55 @@ SmartHire Recruitment Team`
     const interval = setInterval(fetchSessions, 12000) // poll every 12s
     return () => clearInterval(interval)
   }, [fetchSessions])
+
+  // Automatically open candidate interview scorecard drawer/modal when 'session' or 'sessionId' is present in URL
+  const sessionUrlOpenedRef = useRef(false)
+  useEffect(() => {
+    try {
+      const urlParams = new URLSearchParams(window.location.search)
+      const targetSessionId = urlParams.get('session') || urlParams.get('sessionId')
+      const targetCandidate = urlParams.get('candidate')
+      if (!targetSessionId && !targetCandidate) return
+      if (sessionUrlOpenedRef.current) return
+
+      // 1. Try finding in loaded sessions array
+      if (sessions.length > 0) {
+        let matched = null
+        if (targetSessionId) {
+          matched = sessions.find(s => 
+            String(s.sessionId || s.id || s._id || '').toLowerCase().trim() === String(targetSessionId).toLowerCase().trim()
+          )
+        }
+        if (!matched && targetCandidate) {
+          const cleanCand = targetCandidate.toLowerCase().trim()
+          matched = sessions.find(s => 
+            (s.candidateName && s.candidateName.toLowerCase().trim().includes(cleanCand)) ||
+            (s.candidateEmail && s.candidateEmail.toLowerCase().trim() === cleanCand)
+          )
+        }
+        if (matched) {
+          setReviewSession(matched)
+          sessionUrlOpenedRef.current = true
+          return
+        }
+      }
+
+      // 2. If not found in loaded array yet, fetch directly by sessionId from backend
+      if (targetSessionId) {
+        fetch(`${API}/${encodeURIComponent(targetSessionId)}`, { headers: getAuthHeaders() })
+          .then(res => res.json())
+          .then(data => {
+            if (data.success && data.session) {
+              setReviewSession(data.session)
+              sessionUrlOpenedRef.current = true
+            }
+          })
+          .catch(err => console.warn('Failed to load session from URL parameter:', err))
+      }
+    } catch (e) {
+      console.warn('Error reading session URL params:', e)
+    }
+  }, [sessions, getAuthHeaders])
 
   // ─── Admin-only: Delete single session ────────────────────────────────────
   const [deletingId, setDeletingId] = useState(null)

@@ -1074,8 +1074,11 @@ export default function CandidateChat() {
         <p style={{ fontSize: '13.5px', color: '#64748b', maxWidth: '440px', marginTop: '6px', lineHeight: 1.5 }}>
           Please reach out to your recruiter or the talent acquisition team to request an updated screening link.
         </p>
-        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '20px' }}>
-          <a href="mailto:support@praximinds.com" style={{ ...styles.primaryButton, textDecoration: 'none' }}>
+        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '20px', flexWrap: 'wrap' }}>
+          <a href={`/ats?tab=screening&session=${encodeURIComponent(sessionId)}`} style={{ ...styles.primaryButton, background: '#2563eb', color: '#ffffff', textDecoration: 'none' }}>
+            View Screening Evaluation in ATS &rarr;
+          </a>
+          <a href="mailto:support@praximinds.com" style={{ ...styles.primaryButton, background: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', textDecoration: 'none' }}>
             Contact Recruitment Desk
           </a>
         </div>
@@ -1096,8 +1099,11 @@ export default function CandidateChat() {
         <p style={{ fontSize: '14.5px', color: '#475569', maxWidth: '480px', lineHeight: 1.6 }}>
           This single-use screening assessment link has already been completed and submitted on {new Date(submittedAtDate).toLocaleDateString()}. Each assessment link is strictly single-use to maintain evaluation fairness and security.
         </p>
-        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '20px' }}>
-          <a href="mailto:support@praximinds.com" style={{ ...styles.primaryButton, textDecoration: 'none' }}>
+        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '20px', flexWrap: 'wrap' }}>
+          <a href={`/ats?tab=screening&session=${encodeURIComponent(sessionId)}`} style={{ ...styles.primaryButton, background: '#2563eb', color: '#ffffff', textDecoration: 'none' }}>
+            View Screening Evaluation in ATS &rarr;
+          </a>
+          <a href="mailto:support@praximinds.com" style={{ ...styles.primaryButton, background: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', textDecoration: 'none' }}>
             Contact Recruitment Desk
           </a>
         </div>

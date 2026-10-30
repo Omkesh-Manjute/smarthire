@@ -66,6 +66,30 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
     - In resume views, every responsibility, project accomplishment, and contribution line must be formatted with an explicit bullet point (`•`) and proper indentation.
     - The engine must automatically detect responsibilities (lines following `Responsibilities:`, action verbs, or list items) even when converted from plain text or Word documents without literal Unicode bullets.
 
+### 2026-10-30 — Recruiter Email Auto-Fallback to Hostinger & Interview Scorecard Navigation Resolution
+- **Context & Objectives**:
+  - The user reported:
+    1. *"see this error if recruiter ne epna email config nahi kiya so yo deffalt email se jayega but faild nahi hoga email okay jd jana cahiye defalt hai support@praxminds.com se okay so do it"*
+    2. *"and interview ka jo comfirmation email ata hai usmai jo link hoti hai usmai click karne pe vo page mai nahi jata hai so usko bhi check karo kaha error hai sahi page mai jana cahieye bhai so updat karo bina kisi error ke"*
+- **Root Cause & Architectural Implementations**:
+  1. *Recruiter Email Fallback (Zero Failed JD Emails)*:
+     - **Issue**: In `POST /api/recruiter/send-email` (`server/index.js`), if a logged-in recruiter (e.g. `rohit.nagwani@infoorigin.com`) had not configured their Yahoo App Password, the server returned `No active App Password found for <email>` with `success: false`, blocking all "Send JD" actions.
+     - **Resolution**: Implemented automatic fail-safe fallback in `POST /api/recruiter/send-email`. If the recruiter's credentials are not configured, or if their SMTP connection fails, the email is automatically routed via the default Hostinger SMTP account (`support@praximinds.com`, `smtp.hostinger.com:465 SSL`, `Praximinds@1994`) with secondary fallback to Yahoo (`omkesh@coolsofttech.com`).
+     - **Header Integrity**: `replyTo` is strictly set to the originating recruiter's email (`cleanRecruiterEmail`), and the recruiter's display name is preserved in the sender header (`"${recruiterName} (SmartHire)" <support@praximinds.com>`), ensuring candidate responses go directly to that recruiter.
+  2. *Interview Confirmation Email Deep Link Resolution*:
+     - **Issue**: In `sendScreeningCompletedNotificationEmail` (`server/index.js`), `atsDashboardUrl` pointed to `/dashboard?candidate=...&session=...`. `/dashboard` (`RecruiterDashboard.jsx`) had no session handling and simply showed the requisitions table. Secondary link (`/candidate-chat/:sessionId`) showed the single-use completion lock screen, so neither link allowed the recruiter to view the candidate scorecard or video responses.
+     - **Resolution**:
+       - Updated `sendScreeningCompletedNotificationEmail` to point directly to `/ats?tab=screening&session=${session.sessionId}&candidate=${candidateName}`.
+       - Updated `ScreeningModule.jsx` to parse `session` / `sessionId` / `candidate` from `window.location.search`, auto-fetching and opening `reviewSession` drawer immediately.
+       - Added auto-forward in `RecruiterDashboard.jsx` for `/dashboard?session=...` to seamlessly redirect to `/ats?tab=screening&session=...`.
+       - Added "View Screening Evaluation in ATS" button in `CandidateChat.jsx` on completed sessions.
+       - Hardened `ProtectedRoute` in `App.jsx` and `Login.jsx` to preserve the redirect destination across login so unauthenticated users land directly on the candidate scorecard after signing in.
+- **Verification & Deployment Protocol**:
+  - Local production build in `smarthire-react`: 0 errors, 0 warnings (built in 2.89s).
+  - All 42 matching engine unit tests passed (0 failures).
+  - Production bundle deployed to AWS Lightsail server (`34.194.119.199`), old bundles pruned (Rule 5 compliant).
+  - Verified HTTP 200 on live domain `https://smarthireus.com`.
+
 ### 2026-10-28 — Screening Email Hostinger SMTP Resolution & Table Pagination
 - **Context & Objectives**:
   - The user reported two critical items:

@@ -419,6 +419,18 @@ function RecruiterDashboard() {
   const canAccessAdminPanel = isAdmin || isManager
   const isRecruiterRole = isRecruiter || isEmployee
 
+  // Automatic forward for interview screening review links landing on /dashboard
+  useEffect(() => {
+    try {
+      const urlParams = new URLSearchParams(window.location.search)
+      const sessionParam = urlParams.get('session') || urlParams.get('sessionId')
+      const candParam = urlParams.get('candidate')
+      if (sessionParam) {
+        window.location.replace(`/ats?tab=screening&session=${encodeURIComponent(sessionParam)}${candParam ? `&candidate=${encodeURIComponent(candParam)}` : ''}`)
+      }
+    } catch (e) {}
+  }, [])
+
   // Top Nav Tab: 'requisitions' | 'candidates' | 'admin' | 'reports' (Hydrated from URL and localStorage to persist on refresh)
   const [activeMainTab, setActiveMainTab] = useState(() => {
     try {
@@ -1931,6 +1943,7 @@ Email: ${myEmail}
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           recruiterEmail: myEmail,
+          recruiterName: myName,
           to: recEmail,
           subject,
           html: htmlBody,
