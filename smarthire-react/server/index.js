@@ -4708,22 +4708,11 @@ function cleanHtmlText(html) {
     .trim();
 }
 
-export async function scrapeAndImportLatestJobs() {
-  const searchUrl = 'https://www.jobsinhand.com/search_jobs.aspx';
-  console.log('🔄 [Scraper] Fetching job search page from JobsInHand...');
-  const res = await fetch(searchUrl, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    }
-  });
-  if (!res.ok) throw new Error(`Failed to load job list (Status ${res.status})`);
-  const html = await res.text();
-
+function extractJobsFromHtml(html) {
+  if (!html) return [];
   const jobRegex = /id=["']ctl00_Contentpage1_gv_jobs_ctl\d+_Label1["']([\s\S]*?)<\/span>/g;
   let match;
-  const scrapedJobs = [];
-
+  const list = [];
   while ((match = jobRegex.exec(html)) !== null) {
     const jobHtml = match[1];
     const titleLinkMatch = jobHtml.match(/<a\s+href=["']?([^"'\s>]+)["']?[^>]*><b>([\s\S]*?)<\/b><\/a>/i);
@@ -4744,7 +4733,7 @@ export async function scrapeAndImportLatestJobs() {
         }
       }
 
-      scrapedJobs.push({
+      list.push({
         title,
         link,
         createDateStr,
@@ -4752,20 +4741,72 @@ export async function scrapeAndImportLatestJobs() {
       });
     }
   }
+  return list;
+}
 
+export async function scrapeAndImportLatestJobs() {
+  const searchUrl = 'https://www.jobsinhand.com/search_jobs.aspx';
+  console.log('🔄 [Scraper] Fetching job search page from JobsInHand (Multi-page deep scan)...');
+  const res = await fetch(searchUrl, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    }
+  });
+  if (!res.ok) throw new Error(`Failed to load job list (Status ${res.status})`);
+  const html = await res.text();
+  const rawCookies = res.headers.getSetCookie ? res.headers.getSetCookie() : [res.headers.get('set-cookie')];
+  const cookieStr = rawCookies && rawCookies.length > 0 ? rawCookies.filter(Boolean).map(c => c.split(';')[0]).join('; ') : '';
+
+  const scrapedJobs = extractJobsFromHtml(html);
   console.log(`[Scraper] Scanned ${scrapedJobs.length} active job listings on JobsInHand page 1.`);
 
-  // Filter for recent/today's jobs, with fallback to all active jobs on page 1 if none match
-  const recentJobs = scrapedJobs.filter(j => isTodayDate(j.createDateStr));
-  const candidateJobs = recentJobs.length > 0 ? recentJobs : scrapedJobs;
-  console.log(`[Scraper] Identified ${candidateJobs.length} candidate jobs for ingestion (${recentJobs.length} from today/recent).`);
-  
-  // Sort by date descending
-  candidateJobs.sort((a, b) => b.createDate.getTime() - a.createDate.getTime());
+  // Multi-page ASP.NET ViewState scan for Page 2 to guarantee zero missed/pending requisitions
+  try {
+    const mVs = html.match(/id=\"__VIEWSTATE\"\s+value=\"([^\"]+)\"/)?.[1];
+    const mVsg = html.match(/id=\"__VIEWSTATEGENERATOR\"\s+value=\"([^\"]+)\"/)?.[1];
+    const mEv = html.match(/id=\"__EVENTVALIDATION\"\s+value=\"([^\"]+)\"/)?.[1];
 
-  // Filter out duplicates (based on Req ID, sourceId, or exact Title)
+    if (mVs) {
+      const params = new URLSearchParams();
+      params.set('__EVENTTARGET', 'ctl00$Contentpage1$gv_jobs');
+      params.set('__EVENTARGUMENT', 'Page$2');
+      params.set('__VIEWSTATE', mVs);
+      if (mVsg) params.set('__VIEWSTATEGENERATOR', mVsg);
+      if (mEv) params.set('__EVENTVALIDATION', mEv);
+
+      const res2 = await fetch(searchUrl, {
+        method: 'POST',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Cookie': cookieStr,
+          'Referer': searchUrl
+        },
+        body: params.toString()
+      });
+      if (res2.ok) {
+        const html2 = await res2.text();
+        const p2Jobs = extractJobsFromHtml(html2);
+        console.log(`[Scraper] Scanned ${p2Jobs.length} active job listings on JobsInHand page 2.`);
+        for (const pj of p2Jobs) {
+          if (!scrapedJobs.some(sj => sj.link === pj.link || sj.title.toLowerCase().trim() === pj.title.toLowerCase().trim())) {
+            scrapedJobs.push(pj);
+          }
+        }
+      }
+    }
+  } catch (p2Err) {
+    console.warn('[Scraper] Multi-page scan notice (Page 1 preserved):', p2Err.message);
+  }
+
+  // Sort all active scanned jobs by date descending
+  scrapedJobs.sort((a, b) => b.createDate.getTime() - a.createDate.getTime());
+
+  // Deep deduplication against existing jobsStore:
+  // ANY active job on JobsInHand that is not yet present in jobsStore is PENDING and must be imported!
   const uniqueNewJobs = [];
-  for (const job of candidateJobs) {
+  for (const job of scrapedJobs) {
     const idMatch = job.link.match(/\/(\d+)\.htm$/);
     const sourceId = idMatch ? idMatch[1] : null;
     const titleReqMatch = job.title.match(/\b(1[56]\d{4}|\d{6})\b/);
@@ -4775,7 +4816,9 @@ export async function scrapeAndImportLatestJobs() {
       const eReq = String(existing.reqId || existing.id || '').trim();
       if (potentialReqId && eReq === potentialReqId) return true;
       if (sourceId && existing.sourceId === sourceId) return true;
-      return existing.title.toLowerCase().trim() === job.title.toLowerCase().trim();
+      const cleanExisting = (existing.title || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const cleanNew = (job.title || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      return cleanExisting && cleanNew && cleanExisting === cleanNew;
     });
 
     if (!isDuplicate) {
@@ -4785,11 +4828,11 @@ export async function scrapeAndImportLatestJobs() {
         potentialReqId
       });
     }
-    // Limit to top 5 unique new jobs
-    if (uniqueNewJobs.length >= 5) break;
+    // High safe cap (up to 35 new jobs in one run) to guarantee zero pending jobs left behind
+    if (uniqueNewJobs.length >= 35) break;
   }
 
-  console.log(`[Scraper] Selected ${uniqueNewJobs.length} new unique job(s) to import.`);
+  console.log(`[Scraper] Identified ${uniqueNewJobs.length} pending unique job(s) to import into ATS.`);
   const importedJobs = [];
 
   for (const job of uniqueNewJobs) {
@@ -4817,7 +4860,19 @@ export async function scrapeAndImportLatestJobs() {
       const reqIdMatch = detailHtml.match(/id=["']ctl00_Contentpage1_lbl_reqid["'][^>]*>([\s\S]*?)<\/span>/i) ||
                          detailHtml.match(/id=["']ctl00_Contentpage1_lbl_req_id["'][^>]*>([\s\S]*?)<\/span>/i) ||
                          detailHtml.match(/(?:Requirement|Req|Requisition)\s*(?:ID|#|No\.?)?\s*[:\-]?\s*(\d{6})/i);
-      const authenticReqId = reqIdMatch ? cleanHtmlText(reqIdMatch[1]).trim() : (job.potentialReqId || job.sourceId || `159${Math.floor(100 + Math.random() * 900)}`);
+      
+      let authenticReqId = reqIdMatch ? cleanHtmlText(reqIdMatch[1]).trim() : (job.potentialReqId || null);
+      if (!authenticReqId || !/^\d{6}$/.test(authenticReqId)) {
+        let maxReq = 159455;
+        for (const j of jobsStore) {
+          const m = String(j.reqId || j.id || '').match(/^15(\d{4})$/);
+          if (m) {
+            const num = parseInt(m[0], 10);
+            if (num > maxReq) maxReq = num;
+          }
+        }
+        authenticReqId = String(maxReq + 1);
+      }
 
       // Extract skills & location from detail page
       const skillsMatch = detailHtml.match(/id=["']ctl00_Contentpage1_lbl_skills["'][^>]*>([\s\S]*?)<\/span>/i);
