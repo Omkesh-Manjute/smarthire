@@ -2318,17 +2318,19 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
   const isChatRoute = window.location.pathname.includes('/messages') || tabParam === 'chat' || tabParam === 'messages' || viewParam === 'chat' || defaultViewMode === 'chat'
   const initialInboxMode = isChatRoute
     ? 'chat'
-    : (tabParam === 'monster' || viewParam === 'monster' || (!tabParam && !viewParam && storedInboxMode === 'monster'))
-      ? 'monster'
-      : (tabParam === 'leaderboard' || viewParam === 'leaderboard' || (!tabParam && !viewParam && storedInboxMode === 'leaderboard'))
-        ? 'leaderboard'
-        : (tabParam === 'dashboard' || viewParam === 'dashboard' || (!tabParam && !viewParam && storedInboxMode === 'dashboard'))
-          ? 'dashboard'
-          : (tabParam === 'hotlists' || viewParam === 'hotlists' || (!tabParam && !viewParam && storedInboxMode === 'hotlists'))
-            ? 'hotlists'
-            : (!tabParam && !viewParam && storedInboxMode === 'chat')
-              ? 'chat'
-              : (defaultViewMode || 'stream')
+    : (tabParam === 'candidates')
+      ? 'stream'
+      : (tabParam === 'monster' || tabParam === 'universal-search' || viewParam === 'monster' || (!tabParam && !viewParam && storedInboxMode === 'monster'))
+        ? 'monster'
+        : (tabParam === 'leaderboard' || viewParam === 'leaderboard' || (!tabParam && !viewParam && storedInboxMode === 'leaderboard'))
+          ? 'leaderboard'
+          : (tabParam === 'dashboard' || viewParam === 'dashboard' || (!tabParam && !viewParam && storedInboxMode === 'dashboard'))
+            ? 'dashboard'
+            : (tabParam === 'hotlist' || tabParam === 'hotlists' || viewParam === 'hotlists' || viewParam === 'hotlist' || (!tabParam && !viewParam && (storedInboxMode === 'hotlists' || storedInboxMode === 'hotlist')))
+              ? 'hotlists'
+              : (!tabParam && !viewParam && storedInboxMode === 'chat')
+                ? 'chat'
+                : (defaultViewMode || 'stream')
   const [inboxViewMode, setInboxViewMode] = useState(initialInboxMode)
 
   useEffect(() => {
@@ -2480,9 +2482,46 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
   }, [defaultTableCategory])
 
   useEffect(() => {
-    const qCat = searchParams.get('category') || searchParams.get('tab')
-    if (qCat === 'extension' || qCat === 'extension_sourced' || qCat === 'sourcing') {
+    const tab = (searchParams.get('tab') || '').toLowerCase()
+    const view = (searchParams.get('view') || '').toLowerCase()
+    const category = (searchParams.get('category') || '').toLowerCase()
+
+    if (tab === 'monster' || tab === 'universal-search' || tab === 'sourcing' || view === 'monster') {
+      setInboxViewMode('monster')
+    } else if (tab === 'hotlist' || tab === 'hotlists' || view === 'hotlists' || view === 'hotlist') {
+      setInboxViewMode('hotlists')
+    } else if (tab === 'chat' || tab === 'messages' || view === 'chat') {
+      setInboxViewMode('chat')
+    } else if (tab === 'leaderboard' || view === 'leaderboard') {
+      setInboxViewMode('leaderboard')
+    } else if (tab === 'dashboard' || view === 'dashboard') {
+      setInboxViewMode('dashboard')
+    } else if (tab === 'candidates' || (!tab && !view)) {
+      setInboxViewMode('stream')
+      setInboxSubMode('table')
+      if (tab === 'candidates' && !category) {
+        setTableCategory('all')
+      }
+    }
+
+    if (category === 'extension' || category === 'extension_sourced' || category === 'sourcing') {
       setTableCategory('extension_sourced')
+      setInboxViewMode('stream')
+      setInboxSubMode('table')
+    } else if (category === 'careers' || category === 'job_site') {
+      setTableCategory('careers')
+      setInboxViewMode('stream')
+      setInboxSubMode('table')
+    } else if (category === 'app' || category === 'mobile') {
+      setTableCategory('app')
+      setInboxViewMode('stream')
+      setInboxSubMode('table')
+    } else if (category === 'vendor') {
+      setTableCategory('vendor')
+      setInboxViewMode('stream')
+      setInboxSubMode('table')
+    } else if (category && ['all', 'active', 'inbox', 'review', 'spam', 'favorites'].includes(category)) {
+      setTableCategory(category)
       setInboxViewMode('stream')
       setInboxSubMode('table')
     }
@@ -3282,7 +3321,7 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
       try {
         const results = await Promise.allSettled([
           fetch(`/api/recruiter/email-streams?summary=true&${params.toString()}`, { headers: authHeaders, signal: controller.signal }),
-          fetch('/api/candidates?summary=true&limit=150', { headers: authHeaders, signal: controller.signal }),
+          fetch('/api/candidates?summary=true&all=true&limit=1000', { headers: authHeaders, signal: controller.signal }),
           getAllCandidates()
         ])
         streamRes = results[0]
@@ -4872,6 +4911,9 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
     const src = (c.source || '').toLowerCase();
     return cat === 'careers_portal' || cat === 'job_site' || src.includes('career') || src.includes('job site') || src.includes('indeed') || src.includes('linkedin') || src.includes('/jobs');
   }).length, [roleScopedCandidates])
+  const vendorBenchCount = useMemo(() => (roleScopedCandidates || []).filter(c => 
+    c.sourceCategory === 'vendor_bench' || (c.source && (c.source.toLowerCase().includes('vendor') || c.source.toLowerCase().includes('bench')))
+  ).length, [roleScopedCandidates])
 
   const filteredCandidates = useMemo(() => {
     const rawFiltered = roleScopedCandidates.filter(c => {
@@ -4881,6 +4923,11 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
       // When viewing 'all' (default view), include all candidates in the primary pool
       if (tableCategory === 'all') { /* show all */ }
       else if (tableCategory === 'active' && (c.status === 'Archived' || c.status === 'Rejected' || c.status === 'Closed')) return false
+      else if (tableCategory === 'app') {
+        const cat = (c.sourceCategory || '').toLowerCase()
+        const src = (c.source || '').toLowerCase()
+        if (cat !== 'mobile_app' && !src.includes('mobile') && !src.includes('app') && !src.includes('direct')) return false
+      }
       else if (tableCategory === 'review' && c.status !== 'In Review' && c.status !== 'Review') return false
       else if (tableCategory === 'inbox' && c.sourceCategory !== 'email_inbox' && c.sourceCategory !== 'monster_plus' && c.sourceCategory !== 'dice' && !c.isNew) return false
       else if (tableCategory === 'spam' && c.sourceCategory !== 'email_spam' && !c.isSpamRecovery) return false
@@ -4947,6 +4994,7 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
 
       // Source channel filter
       if (filterSource !== 'all') {
+        const cat = (c.sourceCategory || '').toLowerCase()
         const src = (c.source || '').toLowerCase()
         if (filterSource === 'mobile' && cat !== 'mobile_app' && !src.includes('mobile') && !src.includes('app')) return false
         if (filterSource === 'careers') {
@@ -4954,6 +5002,7 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
           if (isExt) return false;
           if (cat !== 'careers_portal' && cat !== 'job_site' && !src.includes('career') && !src.includes('job site') && !src.includes('indeed') && !src.includes('linkedin') && !src.includes('/jobs')) return false;
         }
+        if (filterSource === 'extension' && !c.isSourcedFromExtension && !c.isExtensionSourced && c.sourceCategory !== 'monster_plus' && c.sourceCategory !== 'dice' && !(src.includes('monster') || src.includes('dice') || src.includes('extension'))) return false
         if (filterSource === 'email' && cat !== 'email_inbox' && cat !== 'monster_plus' && cat !== 'dice' && !src.includes('inbox') && !src.includes('monster') && !src.includes('dice')) return false
         if (filterSource === 'spam' && cat !== 'email_spam' && !c.isSpamRecovery && !src.includes('spam')) return false
         if (filterSource === 'manual' && cat !== 'manual_entry' && !src.includes('manual') && !src.includes('direct')) return false
@@ -5994,8 +6043,8 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
       role: item.role
     })
     setEmailTo(item.vendorEmail || '')
-    setEmailSubject(`Candidate Profile Inquiry: ${item.candidateName} (${item.role}) | COOLSOFT LLC`)
-    setEmailBody(`Hi ${item.vendorName ? item.vendorName.split(' ')[0] : 'Partner'},\n\nWe received your hotlist profile for ${item.candidateName} (${item.role}). We have active direct client openings that match their background.\n\nPlease share their updated resume with full contact details, current availability, and confirmed C2C rate.\n\nWith Regards,\n${currentUser?.name || 'Omkesh Manjute'}\nLead Recruiter\nCOOLSOFT LLC | http://www.coolsofttech.com`)
+    setEmailSubject(`Candidate Profile Inquiry: ${item.candidateName} (${item.role}) | SmartHire Team`)
+    setEmailBody(`Hi ${item.vendorName ? item.vendorName.split(' ')[0] : 'Partner'},\n\nWe received your hotlist profile for ${item.candidateName} (${item.role}). We have active direct client openings that match their background.\n\nPlease share their updated resume with full contact details, current availability, and confirmed C2C rate.\n\nWith Regards,\n${currentUser?.name || 'Omkesh Manjute'}\nSmartHire Team | https://smarthireus.com`)
   }
 
   const handleDeleteHotlist = async (id, name) => {
@@ -7323,21 +7372,50 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
       
       {/* ─── Unified Normalized 5-Group ATS Sidebar ─── */}
       <AtsUnifiedSidebar
-        activeItem={inboxViewMode === "hotlist" ? "hotlist" : inboxViewMode === "monster" ? "monster" : inboxViewMode === "chat" ? "inbox" : "candidates"}
+        activeItem={
+          (inboxViewMode === "hotlists" || inboxViewMode === "hotlist")
+            ? "hotlist"
+            : inboxViewMode === "monster"
+              ? "monster"
+              : inboxViewMode === "chat"
+                ? "inbox"
+                : "candidates"
+        }
         sidebarCollapsed={sidebarCollapsed}
         setSidebarCollapsed={setSidebarCollapsed}
-        onSelectInternalTab={(tabId) => {
-          if (tabId === "candidates") {
+        onSelectInternalTab={(targetId) => {
+          if (targetId === "candidates") {
             setInboxViewMode("stream");
             setInboxSubMode("table");
-          } else if (tabId === "hotlist") {
-            setInboxViewMode("hotlist");
-          } else if (tabId === "monster") {
+            setTableCategory("all");
+            try {
+              const url = new URL(window.location.href);
+              url.searchParams.delete('category');
+              url.searchParams.set('tab', 'candidates');
+              window.history.replaceState({}, '', url.toString());
+            } catch (_) {}
+          } else if (targetId === "hotlist" || targetId === "hotlists") {
+            setInboxViewMode("hotlists");
+            try {
+              const url = new URL(window.location.href);
+              url.searchParams.delete('category');
+              url.searchParams.set('tab', 'hotlist');
+              window.history.replaceState({}, '', url.toString());
+            } catch (_) {}
+          } else if (targetId === "monster") {
             setInboxViewMode("monster");
-          } else if (tabId === "inbox") {
+            try {
+              const url = new URL(window.location.href);
+              url.searchParams.delete('category');
+              url.searchParams.set('tab', 'monster');
+              window.history.replaceState({}, '', url.toString());
+            } catch (_) {}
+          } else if (targetId === "inbox" || targetId === "chat") {
             setInboxViewMode("chat");
+          } else if (targetId === "jobs") {
+            navigate("/dashboard");
           } else {
-            navigate("/ats?tab=" + tabId);
+            navigate("/ats?tab=" + targetId);
           }
         }}
         customCounts={{ candidates: roleScopedCandidates.length }}
@@ -11134,13 +11212,16 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                   </div>
                 </div>
 
-                {/* 6 Metric KPI Cards — Linear & Slack Segmented Tab Feel */}
+                {/* Metric KPI Cards — Linear & Slack Segmented Tab Feel */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', backgroundColor: isLight ? '#F1F5F9' : '#1E293B', padding: 4, borderRadius: 10 }}>
                   {[
                     { color: '#4A154B', count: roleScopedCandidates.length, label: 'Total', filter: 'all' },
                     { color: '#0D9488', count: roleScopedCandidates.filter(c => c.status !== 'Archived' && c.status !== 'Rejected' && c.status !== 'Closed').length, label: 'Active', filter: 'active' },
+                    { color: '#2563EB', count: jobSitesCount, label: 'Job Sites', filter: 'careers' },
+                    { color: '#059669', count: mobileAppCount, label: 'App', filter: 'app' },
                     { color: '#7C3AED', count: extensionSourcedCount, label: 'Extension Sourced', filter: 'extension_sourced' },
-                    { color: '#D97706', count: roleScopedCandidates.filter(c => c.sourceCategory === 'email_inbox' || c.sourceCategory === 'monster_plus' || c.sourceCategory === 'dice' || c.isNew).length, label: 'Inbox', filter: 'inbox' },
+                    { color: '#D97706', count: vendorBenchCount, label: 'Vendor Bench', filter: 'vendor' },
+                    { color: '#F59E0B', count: roleScopedCandidates.filter(c => c.sourceCategory === 'email_inbox' || c.isNew).length, label: 'Inbox', filter: 'inbox' },
                     { color: '#0284C7', count: roleScopedCandidates.filter(c => c.status === 'In Review' || c.status === 'Review').length, label: 'In Review', filter: 'review' },
                     { color: '#E11D48', count: roleScopedCandidates.filter(c => c.sourceCategory === 'email_spam' || c.isSpamRecovery).length, label: 'Spam', filter: 'spam' }
                   ].map((card, cIdx) => {
@@ -11152,6 +11233,15 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                         onClick={() => {
                           setTableCategory(card.filter)
                           setTablePage(1)
+                          try {
+                            const url = new URL(window.location.href)
+                            if (card.filter === 'all') {
+                              url.searchParams.delete('category')
+                            } else {
+                              url.searchParams.set('category', card.filter)
+                            }
+                            window.history.replaceState({}, '', url.toString())
+                          } catch (_) {}
                         }}
                         style={{
                           backgroundColor: isSelected ? (isLight ? '#FFFFFF' : '#0F172A') : 'transparent',
@@ -11340,6 +11430,38 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                       <option value="wisconsin">Wisconsin</option>
                       <option value="north carolina">North Carolina</option>
                       <option value="iowa">Iowa</option>
+                    </select>
+                    <span style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', fontSize: 10, color: C.textSecondary }}>
+                      ⌵
+                    </span>
+                  </div>
+
+                  {/* Channel / Source Filter Dropdown */}
+                  <div style={{ position: 'relative' }}>
+                    <select
+                      value={filterSource}
+                      onChange={e => { setFilterSource(e.target.value); setTablePage(1); }}
+                      style={{
+                        backgroundColor: isLight ? '#F8FAFC' : C.inputBg,
+                        border: `1px solid ${filterSource !== 'all' ? '#0D9488' : C.border}`,
+                        borderRadius: 8,
+                        padding: '7px 24px 7px 11px',
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color: filterSource !== 'all' ? '#0D9488' : C.textPrimary,
+                        outline: 'none',
+                        cursor: 'pointer',
+                        appearance: 'none',
+                        WebkitAppearance: 'none'
+                      }}
+                    >
+                      <option value="all">All Sources</option>
+                      <option value="careers">Job Sites / Careers</option>
+                      <option value="mobile">App Submissions</option>
+                      <option value="extension">Extension Sourced</option>
+                      <option value="email">Email Inbox</option>
+                      <option value="vendor">Vendor Bench</option>
+                      <option value="spam">Spam Submissions</option>
                     </select>
                     <span style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', fontSize: 10, color: C.textSecondary }}>
                       ⌵
@@ -11583,6 +11705,9 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                         try {
                           const url = new URL(window.location.href)
                           url.searchParams.delete('category')
+                          if (url.searchParams.get('tab') === 'monster' || url.searchParams.get('tab') === 'sourcing' || url.searchParams.get('tab') === 'extension') {
+                            url.searchParams.delete('tab')
+                          }
                           window.history.replaceState({}, '', url.toString())
                         } catch (_) {}
                       }}
@@ -13576,8 +13701,8 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                         matchedJobClient: activeThread.company || 'Client'
                       })
                       setEmailTo(activeThread.email || '')
-                      setEmailSubject(`Application Update: Next Steps | COOLSOFT LLC`)
-                      setEmailBody(`Hi ${contactName.split(' ')[0]},\n\nSharing the latest updates for your review.\n\nWith Regards,\n${currentUser?.name || 'Omkesh Manjute'}\nLead Recruiter\nCOOLSOFT LLC | http://www.coolsofttech.com`)
+                      setEmailSubject(`Application Update: Next Steps | SmartHire Team`)
+                      setEmailBody(`Hi ${contactName.split(' ')[0]},\n\nSharing the latest updates for your review.\n\nWith Regards,\n${currentUser?.name || 'Omkesh Manjute'}\nSmartHire Team | https://smarthireus.com`)
                     }}
                     style={{
                       background: isLight ? '#F9FAFB' : '#1C252E',

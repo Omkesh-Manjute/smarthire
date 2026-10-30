@@ -1761,7 +1761,7 @@ Apply / Submit Profile: ${applyUrl}
     const recEmail = targetRecruiter.email.trim()
     const myName = userName || currentUser?.name || (isAdmin ? 'Omkesh Manjute' : 'Lead Recruiter')
     const myEmail = currentUser?.email || (isAdmin ? 'omkesh@coolsofttech.com' : 'recruiter@coolsofttech.com')
-    const myCompany = (currentUser?.company && !currentUser.company.toLowerCase().includes('smarthire')) ? currentUser.company : 'COOLSOFT LLC'
+    const myCompany = 'SmartHire Team'
 
     const cleanReqId = resolveReqId(selectedReq?.id, selectedReq) || String(selectedReq?.id || editingFields.id || '159148').replace(/^J-/, '').replace(/^REQ-/, '').trim()
     const jobTitle = editingFields.jobTitle || editingFields.title || selectedReq?.title || selectedReq?.jobTitle || 'Technical Specialist'
@@ -1898,9 +1898,9 @@ Apply / Submit Profile: ${applyUrl}
 
         <!-- Clean Corporate Signature -->
         <div style="margin-top: 32px; padding-top: 18px; border-top: 1px solid #e2e8f0; font-size: 13.5px; color: #334155; line-height: 1.5;">
-          <p style="margin: 0 0 4px 0;">Best Regards,</p>
+          <p style="margin: 0 0 4px 0;">With Regards,</p>
           <p style="margin: 0 0 2px 0; font-weight: 700; color: #0f172a; font-size: 14px;">${myName}</p>
-          <p style="margin: 0 0 2px 0; color: #64748b; font-size: 13px;">${myCompany}</p>
+          <p style="margin: 0 0 2px 0; color: #64748b; font-size: 13px;">SmartHire Team | <a href="https://smarthireus.com" style="color: #2563eb; text-decoration: none;">https://smarthireus.com</a></p>
           <p style="margin: 0 0 0 0; color: #64748b; font-size: 13px;">Email: <a href="mailto:${myEmail}" style="color: #2563eb; text-decoration: none;">${myEmail}</a></p>
         </div>
       </div>
@@ -1924,9 +1924,9 @@ JOB DESCRIPTION & REQUIREMENTS:
 --------------------------------------------------
 ${jdSnippet}
 
-Best Regards,
+With Regards,
 ${myName}
-${myCompany}
+SmartHire Team | https://smarthireus.com
 Email: ${myEmail}
 `
 

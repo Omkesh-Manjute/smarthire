@@ -330,8 +330,12 @@ export default function AtsPlatform() {
 
   // Synchronize activeTab to URL query parameters & localStorage so refresh always preserves the active tab
   useEffect(() => {
+    if (activeTab === 'jobs' || activeTab === 'requisitions') {
+      navigate('/dashboard', { replace: true })
+      return
+    }
     if (activeTab === 'candidates') {
-      navigate('/inbox', { replace: true })
+      navigate('/inbox?tab=candidates', { replace: true })
       return
     }
     if (activeTab === 'monster' || activeTab === 'universal-search') {

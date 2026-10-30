@@ -11629,7 +11629,7 @@ if (envEmailPass && !emailConfigsStore[envEmailUser]) {
     imapHost: envImapHost,
     imapPort: envImapPort,
     appPassword: envEmailPass,
-    signature: 'With Regards,\nOmkesh Manjute\nCOOLSOFT LLC | http://www.coolsofttech.com'
+    signature: 'With Regards,\nOmkesh Manjute\nSmartHire Team | https://smarthireus.com'
   };
   saveEmailConfigs();
 }
@@ -11786,13 +11786,13 @@ app.post('/api/recruiter/send-email', express.json(), async (req, res) => {
 
   const senderDisplayName = recruiterName 
     ? `${recruiterName}` 
-    : (cfg.displayName ? `${cfg.displayName}` : 'COOLSOFT Recruiting Team');
-  const defaultCoolsoftSig = `With Regards,\n${recruiterName || cfg.displayName || 'Technical Recruiter'}\nCOOLSOFT LLC | http://www.coolsofttech.com`;
-  const activeSig = cfg.signature || defaultCoolsoftSig;
-  const bodyAlreadyHasSig = (body || '').includes('Regards') || (body || '').includes('COOLSOFT');
+    : (cfg.displayName ? `${cfg.displayName}` : 'SmartHire Team');
+  const defaultSmartHireSig = `With Regards,\n${recruiterName || cfg.displayName || 'Technical Recruiter'}\nSmartHire Team | https://smarthireus.com`;
+  const activeSig = (cfg.signature && !cfg.signature.includes('COOLSOFT')) ? cfg.signature : defaultSmartHireSig;
+  const bodyAlreadyHasSig = (body || '').includes('Regards') || (body || '').includes('SmartHire') || (body || '').includes('COOLSOFT');
   const emailSignature = (!bodyAlreadyHasSig && activeSig) ? `\n\n--\n${activeSig}` : '';
 
-  const htmlAlreadyHasSig = (html || '').includes('Regards') || (html || '').includes('COOLSOFT');
+  const htmlAlreadyHasSig = (html || '').includes('Regards') || (html || '').includes('SmartHire') || (html || '').includes('COOLSOFT');
   const htmlSignature = (!htmlAlreadyHasSig && activeSig) ? `<br><br>--<br>${activeSig.replace(/\n/g, '<br>')}` : '';
 
   const actualReplyTo = replyTo || cleanRecruiterEmail;
@@ -11821,7 +11821,7 @@ app.post('/api/recruiter/send-email', express.json(), async (req, res) => {
       try {
         const transporter = getPooledRecruiterTransporter(nodemailer, smtpHost, port, isSecure, fromEmail, cleanedRecruiterPass);
         await transporter.sendMail({
-          from: `"${senderDisplayName} (COOLSOFT LLC)" <${fromEmail}>`,
+          from: `"${senderDisplayName} (SmartHire)" <${fromEmail}>`,
           to: toRecipient,
           replyTo: actualReplyTo,
           subject,
@@ -13830,7 +13830,7 @@ app.post('/api/recruiter/send-direct-email', express.json(), async (req, res) =>
 
   const senderEmail = cfg.fromEmail || recruiterEmail || 'omkesh@coolsofttech.com';
   const senderName = cfg.displayName || 'Omkesh Manjute';
-  const senderSignature = cfg.signature || 'With Regards,\nOmkesh Manjute\nCOOLSOFT LLC | http://www.coolsofttech.com';
+  const senderSignature = (cfg.signature && !cfg.signature.includes('COOLSOFT')) ? cfg.signature : 'With Regards,\nOmkesh Manjute\nSmartHire Team | https://smarthireus.com';
 
   if (!to || !subject || (!body && !html && !htmlBody)) {
     return res.status(400).json({ success: false, message: 'Recipient (to), subject, and body are required.' });

@@ -164,8 +164,8 @@ export default function AtsUnifiedSidebar({
       label: 'Talent Hub',
       icon: 'candidates',
       items: [
-        { id: 'jobs', label: 'Requisitions & Jobs', tabId: 'home', path: '/ats?tab=home' },
-        { id: 'candidates', label: 'Candidate Database', path: '/inbox', count: customCounts.candidates },
+        { id: 'jobs', label: 'Requisitions & Jobs', path: '/dashboard' },
+        { id: 'candidates', label: 'Candidate Database', path: '/inbox?tab=candidates', count: customCounts.candidates },
         { id: 'submittal', label: 'Submittal Pack', path: '/submittal-pack' },
         { id: 'rtr', label: 'SmartSign RTR', path: '/sign-rtr' },
       ]
@@ -193,7 +193,7 @@ export default function AtsUnifiedSidebar({
       label: 'Outreach & Comms',
       icon: 'inbox',
       items: [
-        { id: 'inbox', label: 'Recruiter Inbox', path: '/inbox' },
+        { id: 'inbox', label: 'Recruiter Inbox', path: '/inbox?tab=candidates' },
         { id: 'inquiries', label: 'Client Inquiries', tabId: 'inquiries', path: '/ats?tab=inquiries', count: customCounts.inquiries },
       ]
     },
@@ -253,10 +253,18 @@ export default function AtsUnifiedSidebar({
 
     // Cross-page navigation:
     if (it.path) {
-      const currentPath = window.location.pathname
-      const targetPath = it.path.split('?')[0]
-      if (currentPath === targetPath && !it.path.includes('?')) {
-        // Already on this exact page
+      const currentFull = window.location.pathname + window.location.search
+
+      // If clicking within the same base route and onSelectInternalTab is provided (e.g. inside RecruiterInbox)
+      if (window.location.pathname === it.path.split('?')[0] && onSelectInternalTab) {
+        onSelectInternalTab(it.id)
+        if (currentFull !== it.path) {
+          navigate(it.path)
+        }
+        return
+      }
+
+      if (currentFull === it.path) {
         return
       }
       navigate(it.path)

@@ -27,7 +27,7 @@ export async function autoSendJobDescriptionToCandidate({ candidate, job, recrui
   // Resolve recruiter details
   const myName = recruiterUser?.name || 'Technical Recruiter';
   const myEmail = recruiterUser?.email || 'omkesh@coolsofttech.com';
-  const myCompany = recruiterUser?.company || 'SmartHire ATS / COOLSOFT LLC';
+  const myCompany = 'SmartHire Team';
 
   // Resolve job details
   const cleanReqId = String(job?.id || job?.reqId || candidate?.targetReqId || '159116').replace('J-', '').replace('REQ-', '').trim();
@@ -128,7 +128,7 @@ export async function autoSendJobDescriptionToCandidate({ candidate, job, recrui
       <div style="border-top: 1px solid #e2e8f0; padding-top: 16px; font-size: 13px; color: #64748b;">
         <div style="font-size: 14px; font-weight: 700; color: #0f172a;">${myName}</div>
         <div style="font-size: 12.5px; color: #2563eb; font-weight: 600;">Technical Recruiting Specialist</div>
-        <div style="font-size: 12px; color: #64748b; margin-top: 2px;">${myCompany}</div>
+        <div style="font-size: 12px; color: #64748b; margin-top: 2px;">SmartHire Team | <a href="https://smarthireus.com" style="color: #2563eb; text-decoration: none; font-weight: 600;">https://smarthireus.com</a></div>
         <div style="font-size: 12px; color: #475569; margin-top: 3px;">
           Email: <a href="mailto:${myEmail}" style="color: #2563eb; text-decoration: none; font-weight: 600;">${myEmail}</a>
         </div>
@@ -156,9 +156,9 @@ If you are interested, please reply directly to this email with:
 4. Your target hourly rate ($/hr)
 5. Earliest available start date
 
-Best Regards,
+With Regards,
 ${myName}
-Technical Recruiting Specialist | ${myCompany}
+SmartHire Team | https://smarthireus.com
 Email: ${myEmail}
 `;
 
