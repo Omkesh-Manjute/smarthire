@@ -1453,9 +1453,11 @@ setTimeout(cleanupExpiredScreeningVideos, 15000);
 
 
 // ─── Middleware ────────────────────────────────────────────────────────────────
-const distPath = fs.existsSync(path.resolve(__dirname, '../../dist'))
-  ? path.resolve(__dirname, '../../dist')
-  : path.resolve(__dirname, '../dist');
+const distPath = fs.existsSync('/var/www/html/index.html')
+  ? '/var/www/html'
+  : (fs.existsSync(path.resolve(__dirname, '../../dist/index.html'))
+    ? path.resolve(__dirname, '../../dist')
+    : path.resolve(__dirname, '../dist'));
 
 const ALLOWED_ORIGINS = [
   'https://smarthireus.com',
