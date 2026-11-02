@@ -7724,7 +7724,7 @@ async function sendScreeningCompletedNotificationEmail(session) {
     return false;
   }
 
-  const primarySender = 'support@praximinds.com';
+  const primarySender = 'support@smarthireus.com';
   const defaultSender = 'omkesh@coolsofttech.com';
 
   try {
@@ -8008,7 +8008,7 @@ Dispatched from ${fromEmail}`;
 
     let sentSuccess = false;
 
-    // Primary Dispatch attempt via Hostinger support@praximinds.com
+    // Primary Dispatch attempt via Hostinger support@smarthireus.com
     try {
       const transporter = createTransport({
         host: smtpHost,
@@ -11691,8 +11691,8 @@ if (envEmailPass && !emailConfigsStore[envEmailUser]) {
   saveEmailConfigs();
 }
 
-// Auto-seed Hostinger support@praximinds.com email config
-const hostingerUser = 'support@praximinds.com';
+// Auto-seed Hostinger support@smarthireus.com email config
+const hostingerUser = 'support@smarthireus.com';
 const hostingerPass = process.env.SUPPORT_EMAIL_PASS || process.env.HOSTINGER_PASS || process.env.SUPPORT_PASS || (emailConfigsStore[hostingerUser]?.appPassword || '');
 if (!emailConfigsStore[hostingerUser]) {
   emailConfigsStore[hostingerUser] = {
@@ -11705,7 +11705,7 @@ if (!emailConfigsStore[hostingerUser]) {
     imapHost: process.env.SUPPORT_IMAP_HOST || 'imap.hostinger.com',
     imapPort: parseInt(process.env.SUPPORT_IMAP_PORT || '993'),
     appPassword: hostingerPass,
-    signature: 'Best regards,\nSmartHire Support Team\nsupport@praximinds.com'
+    signature: 'Best regards,\nSmartHire Support Team\nsupport@smarthireus.com'
   };
   saveEmailConfigs();
 } else if (hostingerPass && !emailConfigsStore[hostingerUser].appPassword) {
@@ -11796,7 +11796,7 @@ function getPooledRecruiterTransporter(nodemailer, host, port, isSecure, user, p
   return transporter;
 }
 
-// POST send email via recruiter's configured SMTP (with automatic fallback to default support@praximinds.com)
+// POST send email via recruiter's configured SMTP (with automatic fallback to default support@smarthireus.com)
 function formatFallbackEmailContent(origText, origHtml, recName, recEmail) {
   let fText = origText || '';
   let fHtml = origHtml || '';
@@ -11871,8 +11871,8 @@ app.post('/api/recruiter/send-email', express.json(), async (req, res) => {
   const cfg = getRecruiterEmailConfig(cleanRecruiterEmail) || {};
   const cleanedRecruiterPass = (cfg.appPassword || (cleanRecruiterEmail === 'omkesh@coolsofttech.com' ? (process.env.EMAIL_PASS || process.env.SMTP_PASS || '') : '')).replace(/\s+/g, '');
 
-  // Default fallback credentials: support@praximinds.com via Hostinger (smtp.hostinger.com:465 SSL)
-  const defaultSenderEmail = 'support@praximinds.com';
+  // Default fallback credentials: support@smarthireus.com via Hostinger (smtp.hostinger.com:465 SSL)
+  const defaultSenderEmail = 'support@smarthireus.com';
   const defaultHostingerCfg = (typeof emailConfigsStore !== 'undefined' && emailConfigsStore[defaultSenderEmail]) ? emailConfigsStore[defaultSenderEmail] : null;
   const defaultHostingerPass = (defaultHostingerCfg?.appPassword || process.env.SUPPORT_EMAIL_PASS || process.env.HOSTINGER_PASS || 'Praximinds@1994').replace(/\s+/g, '');
   const defaultHostingerHost = defaultHostingerCfg?.smtpHost || process.env.SUPPORT_SMTP_HOST || 'smtp.hostinger.com';
@@ -11958,7 +11958,7 @@ app.post('/api/recruiter/send-email', express.json(), async (req, res) => {
       console.log(`[RecruiterEmail] Recruiter ${cleanRecruiterEmail} has not configured SMTP credentials. Routing automatically through default ${defaultSenderEmail}...`);
     }
 
-    // 2. If recruiter has no config or their SMTP failed, dispatch via default fallback support@praximinds.com
+    // 2. If recruiter has no config or their SMTP failed, dispatch via default fallback support@smarthireus.com
     // Fallback sends strictly as "SmartHire Team" and formats signature without recruiter individual name
     const { fText: fallbackBody, fHtml: fallbackHtml } = formatFallbackEmailContent(
       (body || '') + emailSignature,
@@ -12042,7 +12042,7 @@ app.post('/api/recruiter/send-email', express.json(), async (req, res) => {
       return res.json({ 
         success: true, 
         message: usingFallback
-          ? `Job Description sent successfully to ${toRecipient} (dispatched via support@praximinds.com)`
+          ? `Job Description sent successfully to ${toRecipient} (dispatched via support@smarthireus.com)`
           : `Email sent successfully from ${dispatchedFrom}`,
         dispatchedFrom,
         usingFallback,
@@ -14569,7 +14569,7 @@ app.post('/api/contacts/batch-send-jd', express.json(), async (req, res) => {
     const cleanedRecruiterPass = (cfg.appPassword || (cleanRecruiterEmail === 'omkesh@coolsofttech.com' ? (process.env.EMAIL_PASS || process.env.SMTP_PASS || '') : '')).replace(/\s+/g, '');
 
     // Default Fallback Transporter (Hostinger / Yahoo)
-    const defaultSenderEmail = 'support@praximinds.com';
+    const defaultSenderEmail = 'support@smarthireus.com';
     const defaultHostingerPass = (process.env.SUPPORT_EMAIL_PASS || process.env.HOSTINGER_PASS || 'Praximinds@1994').replace(/\s+/g, '');
     const defaultHostingerHost = process.env.SUPPORT_SMTP_HOST || 'smtp.hostinger.com';
     const defaultHostingerPort = 465;
