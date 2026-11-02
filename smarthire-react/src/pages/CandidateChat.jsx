@@ -1078,7 +1078,7 @@ export default function CandidateChat() {
           <a href={`/ats?tab=screening&session=${encodeURIComponent(sessionId)}`} style={{ ...styles.primaryButton, background: '#2563eb', color: '#ffffff', textDecoration: 'none' }}>
             View Screening Evaluation in ATS &rarr;
           </a>
-          <a href="mailto:support@praximinds.com" style={{ ...styles.primaryButton, background: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', textDecoration: 'none' }}>
+          <a href="mailto:support@smarthireus.com" style={{ ...styles.primaryButton, background: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', textDecoration: 'none' }}>
             Contact Recruitment Desk
           </a>
         </div>
@@ -1103,7 +1103,7 @@ export default function CandidateChat() {
           <a href={`/ats?tab=screening&session=${encodeURIComponent(sessionId)}`} style={{ ...styles.primaryButton, background: '#2563eb', color: '#ffffff', textDecoration: 'none' }}>
             View Screening Evaluation in ATS &rarr;
           </a>
-          <a href="mailto:support@praximinds.com" style={{ ...styles.primaryButton, background: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', textDecoration: 'none' }}>
+          <a href="mailto:support@smarthireus.com" style={{ ...styles.primaryButton, background: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', textDecoration: 'none' }}>
             Contact Recruitment Desk
           </a>
         </div>
@@ -1136,7 +1136,7 @@ export default function CandidateChat() {
           {error}
         </p>
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '16px' }}>
-          <a href="mailto:support@praximinds.com" style={{ ...styles.primaryButton, textDecoration: 'none' }}>
+          <a href="mailto:support@smarthireus.com" style={{ ...styles.primaryButton, textDecoration: 'none' }}>
             Contact Support Desk
           </a>
         </div>
@@ -2020,10 +2020,10 @@ export default function CandidateChat() {
               }}>
                 Facing an unexpected technical difficulty with your recorded take?{' '}
                 <a
-                  href="mailto:support@praximinds.com?subject=Screening%20Technical%20Assistance"
+                  href="mailto:support@smarthireus.com?subject=Screening%20Technical%20Assistance"
                   style={{ color: '#2563EB', fontWeight: '600', textDecoration: 'underline' }}
                 >
-                  Contact Platform Technical Support (support@praximinds.com)
+                  Contact Platform Technical Support (support@smarthireus.com)
                 </a>
               </div>
             </div>
@@ -2034,10 +2034,10 @@ export default function CandidateChat() {
       {/* FOOTER */}
       <footer style={styles.footer}>
         <div style={{ fontWeight: '600', color: '#334155' }}>
-          SmartHire ATS • A Product of Praximind Pvt. Ltd.
+          SmartHire ATS • Enterprise Video Intelligence Platform
         </div>
         <div style={{ marginTop: '4px', fontSize: '11px', color: '#94a3b8' }}>
-          © 2026 Praximind Pvt. Ltd. All rights reserved. • Enterprise Proctored Asynchronous Video Intelligence
+          © 2026 SmartHire Technologies. All rights reserved. • Enterprise Proctored Asynchronous Video Intelligence
         </div>
       </footer>
     </div>

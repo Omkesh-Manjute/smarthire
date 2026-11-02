@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 
 const DEFAULT_TEAM_RECRUITERS = [
-  { name: 'SmartHire Support (Hostinger)', email: 'support@praximinds.com', role: 'admin', refCode: 'praximinds-support' },
+  { name: 'SmartHire System Dispatch', email: 'support@smarthireus.com', role: 'admin', refCode: 'system-dispatch' },
   { name: 'Omkesh', email: 'omkesh@coolsofttech.com', role: 'superadmin', refCode: 'omkesh' },
   { name: 'Omkesh Manjute', email: 'omkesh.manjute@smarthire.com', role: 'superadmin', refCode: 'omkesh' },
   { name: 'Gourav', email: 'gourav@coolsofttech.com', role: 'recruiter', parentRecruiterName: 'Omkesh', refCode: 'gourav' },
@@ -209,7 +209,7 @@ function SettingsModule() {
         setEmailCfg(prev => ({ ...prev, ...data.config }))
       } else {
         const rec = teamList.find(r => (r.email || '').toLowerCase() === emailToFetch.toLowerCase())
-        const isHostinger = emailToFetch.toLowerCase().includes('praximinds') || emailToFetch.toLowerCase().includes('hostinger')
+        const isHostinger = emailToFetch.toLowerCase().includes('smarthire') || emailToFetch.toLowerCase().includes('hostinger')
         setEmailCfg(prev => ({
           ...prev,
           displayName: rec ? rec.name : (emailToFetch.split('@')[0] || ''),
@@ -221,7 +221,7 @@ function SettingsModule() {
           imapHost: isHostinger ? 'imap.hostinger.com' : 'imap.mail.yahoo.com',
           imapPort: 993,
           appPassword: '',
-          signature: isHostinger ? `Best regards,\nSmartHire Support Team\nsupport@praximinds.com` : `With Regards,\n${rec ? rec.name : 'Technical Recruiter'}\nCOOLSOFT LLC | SmartHire ATS`
+          signature: isHostinger ? `Best regards,\nSmartHire Support Team\nsupport@smarthireus.com` : `With Regards,\n${rec ? rec.name : 'Technical Recruiter'}\nSmartHire ATS`
         }))
       }
     } catch(e) {}
@@ -421,22 +421,22 @@ function SettingsModule() {
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <span style={{ fontSize: 10, fontWeight: 800, padding: '2px 7px', borderRadius: 4, background: '#7C3AED', color: '#FFFFFF' }}>HOSTINGER SMTP</span>
-                <strong style={{ fontSize: 13, color: '#4C1D95' }}>Interview Completion Notifications: support@praximinds.com</strong>
+                <strong style={{ fontSize: 13, color: '#4C1D95' }}>Interview Completion Notifications: support@smarthireus.com</strong>
               </div>
               <p style={{ margin: '3px 0 0', fontSize: 12, color: '#6D28D9' }}>
-                All candidate video screening submissions and completion notifications are sent from <strong>support@praximinds.com</strong> via Hostinger (<code>smtp.hostinger.com:465 SSL</code>).
+                All candidate video screening submissions and completion notifications are sent from <strong>support@smarthireus.com</strong> via Hostinger (<code>smtp.hostinger.com:465 SSL</code>).
               </p>
             </div>
             <button
               type="button"
               onClick={() => {
-                setRecruiterEmailKey('support@praximinds.com')
-                fetchEmailConfig('support@praximinds.com')
+                setRecruiterEmailKey('support@smarthireus.com')
+                fetchEmailConfig('support@smarthireus.com')
                 setGuideProvider('hostinger')
               }}
               style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px', background: '#7C3AED', color: '#FFFFFF', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
             >
-              Configure support@praximinds.com
+              Configure support@smarthireus.com
             </button>
           </div>
           {/* Step-by-Step App Password Tutorial Guide */}
@@ -453,7 +453,7 @@ function SettingsModule() {
               {/* Guide Tabs */}
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 {[
-                  { id: 'hostinger', label: 'Hostinger (support@praximinds.com)', color: '#7c3aed' },
+                  { id: 'hostinger', label: 'Hostinger (support@smarthireus.com)', color: '#7c3aed' },
                   { id: 'gmail', label: 'Gmail', color: '#ea4335' },
                   { id: 'yahoo', label: 'Yahoo Mail (SSL 465)', color: '#6001d2' },
                   { id: 'yahooBiz', label: 'Yahoo Biz / Turbify', color: '#4f46e5' },
@@ -488,12 +488,12 @@ function SettingsModule() {
             {guideProvider === 'hostinger' && (
               <div style={{ background: '#f5f3ff', border: '1px solid #ddd6fe', borderRadius: 10, padding: 14 }}>
                 <div style={{ fontWeight: 800, fontSize: 13, color: '#5b21b6', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  Hostinger Mail Settings for support@praximinds.com (mail.hostinger.com)
+                  Hostinger Mail Settings for support@smarthireus.com (mail.hostinger.com)
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10, fontSize: 12, color: '#334155' }}>
                   <div style={{ background: '#fff', padding: '10px 12px', borderRadius: 8, border: '1px solid #c4b5fd' }}>
                     <div style={{ fontWeight: 800, color: '#6d28d9', marginBottom: 4 }}>1. Hostinger Mailbox</div>
-                    Email: <strong>support@praximinds.com</strong><br/>
+                    Email: <strong>support@smarthireus.com</strong><br/>
                     Login: <a href="https://mail.hostinger.com" target="_blank" rel="noreferrer" style={{ color: '#6d28d9', fontWeight: 700 }}>mail.hostinger.com</a>
                   </div>
                   <div style={{ background: '#fff', padding: '10px 12px', borderRadius: 8, border: '1px solid #c4b5fd' }}>

@@ -17,32 +17,31 @@ function Footer() {
   }
 
   return (
-    <footer className="praximind-footer">
-      <div className="praximind-footer-container">
+    <footer className="smarthire-footer">
+      <div className="smarthire-footer-container">
         {/* Main 4-Column Layout */}
-        <div className="praximind-footer-grid">
+        <div className="smarthire-footer-grid">
           
           {/* Column 1: Brand & Parent Company */}
-          <div className="praximind-footer-brand-col">
-            <Link to="/" className="praximind-footer-logo-link">
+          <div className="smarthire-footer-brand-col">
+            <Link to="/" className="smarthire-footer-logo-link">
               <div className="smarthire-footer-logo-icon">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
                   <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
                 </svg>
               </div>
-              <div className="praximind-footer-logo-text">
+              <div className="smarthire-footer-logo-text">
                 <span className="pm-brand-name">SmartHire ATS</span>
-                <span className="pm-parent-badge">A Product of Praximind Pvt. Ltd.</span>
               </div>
             </Link>
 
-            <p className="praximind-footer-desc">
+            <p className="smarthire-footer-desc">
               Enterprise applicant tracking, autonomous proctored video screening, and semantic talent intelligence for high-velocity recruiting teams.
             </p>
 
             {/* Social / Direct Support Buttons */}
-            <div className="praximind-footer-socials">
+            <div className="smarthire-footer-socials">
               <a
                 href="https://www.linkedin.com"
                 target="_blank"
@@ -57,9 +56,9 @@ function Footer() {
               </a>
 
               <a
-                href="mailto:support@praximinds.com"
+                href="mailto:support@smarthireus.com"
                 className="pm-social-btn"
-                title="Direct Support Desk (support@praximinds.com)"
+                title="Direct Support Desk (support@smarthireus.com)"
                 aria-label="Email Support"
               >
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -71,7 +70,7 @@ function Footer() {
           </div>
 
           {/* Column 2: PLATFORM (Actual ATS Features) */}
-          <div className="praximind-footer-col">
+          <div className="smarthire-footer-col">
             <h4 className="pm-col-title">PLATFORM</h4>
             <ul className="pm-links-list">
               <li><Link to="/smartscreen">SmartScreen AI</Link></li>
@@ -82,7 +81,7 @@ function Footer() {
           </div>
 
           {/* Column 3: RESOURCES (Real ATS Pages) */}
-          <div className="praximind-footer-col">
+          <div className="smarthire-footer-col">
             <h4 className="pm-col-title">RESOURCES</h4>
             <ul className="pm-links-list">
               <li><Link to="/blog">Talent Insights Blog</Link></li>
@@ -93,7 +92,7 @@ function Footer() {
           </div>
 
           {/* Column 4: STAY CONNECTED */}
-          <div className="praximind-footer-col praximind-footer-connect-col">
+          <div className="smarthire-footer-col smarthire-footer-connect-col">
             <h4 className="pm-col-title">STAY CONNECTED</h4>
             <p className="pm-connect-text">
               Join our talent network to receive the latest hiring intelligence &amp; ATS feature updates.
@@ -115,8 +114,8 @@ function Footer() {
 
             <div className="pm-direct-support-text">
               Direct Support:{' '}
-              <a href="mailto:support@praximinds.com" className="pm-support-email-link">
-                support@praximinds.com
+              <a href="mailto:support@smarthireus.com" className="pm-support-email-link">
+                support@smarthireus.com
               </a>
             </div>
           </div>
@@ -124,9 +123,9 @@ function Footer() {
         </div>
 
         {/* Bottom Bar: Copyright & Compliance */}
-        <div className="praximind-footer-bottom">
+        <div className="smarthire-footer-bottom">
           <div className="pm-bottom-copy">
-            &copy; {new Date().getFullYear()} Praximind Pvt. Ltd. All rights reserved. &bull; SmartHire ATS
+            &copy; {new Date().getFullYear()} SmartHire Technologies. All rights reserved. &bull; SmartHire ATS
           </div>
           <div className="pm-bottom-links">
             <Link to="/privacy">Privacy Policy</Link>

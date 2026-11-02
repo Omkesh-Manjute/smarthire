@@ -1071,8 +1071,8 @@ async function loadSocialPostsFromDisk() {
           length: 'Medium',
           goal: 'Educational',
           title: 'Revolutionizing Hiring: AI in Recruitment',
-          content: 'Hiring managers are drowning in resumes, leading to missed top talent and slow hiring cycles.\\n\\nAt Praximind Pvt Ltd, we recently helped an HR team automate their initial resume screening. By using a custom recruitment automation layer, they cut their candidate response time from 7 days to under 2 hours.\\n\\nThe goal isn\'t to replace the human element of hiring. It is to free up HR professionals so they can spend their time interviewing, building relationships, and onboarding rather than filtering spreadsheets.\\n\\nHow is your organization addressing time-to-hire challenges this year?',
-          hashtags: ['#RecruitmentTechnology', '#HRTech', '#AIinRecruitment', '#Praximind', '#BusinessAutomation', '#TechTrends'],
+          content: 'Hiring managers are drowning in resumes, leading to missed top talent and slow hiring cycles.\\n\\nAt SmartHire Technologies, we recently helped an HR team automate their initial resume screening. By using a custom recruitment automation layer, they cut their candidate response time from 7 days to under 2 hours.\\n\\nThe goal isn\'t to replace the human element of hiring. It is to free up HR professionals so they can spend their time interviewing, building relationships, and onboarding rather than filtering spreadsheets.\\n\\nHow is your organization addressing time-to-hire challenges this year?',
+          hashtags: ['#RecruitmentTechnology', '#HRTech', '#AIinRecruitment', '#SmartHire', '#BusinessAutomation', '#TechTrends'],
           status: 'published',
           scheduled_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
           published_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
@@ -1087,7 +1087,7 @@ async function loadSocialPostsFromDisk() {
           goal: 'Showcase expertise',
           title: 'Scaling SaaS Without the Dev Bottleneck',
           content: 'You hit product-market fit, and your user base is growing 20% week-over-week. Suddenly, your servers are throttling, and database locks are stalling transactions.\\n\\nScaling a SaaS product isn\'t just about throwing more server resources at it. It requires decoupling services and building an event-driven architecture that handles spike loads smoothly.\\n\\nWe design scalable SaaS backends that ensure your application stays fast, whether you have 100 active users or 100,000.\\n\\nWhat is your biggest technical bottleneck when scaling software applications?',
-          hashtags: ['#SaaS', '#SoftwareDevelopment', '#SaaSArchitect', '#CloudScaling', '#Praximind', '#TechTrends'],
+          hashtags: ['#SaaS', '#SoftwareDevelopment', '#SaaSArchitect', '#CloudScaling', '#SmartHire', '#TechTrends'],
           status: 'scheduled',
           scheduled_at: new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString(),
           published_at: null,
@@ -3386,13 +3386,13 @@ function generateSocialPost(topic, category, tone, length, goal) {
         `How much of your operational cost is tied up in repetitive manual entry? The answer is usually higher than you think.`
       ];
       bodies = [
-        `At Praximind Pvt Ltd, we specialize in building custom AI pipelines that connect directly with your existing systems. Recently, we worked on a project focusing on ${defaultTopic}. By automating this workflow, we helped the business reduce processing time by 85% and eliminated transcription errors entirely.\n\nAutomation doesn't require a complete overhaul of your systems. It’s about building intelligent bridges that handle the high-volume, repetitive tasks so your team can focus on client relationships and high-value decision making.`
+        `At SmartHire Technologies, we specialize in building custom AI pipelines that connect directly with your existing systems. Recently, we worked on a project focusing on ${defaultTopic}. By automating this workflow, we helped the business reduce processing time by 85% and eliminated transcription errors entirely.\n\nAutomation doesn't require a complete overhaul of your systems. It’s about building intelligent bridges that handle the high-volume, repetitive tasks so your team can focus on client relationships and high-value decision making.`
       ];
       ctas = [
         `What is the most tedious, repetitive task in your daily workflow? Let's discuss in the comments.`,
         `If you could automate one process in your operations today, what would it be?`
       ];
-      baseHashtags = ['#AIAutomation', '#BusinessAutomation', '#ProcessEfficiency', '#Praximind', '#BusinessProductivity'];
+      baseHashtags = ['#AIAutomation', '#BusinessAutomation', '#ProcessEfficiency', '#SmartHire', '#BusinessProductivity'];
       break;
 
     case 'Software Development':
@@ -3402,13 +3402,13 @@ function generateSocialPost(topic, category, tone, length, goal) {
         `Scaling a business on Excel sheets and siloed databases eventually hits a wall. That's when custom development becomes a necessity.`
       ];
       bodies = [
-        `We often see companies struggle to grow because their software is holding them back. Whether it's ${defaultTopic} or integrating legacy systems, custom software development solves the exact bottleneck your business faces.\n\nAt Praximind Pvt Ltd, we build robust, scalable architectures designed to adapt as your business grows. No rigid templates—just clean, custom code that fits your exact processes.`
+        `We often see companies struggle to grow because their software is holding them back. Whether it's ${defaultTopic} or integrating legacy systems, custom software development solves the exact bottleneck your business faces.\n\nAt SmartHire Technologies, we build robust, scalable architectures designed to adapt as your business grows. No rigid templates—just clean, custom code that fits your exact processes.`
       ];
       ctas = [
         `What software limitation is currently holding your team back from scaling?`,
         `Have you ever had to change your business processes just to fit into an off-the-shelf software system?`
       ];
-      baseHashtags = ['#SoftwareDevelopment', '#CustomSoftware', '#TechArchitecture', '#Praximind', '#SoftwareEngineering'];
+      baseHashtags = ['#SoftwareDevelopment', '#CustomSoftware', '#TechArchitecture', '#SmartHire', '#SoftwareEngineering'];
       break;
 
     case 'Mobile Apps':
@@ -3418,13 +3418,13 @@ function generateSocialPost(topic, category, tone, length, goal) {
         `Before building a mobile app, ask yourself: does this solve a real customer problem on the go, or are we just checking a box?`
       ];
       bodies = [
-        `Building a successful mobile application requires a deep focus on native performance, clean design, and simple workflows. For businesses looking to address ${defaultTopic}, a mobile-first approach can drastically improve engagement and accessibility.\n\nOur mobile app development team at Praximind Pvt Ltd focuses on building high-performance, intuitive iOS and Android apps that connect seamlessly to your core business APIs.`
+        `Building a successful mobile application requires a deep focus on native performance, clean design, and simple workflows. For businesses looking to address ${defaultTopic}, a mobile-first approach can drastically improve engagement and accessibility.\n\nOur mobile app development team at SmartHire Technologies focuses on building high-performance, intuitive iOS and Android apps that connect seamlessly to your core business APIs.`
       ];
       ctas = [
         `What is the one feature in a mobile app that makes you keep using it daily?`,
         `Is your business planning a mobile-first customer experience this year? Let's share insights.`
       ];
-      baseHashtags = ['#MobileAppDevelopment', '#AppDesign', '#UXUI', '#MobileApps', '#Praximind', '#DigitalTransformation'];
+      baseHashtags = ['#MobileAppDevelopment', '#AppDesign', '#UXUI', '#MobileApps', '#SmartHire', '#DigitalTransformation'];
       break;
 
     case 'SaaS':
@@ -3434,13 +3434,13 @@ function generateSocialPost(topic, category, tone, length, goal) {
         `A great SaaS product is never finished. It relies on continuous deployment, reliable caching, and a user-centric feedback loop.`
       ];
       bodies = [
-        `When designing SaaS platforms, especially around ${defaultTopic}, we emphasize database optimization, decoupled microservices, and serverless compute. This keeps hosting costs low during initial launch, while allowing vertical and horizontal scaling when demand surges.\n\nPraximind Pvt Ltd acts as a dedicated technical partner for founders, helping them move from prototype to production-grade SaaS platforms.`
+        `When designing SaaS platforms, especially around ${defaultTopic}, we emphasize database optimization, decoupled microservices, and serverless compute. This keeps hosting costs low during initial launch, while allowing vertical and horizontal scaling when demand surges.\n\nSmartHire Technologies acts as a dedicated technical partner for founders, helping them move from prototype to production-grade SaaS platforms.`
       ];
       ctas = [
         `What is your biggest engineering challenge when scaling a SaaS product?`,
         `How do you balance adding new SaaS features with managing technical debt?`
       ];
-      baseHashtags = ['#SaaSDevelopment', '#SaaSStartups', '#SoftwareScaling', '#Praximind', '#CloudArchitecture'];
+      baseHashtags = ['#SaaSDevelopment', '#SaaSStartups', '#SoftwareScaling', '#SmartHire', '#CloudArchitecture'];
       break;
 
     case 'ERP':
@@ -3450,13 +3450,13 @@ function generateSocialPost(topic, category, tone, length, goal) {
         `Centralizing your operations into a unified ERP is the single most effective way to eliminate duplicate data entry and improve inventory accuracy.`
       ];
       bodies = [
-        `Integrating an ERP solution tailored to your operational flow, such as handling ${defaultTopic}, ensures that every department has a single source of truth. Real-time dashboards replace weekly manual reporting, giving stakeholders immediate visibility into overheads, order statuses, and margins.\n\nWe design and implement ERP solutions at Praximind Pvt Ltd that bridge department silos and simplify operational workflows.`
+        `Integrating an ERP solution tailored to your operational flow, such as handling ${defaultTopic}, ensures that every department has a single source of truth. Real-time dashboards replace weekly manual reporting, giving stakeholders immediate visibility into overheads, order statuses, and margins.\n\nWe design and implement ERP solutions at SmartHire Technologies that bridge department silos and simplify operational workflows.`
       ];
       ctas = [
         `How many different software platforms does your team have to log into just to complete a single order?`,
         `What is the biggest operational hurdle you've faced during an ERP transition?`
       ];
-      baseHashtags = ['#ERPSolutions', '#EnterpriseSoftware', '#OperationsManagement', '#Praximind', '#BusinessSystems'];
+      baseHashtags = ['#ERPSolutions', '#EnterpriseSoftware', '#OperationsManagement', '#SmartHire', '#BusinessSystems'];
       break;
 
     case 'CRM':
@@ -3466,13 +3466,13 @@ function generateSocialPost(topic, category, tone, length, goal) {
         `Without proper lead scoring and automated pipeline reminders, deals will slip through the cracks of your CRM.`
       ];
       bodies = [
-        `An effective CRM implementation goes beyond storing contact information. It automates follow-ups, structures lead scoring, and integrates with your email and marketing channels, specifically for managing ${defaultTopic}.\n\nAt Praximind Pvt Ltd, we customize and integrate CRM solutions that help B2B sales teams spend less time on admin and more time building relationships.`
+        `An effective CRM implementation goes beyond storing contact information. It automates follow-ups, structures lead scoring, and integrates with your email and marketing channels, specifically for managing ${defaultTopic}.\n\nAt SmartHire Technologies, we customize and integrate CRM solutions that help B2B sales teams spend less time on admin and more time building relationships.`
       ];
       ctas = [
         `Is your sales team happy with your current CRM, or do they find it too manual?`,
         `What CRM automation has had the biggest impact on your sales team's closing rate?`
       ];
-      baseHashtags = ['#CRMIntegration', '#SalesAutomation', '#SalesPipeline', '#Praximind', '#CustomerRelationshipManagement'];
+      baseHashtags = ['#CRMIntegration', '#SalesAutomation', '#SalesPipeline', '#SmartHire', '#CustomerRelationshipManagement'];
       break;
 
     case 'Recruitment Technology':
@@ -3482,13 +3482,13 @@ function generateSocialPost(topic, category, tone, length, goal) {
         `A candidate's first experience with your brand is your application flow. If it's too long, 60% of top talent will drop out.`
       ];
       bodies = [
-        `Improving the hiring pipeline requires smart recruitment systems. Implementing ${defaultTopic} helps recruiters instantly identify qualified profiles, automate interview scheduling, and run background checks safely.\n\nOur custom recruitment solutions at Praximind Pvt Ltd focus on streamlining applicant tracking and integrating security layers to verify candidate credentials quickly.`
+        `Improving the hiring pipeline requires smart recruitment systems. Implementing ${defaultTopic} helps recruiters instantly identify qualified profiles, automate interview scheduling, and run background checks safely.\n\nOur custom recruitment solutions at SmartHire Technologies focus on streamlining applicant tracking and integrating security layers to verify candidate credentials quickly.`
       ];
       ctas = [
         `What is the average time-to-hire in your organization, and where is the biggest bottleneck?`,
         `Have you experimented with AI or automation tools to speed up candidate screening?`
       ];
-      baseHashtags = ['#RecruitmentTechnology', '#HRTech', '#TalentAcquisition', '#Praximind', '#HiringAutomation'];
+      baseHashtags = ['#RecruitmentTechnology', '#HRTech', '#TalentAcquisition', '#SmartHire', '#HiringAutomation'];
       break;
 
     case 'Digital Transformation':
@@ -3498,13 +3498,13 @@ function generateSocialPost(topic, category, tone, length, goal) {
         `The companies that thrive in the next decade are those that treat technology as a core driver, not an administrative cost.`
       ];
       bodies = [
-        `Modernizing operations is a necessity for growth. Moving from legacy applications to scalable, cloud-first infrastructure, especially for tasks like ${defaultTopic}, enables companies to respond to market shifts in real-time.\n\nPraximind Pvt Ltd partners with mid-sized enterprises to map out and execute step-by-step digital transformations that protect business continuity while building for the future.`
+        `Modernizing operations is a necessity for growth. Moving from legacy applications to scalable, cloud-first infrastructure, especially for tasks like ${defaultTopic}, enables companies to respond to market shifts in real-time.\n\nSmartHire Technologies partners with mid-sized enterprises to map out and execute step-by-step digital transformations that protect business continuity while building for the future.`
       ];
       ctas = [
         `What legacy system in your business is currently the hardest to replace or modernize?`,
         `How does your company align stakeholders when driving digital transformation initiatives?`
       ];
-      baseHashtags = ['#DigitalTransformation', '#LegacyModernization', '#CloudMigration', '#Praximind', '#TechStrategy'];
+      baseHashtags = ['#DigitalTransformation', '#LegacyModernization', '#CloudMigration', '#SmartHire', '#TechStrategy'];
       break;
 
     case 'Startup Growth':
@@ -3514,13 +3514,13 @@ function generateSocialPost(topic, category, tone, length, goal) {
         `For a startup founder, hiring a massive in-house dev team too early can drain runway before product-market fit is established.`
       ];
       bodies = [
-        `To scale quickly, startups need agile development frameworks. By focusing tech execution on ${defaultTopic}, founders can launch key value features, collect user feedback, and iterate rapidly without draining resources.\n\nAt Praximind Pvt Ltd, we act as the fractional tech partner for startups, providing the expertise to design architectures that scale without the high overhead of full-time hiring.`
+        `To scale quickly, startups need agile development frameworks. By focusing tech execution on ${defaultTopic}, founders can launch key value features, collect user feedback, and iterate rapidly without draining resources.\n\nAt SmartHire Technologies, we act as the fractional tech partner for startups, providing the expertise to design architectures that scale without the high overhead of full-time hiring.`
       ];
       ctas = [
         `As a startup founder, how do you decide what features to build in your MVP versus what to hold for v2?`,
         `What has been your experience using external software teams to launch initial product drafts?`
       ];
-      baseHashtags = ['#StartupGrowth', '#MVPDevelopment', '#FractionalCTO', '#Praximind', '#TechVelocity'];
+      baseHashtags = ['#StartupGrowth', '#MVPDevelopment', '#FractionalCTO', '#SmartHire', '#TechVelocity'];
       break;
 
     case 'Business Productivity':
@@ -3530,13 +3530,13 @@ function generateSocialPost(topic, category, tone, length, goal) {
         `You don't need a larger team to scale operations. You need to automate the micro-tasks that consume their attention.`
       ];
       bodies = [
-        `Improving productivity requires looking at daily work flows. Connecting database pipelines to automate ${defaultTopic} reduces human error and gives team members back hours of focused time every week.\n\nPraximind Pvt Ltd specializes in business process automation, designing custom software utilities that eliminate bottlenecks and streamline internal communications.`
+        `Improving productivity requires looking at daily work flows. Connecting database pipelines to automate ${defaultTopic} reduces human error and gives team members back hours of focused time every week.\n\nSmartHire Technologies specializes in business process automation, designing custom software utilities that eliminate bottlenecks and streamline internal communications.`
       ];
       ctas = [
         `What is the single most time-consuming admin task that your team complains about weekly?`,
         `Have you mapped out your team's workflow to see where the biggest productivity drop-offs happen?`
       ];
-      baseHashtags = ['#BusinessProductivity', '#ProcessAutomation', '#WorkflowOptimization', '#Praximind', '#Operations'];
+      baseHashtags = ['#BusinessProductivity', '#ProcessAutomation', '#WorkflowOptimization', '#SmartHire', '#Operations'];
       break;
 
     case 'Tech Trends':
@@ -3546,13 +3546,13 @@ function generateSocialPost(topic, category, tone, length, goal) {
         `Security and data compliance are no longer just IT checklist items—they are major differentiators for enterprise clients.`
       ];
       bodies = [
-        `As we monitor tech trends, particularly around ${defaultTopic}, we observe a massive shift toward secure, decentralized data verification and automated operations. Companies that implement these solutions early will outperform legacy competitors.\n\nAt Praximind Pvt Ltd, we stay ahead of emerging tech stacks to build future-proof software solutions for our clients.`
+        `As we monitor tech trends, particularly around ${defaultTopic}, we observe a massive shift toward secure, decentralized data verification and automated operations. Companies that implement these solutions early will outperform legacy competitors.\n\nAt SmartHire Technologies, we stay ahead of emerging tech stacks to build future-proof software solutions for our clients.`
       ];
       ctas = [
         `What emerging technology trend do you think will have the biggest impact on your industry in the next 18 months?`,
         `How does your company filter tech hype from practical business applications?`
       ];
-      baseHashtags = ['#TechTrends', '#FutureOfWork', '#EmergingTech', '#Praximind', '#BusinessStrategy'];
+      baseHashtags = ['#TechTrends', '#FutureOfWork', '#EmergingTech', '#SmartHire', '#BusinessStrategy'];
       break;
 
     case 'Case Studies':
@@ -3568,7 +3568,7 @@ function generateSocialPost(topic, category, tone, length, goal) {
         `Would you like to read the full case study breakdown? Leave a comment below and I'll send it over.`,
         `What is the most successful custom software integration you have implemented in your organization?`
       ];
-      baseHashtags = ['#CaseStudy', '#BusinessROI', '#SystemIntegration', '#Praximind', '#TechConsulting'];
+      baseHashtags = ['#CaseStudy', '#BusinessROI', '#SystemIntegration', '#SmartHire', '#TechConsulting'];
       break;
 
     default:
@@ -3576,12 +3576,12 @@ function generateSocialPost(topic, category, tone, length, goal) {
         `To scale operations effectively, B2B companies must align their business processes with modern software architectures.`
       ];
       bodies = [
-        `At Praximind Pvt Ltd, we specialize in custom software and automation solutions. We help companies modernize operations, integrate systems, and build software that supports growth rather than hindering it.`
+        `At SmartHire Technologies, we specialize in custom software and automation solutions. We help companies modernize operations, integrate systems, and build software that supports growth rather than hindering it.`
       ];
       ctas = [
         `What are your thoughts on B2B tech strategies for this quarter?`
       ];
-      baseHashtags = ['#Praximind', '#BusinessTechnology', '#CustomSoftware'];
+      baseHashtags = ['#SmartHire', '#BusinessTechnology', '#CustomSoftware'];
       break;
   }
 
@@ -3599,7 +3599,7 @@ function generateSocialPost(topic, category, tone, length, goal) {
     const shortenedBody = body.split('\n\n')[0];
     fullContent = `${hook}\n\n${shortenedBody}\n\n${cta}`;
   } else if (length === 'Long') {
-    const extraPara = `Our engineering philosophy at Praximind Pvt Ltd is simple: we don't just write code. We partner with business leaders to map their operations, find the real bottlenecks, and deploy clean, maintainable tech stacks. We believe in transparency, high performance, and architectures that scale.`;
+    const extraPara = `Our engineering philosophy at SmartHire Technologies is simple: we don't just write code. We partner with business leaders to map their operations, find the real bottlenecks, and deploy clean, maintainable tech stacks. We believe in transparency, high performance, and architectures that scale.`;
     fullContent = `${hook}\n\n${body}\n\n${extraPara}\n\n${cta}`;
   }
 
@@ -4032,11 +4032,11 @@ function cleanJobTitle(title) {
 
 // Call remote LLM APIs for LinkedIn post generation
 async function generatePostWithLLM({ provider, apiKey, topic, category, tone, length, goal }) {
-  const systemPrompt = `You are the official content strategist for Praximind Pvt Ltd.
+  const systemPrompt = `You are the official content strategist for SmartHire Technologies.
 Generate authentic LinkedIn content.
 
 Company:
-Praximind Pvt Ltd
+SmartHire Technologies
 
 Services:
 AI Automation, Software Development, Mobile Apps, SaaS, ERP, CRM, Recruitment Solutions, Digital Transformation
@@ -4046,7 +4046,7 @@ Business Owners, Founders, HR Teams, Recruiters, SMEs, Decision Makers
 
 Rules:
 - 70% Educational (Explain value, tips, process, or benefits in simple English)
-- 20% Authority Building (Highlight Praximind's custom service capabilities, clean work, and efficiency gains)
+- 20% Authority Building (Highlight SmartHire's custom service capabilities, clean work, and efficiency gains)
 - 10% Promotional (Include a soft B2B call to action, no hard selling)
 - Strong attention-grabbing hook at the beginning
 - Human writing style, simple English, professional tone
@@ -4275,7 +4275,7 @@ app.post('/api/social-posts/generate', async (req, res) => {
     const generated = await generatePostWithLLM({ provider, apiKey, topic, category, tone, length, goal });
     res.json({
       success: true,
-      title: generated.title || 'Praximind Brand Post',
+      title: generated.title || 'SmartHire Brand Post',
       content: generated.content || '',
       hashtags: Array.isArray(generated.hashtags) ? generated.hashtags : []
     });
@@ -4296,7 +4296,7 @@ let commentsStore = [
     postTitle: 'Revolutionizing Hiring: AI in Recruitment',
     author: 'Sanjay Mehta (CTO at InnovateCorp)',
     avatar: 'SM',
-    text: 'Great insights! How does Praximind handle security and candidate compliance during automated screening?',
+    text: 'Great insights! How does SmartHire handle security and candidate compliance during automated screening?',
     reply: null,
     status: 'pending', // 'pending', 'replied'
     created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
@@ -4344,13 +4344,13 @@ app.post('/api/social-posts/comments/reply', async (req, res) => {
     if (provider === 'mock' || !resolvedKey) {
       // Mock reply logic
       if (comment.text.includes('security') || comment.text.includes('compliance')) {
-        replyText = "Thanks for asking, Sanjay! At Praximind, we implement strict data decoupling, AES-256 encryption, and secure APIs to ensure absolute compliance and candidate data privacy.";
+        replyText = "Thanks for asking, Sanjay! At SmartHire, we implement strict data decoupling, AES-256 encryption, and secure APIs to ensure absolute compliance and candidate data privacy.";
       } else {
         replyText = "Excellent point, Priya! We design automation to handle high-volume sorting so HR teams can spend quality face-time interviewing candidates. It actually makes the final stages more personal.";
       }
     } else {
       // Live LLM reply logic
-      const systemPrompt = `You are the official LinkedIn spokesperson for Praximind Pvt Ltd.
+      const systemPrompt = `You are the official LinkedIn spokesperson for SmartHire Technologies.
 Generate a professional, helpful, and concise response (max 2-3 sentences) to a comment on our LinkedIn post.
 Keep the tone friendly, B2B-authoritative, and constructive.
 
@@ -4535,7 +4535,7 @@ function generateThemeGradientSVG(title, category, theme = 'neon') {
     <rect x="0" y="540" width="1200" height="90" fill="rgba(0, 0, 0, 0.7)" />
     <text x="100" y="594" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="24" font-weight="800" fill="${brandColor}">VerifyHire</text>
     <text x="230" y="593" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="20" font-weight="500" fill="#a0a0a0">| B2B Branding Console</text>
-    <text x="980" y="593" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="20" font-weight="700" fill="#ffffff">praximind.com</text>
+    <text x="980" y="593" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="20" font-weight="700" fill="#ffffff">smarthireus.com</text>
   </svg>`;
   
   return svg;
@@ -4544,7 +4544,7 @@ function generateThemeGradientSVG(title, category, theme = 'neon') {
 // GET generate social card banner image (Strictly Google Gemini gemini-2.5-flash-image)
 app.get('/api/social-posts/generate-banner', async (req, res) => {
   const { 
-    title = 'Praximind Brand Post', 
+    title = 'SmartHire Brand Post', 
     category = 'AI Automation',
     theme = 'neon'
   } = req.query;
@@ -7996,7 +7996,7 @@ Dispatched from ${fromEmail}`;
             Dispatched via Hostinger from ${fromEmail}
           </td>
           <td style="text-align: right; color: #94A3B8;">
-            Praximind Pvt. Ltd.
+            SmartHire Technologies
           </td>
         </tr>
       </table>
