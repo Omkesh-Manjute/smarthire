@@ -14438,40 +14438,79 @@ app.delete('/api/recruiter/vendor-hotlists/:id', (req, res) => {
 // EXTRACTED COMPANY CONTACTS & BATCH JD OUTREACH ENGINE
 // ═══════════════════════════════════════════════════════════════════════════════
 
-// GET /api/contacts/extracted - List extracted company & recruiter contacts from email
+// GET /api/contacts/extracted - List extracted company & recruiter contacts from email (strictly corporate, grouped by company)
 app.get('/api/contacts/extracted', async (req, res) => {
   try {
     const { getCachedContacts } = await import('./jobs-ingestion/email-contacts-extractor.js');
     const data = getCachedContacts();
     const search = (req.query.q || req.query.search || '').toLowerCase().trim();
-    const typeFilter = (req.query.type || 'all').toLowerCase().trim();
 
-    let list = Array.isArray(data.contacts) ? data.contacts : [];
+    // Strictly filter to corporate vendors/agencies only (remove personal/direct completely)
+    const rawCorporate = (Array.isArray(data.contacts) ? data.contacts : []).filter(c => c.type === 'Corporate');
 
-    if (typeFilter === 'corporate') {
-      list = list.filter(c => c.type === 'Corporate');
-    } else if (typeFilter === 'personal') {
-      list = list.filter(c => c.type !== 'Corporate');
+    // Group contacts by domain / company
+    const companyMap = new Map();
+    for (const c of rawCorporate) {
+      const domainKey = (c.domain || c.company || '').toLowerCase().trim();
+      if (!domainKey) continue;
+
+      if (!companyMap.has(domainKey)) {
+        companyMap.set(domainKey, {
+          id: domainKey,
+          company: c.company,
+          domain: c.domain,
+          lastDate: c.lastDate,
+          totalEmailsSeen: 0,
+          recruiters: []
+        });
+      }
+
+      const entry = companyMap.get(domainKey);
+      entry.totalEmailsSeen += (c.interactionCount || 1);
+
+      if (!entry.lastDate || (c.lastDate && new Date(c.lastDate) > new Date(entry.lastDate))) {
+        entry.lastDate = c.lastDate;
+      }
+
+      if (!entry.recruiters.some(r => r.email.toLowerCase() === c.email.toLowerCase())) {
+        entry.recruiters.push({
+          name: c.name || c.email.split('@')[0],
+          email: c.email,
+          emailsSeen: c.interactionCount || 1,
+          lastDate: c.lastDate
+        });
+      }
     }
 
+    // Sort recruiters inside each company by emailsSeen descending
+    for (const entry of companyMap.values()) {
+      entry.recruiters.sort((a, b) => b.emailsSeen - a.emailsSeen);
+    }
+
+    // Convert map to sorted list
+    let companies = Array.from(companyMap.values()).sort((a, b) => a.company.localeCompare(b.company));
+
+    // Search filter across company, domain, recruiter name, and recruiter email
     if (search) {
-      list = list.filter(c => 
-        (c.name && c.name.toLowerCase().includes(search)) ||
-        (c.company && c.company.toLowerCase().includes(search)) ||
-        (c.email && c.email.toLowerCase().includes(search)) ||
-        (c.domain && c.domain.toLowerCase().includes(search))
+      companies = companies.filter(comp =>
+        comp.company.toLowerCase().includes(search) ||
+        comp.domain.toLowerCase().includes(search) ||
+        comp.recruiters.some(r =>
+          (r.name && r.name.toLowerCase().includes(search)) ||
+          (r.email && r.email.toLowerCase().includes(search))
+        )
       );
     }
 
+    const totalRecruiters = companies.reduce((acc, c) => acc + c.recruiters.length, 0);
+
     return res.json({
       success: true,
-      total: data.total,
-      corporateCount: data.corporateCount,
-      personalCount: data.personalCount,
+      totalCompanies: companies.length,
+      totalRecruiters,
       updatedAt: data.updatedAt,
       account: data.account || 'omkesh@coolsofttech.com',
-      filteredCount: list.length,
-      contacts: list
+      companies
     });
   } catch (err) {
     console.error('[ContactsAPI] Error fetching extracted contacts:', err);
