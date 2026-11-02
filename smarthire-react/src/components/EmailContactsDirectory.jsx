@@ -43,6 +43,7 @@ export default function EmailContactsDirectory() {
   });
   const [showErrorDetails, setShowErrorDetails] = useState(false);
   const cancelSendingRef = useRef(false);
+  const abortControllerRef = useRef(null);
 
   // Fetch companies on mount
   useEffect(() => {
@@ -398,8 +399,6 @@ Looking forward to your prompt response.`;
     const activeJobTitle = availableJobs.find(j => (j.id || j._id) === selectedJobId)?.title || '';
 
     const total = targetRecipients.length;
-    let sentCount = 0;
-    let failedCount = 0;
     const accumulatedErrors = [];
 
     setSendProgress({
@@ -414,96 +413,111 @@ Looking forward to your prompt response.`;
     });
 
     try {
-      for (let i = 0; i < total; i++) {
-        if (cancelSendingRef.current) {
-          showToast(`Sending stopped at ${i} of ${total}`);
-          break;
-        }
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
 
-        const r = targetRecipients[i];
-        const toEmail = typeof r === 'string' ? r : (r.email || '');
-        const toName = typeof r === 'string' ? '' : (r.name || '');
-        const toCompany = typeof r === 'string' ? '' : (r.company || '');
-
-        setSendProgress({
-          current: i + 1,
-          total,
-          sentCount,
-          failedCount,
-          activeEmail: toEmail,
-          activeName: toName,
-          activeCompany: toCompany,
-          errors: accumulatedErrors
-        });
-
-        try {
-          const res = await fetch('/api/contacts/batch-send-jd', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              recipients: [r],
-              subject: jdSubject,
-              body: jdBody,
-              recruiterEmail,
-              recruiterName,
-              jobId: selectedJobId,
-              jobTitle: activeJobTitle
-            })
-          });
-
-          const data = await res.json();
-          if (data && data.success && data.sentCount > 0) {
-            sentCount++;
-          } else {
-            failedCount++;
-            const errMsg = data?.errors?.[0]?.error || data?.message || 'Delivery failed';
-            accumulatedErrors.push({ email: toEmail, name: toName, company: toCompany, error: errMsg });
-          }
-        } catch (itemErr) {
-          failedCount++;
-          accumulatedErrors.push({ email: toEmail, name: toName, company: toCompany, error: itemErr.message });
-        }
-
-        setSendProgress({
-          current: i + 1,
-          total,
-          sentCount,
-          failedCount,
-          activeEmail: toEmail,
-          activeName: toName,
-          activeCompany: toCompany,
-          errors: accumulatedErrors
-        });
-
-        // Small delay between emails (200ms) to ensure smooth UI updates and safe throttling
-        if (i < total - 1 && !cancelSendingRef.current) {
-          await new Promise(res => setTimeout(res, 200));
-        }
-      }
-
-      const finalSuccess = sentCount > 0;
-      setSendResult({
-        success: finalSuccess,
-        sentCount,
-        failedCount,
-        total,
-        errors: accumulatedErrors,
-        isCanceled: cancelSendingRef.current
+      const res = await fetch('/api/contacts/batch-send-jd?stream=true', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
+        body: JSON.stringify({
+          recipients: targetRecipients,
+          subject: jdSubject,
+          body: jdBody,
+          recruiterEmail,
+          recruiterName,
+          jobId: selectedJobId,
+          jobTitle: activeJobTitle
+        })
       });
 
-      if (sentCount === total) {
-        showToast(`Sent Job Description to all ${total} recruiters!`);
-      } else {
-        showToast(`Dispatched to ${sentCount} of ${total} recruiters`);
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.message || `Server error (${res.status})`);
+      }
+
+      if (!res.body) {
+        throw new Error('ReadableStream not supported on this browser');
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop(); // keep last incomplete line
+
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          try {
+            const data = JSON.parse(line);
+            if (data.type === 'progress') {
+              if (data.lastStatus === 'failed' && data.lastError) {
+                accumulatedErrors.push({
+                  email: data.activeEmail,
+                  name: data.activeName,
+                  company: data.activeCompany,
+                  error: data.lastError
+                });
+              }
+              setSendProgress({
+                current: data.current,
+                total: data.total,
+                sentCount: data.sentCount,
+                failedCount: data.failedCount,
+                activeEmail: data.activeEmail,
+                activeName: data.activeName,
+                activeCompany: data.activeCompany,
+                errors: accumulatedErrors
+              });
+            } else if (data.type === 'done') {
+              const allErrors = (data.errors && data.errors.length > 0) ? data.errors : accumulatedErrors;
+              setSendResult({
+                success: data.sentCount > 0,
+                sentCount: data.sentCount,
+                failedCount: data.failedCount,
+                total: data.total,
+                errors: allErrors
+              });
+              if (data.sentCount === data.total) {
+                showToast(`Sent Job Description to all ${data.total} recruiters!`);
+              } else {
+                showToast(`Dispatched to ${data.sentCount} of ${data.total} recruiters`);
+              }
+            }
+          } catch (_) {}
+        }
       }
     } catch (err) {
-      setSendResult({ success: false, message: err.message, errors: accumulatedErrors, sentCount, failedCount, total });
+      if (err.name === 'AbortError') {
+        showToast('Sending stopped by user');
+        setSendResult({
+          success: sendProgress.sentCount > 0,
+          sentCount: sendProgress.sentCount,
+          failedCount: sendProgress.failedCount,
+          total,
+          errors: accumulatedErrors,
+          isCanceled: true
+        });
+      } else {
+        setSendResult({ success: false, message: err.message, errors: accumulatedErrors, sentCount: 0, failedCount: total, total });
+        showToast(`Error: ${err.message}`);
+      }
     } finally {
       setIsSendingJd(false);
+      abortControllerRef.current = null;
     }
   };
 
   const handleCancelSending = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
     cancelSendingRef.current = true;
     showToast('Stopping email dispatch...');
   };

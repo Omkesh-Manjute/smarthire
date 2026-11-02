@@ -14552,6 +14552,38 @@ app.post('/api/contacts/sync', express.json(), async (req, res) => {
   }
 });
 
+// ─── Persistent SMTP Transporter Cache (Prevents Rapid TLS Auth Hammering / #AUTH005) ──
+const persistentSmtpPools = new Map();
+
+async function getOrCreatePersistentSmtp(fromEmail, pass, host, port) {
+  const key = `${fromEmail}:${host}:${port}:${pass}`;
+  if (persistentSmtpPools.has(key)) {
+    return persistentSmtpPools.get(key);
+  }
+  const nodemailer = await import('nodemailer').catch(() => null);
+  if (!nodemailer) throw new Error('Nodemailer unavailable on server');
+  const createTransport = nodemailer.default?.createTransport || nodemailer.createTransport;
+
+  const pool = createTransport({
+    pool: true,
+    maxConnections: 1,
+    maxMessages: 1000,
+    rateDelta: 1200,
+    rateLimit: 1,
+    host,
+    port,
+    secure: port === 465,
+    auth: { user: fromEmail, pass },
+    tls: { rejectUnauthorized: false, minVersion: 'TLSv1.2' },
+    connectionTimeout: 20000,
+    greetingTimeout: 15000,
+    socketTimeout: 30000
+  });
+
+  persistentSmtpPools.set(key, pool);
+  return pool;
+}
+
 // POST /api/contacts/batch-send-jd - Send Job Description outreach to selected contacts
 app.post('/api/contacts/batch-send-jd', express.json(), async (req, res) => {
   try {
@@ -14577,39 +14609,39 @@ app.post('/api/contacts/batch-send-jd', express.json(), async (req, res) => {
       });
     }
 
-    const nodemailer = await import('nodemailer').catch(() => null);
-    if (!nodemailer) {
-      return res.status(500).json({ success: false, message: 'Email service unavailable on server' });
-    }
-
-    const createTransport = nodemailer.default?.createTransport || nodemailer.createTransport;
-
     const fromEmail = cfg.fromEmail || cleanRecruiterEmail;
-    const smtpHost = cfg.smtpHost || (fromEmail.includes('coolsofttech.com') ? 'smtp.mail.yahoo.com' : 'smtp.bizmail.yahoo.com');
+    const smtpHost = cfg.smtpHost || (fromEmail.includes('coolsofttech.com') ? 'smtp.bizmail.yahoo.com' : 'smtp.mail.yahoo.com');
     const port = parseInt(cfg.smtpPort || '465');
 
-    // Connection pooling to prevent multiple rapid TLS auth handshakes on Yahoo SMTP
-    const activeTransporter = createTransport({
-      pool: true,
-      maxConnections: 1,
-      maxMessages: 100,
-      rateDelta: 1000,
-      rateLimit: 2,
-      host: smtpHost,
-      port,
-      secure: port === 465,
-      auth: { user: fromEmail, pass: cleanedRecruiterPass },
-      tls: { rejectUnauthorized: false, minVersion: 'TLSv1.2' },
-      connectionTimeout: 15000
-    });
+    // Acquire persistent pooled transporter
+    const activeTransporter = await getOrCreatePersistentSmtp(fromEmail, cleanedRecruiterPass, smtpHost, port);
     const fromAddress = `"${cleanRecruiterName}" <${fromEmail}>`;
+
+    const isStreaming = req.query.stream === 'true';
+    if (isStreaming) {
+      res.setHeader('Content-Type', 'application/x-ndjson; charset=utf-8');
+      res.setHeader('Cache-Control', 'no-cache, no-transform');
+      res.setHeader('Connection', 'keep-alive');
+      res.flushHeaders?.();
+    }
+
+    let isClientConnected = true;
+    req.on('close', () => {
+      isClientConnected = false;
+    });
 
     let sentCount = 0;
     let failedCount = 0;
     const errors = [];
 
-    // Dispatch loop
-    for (const r of recipients) {
+    // Dispatch loop with controlled safe pacing
+    for (let i = 0; i < recipients.length; i++) {
+      if (!isClientConnected) {
+        console.log(`[BatchSendJD] Client disconnected midway at recipient ${i} of ${recipients.length}`);
+        break;
+      }
+
+      const r = recipients[i];
       const toEmail = typeof r === 'string' ? r : (r.email || '');
       const toName = typeof r === 'string' ? '' : (r.name || '');
       const toCompany = typeof r === 'string' ? '' : (r.company || '');
@@ -14638,6 +14670,7 @@ app.post('/api/contacts/batch-send-jd', express.json(), async (req, res) => {
         .replace(/\{\{company_name\}\}/gi, toCompany || '')
         .replace(/\{\{job_title\}\}/gi, jobTitle || 'Immediate IT Requirement') : undefined;
 
+      let itemError = null;
       try {
         await activeTransporter.sendMail({
           from: fromAddress,
@@ -14651,13 +14684,41 @@ app.post('/api/contacts/batch-send-jd', express.json(), async (req, res) => {
       } catch (sendErr) {
         console.warn(`[BatchSendJD] Error sending to ${toEmail}:`, sendErr.message);
         failedCount++;
+        itemError = sendErr.message;
         errors.push({ email: toEmail, error: sendErr.message });
       }
 
-      // Small pause between emails to protect SMTP reputation
-      if (recipients.length > 1) {
-        await new Promise(r => setTimeout(r, 200));
+      if (isStreaming) {
+        res.write(JSON.stringify({
+          type: 'progress',
+          current: i + 1,
+          total: recipients.length,
+          sentCount,
+          failedCount,
+          activeEmail: toEmail,
+          activeName: toName,
+          activeCompany: toCompany,
+          lastStatus: itemError ? 'failed' : 'sent',
+          lastError: itemError
+        }) + '\n');
       }
+
+      // 1.2 second pause between emails to protect SMTP reputation and avoid Yahoo rate limits (554 6.6.0)
+      if (recipients.length > 1 && i < recipients.length - 1 && isClientConnected) {
+        await new Promise(r => setTimeout(r, 1200));
+      }
+    }
+
+    if (isStreaming) {
+      res.write(JSON.stringify({
+        type: 'done',
+        success: true,
+        sentCount,
+        failedCount,
+        total: recipients.length,
+        errors
+      }) + '\n');
+      return res.end();
     }
 
     return res.json({
@@ -14667,6 +14728,11 @@ app.post('/api/contacts/batch-send-jd', express.json(), async (req, res) => {
       total: recipients.length,
       errors
     });
+  } catch (err) {
+    console.error('[ContactsAPI] Error in batch-send-jd:', err);
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
   } catch (err) {
     console.error('[ContactsAPI] Error in batch-send-jd:', err);
     return res.status(500).json({ success: false, error: err.message });
