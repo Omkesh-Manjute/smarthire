@@ -11920,8 +11920,9 @@ app.post('/api/recruiter/send-email', express.json(), async (req, res) => {
 
       try {
         const transporter = getPooledRecruiterTransporter(nodemailer, smtpHost, port, isSecure, fromEmail, cleanedRecruiterPass);
+        const cleanDisplayName = (senderDisplayName || '').replace(/\s*\(SmartHire\)/gi, '').replace(/\s*SmartHire/gi, '').trim() || 'Recruiter';
         await transporter.sendMail({
-          from: `"${senderDisplayName} (SmartHire)" <${fromEmail}>`,
+          from: `"${cleanDisplayName}" <${fromEmail}>`,
           to: toRecipient,
           replyTo: actualReplyTo,
           subject,
@@ -14563,7 +14564,8 @@ app.post('/api/contacts/batch-send-jd', express.json(), async (req, res) => {
     }
 
     const cleanRecruiterEmail = String(recruiterEmail || 'omkesh@coolsofttech.com').toLowerCase().trim();
-    const cleanRecruiterName = recruiterName || 'Omkesh Manjute';
+    const rawRecruiterName = recruiterName || cfg.displayName || 'Omkesh';
+    const cleanRecruiterName = rawRecruiterName.replace(/\s*\(SmartHire\)/gi, '').replace(/\s*SmartHire/gi, '').trim() || 'Omkesh';
     loadEmailConfigs();
     const cfg = getRecruiterEmailConfig(cleanRecruiterEmail) || {};
     const cleanedRecruiterPass = (cfg.appPassword || (cleanRecruiterEmail === 'omkesh@coolsofttech.com' ? (process.env.EMAIL_PASS || process.env.SMTP_PASS || '') : '')).replace(/\s+/g, '');
@@ -14596,7 +14598,7 @@ app.post('/api/contacts/batch-send-jd', express.json(), async (req, res) => {
         tls: { rejectUnauthorized: false, minVersion: 'TLSv1.2' },
         connectionTimeout: 10000
       });
-      fromAddress = `"${cleanRecruiterName} (SmartHire)" <${fromEmail}>`;
+      fromAddress = `"${cleanRecruiterName}" <${fromEmail}>`;
     } else {
       activeTransporter = createTransport({
         host: defaultHostingerHost,
