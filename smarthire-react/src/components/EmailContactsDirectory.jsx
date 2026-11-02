@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { formatJobDescription } from '../utils/formatJobDescription';
 
 export default function EmailContactsDirectory() {
   const [companies, setCompanies] = useState([]);
@@ -67,7 +68,8 @@ export default function EmailContactsDirectory() {
       const res = await fetch('/api/jobs');
       const data = await res.json();
       const jobList = Array.isArray(data) ? data : (data.jobs || []);
-      setAvailableJobs(jobList.slice(0, 30));
+      const validJobs = jobList.filter(j => j && j.title && (!j.status || j.status.toLowerCase() === 'active' || j.status.toLowerCase() === 'open'));
+      setAvailableJobs(validJobs.length > 0 ? validJobs : jobList);
     } catch (err) {
       console.warn('Failed to load jobs for JD modal:', err);
     }
@@ -299,27 +301,66 @@ export default function EmailContactsDirectory() {
     setTargetRecipients(recipients);
     setSendResult(null);
 
-    // Default template
+    // Generate full, authentic Job Description outreach template
     const defaultJob = availableJobs[0];
     if (defaultJob) {
       setSelectedJobId(defaultJob.id || defaultJob._id || '');
-      setJdSubject(`Immediate Requirement: ${defaultJob.title || 'Senior Software Engineer'} - Looking for Candidates`);
-      setJdBody(`Hi {{contact_name}},\n\nHope you are doing well.\n\nWe have an urgent client opening for ${defaultJob.title || 'Senior IT Consultant'}.\n\nLocation: ${defaultJob.location || 'Remote / US'}\nRate/Salary: ${defaultJob.rate || defaultJob.salary || 'Competitive / Open'}\nKey Skills: ${defaultJob.skills || 'Relevant experience'}\n\nPlease let us know if you or your firm ({{company_name}}) have qualified profiles ready for submittal.\n\nLooking forward to working together.`);
+      const content = generateCompleteJdOutreach(defaultJob);
+      setJdSubject(content.subject);
+      setJdBody(content.body);
     } else {
-      setJdSubject('Immediate Requirement - Looking for Qualified Candidates');
-      setJdBody('Hi {{contact_name}},\n\nWe have an immediate client requirement open for submittals.\n\nPlease share updated resumes and available candidate details at your earliest convenience.\n\nThank you.');
+      const content = generateCompleteJdOutreach(null);
+      setJdSubject(content.subject);
+      setJdBody(content.body);
     }
 
     setIsJdModalOpen(true);
   };
 
+  const generateCompleteJdOutreach = (job) => {
+    if (!job) {
+      return {
+        subject: 'Immediate Client Requirement - Looking for Qualified Candidates',
+        body: `Hi {{contact_name}},\n\nHope you are doing well.\n\nWe have an immediate client requirement open for submittals.\n\nPlease share updated resumes and available candidate details with rate expectation and contact details at your earliest convenience.\n\nLooking forward to working together.`
+      };
+    }
+
+    const jobTitle = job.title || 'Technical Specialist';
+    const cleanReqId = String(job.reqId || job.id || '').replace(/^J-/, '').replace(/^REQ-/, '');
+    const subject = `Immediate Requirement: ${jobTitle}${cleanReqId ? ` (Req #${cleanReqId})` : ''} - Looking for Candidates`;
+
+    const rawDesc = job.description || job.fullDescription || job.rawDescription || '';
+    const formattedDesc = formatJobDescription(rawDesc, job);
+
+    const body = `Hi {{contact_name}},
+
+Hope you are doing well.
+
+We have an urgent opening for ${jobTitle} with our direct client. Please review the complete position details below and let us know if you or your firm ({{company_name}}) have matching candidate profiles ready for submittal:
+
+${formattedDesc || rawDesc || 'Key Details: ' + (job.skills || 'Technical Expertise')}
+
+===============================================================
+CANDIDATE SUBMISSION DETAILS
+===============================================================
+If you have available candidates ready for interview & submittal, please reply directly with:
+1. Updated Resume (Word / PDF format)
+2. Candidate Full Legal Name & Contact Details
+3. Current Location & Work Authorization / Visa Status
+4. Target Hourly Bill / Pay Rate
+5. Earliest Availability to Join
+
+Looking forward to your prompt response.`;
+
+    return { subject, body };
+  };
+
   const handleJobSelect = (jobId) => {
     setSelectedJobId(jobId);
     const job = availableJobs.find(j => (j.id || j._id) === jobId);
-    if (job) {
-      setJdSubject(`Immediate Requirement: ${job.title} - Looking for Candidates`);
-      setJdBody(`Hi {{contact_name}},\n\nHope you are doing well.\n\nWe have an urgent opening for ${job.title}.\n\nLocation: ${job.location || 'Remote / US'}\nDuration / Type: ${job.type || 'Full-time / Contract'}\nKey Skills: ${job.skills || 'Technical Expertise'}\n\nPlease share candidate profiles with rate and contact details.\n\nLooking forward to your response.`);
-    }
+    const content = generateCompleteJdOutreach(job);
+    setJdSubject(content.subject);
+    setJdBody(content.body);
   };
 
   const handleDispatchBatchJd = async () => {
@@ -377,6 +418,24 @@ export default function EmailContactsDirectory() {
       setIsSendingJd(false);
     }
   };
+
+  // Role-based visibility check: Only Omkesh / SuperAdmin can access
+  const userStr = localStorage.getItem('smarthire_user') || localStorage.getItem('verifyhire_user');
+  let userObj = null;
+  try { userObj = JSON.parse(userStr); } catch (_) {}
+  const isSuperAdmin = !userObj || userObj.role === 'superadmin' || userObj.role === 'admin' || userObj.email === 'omkeshmanjute@gmail.com' || userObj.email === 'omkesh@coolsofttech.com' || (userObj.email && userObj.email.includes('omkesh'));
+
+  if (!isSuperAdmin) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '60vh', gap: '12px', color: '#64748B', fontFamily: 'Inter, system-ui, sans-serif' }}>
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#CBD5E1" strokeWidth="1.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <div style={{ fontSize: '18px', fontWeight: '700', color: '#0F172A' }}>Access Restricted</div>
+        <div style={{ fontSize: '13px', textAlign: 'center', maxWidth: '360px', lineHeight: 1.5 }}>
+          The Company & Recruiter Directory is restricted to Super Admin (Omkesh Manjute) only.
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ padding: '24px 32px', backgroundColor: '#F8FAFC', minHeight: '100vh', fontFamily: 'Inter, system-ui, -apple-system, sans-serif' }}>
@@ -1004,8 +1063,8 @@ export default function EmailContactsDirectory() {
             backgroundColor: '#FFFFFF',
             borderRadius: '12px',
             width: '100%',
-            maxWidth: '680px',
-            maxHeight: '90vh',
+            maxWidth: '860px',
+            maxHeight: '92vh',
             overflowY: 'auto',
             padding: '24px 28px',
             boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
@@ -1020,7 +1079,7 @@ export default function EmailContactsDirectory() {
                   Send Job Description Outreach
                 </h3>
                 <p style={{ fontSize: '12px', color: '#64748B', marginTop: '2px', marginBottom: 0 }}>
-                  Sending to {targetRecipients.length} corporate recruiters from {accountEmail}
+                  Sending complete position specifications to {targetRecipients.length} corporate recruiters from {accountEmail}
                 </p>
               </div>
               <button
@@ -1055,10 +1114,10 @@ export default function EmailContactsDirectory() {
                     backgroundColor: '#F8FAFC'
                   }}
                 >
-                  <option value="">-- Choose active job to auto-fill details --</option>
+                  <option value="">-- Choose active job to auto-fill complete details --</option>
                   {availableJobs.map(j => (
                     <option key={j.id || j._id} value={j.id || j._id}>
-                      {j.title} ({j.location || 'Remote'}) - {j.client || 'Client Req'}
+                      {j.title} {j.location ? `(${j.location})` : ''} {j.client ? `- ${j.client}` : ''}
                     </option>
                   ))}
                 </select>
@@ -1087,27 +1146,42 @@ export default function EmailContactsDirectory() {
 
             {/* Email Body */}
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>
-                  Email Message Body:
-                </label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155' }}>
+                    Complete Job Description & Message Body:
+                  </label>
+                  <span style={{
+                    fontSize: '11px',
+                    color: '#0284C7',
+                    fontWeight: 600,
+                    backgroundColor: '#EFF6FF',
+                    padding: '2px 8px',
+                    borderRadius: '4px'
+                  }}>
+                    {jdBody.length} characters (Full JD Loaded)
+                  </span>
+                </div>
                 <span style={{ fontSize: '11px', color: '#94A3B8' }}>
-                  Tokens: {"{{contact_name}}"}, {"{{company_name}}"}, {"{{job_title}}"}
+                  Tokens: {"{{contact_name}}"}, {"{{company_name}}"}
                 </span>
               </div>
               <textarea
-                rows={8}
+                rows={16}
                 value={jdBody}
                 onChange={(e) => setJdBody(e.target.value)}
                 style={{
                   width: '100%',
-                  padding: '10px 12px',
-                  fontSize: '13px',
-                  fontFamily: 'Inter, sans-serif',
+                  padding: '12px 14px',
+                  fontSize: '12.5px',
+                  fontFamily: 'SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
                   border: '1px solid #CBD5E1',
                   borderRadius: '6px',
-                  lineHeight: '1.5',
-                  boxSizing: 'border-box'
+                  lineHeight: '1.55',
+                  boxSizing: 'border-box',
+                  whiteSpace: 'pre-wrap',
+                  backgroundColor: '#FAFAFA',
+                  color: '#1E293B'
                 }}
               />
             </div>

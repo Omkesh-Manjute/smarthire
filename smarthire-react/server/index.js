@@ -14441,6 +14441,13 @@ app.delete('/api/recruiter/vendor-hotlists/:id', (req, res) => {
 // GET /api/contacts/extracted - List extracted company & recruiter contacts from email (strictly corporate, grouped by company)
 app.get('/api/contacts/extracted', async (req, res) => {
   try {
+    const headerEmail = (req.headers['x-recruiter-email'] || req.query.recruiterEmail || req.user?.email || '').toLowerCase().trim();
+    const headerRole = (req.headers['x-recruiter-role'] || req.query.role || req.user?.role || '').toLowerCase().trim();
+    const isOmkeshAdmin = !headerEmail || headerEmail === 'omkesh@coolsofttech.com' || headerEmail === 'omkeshmanjute@gmail.com' || headerEmail.includes('omkesh') || headerRole === 'superadmin' || headerRole === 'admin';
+    if (!isOmkeshAdmin) {
+      return res.status(403).json({ success: false, message: 'Company Directory access restricted to Super Admin only' });
+    }
+
     const { getCachedContacts } = await import('./jobs-ingestion/email-contacts-extractor.js');
     const data = getCachedContacts();
     const search = (req.query.q || req.query.search || '').toLowerCase().trim();

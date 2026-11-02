@@ -178,7 +178,7 @@ export default function AtsUnifiedSidebar({
       icon: 'monster',
       items: [
         { id: 'hotlist', label: 'Vendor Hotlists', path: '/inbox?tab=hotlist' },
-        { id: 'contacts', label: 'Company Directory', tabId: 'contacts', path: '/ats?tab=contacts' },
+        ...(isSuperAdmin ? [{ id: 'contacts', label: 'Company Directory', tabId: 'contacts', path: '/ats?tab=contacts' }] : []),
         { id: 'monster', label: 'Universal Search', path: '/inbox?tab=monster' },
         { id: 'sourcing_pipeline', label: 'Sourcing Pipeline', path: '/sourcing' },
       ]
