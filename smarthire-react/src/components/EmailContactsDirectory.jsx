@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { formatJobDescription } from '../utils/formatJobDescription';
 
 export default function EmailContactsDirectory() {
@@ -31,6 +31,18 @@ export default function EmailContactsDirectory() {
   const [isSendingJd, setIsSendingJd] = useState(false);
   const [sendResult, setSendResult] = useState(null);
   const [targetRecipients, setTargetRecipients] = useState([]);
+  const [sendProgress, setSendProgress] = useState({
+    current: 0,
+    total: 0,
+    sentCount: 0,
+    failedCount: 0,
+    activeEmail: '',
+    activeName: '',
+    activeCompany: '',
+    errors: []
+  });
+  const [showErrorDetails, setShowErrorDetails] = useState(false);
+  const cancelSendingRef = useRef(false);
 
   // Fetch companies on mount
   useEffect(() => {
@@ -375,48 +387,125 @@ Looking forward to your prompt response.`;
 
     setIsSendingJd(true);
     setSendResult(null);
+    setShowErrorDetails(false);
+    cancelSendingRef.current = false;
 
     const userStr = localStorage.getItem('smarthire_user') || localStorage.getItem('verifyhire_user');
     let userObj = null;
     try { userObj = JSON.parse(userStr); } catch (_) {}
     const recruiterEmail = userObj?.email || accountEmail || 'support@smarthireus.com';
     const recruiterName = userObj?.name || 'Recruiter';
+    const activeJobTitle = availableJobs.find(j => (j.id || j._id) === selectedJobId)?.title || '';
+
+    const total = targetRecipients.length;
+    let sentCount = 0;
+    let failedCount = 0;
+    const accumulatedErrors = [];
+
+    setSendProgress({
+      current: 0,
+      total,
+      sentCount: 0,
+      failedCount: 0,
+      activeEmail: '',
+      activeName: '',
+      activeCompany: '',
+      errors: []
+    });
 
     try {
-      const res = await fetch('/api/contacts/batch-send-jd', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          recipients: targetRecipients,
-          subject: jdSubject,
-          body: jdBody,
-          recruiterEmail,
-          recruiterName,
-          jobId: selectedJobId,
-          jobTitle: availableJobs.find(j => (j.id || j._id) === selectedJobId)?.title || ''
-        })
+      for (let i = 0; i < total; i++) {
+        if (cancelSendingRef.current) {
+          showToast(`Sending stopped at ${i} of ${total}`);
+          break;
+        }
+
+        const r = targetRecipients[i];
+        const toEmail = typeof r === 'string' ? r : (r.email || '');
+        const toName = typeof r === 'string' ? '' : (r.name || '');
+        const toCompany = typeof r === 'string' ? '' : (r.company || '');
+
+        setSendProgress({
+          current: i + 1,
+          total,
+          sentCount,
+          failedCount,
+          activeEmail: toEmail,
+          activeName: toName,
+          activeCompany: toCompany,
+          errors: accumulatedErrors
+        });
+
+        try {
+          const res = await fetch('/api/contacts/batch-send-jd', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              recipients: [r],
+              subject: jdSubject,
+              body: jdBody,
+              recruiterEmail,
+              recruiterName,
+              jobId: selectedJobId,
+              jobTitle: activeJobTitle
+            })
+          });
+
+          const data = await res.json();
+          if (data && data.success && data.sentCount > 0) {
+            sentCount++;
+          } else {
+            failedCount++;
+            const errMsg = data?.errors?.[0]?.error || data?.message || 'Delivery failed';
+            accumulatedErrors.push({ email: toEmail, name: toName, company: toCompany, error: errMsg });
+          }
+        } catch (itemErr) {
+          failedCount++;
+          accumulatedErrors.push({ email: toEmail, name: toName, company: toCompany, error: itemErr.message });
+        }
+
+        setSendProgress({
+          current: i + 1,
+          total,
+          sentCount,
+          failedCount,
+          activeEmail: toEmail,
+          activeName: toName,
+          activeCompany: toCompany,
+          errors: accumulatedErrors
+        });
+
+        // Small delay between emails (200ms) to ensure smooth UI updates and safe throttling
+        if (i < total - 1 && !cancelSendingRef.current) {
+          await new Promise(res => setTimeout(res, 200));
+        }
+      }
+
+      const finalSuccess = sentCount > 0;
+      setSendResult({
+        success: finalSuccess,
+        sentCount,
+        failedCount,
+        total,
+        errors: accumulatedErrors,
+        isCanceled: cancelSendingRef.current
       });
 
-      const data = await res.json();
-      if (data && data.success) {
-        setSendResult({
-          success: true,
-          sentCount: data.sentCount,
-          failedCount: data.failedCount,
-          total: data.total
-        });
-        showToast(`Sent Job Description to ${data.sentCount} recruiters!`);
+      if (sentCount === total) {
+        showToast(`Sent Job Description to all ${total} recruiters!`);
       } else {
-        setSendResult({
-          success: false,
-          message: data?.message || 'Failed to dispatch emails'
-        });
+        showToast(`Dispatched to ${sentCount} of ${total} recruiters`);
       }
     } catch (err) {
-      setSendResult({ success: false, message: err.message });
+      setSendResult({ success: false, message: err.message, errors: accumulatedErrors, sentCount, failedCount, total });
     } finally {
       setIsSendingJd(false);
     }
+  };
+
+  const handleCancelSending = () => {
+    cancelSendingRef.current = true;
+    showToast('Stopping email dispatch...');
   };
 
   // Role-based visibility check: Only Omkesh / SuperAdmin can access
@@ -1186,22 +1275,178 @@ Looking forward to your prompt response.`;
               />
             </div>
 
+            {/* Live Real-Time Sending Progress */}
+            {isSendingJd && (
+              <div style={{
+                padding: '14px 16px',
+                backgroundColor: '#F0F9FF',
+                border: '1px solid #BAE6FD',
+                borderRadius: '8px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '10px'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{
+                      width: '14px',
+                      height: '14px',
+                      border: '2px solid #0284C7',
+                      borderTopColor: 'transparent',
+                      borderRadius: '50%',
+                      animation: 'spin 0.8s linear infinite'
+                    }} />
+                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#0369A1' }}>
+                      Sending email {sendProgress.current} of {sendProgress.total}...
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      color: '#15803D',
+                      backgroundColor: '#DCFCE7',
+                      padding: '2px 8px',
+                      borderRadius: '4px'
+                    }}>
+                      Sent: {sendProgress.sentCount}
+                    </span>
+                    {sendProgress.failedCount > 0 && (
+                      <span style={{
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        color: '#B91C1C',
+                        backgroundColor: '#FEE2E2',
+                        padding: '2px 8px',
+                        borderRadius: '4px'
+                      }}>
+                        Failed: {sendProgress.failedCount}
+                      </span>
+                    )}
+                    <span style={{
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      color: '#475569',
+                      backgroundColor: '#E2E8F0',
+                      padding: '2px 8px',
+                      borderRadius: '4px'
+                    }}>
+                      Remaining: {Math.max(0, sendProgress.total - sendProgress.current)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Progress Bar */}
+                <div style={{
+                  width: '100%',
+                  height: '8px',
+                  backgroundColor: '#E0F2FE',
+                  borderRadius: '4px',
+                  overflow: 'hidden'
+                }}>
+                  <div style={{
+                    height: '100%',
+                    width: `${Math.min(100, Math.round(((sendProgress.current) / (sendProgress.total || 1)) * 100))}%`,
+                    backgroundColor: '#0284C7',
+                    borderRadius: '4px',
+                    transition: 'width 0.25s ease-out'
+                  }} />
+                </div>
+
+                {/* Current Recruiter Details */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: '#0C4A6E' }}>
+                  <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '80%' }}>
+                    <span>Currently sending to: </span>
+                    <strong style={{ color: '#0369A1' }}>
+                      {sendProgress.activeName ? `${sendProgress.activeName} ` : ''}
+                      {sendProgress.activeCompany ? `(${sendProgress.activeCompany}) ` : ''}
+                    </strong>
+                    <span style={{ color: '#0284C7', textDecoration: 'underline' }}>{sendProgress.activeEmail}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCancelSending}
+                    style={{
+                      padding: '3px 10px',
+                      backgroundColor: '#FFFFFF',
+                      border: '1px solid #CBD5E1',
+                      borderRadius: '4px',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      color: '#DC2626',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Stop Sending
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Send Result Banner */}
             {sendResult && (
               <div style={{
                 padding: '12px 16px',
                 borderRadius: '6px',
                 fontSize: '13px',
-                backgroundColor: sendResult.success ? '#F0FDF4' : '#FEF2F2',
-                color: sendResult.success ? '#166534' : '#991B1B',
-                border: `1px solid ${sendResult.success ? '#BBF7D0' : '#FECACA'}`
+                backgroundColor: sendResult.failedCount === 0 ? '#F0FDF4' : (sendResult.sentCount > 0 ? '#FFFBEB' : '#FEF2F2'),
+                color: sendResult.failedCount === 0 ? '#166534' : (sendResult.sentCount > 0 ? '#B45309' : '#991B1B'),
+                border: `1px solid ${sendResult.failedCount === 0 ? '#BBF7D0' : (sendResult.sentCount > 0 ? '#FDE68A' : '#FECACA')}`
               }}>
-                {sendResult.success ? (
-                  <span>
-                    Successfully dispatched Job Description to {sendResult.sentCount} out of {sendResult.total} recruiters!
-                  </span>
-                ) : (
-                  <span>Dispatch error: {sendResult.message}</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <strong>
+                      {sendResult.failedCount === 0
+                        ? `Successfully dispatched Job Description to all ${sendResult.sentCount} recruiters!`
+                        : `Dispatched Job Description to ${sendResult.sentCount} out of ${sendResult.total} recruiters (${sendResult.failedCount} failed).`}
+                    </strong>
+                    {sendResult.isCanceled && <span style={{ marginLeft: '8px', fontSize: '11px', color: '#64748B' }}>(Stopped by user)</span>}
+                  </div>
+                  {sendResult.errors && sendResult.errors.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowErrorDetails(prev => !prev)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#0284C7',
+                        cursor: 'pointer',
+                        fontSize: '12px',
+                        fontWeight: 600,
+                        textDecoration: 'underline'
+                      }}
+                    >
+                      {showErrorDetails ? 'Hide Error Details' : `View ${sendResult.errors.length} Failure Details`}
+                    </button>
+                  )}
+                </div>
+
+                {/* Expandable Failure Details List */}
+                {showErrorDetails && sendResult.errors && sendResult.errors.length > 0 && (
+                  <div style={{
+                    marginTop: '10px',
+                    maxHeight: '160px',
+                    overflowY: 'auto',
+                    backgroundColor: '#FFFFFF',
+                    border: '1px solid #E2E8F0',
+                    borderRadius: '4px',
+                    padding: '8px 10px',
+                    fontSize: '12px'
+                  }}>
+                    {sendResult.errors.map((errItem, idx) => (
+                      <div key={idx} style={{
+                        padding: '4px 0',
+                        borderBottom: idx < sendResult.errors.length - 1 ? '1px solid #F1F5F9' : 'none',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        gap: '12px',
+                        color: '#334155'
+                      }}>
+                        <span style={{ fontWeight: 600, color: '#0F172A' }}>{errItem.email}</span>
+                        <span style={{ color: '#DC2626', fontSize: '11px' }}>{errItem.error || 'Delivery failed'}</span>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
             )}
@@ -1210,6 +1455,7 @@ Looking forward to your prompt response.`;
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '8px' }}>
               <button
                 onClick={() => setIsJdModalOpen(false)}
+                disabled={isSendingJd}
                 style={{
                   padding: '8px 16px',
                   backgroundColor: '#FFFFFF',
@@ -1218,7 +1464,7 @@ Looking forward to your prompt response.`;
                   fontSize: '13px',
                   fontWeight: 600,
                   color: '#475569',
-                  cursor: 'pointer'
+                  cursor: isSendingJd ? 'not-allowed' : 'pointer'
                 }}
               >
                 Close
@@ -1237,7 +1483,9 @@ Looking forward to your prompt response.`;
                   cursor: isSendingJd ? 'not-allowed' : 'pointer'
                 }}
               >
-                {isSendingJd ? 'Dispatching Emails...' : `Send to ${targetRecipients.length} Recruiter${targetRecipients.length > 1 ? 's' : ''}`}
+                {isSendingJd
+                  ? `Sending (${sendProgress.current}/${sendProgress.total})...`
+                  : `Send to ${targetRecipients.length} Recruiter${targetRecipients.length > 1 ? 's' : ''}`}
               </button>
             </div>
           </div>
