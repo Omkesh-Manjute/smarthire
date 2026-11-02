@@ -66,6 +66,32 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
     - In resume views, every responsibility, project accomplishment, and contribution line must be formatted with an explicit bullet point (`•`) and proper indentation.
     - The engine must automatically detect responsibilities (lines following `Responsibilities:`, action verbs, or list items) even when converted from plain text or Word documents without literal Unicode bullets.
 
+### 2026-11-03 — Company Directory: Single-Row Grouping with Recruiter Dropdown, Clean Numeric Seen & Personal Elimination
+- **Context & Objectives**:
+  - The user provided a live screenshot showing repeated company rows (e.g. `Artifint` across rows 120, 121, 122) and requested:
+    1. Consolidate into a single row per company with a recruiters count column (e.g. `3 Recruiters`).
+    2. Clicking on the recruiter/pill smoothly drops down/expands an accordion row showing all recruiters and emails belonging to that company.
+    3. In `EMAILS SEEN`, remove repeated `"3 emails"`, `"2 emails"` text — display strictly the clean number.
+    4. Completely remove `Direct / Personal` (Gmail/Yahoo candidates) from the directory since position titles are absent and only corporate companies/vendors are relevant.
+- **Architectural Implementations**:
+  1. *Backend Grouping & Filtering (`server/index.js`)*:
+     - In `GET /api/contacts/extracted`, strictly excluded all `type !== 'Corporate'` contacts.
+     - Grouped 2,054 corporate contacts by unique company domain into 1,069 consolidated enterprise companies (292 companies with multiple recruiters).
+     - Aggregated total company interactions and sorted recruiters within each company by interaction frequency.
+  2. *Frontend UI & Accordion Dropdown (`EmailContactsDirectory.jsx`)*:
+     - Single row per company with crisp B2B Excel styling (Rule 9 compliant).
+     - `RECRUITERS` column: Renders `1 Recruiter` or an interactive `3 Recruiters ▼` pill.
+     - Clicking the pill or clicking the primary recruiter name smoothly expands a nested sub-table showing all recruiters with their name, email, individual `[Copy]` button, clean numeric `EMAILS SEEN`, and individual `[Send JD]` button.
+     - `EMAILS SEEN` column strictly displays clean integer values (e.g. `16`, `3`, `1`).
+     - Removed the "Direct / Personal" tab entirely; metrics updated to `Unique Companies & Vendors (1,069)`, `Corporate Recruiters & Contacts (2,054)`, and `Multi-Recruiter Companies (292)`.
+- **Verification & Deployment Protocol**:
+  - Local production build in `smarthire-react`: 0 errors, 0 warnings (built in 2.94s).
+  - All 42 matching engine unit tests passed (0 failures).
+  - Git committed (`f6f5fcc`) and pushed to GitHub `origin main`.
+  - Deployed bundle `index-mnkzVPDG.js` to AWS Lightsail server (`34.194.119.199`), temporary archives deleted immediately, PM2 reloaded.
+  - Live query `https://smarthireus.com/api/contacts/extracted?q=artifint` verified single company row with 3 nested recruiters (`Nina Stephens`, `Jessica M. Adams`, `Leslie Fisher`).
+  - Server disk space: 56% used, 8.2GB free.
+
 ### 2026-11-02 — Company Directory & Recruiter Contacts Harvester with 1-Click Excel Copy & Batch Send JD
 - **Context & Objectives**:
   - The user requested extracting company names, recruiter/sender names, and emails from the connected Yahoo account (`omkesh@coolsofttech.com`), presenting them in an authentic Excel-style table in ATS, removing all duplicates, supporting 1-click full copy (for Excel & email lists), and enabling 1-click Job Description (JD) dispatch.
