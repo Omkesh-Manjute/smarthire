@@ -66,6 +66,122 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
     - In resume views, every responsibility, project accomplishment, and contribution line must be formatted with an explicit bullet point (`•`) and proper indentation.
     - The engine must automatically detect responsibilities (lines following `Responsibilities:`, action verbs, or list items) even when converted from plain text or Word documents without literal Unicode bullets.
 
+### 2026-11-02 — Company Directory & Recruiter Contacts Harvester with 1-Click Excel Copy & Batch Send JD
+- **Context & Objectives**:
+  - The user requested extracting company names, recruiter/sender names, and emails from the connected Yahoo account (`omkesh@coolsofttech.com`), presenting them in an authentic Excel-style table in ATS, removing all duplicates, supporting 1-click full copy (for Excel & email lists), and enabling 1-click Job Description (JD) dispatch.
+- **Architectural Implementations**:
+  1. *IMAP Harvester & Deduplication Engine (`email-contacts-extractor.js`)*:
+     - Connects securely to Yahoo IMAP (`imap.mail.yahoo.com:993` via TLS).
+     - Scans `INBOX`, `Sent`, and `Hotlist` folders via fast RFC822 PEEK chunking (2,000 headers per batch).
+     - Decodes MIME encoded-words (`=?UTF-8?B?...?=` / `quoted-printable`).
+     - Extracts clean human name, lowercase email, domain, and derives company name.
+     - Strips system notifications (LinkedIn, Google, Zoom, Apple, Amazon, Twitter, etc.) and bounces/daemons (`no-reply`, `mailer-daemon`, `postmaster`).
+     - Classifies into `Corporate` (custom enterprise/agency domain) vs `Personal / Direct` (`gmail.com`, `yahoo.com`, etc.).
+     - Strictly deduplicates by email address, keeping the most recent interaction date, interaction frequency, and canonical full name.
+     - Extracted 5,129 unique clean contacts (2,054 corporate companies/vendors) from 10,000+ emails in 40.6s.
+  2. *Backend API Endpoints (`server/index.js`)*:
+     - `GET /api/contacts/extracted`: Returns cached contacts with search and category filtering (`corporate`, `all`, `personal`).
+     - `POST /api/contacts/sync`: Allows on-demand rescan from email.
+     - `POST /api/contacts/batch-send-jd`: Dispatches personalized JDs to selected contacts with token substitution (`{{contact_name}}`, `{{company_name}}`, `{{job_title}}`), rate-limiting (200ms gap), and auto-fallback to Hostinger/Yahoo.
+  3. *ATS Frontend Table & Outreach Module (`EmailContactsDirectory.jsx`)*:
+     - Excel-style grid matching Rule 9 (crisp 1px borders, `#F1F5F9` headers, `#EFF6FF` hover highlight, compact row height).
+     - Metric cards for Corporate Vendors (`2,054`), Total Unique Contacts (`5,129`), and Direct Inboxes (`3,075`).
+     - "Copy All Emails" button: 1-click copies all filtered/selected emails as comma-separated list.
+     - "Copy for Excel" button: 1-click copies entire table with tab-separated headers for seamless paste into Excel & Google Sheets.
+     - "Export CSV" button: 1-click spreadsheet download.
+     - "Send JD" Modal: Allows selecting an active ATS requisition, auto-populates JD, previews template, and dispatches batch outreach with live feedback.
+     - Integrated in ATS sidebar under "Sourcing Console -> Company Directory" (`/ats?tab=contacts`).
+- **Verification & Deployment Protocol**:
+  - Local production build in `smarthire-react`: 0 errors, 0 warnings (built in 3.35s).
+  - All 42 matching engine unit tests passed (0 failures).
+  - Git committed (`a46b175`) and pushed to GitHub `origin main`.
+  - Deployed bundle to AWS Lightsail server (`34.194.119.199`) at `/var/www/html/` and `/home/ubuntu/smarthire/dist/`.
+  - Pruned old asset bundles, deleted temporary archives immediately (Rule 5 compliant).
+  - PM2 `smarthire-ats` reloaded.
+  - Live domain `https://smarthireus.com/api/contacts/extracted` and `https://smarthireus.com` verified HTTP 200 OK.
+  - Server disk space: 56% used, 8.2GB free.
+
+### 2026-10-31 — Chats UI/UX Redesign (HotJPT Clean 2-Column System, Candidate Exclusion & Rebranding)
+- **Context & Objectives**:
+  - The user shared two reference screenshots (`app.hotjpt.com/chats` vs `smarthireus.com/inbox?tab=candidates`) and commanded:
+    *"bhai ye dekho ui/ux kitna cool lag raha hai so chat wala page ko bhi is type se karo sab dekho kitna orgnize hai canidate ke remove kar dena recruiter inbox ho hai rename bhi karna hai chat kar ke and better banavo jo kam ka nahi hai remove karo"*
+  - Mandates:
+    1. **Rename "Recruiter Inbox" -> "Chats"**:
+       - Rename sidebar navigation link from `Recruiter Inbox` to `Chats` (pointing to `/inbox?tab=chat` or `/chats`).
+       - Add `/chats` route in `App.jsx`.
+       - Update page header title to **`Chats`** with subtitle: `"Signal chats stay tied to a match. General chats are for connected people."`
+       - Update breadcrumb to `Workspace / Chats`.
+    2. **"canidate ke remove kar dena"**:
+       - Exclude candidate applicants/submissions from the chat list completely.
+       - Only display team recruiters, managers, lead supervisors, and internal colleagues.
+       - Replace old category tabs (`All`, `Candidates`, `Clients`, `Team`) with HotJPT pill tabs: `[ Signal Chats ]` and `[ General Chats ]`.
+    3. **Remove Clutter ("jo kam ka nahi hai remove karo")**:
+       - Completely removed the 310px wide 3rd pane ("About / Call / Video / Delete / Coolsoft LLC / Quick Actions / Suggest Interview Time").
+       - Allowed active chat thread to expand 100% across the remaining screen width.
+       - Removed redundant recruiter selector dropdown from above conversation list.
+       - Removed bulky 3 horizontal buttons below input composer; unified into a clean floating input bar.
+    4. **HotJPT UI/UX Styling**:
+       - Left pane: 370px wide with pill tabs, clean search `Search by name or company..`, filter dropdown `[ Chats ▾ ]`.
+       - Conversation cards: 44px circular avatar with green online badge, bold name (`Pankaj`, `Rohit nagwani`), subtitle `Recruiter · Coolsofttech` (company in `#0284C7`), last message preview, timestamp on right (`2h ago`), chevron `›`.
+       - Active Chat header: 40px avatar with online status, name in bold `#0F172A`, role and company in `#0284C7`.
+       - Message stream: Date divider `── FRIDAY 30 OCT ──`, incoming soft grey cards `#F1F5F9` with sender name above, outgoing vibrant blue bubbles `#0284C7` with white text on right.
+       - Input composer: Clean rounded card with emoji smile `😊`, file attach `📎`, textarea, and vibrant blue airplane send button `✈️`.
+- **Verification & Deployment Protocol**:
+  - Local production build in `smarthire-react`: 0 errors, 0 warnings (built in 3.29s).
+  - All 42 matching engine unit tests passed (0 failures).
+  - Git committed (`9f3d6bf`) and pushed to GitHub `origin main`.
+  - Extracted production bundle to `/var/www/html/` and `/home/ubuntu/smarthire/dist/` on AWS Lightsail (`34.194.119.199`).
+  - Pruned old asset bundles, deleted temporary archives immediately (Rule 5 compliant).
+  - PM2 `smarthire-ats` reloaded.
+  - Live domain `https://smarthireus.com` verified HTTP 200 OK.
+  - Server disk space: 56% used, 8.2GB free.
+
+### 2026-10-31 — Fallback Email Signature Cleanse (Recruiter Name & Recruiter Email Omission)
+- **Context & Objectives**:
+  - The user commanded: *"bhai ye hata do ye email nahi hona below  mai okay so update it Email: rohit.nagwani@infoorigin.com."*
+  - Mandates:
+    - In fallback dispatch mode (when recruiter has not configured their SMTP), completely remove the recruiter email line from the signature.
+    - The signature should strictly read:
+      ```
+      With Regards,
+      SmartHire Team | https://smarthireus.com
+      ```
+    - The `replyTo` header continues to route candidate replies directly to the recruiter's email.
+- **Architectural Implementations**:
+  - In `formatFallbackEmailContent` (`server/index.js`), added regex rules to purge `\nEmail: <recruiterEmail>` from plain text and `<p ...>Email: ...</p>` / `<div ...>Email: ...</div>` from HTML.
+- **Verification & Deployment Protocol**:
+  - Local production build in `smarthire-react`: 0 errors, 0 warnings (built in 3.21s).
+  - All 42 matching engine unit tests passed (0 failures).
+  - Git committed (`b94aab5`) and pushed to GitHub `origin main`.
+  - Copied `server/index.js` to AWS Lightsail server (`34.194.119.199`) and reloaded PM2 `smarthire-ats`.
+  - Dispatched live test email via fallback to `omkesh@coolsofttech.com`: verified `success: true` via `support@praximinds.com`, `usingFallback: true`, with recruiter name and email lines completely absent from signature.
+  - Live domain `https://smarthireus.com` verified HTTP 200 OK.
+  - Server disk space: 56% used, 8.2GB free (Rule 5 compliant).
+- **Context & Objectives**:
+  - The user commanded:
+    *"bhai ismai name rohit nagwani hata do only smarthire team karo senader mai bhi smarhire team hi ana cahiye okay so update karo final wala ak sample batavo kaisa ayega email if ye tab hoga jab recruiter apna email confiq nahi kaega tab hi ana cahiye okay nahi to nahi so do it"*
+  - Core Mandates:
+    1. If the recruiter has **not** configured personal email credentials in SmartHire ATS Settings (or if their personal SMTP fails/times out), the email automatically routes via fallback (`support@praximinds.com`).
+    2. In that fallback mode:
+       - The sender header must display strictly as **`"SmartHire Team" <support@praximinds.com>`** (never showing the individual recruiter's name).
+       - In both plain text and HTML signatures, the recruiter's individual name (`Rohit nagwani`) must be removed, leaving only `SmartHire Team | https://smarthireus.com` with `Email: <recruiterEmail>`.
+       - Candidate replies (`replyTo`) must still be the recruiter's email (`rohit.nagwani@infoorigin.com`) so candidate responses are routed directly to the recruiter.
+    3. If the recruiter **has** configured their personal email credentials in Settings, it must continue to send from their own email address with their personal name (`"${recruiterName} (SmartHire)" <${fromEmail}>`).
+- **Architectural Implementations**:
+  1. *Fallback Email Formatter (`server/index.js`)*:
+     - Implemented `formatFallbackEmailContent(origText, origHtml, recName, recEmail)` which dynamically cleans recruiter name references from plain text (`With Regards,\n${recName}\n` -> `With Regards,\n`) and HTML (`<p>${recName}</p>`, `<div>${recName}</div>`, and role sub-lines).
+     - Standardized fallback sender header in both Step 2 (Hostinger) and Step 3 (Yahoo) to `"SmartHire Team" <${senderEmail}>`.
+  2. *Zero Legacy Branding*:
+     - Replaced remaining legacy COOLSOFT signatures in `server/index.js` with `SmartHire Team | https://smarthireus.com`.
+- **Verification & Deployment Protocol**:
+  - Local production build in `smarthire-react`: 0 errors, 0 warnings (built in 3.28s).
+  - All 42 matching engine unit tests passed (0 failures).
+  - Git committed (`f372f29`) and pushed to GitHub `origin main`.
+  - Synced to AWS Lightsail server (`34.194.119.199`) and reloaded PM2 `smarthire-ats`.
+  - Dispatched live test email via fallback to `omkesh@coolsofttech.com` for recruiter `rohit.nagwani@infoorigin.com`: verified `success: true` via `support@praximinds.com`, `usingFallback: true`, sender header `"SmartHire Team" <support@praximinds.com>`.
+  - Live domain `https://smarthireus.com` verified HTTP 200 OK.
+  - Server disk space: 56% used, 8.2GB free (Rule 5 compliant).
+
 ### 2026-10-30 — Recruiter Email Auto-Fallback to Hostinger & Interview Scorecard Navigation Resolution
 - **Context & Objectives**:
   - The user reported:
