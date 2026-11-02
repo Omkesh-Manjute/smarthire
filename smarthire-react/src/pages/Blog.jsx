@@ -74,10 +74,9 @@ export const BLOG_POSTS = [
     category: "IT Career Guide",
     readTime: "7 min read",
     date: "October 12, 2026",
-    author: "Omkesh Singh Thakur",
-    authorUrl: "https://omkeshsinghthakur.com",
-    authorRole: "Talent Acquisition Strategist & Senior Technical Recruiter",
-    authorBio: "Omkesh is a talent acquisition strategist, enterprise ATS architect, and technical recruiter specializing in US IT staffing, AI infrastructure sourcing, and contract compliance across Fortune 500 and government accounts.",
+    author: "SmartHire Editorial Team",
+    authorRole: "Technical Recruiting Research Group",
+    authorBio: "The SmartHire Editorial Research Group curates empirical hiring trends, compensation datasets, and talent benchmarks across direct-client US enterprise staffing.",
     caption: "Inside a modern US enterprise hyperscale data center facility. Certified critical facility engineers and high-voltage technicians manage 24/7 power distribution, liquid cooling loops, and high-density compute clusters.",
     tags: ["Data Center Jobs", "AI Infrastructure", "Critical Facility Technicians", "Liquid Cooling", "Electricians", "IT Staffing 2026"],
     image: "/images/blog/data-center-staffing-boom-hero.webp",
@@ -270,8 +269,6 @@ function BlogPostContent({ post }) {
   const relatedPosts = BLOG_POSTS.filter(p => p.slug !== post.slug).slice(0, 3)
   const ArticleComponent = post.component || C2cW2Article
 
-  const isOmkesh = post.author.includes('Omkesh')
-
   return (
     <>
       {/* WordPress Reading Progress Bar */}
@@ -328,8 +325,8 @@ function BlogPostContent({ post }) {
         {/* WordPress Author Byline Bar */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', backgroundColor: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 8, marginBottom: 28, flexWrap: 'wrap', gap: 14 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ width: 44, height: 44, borderRadius: '50%', backgroundColor: isOmkesh ? '#0D6B5F' : '#1E293B', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 17, flexShrink: 0 }}>
-              {isOmkesh ? 'O' : 'S'}
+            <div style={{ width: 44, height: 44, borderRadius: '50%', backgroundColor: '#0D6B5F', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 17, flexShrink: 0 }}>
+              S
             </div>
             <div>
               <div style={{ fontWeight: 700, fontSize: 15, color: '#111827' }}>
@@ -401,8 +398,8 @@ function BlogPostContent({ post }) {
 
         {/* WordPress "About the Author" Box */}
         <div style={{ marginTop: 36, padding: '24px 28px', backgroundColor: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 8, display: 'flex', gap: 18, alignItems: 'flex-start' }}>
-          <div style={{ width: 56, height: 56, borderRadius: '50%', backgroundColor: isOmkesh ? '#0D6B5F' : '#1E293B', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 22, flexShrink: 0 }}>
-            {isOmkesh ? 'O' : 'S'}
+          <div style={{ width: 56, height: 56, borderRadius: '50%', backgroundColor: '#0D6B5F', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 22, flexShrink: 0 }}>
+            S
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#6B7280', fontWeight: 700, marginBottom: 4 }}>

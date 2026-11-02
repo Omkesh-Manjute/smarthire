@@ -359,8 +359,8 @@ export default function CandidateChat() {
             jobTitle: 'Cloud Platform Specialist',
             jobClient: 'Enterprise Cloud Systems',
             jobReqId: '74921',
-            recruiterName: 'Omkesh Manjute',
-            recruiterEmail: 'omkesh@coolsofttech.com',
+            recruiterName: 'Technical Recruiter',
+            recruiterEmail: 'support@smarthireus.com',
             questions: [
               {
                 id: 'q1',

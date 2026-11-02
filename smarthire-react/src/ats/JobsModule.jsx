@@ -87,7 +87,7 @@ function JobsModule({
 
   // Recruiter List for Attribution
   const ALL_SMARTHIRE_RECRUITERS = [
-    { name: 'Omkesh Manjute', email: 'omkesh.manjute@smarthire.com', refCode: 'omkesh', role: 'Super Admin' },
+    { name: 'Super Admin', email: 'support@smarthireus.com', refCode: 'omkesh', role: 'Super Admin' },
     { name: 'Vaibhav Bisen', email: 'vaibhav.bisen@smarthire.com', refCode: 'vaibhav-bisen', role: 'Lead Recruiter' },
     { name: 'Sukamal Chatterjee', email: 'sukamal.c@smarthire.com', refCode: 'sukamal-chatterjee', role: 'Senior Recruiter' },
     { name: 'Prudhvi Sevveti', email: 'prudhvi.s@smarthire.com', refCode: 'prudhvi-sevveti', role: 'Recruiter' },

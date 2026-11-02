@@ -26,7 +26,7 @@ export async function autoSendJobDescriptionToCandidate({ candidate, job, recrui
 
   // Resolve recruiter details
   const myName = recruiterUser?.name || 'Technical Recruiter';
-  const myEmail = recruiterUser?.email || 'omkesh@coolsofttech.com';
+  const myEmail = recruiterUser?.email || 'support@smarthireus.com';
   const myCompany = 'SmartHire Team';
 
   // Resolve job details

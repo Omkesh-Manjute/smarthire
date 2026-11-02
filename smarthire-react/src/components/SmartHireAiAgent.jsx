@@ -32,8 +32,8 @@ export default function SmartHireAiAgent({
       id: 'welcome',
       role: 'assistant',
       content: pageContext?.page?.includes('submittal')
-        ? `Hi Omkesh! I'm your **SmartHire AI Copilot** (Gemini Agent).\n\nI understand you are working on the **Submittal Pack** for **${pageContext?.candidate?.name || 'Selected Candidate'}** (#${pageContext?.job?.vmsNumber || '159260'}).\n\nAsk me to:\n• *Rewrite summary to highlight Azure cloud architectures*\n• *Switch to Nebraska State template*\n• *Change proposed rate to $80/hr*\n• *Align technical skills with the job requisition*`
-        : `Hi Omkesh! I'm your **SmartHire AI Copilot** (Gemini Agent).\n\nI am connected to your entire ATS candidate pool. You can:\n• Paste a Job Description (JD) and say *"Find best match for this requirement"*\n• Ask *"Find 10+ years Java developers in Texas"*\n• Say *"Find top DevOps engineers with Kubernetes"*`,
+        ? `Hello! I'm your **SmartHire AI Copilot** (Gemini Agent).\n\nI understand you are working on the **Submittal Pack** for **${pageContext?.candidate?.name || 'Selected Candidate'}** (#${pageContext?.job?.vmsNumber || '159260'}).\n\nAsk me to:\n• *Rewrite summary to highlight Azure cloud architectures*\n• *Switch to Nebraska State template*\n• *Change proposed rate to $80/hr*\n• *Align technical skills with the job requisition*`
+        : `Hello! I'm your **SmartHire AI Copilot** (Gemini Agent).\n\nI am connected to your entire ATS candidate pool. You can:\n• Paste a Job Description (JD) and say *"Find best match for this requirement"*\n• Ask *"Find 10+ years Java developers in Texas"*\n• Say *"Find top DevOps engineers with Kubernetes"*`,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
   ]);

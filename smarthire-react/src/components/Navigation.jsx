@@ -76,8 +76,8 @@ function Navigation() {
     : (user?.role === 'superadmin' ? 'Recruiter' : (user?.name || 'Recruiter'))
 
   const effectiveDisplayEmail = isSuperAdmin 
-    ? (user?.email || 'omkesh@coolsofttech.com') 
-    : (user?.role === 'superadmin' ? 'recruiter@coolsofttech.com' : (user?.email || 'recruiter@coolsofttech.com'))
+    ? (user?.email || 'support@smarthireus.com') 
+    : (user?.role === 'superadmin' ? 'recruiter@smarthireus.com' : (user?.email || 'recruiter@smarthireus.com'))
 
   const isReportee = Boolean(effectiveParentRecruiterName && !isSuperAdmin && !isManager && effectiveParentRecruiterName.toLowerCase() !== (effectiveDisplayName || '').toLowerCase())
 

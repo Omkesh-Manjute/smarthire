@@ -155,8 +155,8 @@ export default function AtsUnifiedSidebar({
   let userObj = null
   try { userObj = JSON.parse(userStr) } catch (_) {}
   const isSuperAdmin = !userObj || userObj.role === 'superadmin' || userObj.role === 'admin' || userObj.email === 'omkeshmanjute@gmail.com' || userObj.email === 'omkesh@coolsofttech.com'
-  const userName = userObj?.name || 'Omkesh Manjute'
-  const userEmail = userObj?.email || 'omkesh@coolsofttech.com'
+  const userName = userObj?.name || (isSuperAdmin ? 'Super Admin' : 'Recruiter')
+  const userEmail = userObj?.email || (isSuperAdmin ? 'support@smarthireus.com' : 'recruiter@company.com')
   const userRole = (userObj?.role || 'Super Admin').toUpperCase()
 
   // 5 Master Navigation Groups

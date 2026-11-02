@@ -237,7 +237,7 @@ export default function AtsPlatform() {
   const canSwitchRoles = isSuperAdmin
   const activeRole = canSwitchRoles ? (localStorage.getItem('smarthire_active_role') || 'superadmin') : defaultRole
   const roleKey = isSuperAdmin ? 'superadmin' : isManager ? 'manager' : isEmployee ? 'employee' : 'recruiter'
-  const userName = currentUser?.name || 'Omkesh Manjute'
+  const userName = currentUser?.name || (isSuperAdmin ? 'Super Admin' : 'Recruiter')
 
   const DEFAULT_PERMISSIONS = {
     superadmin: {
@@ -1395,7 +1395,7 @@ export default function AtsPlatform() {
               <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#CBD5E1" strokeWidth="1.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
               <div style={{ fontSize: '18px', fontWeight: '700', color: '#0F172A' }}>Access Restricted</div>
               <div style={{ fontSize: '13px', textAlign: 'center', maxWidth: '340px', lineHeight: 1.5 }}>
-                The Company & Recruiter Directory is restricted to Super Admin (Omkesh Manjute) only.
+                The Company & Recruiter Directory is restricted to Super Admin only.
               </div>
             </div>
           )}

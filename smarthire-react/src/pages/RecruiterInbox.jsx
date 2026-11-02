@@ -16,7 +16,7 @@ const IconLinkedIn = () => (
 const POLL_INTERVAL = 3000
 
 export const ALL_SMARTHIRE_RECRUITERS = [
-  { id: 'rec-1', name: 'Omkesh Manjute', email: 'omkesh@coolsofttech.com', refCode: 'omkesh', role: 'Super Admin' },
+  { id: 'rec-1', name: 'Super Admin', email: 'omkesh@coolsofttech.com', refCode: 'omkesh', role: 'Super Admin' },
   { id: 'rec-2', name: 'Vaibhav Bisen', email: 'vaibhav@coolsofttech.com', refCode: 'vaibhav-bisen', role: 'Lead Recruiter' },
   { id: 'rec-3', name: 'Sukamal Chatterjee', email: 'kamal@coolsofttech.com', refCode: 'sukamal-chatterjee', role: 'Senior Recruiter' },
   { id: 'rec-4', name: 'Gourav', email: 'gourav@coolsofttech.com', refCode: 'gourav', role: 'Recruiter' },
@@ -3316,7 +3316,7 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
         (currentUser?.name && currentUser.name.toLowerCase().includes('omkesh'))
 
       const recEmail = u.email || currentUser?.email || (isOm ? 'omkesh@coolsofttech.com' : 'recruiter@coolsofttech.com')
-      const recName = u.name || currentUser?.name || (isOm ? 'Omkesh Manjute' : 'Recruiter')
+      const recName = u.name || currentUser?.name || (isOm ? 'Super Admin' : 'Recruiter')
       const recRole = isOm ? 'superadmin' : (activeRole || u.role || 'recruiter')
 
       const params = new URLSearchParams({
@@ -3615,7 +3615,7 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
 
     const candFirstName = (cand.name || 'Candidate').split(' ')[0]
     const u = JSON.parse(localStorage.getItem('smarthire_user') || '{}')
-    const myName = u.name || currentUser?.name || (isSuperAdmin ? 'Omkesh Manjute' : 'Lead Recruiter')
+    const myName = u.name || currentUser?.name || (isSuperAdmin ? 'Super Admin' : 'Lead Recruiter')
     const myEmail = u.email || currentUser?.email || (isSuperAdmin ? 'omkesh@coolsofttech.com' : 'recruiter@coolsofttech.com')
 
     const defaultBody = `Hi ${candFirstName},\n\nI reviewed your resume for the ${jobTitle} position (Req #${targetReq}) with our client ${jobClient} (${jobRate}). Your technical background and experience are a strong fit for this project.\n\nCould you please review and confirm:\n1. Your current work authorization status?\n2. Your updated hourly rate expectation for this position?\n3. Your immediate availability for a brief technical screening call?\n\nPlease reply directly to this email or feel free to attach your latest updated resume.\n\nWith Regards,\n${myName}\nLead Recruiter\nCOOLSOFT LLC | ${myEmail}\nhttp://www.coolsofttech.com`
@@ -5375,7 +5375,7 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
     const candFirstName = (activeCandidate.name || 'Candidate').split(' ')[0]
 
     const u = JSON.parse(localStorage.getItem('smarthire_user') || '{}')
-    const myName = u.name || currentUser?.name || (isSuperAdmin ? 'Omkesh Manjute' : 'Lead Recruiter')
+    const myName = u.name || currentUser?.name || (isSuperAdmin ? 'Super Admin' : 'Lead Recruiter')
     const myEmail = u.email || currentUser?.email || (isSuperAdmin ? 'omkesh@coolsofttech.com' : 'recruiter@coolsofttech.com')
 
     setEmailTo(activeCandidate.email || '')
@@ -5624,7 +5624,7 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
     if (!targetCand) return
     const candFirstName = (targetCand.name || targetCand.candidateName || 'Candidate').split(' ')[0]
     const u = JSON.parse(localStorage.getItem('smarthire_user') || '{}')
-    const myName = u.name || currentUser?.name || 'Omkesh Manjute'
+    const myName = u.name || currentUser?.name || 'Super Admin'
     const myEmail = u.email || currentUser?.email || 'omkesh@coolsofttech.com'
     const targetReq = targetCand.targetReqId || drawerReqId || openJobsList[0]?.id || ''
     const jobTitle = targetCand.matchedJobTitle || activeTargetJob?.title || 'Open Position'
@@ -6064,7 +6064,7 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
     })
     setEmailTo(item.vendorEmail || '')
     setEmailSubject(`Candidate Profile Inquiry: ${item.candidateName} (${item.role}) | SmartHire Team`)
-    setEmailBody(`Hi ${item.vendorName ? item.vendorName.split(' ')[0] : 'Partner'},\n\nWe received your hotlist profile for ${item.candidateName} (${item.role}). We have active direct client openings that match their background.\n\nPlease share their updated resume with full contact details, current availability, and confirmed C2C rate.\n\nWith Regards,\n${currentUser?.name || 'Omkesh Manjute'}\nSmartHire Team | https://smarthireus.com`)
+    setEmailBody(`Hi ${item.vendorName ? item.vendorName.split(' ')[0] : 'Partner'},\n\nWe received your hotlist profile for ${item.candidateName} (${item.role}). We have active direct client openings that match their background.\n\nPlease share their updated resume with full contact details, current availability, and confirmed C2C rate.\n\nWith Regards,\n${currentUser?.name || 'Super Admin'}\nSmartHire Team | https://smarthireus.com`)
   }
 
   const handleDeleteHotlist = async (id, name) => {
@@ -7854,7 +7854,7 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                   {/* Profile Details */}
                   <div style={{ width: '100%', borderTop: `1px solid ${C.border}`, paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'center' }}>
                     <div style={{ fontSize: 14, fontWeight: 800, color: C.textPrimary }}>
-                      {currentUser?.name || 'Omkesh Manjute'}
+                      {currentUser?.name || 'Super Admin'}
                     </div>
                     <div style={{ fontSize: 11.5, color: C.textSecondary, wordBreak: 'break-all' }}>
                       {currentUser?.email || 'omkesh@coolsofttech.com'}
@@ -10478,7 +10478,7 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                           <div style={{ padding: '14px 16px', borderRight: `1px solid ${C.border}` }}>
                             <div style={{ fontSize: 10.5, fontWeight: 800, color: C.textSecondary, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Resume Uploader</div>
                             <div style={{ fontSize: 13, fontWeight: 800, color: C.textPrimary, marginTop: 4 }}>
-                              {activeCandidate?.recruiterName || currentUser?.name || (isSuperAdmin ? 'Omkesh Manjute' : 'Recruiter')}
+                              {activeCandidate?.recruiterName || currentUser?.name || (isSuperAdmin ? 'Super Admin' : 'Recruiter')}
                               <div style={{ fontSize: 11, color: C.textSecondary, fontWeight: 500, marginTop: 1 }}>({activeCandidate?.recruiterEmail || currentUser?.email || (isSuperAdmin ? 'omkesh@coolsofttech.com' : 'recruiter@coolsofttech.com')})</div>
                             </div>
                           </div>
@@ -10576,7 +10576,7 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                       const candId = String(activeCandidate?.id || activeCandidate?.candidate_id || activeCandidate?.canId || 'cand')
                       const sentList = candidateSentEmails[candId] || []
                       const u = JSON.parse(localStorage.getItem('smarthire_user') || '{}')
-                      const myName = u.name || currentUser?.name || (isSuperAdmin ? 'Omkesh Manjute' : 'Lead Recruiter')
+                      const myName = u.name || currentUser?.name || (isSuperAdmin ? 'Super Admin' : 'Lead Recruiter')
                       const myEmail = u.email || currentUser?.email || (isSuperAdmin ? 'omkesh@coolsofttech.com' : 'recruiter@coolsofttech.com')
 
                       return (
@@ -11075,7 +11075,7 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                           id: 'act-ingest',
                           title: 'Candidate Ingested into ATS',
                           time: activeCandidate?.createdAt ? new Date(activeCandidate.createdAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : '10th Sep 2026, 09:42 PM',
-                          desc: `Ingested from ${activeCandidate?.source || 'Email Inbox'} by ${currentUser?.name || (isSuperAdmin ? 'Omkesh Manjute' : 'Recruiter')}`,
+                          desc: `Ingested from ${activeCandidate?.source || 'Email Inbox'} by ${currentUser?.name || (isSuperAdmin ? 'Super Admin' : 'Recruiter')}`,
                           badge: 'Profile Ingest',
                           badgeBg: isLight ? '#F1F5F9' : '#1E293B',
                           badgeColor: C.textPrimary
@@ -11093,7 +11093,7 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                           id: 'act-view',
                           title: 'Profile Inspected & Screened',
                           time: 'Active session',
-                          desc: `Candidate dossier inspected by ${currentUser?.name || (isSuperAdmin ? 'Omkesh Manjute' : 'Recruiter')}`,
+                          desc: `Candidate dossier inspected by ${currentUser?.name || (isSuperAdmin ? 'Super Admin' : 'Recruiter')}`,
                           badge: 'Screening',
                           badgeBg: '#F0FDF4',
                           badgeColor: '#16A34A'
@@ -13614,7 +13614,7 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                 type="button"
                 title="Launch in Desktop Outlook / Apple Mail"
                 onClick={() => {
-                  const fullSig = `\n\nWith Regards,\n${currentUser?.name || (isSuperAdmin ? 'Omkesh Manjute' : 'Lead Recruiter')}\nLead Recruiter\nCOOLSOFT LLC | ${currentUser?.email || (isSuperAdmin ? 'omkesh@coolsofttech.com' : 'recruiter@coolsofttech.com')}\nhttp://www.coolsofttech.com`
+                  const fullSig = `\n\nWith Regards,\n${currentUser?.name || (isSuperAdmin ? 'Super Admin' : 'Lead Recruiter')}\nLead Recruiter\nCOOLSOFT LLC | ${currentUser?.email || (isSuperAdmin ? 'omkesh@coolsofttech.com' : 'recruiter@coolsofttech.com')}\nhttp://www.coolsofttech.com`
                   const fullText = emailBody.includes('Regards') ? emailBody : `${emailBody}${fullSig}`
                   const url = `mailto:${encodeURIComponent(emailTo)}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(fullText)}`
                   window.location.href = url

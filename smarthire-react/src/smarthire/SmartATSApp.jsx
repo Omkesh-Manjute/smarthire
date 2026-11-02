@@ -1735,7 +1735,7 @@ export function SmartATSApp() {
                 {sortedFiltered.length} of {candidates.length} candidates
               </p>{' '}
               <p className=" text-gray-500">
-                Built by <span className="text-orange-400 font-semibold">Omkesh</span>
+                Powered by <span className="text-blue-400 font-semibold">SmartHire Technologies</span>
               </p>{' '}
             </div>{' '}
           </div>{' '}

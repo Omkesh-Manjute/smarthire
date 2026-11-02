@@ -2538,7 +2538,7 @@ function Homepage() {
                           <span className="req-sub">AWS Cloud Engineer</span>
                         </div>
                         <div className="td-cell td-recruiter">
-                          <span className="recruiter-tag">Omkesh M.</span>
+                          <span className="recruiter-tag">Senior Recruiter</span>
                         </div>
                         <div className="td-cell td-skills">
                           <span className="skill-chip">aws</span>
@@ -2927,7 +2927,7 @@ function Homepage() {
                       <input 
                         type="email" 
                         required 
-                        placeholder="e.g. omkesh@coolsofttech.com"
+                        placeholder="e.g. recruiter@company.com"
                         value={forgotEmail}
                         onChange={(e) => setForgotEmail(e.target.value)}
                       />

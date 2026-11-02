@@ -379,8 +379,8 @@ Looking forward to your prompt response.`;
     const userStr = localStorage.getItem('smarthire_user') || localStorage.getItem('verifyhire_user');
     let userObj = null;
     try { userObj = JSON.parse(userStr); } catch (_) {}
-    const recruiterEmail = userObj?.email || accountEmail || 'omkesh@coolsofttech.com';
-    const recruiterName = userObj?.name || 'Omkesh Manjute';
+    const recruiterEmail = userObj?.email || accountEmail || 'support@smarthireus.com';
+    const recruiterName = userObj?.name || 'Recruiter';
 
     try {
       const res = await fetch('/api/contacts/batch-send-jd', {
@@ -431,7 +431,7 @@ Looking forward to your prompt response.`;
         <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#CBD5E1" strokeWidth="1.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
         <div style={{ fontSize: '18px', fontWeight: '700', color: '#0F172A' }}>Access Restricted</div>
         <div style={{ fontSize: '13px', textAlign: 'center', maxWidth: '360px', lineHeight: 1.5 }}>
-          The Company & Recruiter Directory is restricted to Super Admin (Omkesh Manjute) only.
+          The Company & Recruiter Directory is restricted to Super Admin only.
         </div>
       </div>
     );
