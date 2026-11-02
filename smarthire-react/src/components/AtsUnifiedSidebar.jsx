@@ -12,6 +12,8 @@ export const renderAtsIcon = (id, size = 16, color = 'currentColor') => {
       )
     case 'candidates':
     case 'users':
+    case 'contacts':
+    case 'directory':
       return (
         <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
           <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
@@ -176,6 +178,7 @@ export default function AtsUnifiedSidebar({
       icon: 'monster',
       items: [
         { id: 'hotlist', label: 'Vendor Hotlists', path: '/inbox?tab=hotlist' },
+        { id: 'contacts', label: 'Company Directory', tabId: 'contacts', path: '/ats?tab=contacts' },
         { id: 'monster', label: 'Universal Search', path: '/inbox?tab=monster' },
         { id: 'sourcing_pipeline', label: 'Sourcing Pipeline', path: '/sourcing' },
       ]

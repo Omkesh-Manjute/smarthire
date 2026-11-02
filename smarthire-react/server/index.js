@@ -14435,6 +14435,206 @@ app.delete('/api/recruiter/vendor-hotlists/:id', (req, res) => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// EXTRACTED COMPANY CONTACTS & BATCH JD OUTREACH ENGINE
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// GET /api/contacts/extracted - List extracted company & recruiter contacts from email
+app.get('/api/contacts/extracted', async (req, res) => {
+  try {
+    const { getCachedContacts } = await import('./jobs-ingestion/email-contacts-extractor.js');
+    const data = getCachedContacts();
+    const search = (req.query.q || req.query.search || '').toLowerCase().trim();
+    const typeFilter = (req.query.type || 'all').toLowerCase().trim();
+
+    let list = Array.isArray(data.contacts) ? data.contacts : [];
+
+    if (typeFilter === 'corporate') {
+      list = list.filter(c => c.type === 'Corporate');
+    } else if (typeFilter === 'personal') {
+      list = list.filter(c => c.type !== 'Corporate');
+    }
+
+    if (search) {
+      list = list.filter(c => 
+        (c.name && c.name.toLowerCase().includes(search)) ||
+        (c.company && c.company.toLowerCase().includes(search)) ||
+        (c.email && c.email.toLowerCase().includes(search)) ||
+        (c.domain && c.domain.toLowerCase().includes(search))
+      );
+    }
+
+    return res.json({
+      success: true,
+      total: data.total,
+      corporateCount: data.corporateCount,
+      personalCount: data.personalCount,
+      updatedAt: data.updatedAt,
+      account: data.account || 'omkesh@coolsofttech.com',
+      filteredCount: list.length,
+      contacts: list
+    });
+  } catch (err) {
+    console.error('[ContactsAPI] Error fetching extracted contacts:', err);
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// POST /api/contacts/sync - Trigger live rescan of Yahoo/IMAP emails
+app.post('/api/contacts/sync', express.json(), async (req, res) => {
+  try {
+    const { extractContactsFromIMAP } = await import('./jobs-ingestion/email-contacts-extractor.js');
+    const user = req.body.email || process.env.IMAP_USER || 'omkesh@coolsofttech.com';
+    const password = req.body.password || process.env.IMAP_PASS || 'ykbmemlfgywcjrbo';
+
+    console.log(`[ContactsAPI] Starting sync for ${user}...`);
+    const result = await extractContactsFromIMAP({
+      user,
+      password,
+      folders: ['INBOX', 'Sent', 'Hotlist'],
+      maxEmailsPerFolder: 10000
+    });
+
+    return res.json({
+      success: true,
+      message: 'Email contacts synchronized successfully',
+      ...result
+    });
+  } catch (err) {
+    console.error('[ContactsAPI] Error syncing contacts:', err);
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// POST /api/contacts/batch-send-jd - Send Job Description outreach to selected contacts
+app.post('/api/contacts/batch-send-jd', express.json(), async (req, res) => {
+  try {
+    const { recipients, subject, body, html, recruiterEmail, recruiterName, jobTitle, jobId } = req.body;
+    if (!recipients || !Array.isArray(recipients) || recipients.length === 0) {
+      return res.status(400).json({ success: false, message: 'Recipients list is required' });
+    }
+    if (!subject || (!body && !html)) {
+      return res.status(400).json({ success: false, message: 'Subject and email body are required' });
+    }
+
+    const cleanRecruiterEmail = String(recruiterEmail || 'omkesh@coolsofttech.com').toLowerCase().trim();
+    const cleanRecruiterName = recruiterName || 'Omkesh Manjute';
+    loadEmailConfigs();
+    const cfg = getRecruiterEmailConfig(cleanRecruiterEmail) || {};
+    const cleanedRecruiterPass = (cfg.appPassword || (cleanRecruiterEmail === 'omkesh@coolsofttech.com' ? (process.env.EMAIL_PASS || process.env.SMTP_PASS || '') : '')).replace(/\s+/g, '');
+
+    // Default Fallback Transporter (Hostinger / Yahoo)
+    const defaultSenderEmail = 'support@praximinds.com';
+    const defaultHostingerPass = (process.env.SUPPORT_EMAIL_PASS || process.env.HOSTINGER_PASS || 'Praximinds@1994').replace(/\s+/g, '');
+    const defaultHostingerHost = process.env.SUPPORT_SMTP_HOST || 'smtp.hostinger.com';
+    const defaultHostingerPort = 465;
+
+    const nodemailer = await import('nodemailer').catch(() => null);
+    if (!nodemailer) {
+      return res.status(500).json({ success: false, message: 'Email service unavailable on server' });
+    }
+
+    const createTransport = nodemailer.default?.createTransport || nodemailer.createTransport;
+    let activeTransporter = null;
+    let fromAddress = '';
+    let isFallback = false;
+
+    if (cleanedRecruiterPass) {
+      const fromEmail = cfg.fromEmail || cleanRecruiterEmail;
+      const smtpHost = cfg.smtpHost || (fromEmail.includes('coolsofttech.com') ? 'smtp.mail.yahoo.com' : 'smtp.bizmail.yahoo.com');
+      const port = parseInt(cfg.smtpPort || '465');
+      activeTransporter = createTransport({
+        host: smtpHost,
+        port,
+        secure: port === 465,
+        auth: { user: fromEmail, pass: cleanedRecruiterPass },
+        tls: { rejectUnauthorized: false, minVersion: 'TLSv1.2' },
+        connectionTimeout: 10000
+      });
+      fromAddress = `"${cleanRecruiterName} (SmartHire)" <${fromEmail}>`;
+    } else {
+      activeTransporter = createTransport({
+        host: defaultHostingerHost,
+        port: defaultHostingerPort,
+        secure: true,
+        auth: { user: defaultSenderEmail, pass: defaultHostingerPass },
+        tls: { rejectUnauthorized: false, minVersion: 'TLSv1.2' },
+        connectionTimeout: 10000
+      });
+      fromAddress = `"SmartHire Team" <${defaultSenderEmail}>`;
+      isFallback = true;
+    }
+
+    let sentCount = 0;
+    let failedCount = 0;
+    const errors = [];
+
+    // Dispatch loop with 250ms gap
+    for (const r of recipients) {
+      const toEmail = typeof r === 'string' ? r : (r.email || '');
+      const toName = typeof r === 'string' ? '' : (r.name || '');
+      const toCompany = typeof r === 'string' ? '' : (r.company || '');
+
+      if (!toEmail || !toEmail.includes('@')) {
+        failedCount++;
+        continue;
+      }
+
+      // Personalized substitutions
+      let personalSubject = subject
+        .replace(/\{\{candidate_name\}\}/gi, toName || 'Partner')
+        .replace(/\{\{contact_name\}\}/gi, toName || 'Partner')
+        .replace(/\{\{company_name\}\}/gi, toCompany || '')
+        .replace(/\{\{job_title\}\}/gi, jobTitle || 'Immediate IT Requirement');
+
+      let personalBody = (body || '')
+        .replace(/\{\{candidate_name\}\}/gi, toName || 'Team')
+        .replace(/\{\{contact_name\}\}/gi, toName || 'Team')
+        .replace(/\{\{company_name\}\}/gi, toCompany || '')
+        .replace(/\{\{job_title\}\}/gi, jobTitle || 'Immediate IT Requirement');
+
+      let personalHtml = html ? html
+        .replace(/\{\{candidate_name\}\}/gi, toName || 'Team')
+        .replace(/\{\{contact_name\}\}/gi, toName || 'Team')
+        .replace(/\{\{company_name\}\}/gi, toCompany || '')
+        .replace(/\{\{job_title\}\}/gi, jobTitle || 'Immediate IT Requirement') : undefined;
+
+      try {
+        await activeTransporter.sendMail({
+          from: fromAddress,
+          to: toEmail,
+          replyTo: cleanRecruiterEmail,
+          subject: personalSubject,
+          text: personalBody,
+          html: personalHtml
+        });
+        sentCount++;
+      } catch (sendErr) {
+        console.warn(`[BatchSendJD] Error sending to ${toEmail}:`, sendErr.message);
+        failedCount++;
+        errors.push({ email: toEmail, error: sendErr.message });
+      }
+
+      // Small pause between emails to protect SMTP reputation
+      if (recipients.length > 1) {
+        await new Promise(r => setTimeout(r, 200));
+      }
+    }
+
+    return res.json({
+      success: true,
+      sentCount,
+      failedCount,
+      total: recipients.length,
+      isFallback,
+      errors: errors.slice(0, 10)
+    });
+  } catch (err) {
+    console.error('[ContactsAPI] Error in batch-send-jd:', err);
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // MONSTER+ AI CANDIDATE SOURCING & GOOD MATCH ENGINE
 // ═══════════════════════════════════════════════════════════════════════════════
 

@@ -131,6 +131,8 @@ function App() {
           <Route path="/dashboard" element={<ProtectedRoute><RecruiterDashboard /></ProtectedRoute>} />
           <Route path="/verify" element={<Navigate to="/ats" replace />} />
           <Route path="/ats" element={<ProtectedRoute><AtsPlatform /></ProtectedRoute>} />
+          <Route path="/contacts" element={<Navigate to="/ats?tab=contacts" replace />} />
+          <Route path="/directory" element={<Navigate to="/ats?tab=contacts" replace />} />
           <Route path="/reports" element={<Navigate to="/ats" replace />} />
           <Route path="/pricing" element={<ProtectedRoute><Pricing /></ProtectedRoute>} />
           <Route path="/branding" element={<ProtectedRoute><BrandingCenter /></ProtectedRoute>} />

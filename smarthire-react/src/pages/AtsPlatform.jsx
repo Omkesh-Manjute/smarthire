@@ -4,6 +4,7 @@ import ActivityNotificationBell, { pushActivityNotification } from '../component
 import { useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import AtsUnifiedSidebar from '../components/AtsUnifiedSidebar'
+import EmailContactsDirectory from '../components/EmailContactsDirectory'
 import {
   DashboardModule,
   CandidatesModule,
@@ -847,7 +848,7 @@ export default function AtsPlatform() {
           {/* Left: Current Tab Title & View Selector */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <span style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a' }}>
-              {activeTab === 'home' ? 'Home' : activeTab === 'candidates' ? 'Candidates' : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
+              {activeTab === 'home' ? 'Home' : activeTab === 'candidates' ? 'Candidates' : (activeTab === 'contacts' || activeTab === 'directory') ? 'Company Directory' : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
             </span>
             {activeTab === 'home' && (
               <span style={{ fontSize: '11px', color: '#64748b', fontWeight: '600' }}>
@@ -1383,6 +1384,10 @@ export default function AtsPlatform() {
                 Open Vendor Hotlists →
               </button>
             </div>
+          )}
+
+          {(activeTab === 'contacts' || activeTab === 'directory') && (
+            <EmailContactsDirectory />
           )}
 
           {/* ══════════════════════════════════════════════════════════════════
