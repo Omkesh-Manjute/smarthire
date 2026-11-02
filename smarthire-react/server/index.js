@@ -14570,11 +14570,12 @@ app.post('/api/contacts/batch-send-jd', express.json(), async (req, res) => {
     const cleanRecruiterName = rawRecruiterName.replace(/\s*\(SmartHire\)/gi, '').replace(/\s*SmartHire/gi, '').trim() || 'Omkesh';
     const cleanedRecruiterPass = (cfg.appPassword || (cleanRecruiterEmail === 'omkesh@coolsofttech.com' ? (process.env.EMAIL_PASS || process.env.SMTP_PASS || '') : '')).replace(/\s+/g, '');
 
-    // Default Fallback Transporter (Hostinger / Yahoo)
-    const defaultSenderEmail = 'support@smarthireus.com';
-    const defaultHostingerPass = (process.env.SUPPORT_EMAIL_PASS || process.env.HOSTINGER_PASS || 'Praximinds@1994').replace(/\s+/g, '');
-    const defaultHostingerHost = process.env.SUPPORT_SMTP_HOST || 'smtp.hostinger.com';
-    const defaultHostingerPort = 465;
+    if (!cleanedRecruiterPass) {
+      return res.status(400).json({
+        success: false,
+        message: `SMTP credentials not configured for ${cleanRecruiterEmail}. Please check email settings in ATS.`
+      });
+    }
 
     const nodemailer = await import('nodemailer').catch(() => null);
     if (!nodemailer) {
@@ -14583,45 +14584,25 @@ app.post('/api/contacts/batch-send-jd', express.json(), async (req, res) => {
 
     const createTransport = nodemailer.default?.createTransport || nodemailer.createTransport;
 
-    const createFallbackTransporter = () => createTransport({
+    const fromEmail = cfg.fromEmail || cleanRecruiterEmail;
+    const smtpHost = cfg.smtpHost || (fromEmail.includes('coolsofttech.com') ? 'smtp.mail.yahoo.com' : 'smtp.bizmail.yahoo.com');
+    const port = parseInt(cfg.smtpPort || '465');
+
+    // Connection pooling to prevent multiple rapid TLS auth handshakes on Yahoo SMTP
+    const activeTransporter = createTransport({
       pool: true,
-      maxConnections: 3,
-      maxMessages: 200,
-      host: defaultHostingerHost,
-      port: defaultHostingerPort,
-      secure: true,
-      auth: { user: defaultSenderEmail, pass: defaultHostingerPass },
+      maxConnections: 1,
+      maxMessages: 100,
+      rateDelta: 1000,
+      rateLimit: 2,
+      host: smtpHost,
+      port,
+      secure: port === 465,
+      auth: { user: fromEmail, pass: cleanedRecruiterPass },
       tls: { rejectUnauthorized: false, minVersion: 'TLSv1.2' },
       connectionTimeout: 15000
     });
-
-    let activeTransporter = null;
-    let fromAddress = '';
-    let isFallback = false;
-
-    if (cleanedRecruiterPass) {
-      const fromEmail = cfg.fromEmail || cleanRecruiterEmail;
-      const smtpHost = cfg.smtpHost || (fromEmail.includes('coolsofttech.com') ? 'smtp.mail.yahoo.com' : 'smtp.bizmail.yahoo.com');
-      const port = parseInt(cfg.smtpPort || '465');
-      activeTransporter = createTransport({
-        pool: true,
-        maxConnections: 1,
-        maxMessages: 50,
-        rateDelta: 1000,
-        rateLimit: 2,
-        host: smtpHost,
-        port,
-        secure: port === 465,
-        auth: { user: fromEmail, pass: cleanedRecruiterPass },
-        tls: { rejectUnauthorized: false, minVersion: 'TLSv1.2' },
-        connectionTimeout: 15000
-      });
-      fromAddress = `"${cleanRecruiterName}" <${fromEmail}>`;
-    } else {
-      activeTransporter = createFallbackTransporter();
-      fromAddress = `"${cleanRecruiterName}" <${defaultSenderEmail}>`;
-      isFallback = true;
-    }
+    const fromAddress = `"${cleanRecruiterName}" <${fromEmail}>`;
 
     let sentCount = 0;
     let failedCount = 0;
@@ -14669,34 +14650,8 @@ app.post('/api/contacts/batch-send-jd', express.json(), async (req, res) => {
         sentCount++;
       } catch (sendErr) {
         console.warn(`[BatchSendJD] Error sending to ${toEmail}:`, sendErr.message);
-
-        // If primary recruiter account (e.g. Yahoo) failed with auth limit, 535, rate limit, or socket reset, immediately fallback to Hostinger
-        if (!isFallback) {
-          console.log(`[BatchSendJD] Switching to Hostinger fallback for ${toEmail} and continuing...`);
-          try {
-            activeTransporter = createFallbackTransporter();
-            fromAddress = `"${cleanRecruiterName}" <${defaultSenderEmail}>`;
-            isFallback = true;
-            await activeTransporter.sendMail({
-              from: fromAddress,
-              to: toEmail,
-              replyTo: cleanRecruiterEmail,
-              subject: personalSubject,
-              text: personalBody,
-              html: personalHtml
-            });
-            sentCount++;
-            console.log(`[BatchSendJD] Successfully delivered to ${toEmail} via Hostinger fallback.`);
-            continue;
-          } catch (fallbackErr) {
-            console.error(`[BatchSendJD] Fallback also failed for ${toEmail}:`, fallbackErr.message);
-            failedCount++;
-            errors.push({ email: toEmail, error: fallbackErr.message });
-          }
-        } else {
-          failedCount++;
-          errors.push({ email: toEmail, error: sendErr.message });
-        }
+        failedCount++;
+        errors.push({ email: toEmail, error: sendErr.message });
       }
 
       // Small pause between emails to protect SMTP reputation
@@ -14710,7 +14665,6 @@ app.post('/api/contacts/batch-send-jd', express.json(), async (req, res) => {
       sentCount,
       failedCount,
       total: recipients.length,
-      isFallback,
       errors
     });
   } catch (err) {

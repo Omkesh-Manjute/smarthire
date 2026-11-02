@@ -393,8 +393,8 @@ Looking forward to your prompt response.`;
     const userStr = localStorage.getItem('smarthire_user') || localStorage.getItem('verifyhire_user');
     let userObj = null;
     try { userObj = JSON.parse(userStr); } catch (_) {}
-    const recruiterEmail = userObj?.email || accountEmail || 'support@smarthireus.com';
-    const recruiterName = userObj?.name || 'Recruiter';
+    const recruiterEmail = userObj?.email || accountEmail || 'omkesh@coolsofttech.com';
+    const recruiterName = userObj?.name || 'Omkesh';
     const activeJobTitle = availableJobs.find(j => (j.id || j._id) === selectedJobId)?.title || '';
 
     const total = targetRecipients.length;
