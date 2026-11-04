@@ -1145,7 +1145,10 @@ export default function CandidateChat() {
   }
 
   const jobTitle = session?.jobTitle || 'Lead Software Engineer'
-  const jobClient = session?.jobClient || 'Enterprise Client'
+  const rawJobClient = String(session?.jobClient || '').trim()
+  const isPraximind = /praximind/i.test(rawJobClient)
+  const isDefaultGeneric = /enterprise client/i.test(rawJobClient) || /client partner/i.test(rawJobClient)
+  const cleanJobClient = (isPraximind || isDefaultGeneric) ? '' : rawJobClient
   const currentQ = questions[currentQuestionIndex] || {}
   const maxDuration = currentQ.maxDuration || 120
 
@@ -1249,8 +1252,12 @@ export default function CandidateChat() {
           <div style={styles.jobInfoBadge}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
             <span style={{ fontWeight: '700', color: '#0f172a' }}>{jobTitle}</span>
-            <span style={{ color: '#94a3b8' }}>•</span>
-            <span style={{ color: '#64748b' }}>{jobClient}</span>
+            {cleanJobClient ? (
+              <>
+                <span style={{ color: '#94a3b8' }}>•</span>
+                <span style={{ color: '#64748b' }}>{cleanJobClient}</span>
+              </>
+            ) : null}
           </div>
 
           <div style={styles.headerRight}>
@@ -2354,17 +2361,21 @@ const styles = {
     marginBottom: '14px'
   },
   questionTitle: {
-    fontSize: '17px',
-    fontWeight: '800',
+    fontSize: '16px',
+    fontWeight: '600',
     color: '#0f172a',
-    margin: '0 0 4px',
-    lineHeight: '1.35'
+    margin: '0 0 8px',
+    lineHeight: '1.6',
+    letterSpacing: '-0.01em',
+    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
   },
   questionDesc: {
     fontSize: '13px',
+    fontWeight: '400',
     color: '#64748b',
-    margin: 0,
-    lineHeight: '1.4'
+    margin: '0 0 14px',
+    lineHeight: '1.5',
+    letterSpacing: '0.005em'
   },
   studioSplitLayout: {
     display: 'flex',
