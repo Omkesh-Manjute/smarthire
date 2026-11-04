@@ -66,6 +66,37 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
     - In resume views, every responsibility, project accomplishment, and contribution line must be formatted with an explicit bullet point (`•`) and proper indentation.
     - The engine must automatically detect responsibilities (lines following `Responsibilities:`, action verbs, or list items) even when converted from plain text or Word documents without literal Unicode bullets.
 
+### 2026-11-05 — PDF Candidate Assessment Report in B2B Client Portal & Strict Role-Based Interview Scoping
+- **Context & Objectives**:
+  - The user reported two critical issues:
+    1. *"bhai ye wala bhi nahi a raha hai B2B mai client side so ye bhi update karo"*: The standalone "Candidate Interview Assessment Report" popup (with Location Mismatch Integrity Alert, Candidate Stated Location vs Actual Verified Device GPS, Proctoring telemetry, AI scorecard, takeaways, and question-by-question spoken transcripts) was missing in the B2B Client Portal (`ClientScreeningPortal.jsx`). Previously clicking "Print / PDF Report" in B2B portal just called `window.print()` which printed the portal dashboard rather than generating the official confidential assessment document.
+    2. *"interview sab ko dikh raha hai abhi role base mai kuch issu a gaya hai fix karo isko bhai"*: Screening interviews were visible across all ATS users (`visibleSessions = sessions` in `ScreeningModule.jsx` and `filtered = screeningStore` in `server/index.js`), causing external B2B client interviews to leak into internal recruiter lists, and recruiters to see other recruiters' candidates. Furthermore, `authenticateToken` in `server/index.js` was promoting `omkeshmanjute1@gmail.com` (and anyone without explicit token) to `superadmin`.
+- **Architectural Implementations**:
+  1. *B2B Client Portal PDF Report & Integrity Telemetry (`ClientScreeningPortal.jsx`)*:
+     - Implemented `checkLocationMismatch(enteredLoc, gpsGeo)` and full standalone `handleExportPDFReport(session)` HTML report builder (identical to ATS format shown in user screenshot `media_1793825209681_1e1a2065.png`).
+     - Added dedicated `Report / PDF` action button on completed candidate table rows in `/client/screening`.
+     - Wired the review modal's "Print / PDF Report" header button directly to `handleExportPDFReport(reviewSession)`.
+     - Enhanced review modal left drawer with live Location & Integrity Audit card (highlighting stated location vs actual GPS) and anti-cheat proctoring metrics (screen share, fullscreen enforcement, tab violations count).
+  2. *Strict Multi-Tenant & Role-Based Scoping (`server/index.js` & `ScreeningModule.jsx`)*:
+     - Added `isSuperAdminEmail(email)`: Strictly reserved for `omkesh@coolsofttech.com`, `omkesh.manjute@smarthire.com`, and `omkeshmanjute@gmail.com`. Explicitly prevents `omkeshmanjute1@gmail.com` (B2B test client account) from receiving superadmin rights.
+     - Hardened `authenticateToken`: Non-authenticated or mock sessions resolve role accurately (`superadmin` only for verified superadmin emails, `client` for client portal accounts in `clientCreditsStore`, and `recruiter` by default).
+     - Updated `/api/screening/sessions`:
+       - `client` role: returns strictly sessions created by/for that client.
+       - Standard `recruiter` / `employee`: filters out all `isClientSession` external B2B sessions; restricts results strictly to their own sessions (`recruiterEmail === userEmail || createdByEmail === userEmail`).
+       - `manager` role: returns own sessions + assigned team reportees (`recruitersMock` hierarchy + supervisor pairs: Gourav -> Omkesh, Naveen -> Sukamal, Rahul -> Vaibhav). Never shows external B2B client sessions.
+       - `superadmin`: organization-wide visibility into ATS sessions (excludes client sessions unless explicitly requested via `includeClient=true` or `scope=all`).
+     - Updated `ScreeningModule.jsx` frontend `visibleSessions` to use `useMemo` strictly honoring `isSuper`, `isManager`, and recruiter ownership.
+- **Verification & Deployment Protocol**:
+  - All 42 matching engine unit tests passed (0 failures).
+  - Production build in `smarthire-react`: 0 errors, 0 warnings (built in 6.44s, bundle `index-CegNK7Y4.js`).
+  - Git committed (`6e14c1f`) and pushed to GitHub `origin main`.
+  - Deployed bundle `index-CegNK7Y4.js` and `server/index.js` to AWS Lightsail server (`34.194.119.199`).
+  - Pruned old asset bundles, deleted temporary archives immediately (Rule 5 compliant).
+  - PM2 `smarthire-ats` reloaded successfully.
+  - Live domain `https://smarthireus.com` verified HTTP 200 OK with bundle `index-CegNK7Y4.js`.
+  - Live API verified: `rahul@coolsofttech.com` (recruiter) receives only 0 sessions (strictly scoped), `omkesh@coolsofttech.com` receives all internal ATS sessions, and `omkeshmanjute1@gmail.com` receives only their B2B client sessions.
+  - Server disk space: 55% used, 8.5GB free (Rule 5 compliant).
+
 ### 2026-11-03 — Company Directory: Single-Row Grouping with Recruiter Dropdown, Clean Numeric Seen & Personal Elimination
 - **Context & Objectives**:
   - The user provided a live screenshot showing repeated company rows (e.g. `Artifint` across rows 120, 121, 122) and requested:
