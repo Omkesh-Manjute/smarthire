@@ -7829,13 +7829,15 @@ async function sendScreeningCompletedNotificationEmail(session) {
     const rawRecruiterName = session.recruiterName || session.createdByName || (recruiterEmail.split('@')[0]);
     const recruiterName = rawRecruiterName.charAt(0).toUpperCase() + rawRecruiterName.slice(1);
 
-    // Recipient list & CC
+    // Recipient list & CC (B2B client privacy: strictly NO CC to admin)
     const to = recruiterEmail;
-    // Always CC Omkesh so he has full visibility of candidate submissions across all recruiters
-    const cc = (recruiterEmail !== defaultSender) ? defaultSender : undefined;
+    const isClientSession = Boolean(session.isClientSession || session.clientEmail || session.clientCompany);
+    const cc = undefined;
 
-    // Direct ATS Candidate Review Link (pointing to AI Screening scorecard)
-    const atsDashboardUrl = `https://smarthireus.com/ats?tab=screening&session=${encodeURIComponent(session.sessionId)}&candidate=${encodeURIComponent(candidateName)}`;
+    // Direct Candidate Review Link
+    const atsDashboardUrl = isClientSession
+      ? `https://smarthireus.com/client/screening?session=${encodeURIComponent(session.sessionId)}`
+      : `https://smarthireus.com/ats?tab=screening&session=${encodeURIComponent(session.sessionId)}&candidate=${encodeURIComponent(candidateName)}`;
     const candidateChatUrl = atsDashboardUrl;
 
     const scoreColor = aiScore >= 80 ? '#10B981' : aiScore >= 65 ? '#2563EB' : '#F59E0B';
@@ -11282,7 +11284,7 @@ Output ONLY raw JSON array starting with '[' and ending with ']'.`;
 
 // POST Client Create Screening Invite (consumes 1 Screening Credit)
 app.post('/api/client/screening/create', express.json(), async (req, res) => {
-  const { clientEmail, jobTitle, candidateName, candidateEmail, questions, jobDescription, sendInviteEmail } = req.body;
+  const { clientEmail, jobTitle, candidateName, candidateEmail, questions, jobDescription, sendInviteEmail, expiresAt: inputExpiresAt } = req.body;
   if (!clientEmail || !jobTitle) {
     return res.status(400).json({ success: false, message: 'clientEmail and jobTitle are required' });
   }
@@ -11328,9 +11330,17 @@ app.post('/api/client/screening/create', express.json(), async (req, res) => {
 
   const resolvedQuestions = Array.isArray(questions) && questions.length > 0 ? questions : defaultQuestions;
 
-  // Set 7-day expiration
-  const expDate = new Date();
-  expDate.setDate(expDate.getDate() + 7);
+  // Resolve expiration date (custom, preset, or default 7 days)
+  let resolvedExpiresAt = null;
+  if (inputExpiresAt === null || inputExpiresAt === 'never') {
+    resolvedExpiresAt = null;
+  } else if (inputExpiresAt) {
+    resolvedExpiresAt = inputExpiresAt;
+  } else {
+    const expDate = new Date();
+    expDate.setDate(expDate.getDate() + 7);
+    resolvedExpiresAt = expDate.toISOString();
+  }
 
   const newSession = {
     sessionId,
@@ -11353,7 +11363,7 @@ app.post('/api/client/screening/create', express.json(), async (req, res) => {
     candidateEmail: cleanCandEmail || null,
     status: 'pending',
     createdAt: new Date().toISOString(),
-    expiresAt: expDate.toISOString(),
+    expiresAt: resolvedExpiresAt,
     isClientSession: true
   };
 
@@ -11405,6 +11415,7 @@ app.post('/api/client/screening/create', express.json(), async (req, res) => {
     success: true,
     sessionId,
     screeningUrl,
+    expiresAt: resolvedExpiresAt,
     session: newSession,
     remainingScreeningCredits: client.screeningCredits,
     usedScreeningCredits: client.usedScreeningCredits,

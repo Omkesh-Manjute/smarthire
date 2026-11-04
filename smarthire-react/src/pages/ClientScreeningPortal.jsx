@@ -23,6 +23,8 @@ export default function ClientScreeningPortal() {
   const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false)
   const [isCreatingSession, setIsCreatingSession] = useState(false)
   const [createdSessionResult, setCreatedSessionResult] = useState(null)
+  const [expiryOption, setExpiryOption] = useState('7days')
+  const [customExpiryDate, setCustomExpiryDate] = useState('')
   const [questions, setQuestions] = useState([
     {
       id: 'q1',
@@ -178,6 +180,31 @@ export default function ClientScreeningPortal() {
       return
     }
 
+    // Resolve expiration timestamp
+    let expiresAt = null
+    if (expiryOption === '3days') {
+      const d = new Date()
+      d.setDate(d.getDate() + 3)
+      d.setHours(23, 59, 59, 999)
+      expiresAt = d.toISOString()
+    } else if (expiryOption === '7days') {
+      const d = new Date()
+      d.setDate(d.getDate() + 7)
+      d.setHours(23, 59, 59, 999)
+      expiresAt = d.toISOString()
+    } else if (expiryOption === '14days') {
+      const d = new Date()
+      d.setDate(d.getDate() + 14)
+      d.setHours(23, 59, 59, 999)
+      expiresAt = d.toISOString()
+    } else if (expiryOption === 'custom' && customExpiryDate) {
+      const d = new Date(customExpiryDate)
+      d.setHours(23, 59, 59, 999)
+      expiresAt = d.toISOString()
+    } else if (expiryOption === 'never') {
+      expiresAt = null
+    }
+
     setIsCreatingSession(true)
     try {
       const res = await fetch('/api/client/screening/create', {
@@ -190,7 +217,8 @@ export default function ClientScreeningPortal() {
           candidateEmail: candidateEmail.trim(),
           questions,
           jobDescription: jobDescription.trim(),
-          sendInviteEmail: Boolean(sendInviteEmail && candidateEmail.trim())
+          sendInviteEmail: Boolean(sendInviteEmail && candidateEmail.trim()),
+          expiresAt
         })
       })
       const data = await res.json()
@@ -201,7 +229,8 @@ export default function ClientScreeningPortal() {
           jobTitle: jobTitle.trim(),
           candidateName: candidateName.trim(),
           candidateEmail: candidateEmail.trim(),
-          inviteEmailSent: data.inviteEmailSent
+          inviteEmailSent: data.inviteEmailSent,
+          expiresAt: data.expiresAt !== undefined ? data.expiresAt : expiresAt
         })
         if (typeof data.remainingScreeningCredits === 'number') {
           setClientProfile(prev => ({
@@ -473,7 +502,7 @@ export default function ClientScreeningPortal() {
                 <th style={{ ...clientStyles.excelTh, width: '45px', textAlign: 'center' }}>#</th>
                 <th style={clientStyles.excelTh}>Candidate Name & Email</th>
                 <th style={clientStyles.excelTh}>Job Position / Role</th>
-                <th style={clientStyles.excelTh}>Interview Date</th>
+                <th style={clientStyles.excelTh}>Interview / Validity</th>
                 <th style={{ ...clientStyles.excelTh, width: '130px', textAlign: 'center' }}>AI Match</th>
                 <th style={{ ...clientStyles.excelTh, width: '110px', textAlign: 'center' }}>Status</th>
                 <th style={{ ...clientStyles.excelTh, width: '150px', textAlign: 'center' }}>Actions</th>
@@ -495,6 +524,7 @@ export default function ClientScreeningPortal() {
               ) : (
                 filteredSessions.map((session, idx) => {
                   const isSubmitted = session.status === 'submitted' || session.status === 'shortlisted' || (session.responses && session.responses.length > 0)
+                  const isExpired = !isSubmitted && session.expiresAt && new Date() > new Date(session.expiresAt)
                   const candName = session.candidateName || 'Candidate'
                   const candEmail = session.candidateEmail || 'No email specified'
                   const role = session.jobTitle || 'Custom Role'
@@ -527,7 +557,64 @@ export default function ClientScreeningPortal() {
                         {role}
                       </td>
                       <td style={{ ...clientStyles.excelTd, color: '#475569' }}>
-                        {dateStr}
+                        {isSubmitted ? (
+                          <div>
+                            <div style={{ fontWeight: '600', color: '#0f172a' }}>{dateStr}</div>
+                            <div style={{ fontSize: '11px', color: '#059669', display: 'flex', alignItems: 'center', gap: '3px', marginTop: '2px' }}>
+                              <span>✓</span> Completed
+                            </div>
+                          </div>
+                        ) : (
+                          <div>
+                            <div style={{ fontSize: '11px', color: '#64748b' }}>Created {dateStr}</div>
+                            {isExpired ? (
+                              <span style={{
+                                fontSize: '10.5px',
+                                fontWeight: 700,
+                                color: '#b91c1c',
+                                background: '#fef2f2',
+                                border: '1px solid #fecaca',
+                                padding: '1px 6px',
+                                borderRadius: '4px',
+                                display: 'inline-block',
+                                marginTop: '2px',
+                                whiteSpace: 'nowrap'
+                              }}>
+                                Expired {new Date(session.expiresAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                              </span>
+                            ) : session.expiresAt ? (
+                              <span style={{
+                                fontSize: '10.5px',
+                                fontWeight: 600,
+                                color: '#0369a1',
+                                background: '#f0f9ff',
+                                border: '1px solid #bae6fd',
+                                padding: '1px 6px',
+                                borderRadius: '4px',
+                                display: 'inline-block',
+                                marginTop: '2px',
+                                whiteSpace: 'nowrap'
+                              }}>
+                                Exp: {new Date(session.expiresAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                              </span>
+                            ) : (
+                              <span style={{
+                                fontSize: '10.5px',
+                                fontWeight: 600,
+                                color: '#059669',
+                                background: '#ecfdf5',
+                                border: '1px solid #a7f3d0',
+                                padding: '1px 6px',
+                                borderRadius: '4px',
+                                display: 'inline-block',
+                                marginTop: '2px',
+                                whiteSpace: 'nowrap'
+                              }}>
+                                No Expiry
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </td>
                       <td style={{ ...clientStyles.excelTd, textAlign: 'center' }}>
                         {isSubmitted && session.aiScore ? (
@@ -551,12 +638,12 @@ export default function ClientScreeningPortal() {
                           borderRadius: '4px',
                           fontSize: '11px',
                           fontWeight: '700',
-                          background: session.status === 'shortlisted' ? '#ecfdf5' : isSubmitted ? '#eff6ff' : '#f8fafc',
-                          color: session.status === 'shortlisted' ? '#059669' : isSubmitted ? '#2563eb' : '#64748b',
+                          background: session.status === 'shortlisted' ? '#ecfdf5' : isSubmitted ? '#eff6ff' : isExpired ? '#fef2f2' : '#f8fafc',
+                          color: session.status === 'shortlisted' ? '#059669' : isSubmitted ? '#2563eb' : isExpired ? '#b91c1c' : '#64748b',
                           border: '1px solid',
-                          borderColor: session.status === 'shortlisted' ? '#a7f3d0' : isSubmitted ? '#bfdbfe' : '#e2e8f0'
+                          borderColor: session.status === 'shortlisted' ? '#a7f3d0' : isSubmitted ? '#bfdbfe' : isExpired ? '#fecaca' : '#e2e8f0'
                         }}>
-                          {session.status === 'shortlisted' ? 'Shortlisted' : isSubmitted ? 'Completed' : 'Pending'}
+                          {session.status === 'shortlisted' ? 'Shortlisted' : isSubmitted ? 'Completed' : isExpired ? 'Expired' : 'Pending'}
                         </span>
                       </td>
                       <td style={{ ...clientStyles.excelTd, textAlign: 'center' }}>
@@ -758,6 +845,59 @@ export default function ClientScreeningPortal() {
                     </div>
                   </div>
 
+                  {/* Link Expiration & Validity Period */}
+                  <div style={clientStyles.formGroup}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <label style={{ ...clientStyles.label, marginBottom: 0 }}>Link Expiration & Validity Period</label>
+                      <span style={{ fontSize: '11.5px', color: '#64748b' }}>
+                        Automatically deactivates after selected date
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(95px, 1fr))', gap: '8px' }}>
+                      {[
+                        { id: '3days', label: '3 Days' },
+                        { id: '7days', label: '7 Days (Std)' },
+                        { id: '14days', label: '14 Days' },
+                        { id: 'custom', label: 'Custom Date' },
+                        { id: 'never', label: 'No Expiry' }
+                      ].map(opt => (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() => setExpiryOption(opt.id)}
+                          style={{
+                            padding: '8px 6px',
+                            borderRadius: '8px',
+                            fontSize: '12px',
+                            fontWeight: '700',
+                            cursor: 'pointer',
+                            textAlign: 'center',
+                            border: expiryOption === opt.id ? '2px solid #2563eb' : '1px solid #cbd5e1',
+                            background: expiryOption === opt.id ? '#eff6ff' : '#ffffff',
+                            color: expiryOption === opt.id ? '#1d4ed8' : '#334155',
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    {expiryOption === 'custom' && (
+                      <div style={{ marginTop: '10px' }}>
+                        <input
+                          type="date"
+                          min={new Date().toISOString().split('T')[0]}
+                          value={customExpiryDate}
+                          onChange={e => setCustomExpiryDate(e.target.value)}
+                          style={clientStyles.input}
+                          required
+                        />
+                      </div>
+                    )}
+                  </div>
+
                   {/* Send Email Checkbox */}
                   {candidateEmail.trim() && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '18px' }}>
@@ -810,6 +950,42 @@ export default function ClientScreeningPortal() {
                   <h3 style={{ fontSize: '17px', fontWeight: '800', color: '#0f172a', margin: '0 0 6px' }}>
                     Screening Session Created!
                   </h3>
+
+                  {/* Expiration Pill in Modal Result */}
+                  <div style={{ marginBottom: '14px' }}>
+                    {createdSessionResult.expiresAt ? (
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        background: '#fef3c7',
+                        color: '#92400e',
+                        border: '1px solid #fde68a',
+                        borderRadius: '20px',
+                        padding: '4px 14px',
+                        fontSize: '12px',
+                        fontWeight: '700'
+                      }}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        Expires on: {new Date(createdSessionResult.expiresAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </span>
+                    ) : (
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        background: '#ecfdf5',
+                        color: '#065f46',
+                        border: '1px solid #a7f3d0',
+                        borderRadius: '20px',
+                        padding: '4px 14px',
+                        fontSize: '12px',
+                        fontWeight: '700'
+                      }}>
+                        ✓ No Expiration (Always Active)
+                      </span>
+                    )}
+                  </div>
                   <p style={{ fontSize: '13px', color: '#64748b', margin: '0 0 16px' }}>
                     {createdSessionResult.inviteEmailSent
                       ? `Invitation email successfully delivered to ${createdSessionResult.candidateEmail}.`
@@ -1239,6 +1415,10 @@ export default function ClientScreeningPortal() {
                         >
                           {copiedLink ? 'Copied' : 'Copy'}
                         </button>
+                      </div>
+                      <div style={{ fontSize: '11.5px', color: '#64748b', marginTop: '8px', display: 'flex', justifyContent: 'space-between' }}>
+                        <span>Session: {reviewSession.sessionId || reviewSession.id}</span>
+                        <span>{reviewSession.expiresAt ? (new Date() > new Date(reviewSession.expiresAt) ? `Expired on ${new Date(reviewSession.expiresAt).toLocaleDateString()}` : `Valid until ${new Date(reviewSession.expiresAt).toLocaleDateString()}`) : 'No Expiry (Always Active)'}</span>
                       </div>
                     </div>
                   </div>
