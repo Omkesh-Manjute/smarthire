@@ -683,15 +683,69 @@ export default function ClientScreeningPortal() {
 
                   {/* Questions Preview & Edit */}
                   <div style={clientStyles.formGroup}>
-                    <label style={clientStyles.label}>Interview Questions ({questions.length})</label>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <label style={{ ...clientStyles.label, marginBottom: 0 }}>Interview Questions ({questions.length})</label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setQuestions(prev => [
+                            ...prev,
+                            {
+                              id: `q_${Date.now()}_${prev.length + 1}`,
+                              text: '',
+                              description: 'Provide a clear, detailed response.',
+                              allowedFormats: ['video', 'audio', 'text'],
+                              maxDuration: 120
+                            }
+                          ])
+                        }}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#2563eb',
+                          fontSize: '12px',
+                          fontWeight: '700',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          padding: '2px 6px',
+                          borderRadius: '4px'
+                        }}
+                      >
+                        + Add Question
+                      </button>
+                    </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       {questions.map((q, qIdx) => (
                         <div key={q.id || qIdx} style={clientStyles.questionItem}>
-                          <div style={{ fontWeight: '700', fontSize: '12px', color: '#2563eb', marginBottom: '4px' }}>
-                            Question {qIdx + 1}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                            <div style={{ fontWeight: '700', fontSize: '12px', color: '#2563eb' }}>
+                              Question {qIdx + 1}
+                            </div>
+                            {questions.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => setQuestions(prev => prev.filter((_, idx) => idx !== qIdx))}
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  color: '#ef4444',
+                                  fontSize: '13px',
+                                  fontWeight: '700',
+                                  cursor: 'pointer',
+                                  padding: '0 4px',
+                                  lineHeight: 1
+                                }}
+                                title="Remove Question"
+                              >
+                                ✕
+                              </button>
+                            )}
                           </div>
                           <input
                             type="text"
+                            placeholder={`Enter interview question ${qIdx + 1}...`}
                             value={q.text}
                             onChange={e => {
                               const val = e.target.value
