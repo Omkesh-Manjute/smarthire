@@ -37,18 +37,43 @@ import SmartHireMatchingEngine from './matching_engine.cjs'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'smarthire_secure_jwt_secret_key_2026';
 
+export function isSuperAdminEmail(email) {
+  if (!email) return false;
+  const e = String(email).toLowerCase().trim();
+  if (e === 'omkeshmanjute1@gmail.com') return false; // Explicit test B2B Client account
+  return e === 'omkesh@coolsofttech.com' || e === 'omkesh.manjute@smarthire.com' || e === 'omkeshmanjute@gmail.com';
+}
+
 function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
   
-  const headerEmail = (req.headers['x-recruiter-email'] || '').toLowerCase().trim();
+  const headerEmail = (req.headers['x-recruiter-email'] || req.headers['x-client-email'] || '').toLowerCase().trim();
   const headerRole = (req.headers['x-recruiter-role'] || '').toLowerCase().trim();
+
+  // Helper to resolve role
+  const resolveRole = (email, explicitRole) => {
+    if (explicitRole) return explicitRole.toLowerCase().trim();
+    if (isSuperAdminEmail(email)) return 'superadmin';
+    if (email && clientCreditsStore && clientCreditsStore[email]) return 'client';
+    return 'recruiter';
+  };
+
+  const resolveName = (email, explicitName) => {
+    if (explicitName) return explicitName;
+    if (isSuperAdminEmail(email)) return 'Omkesh Manjute';
+    if (email) {
+      const part = email.split('@')[0].replace(/[._-]/g, ' ');
+      return part.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    }
+    return 'User';
+  };
 
   // If no authorization token is provided, verify whether client has valid identity headers
   if (!token || token === 'undefined' || token === 'null') {
     if (headerEmail) {
-      const userRole = headerRole || (headerEmail.includes('omkesh') ? 'superadmin' : 'superadmin');
-      req.user = { id: 'header-session', email: headerEmail, role: userRole, name: headerEmail.includes('omkesh') ? 'Omkesh Manjute' : 'Admin' };
+      const userRole = resolveRole(headerEmail, headerRole);
+      req.user = { id: 'header-session', email: headerEmail, role: userRole, name: resolveName(headerEmail) };
       return next();
     }
     return res.status(401).json({ success: false, message: 'Unauthorized: Access token is required' });
@@ -56,9 +81,9 @@ function authenticateToken(req, res, next) {
 
   // 1. Handle client-side session tokens (e.g. mock session token from auth store)
   if (token.startsWith('mock-token-') || token.startsWith('token-') || token.startsWith('session-')) {
-    const userEmail = headerEmail || 'omkesh@coolsofttech.com';
-    const userRole = headerRole || (userEmail.includes('omkesh') ? 'superadmin' : 'superadmin');
-    req.user = { id: token, email: userEmail, role: userRole, name: userEmail.includes('omkesh') ? 'Omkesh Manjute' : 'Admin' };
+    const userEmail = headerEmail || (token.includes('omkesh') ? 'omkesh@coolsofttech.com' : 'recruiter@smarthire.com');
+    const userRole = resolveRole(userEmail, headerRole);
+    req.user = { id: token, email: userEmail, role: userRole, name: resolveName(userEmail) };
     return next();
   }
 
@@ -73,13 +98,13 @@ function authenticateToken(req, res, next) {
     try {
       const decoded = jwt.decode(token);
       if (decoded && typeof decoded === 'object') {
-        const userEmail = (decoded.email || headerEmail || 'omkesh@coolsofttech.com').toLowerCase().trim();
-        const userRole = headerRole || (userEmail.includes('omkesh') ? 'superadmin' : (decoded.role || 'superadmin'));
+        const userEmail = (decoded.email || headerEmail || 'recruiter@smarthire.com').toLowerCase().trim();
+        const userRole = resolveRole(userEmail, headerRole || decoded.role);
         req.user = {
           id: decoded.user_id || decoded.sub || token,
           email: userEmail,
           role: userRole,
-          name: decoded.name || (userEmail.includes('omkesh') ? 'Omkesh Manjute' : userEmail.split('@')[0])
+          name: decoded.name || resolveName(userEmail)
         };
         return next();
       }
@@ -87,12 +112,12 @@ function authenticateToken(req, res, next) {
 
     // 4. Fallback for authenticated client session headers
     if (headerEmail) {
-      const userRole = headerRole || (headerEmail.includes('omkesh') ? 'superadmin' : 'superadmin');
+      const userRole = resolveRole(headerEmail, headerRole);
       req.user = {
         id: token,
         email: headerEmail,
         role: userRole,
-        name: headerEmail.includes('omkesh') ? 'Omkesh Manjute' : 'Admin'
+        name: resolveName(headerEmail)
       };
       return next();
     }
@@ -7519,13 +7544,72 @@ app.post('/api/applications', upload.single('resume'), handlePublicApplication);
 
 // Get all screening sessions (recruiter dashboard)
 app.get('/api/screening/sessions', authenticateToken, (req, res) => {
-  const userRole = (req.user?.role || 'superadmin').toLowerCase().trim();
-  const userEmail = (req.user?.email || '').toLowerCase().trim();
+  const userRole = (req.headers['x-recruiter-role'] || req.query.role || req.user?.role || 'recruiter').toLowerCase().trim();
+  const userEmail = (req.headers['x-recruiter-email'] || req.query.recruiterEmail || req.user?.email || '').toLowerCase().trim();
+  const userName = (req.user?.name || '').toLowerCase().trim();
+  const userFirstName = (userName.split(' ')[0] || '').toLowerCase().trim();
 
-  // Return all screening sessions across the organization so ATS recruiters have full visibility
-  const filtered = screeningStore;
+  const isSuper = userRole === 'superadmin' || userRole === 'admin' || isSuperAdminEmail(userEmail);
+  const isManager = userRole === 'manager';
+  const isClient = userRole === 'client';
+
+  loadScreeningFromDisk();
+  let list = [...screeningStore];
+
+  if (isClient) {
+    // Client role: strictly scoped to sessions they created or own
+    list = list.filter(s => {
+      if (!s) return false;
+      const cBy = (s.createdByEmail || s.createdBy || s.recruiterEmail || '').toLowerCase().trim();
+      const cClient = (s.clientEmail || '').toLowerCase().trim();
+      return cBy === userEmail || cClient === userEmail;
+    });
+  } else if (!isSuper) {
+    // ATS Recruiter / Manager / Employee: NEVER show external B2B client sessions
+    list = list.filter(s => !s.isClientSession && !(s.sessionId && s.sessionId.startsWith('SCR-CL-')) && !s.clientEmail);
+
+    if (isManager) {
+      // Manager sees own sessions + subordinate team reportees
+      const subEmails = new Set([userEmail]);
+      (recruitersMock || []).forEach(u => {
+        const pEmail = (u.parentRecruiterEmail || '').toLowerCase().trim();
+        const pName = (u.parentRecruiterName || '').toLowerCase().trim();
+        if (pEmail === userEmail || (pName && userEmail.includes(pName))) {
+          if (u.email) subEmails.add(u.email.toLowerCase().trim());
+        }
+      });
+      list = list.filter(s => {
+        const rEmail = (s.recruiterEmail || s.createdByEmail || (typeof s.createdBy === 'string' && s.createdBy.includes('@') ? s.createdBy : '')).toLowerCase().trim();
+        const rName = (s.recruiterName || s.createdByName || '').toLowerCase().trim();
+        if (subEmails.has(rEmail) || rEmail === userEmail) return true;
+        if (userFirstName && userFirstName.length >= 3 && rName.includes(userFirstName)) return true;
+        // Known reporting hierarchy (Rule 3)
+        if (userEmail.includes('omkesh') && (rName.includes('gourav') || rEmail.includes('gourav'))) return true;
+        if (userEmail.includes('sukamal') && (rName.includes('naveen') || rEmail.includes('naveen'))) return true;
+        if (userEmail.includes('vaibhav') && (rName.includes('rahul') || rEmail.includes('rahul'))) return true;
+        return false;
+      });
+    } else {
+      // Standard recruiter / employee: ONLY their own sessions
+      list = list.filter(s => {
+        const rEmail = (s.recruiterEmail || s.createdByEmail || (typeof s.createdBy === 'string' && s.createdBy.includes('@') ? s.createdBy : '')).toLowerCase().trim();
+        const rName = (s.recruiterName || s.createdByName || '').toLowerCase().trim();
+        if (rEmail && userEmail && rEmail === userEmail) return true;
+        if (userFirstName && userFirstName.length >= 3 && rName.includes(userFirstName)) return true;
+        return false;
+      });
+    }
+  } else {
+    // SuperAdmin: Full access to ATS internal sessions
+    // By default, filter out client sessions unless requested via ?includeClient=true or ?scope=all
+    const includeClient = req.query.includeClient === 'true' || req.query.scope === 'all';
+    if (!includeClient) {
+      list = list.filter(s => !s.isClientSession && !(s.sessionId && s.sessionId.startsWith('SCR-CL-')) && !s.clientEmail);
+    }
+  }
+
   // Ensure recruiterName and createdByName are present on every session
-  const enriched = filtered.map(s => {
+  const enriched = list.map(s => {
     if (!s) return s;
     let recName = s.recruiterName || s.createdByName;
     if (!recName) {
@@ -7540,7 +7624,7 @@ app.get('/api/screening/sessions', authenticateToken, (req, res) => {
           const namePart = em.split('@')[0].replace(/[._-]/g, ' ');
           recName = namePart.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
         } else {
-          recName = 'Omkesh';
+          recName = 'Recruiter';
         }
       }
     }
@@ -14139,7 +14223,7 @@ app.get('/api/recruiter/vendor-hotlists', (req, res) => {
   const visaFilter = (req.query.visa || '').toLowerCase().trim();
   const recruiterEmail = (req.query.recruiterEmail || req.user?.email || '').toLowerCase().trim();
   const userRole = (req.query.role || req.user?.role || '').toLowerCase().trim();
-  const isSuper = userRole === 'superadmin' || userRole === 'admin' || recruiterEmail === 'omkesh@coolsofttech.com' || recruiterEmail.includes('omkesh');
+  const isSuper = userRole === 'superadmin' || userRole === 'admin' || isSuperAdminEmail(recruiterEmail);
   const isManager = userRole === 'manager';
 
   let list = [...vendorHotlistsStore];
@@ -14455,7 +14539,7 @@ app.get('/api/contacts/extracted', async (req, res) => {
   try {
     const headerEmail = (req.headers['x-recruiter-email'] || req.query.recruiterEmail || req.user?.email || '').toLowerCase().trim();
     const headerRole = (req.headers['x-recruiter-role'] || req.query.role || req.user?.role || '').toLowerCase().trim();
-    const isOmkeshAdmin = !headerEmail || headerEmail === 'omkesh@coolsofttech.com' || headerEmail === 'omkeshmanjute@gmail.com' || headerEmail.includes('omkesh') || headerRole === 'superadmin' || headerRole === 'admin';
+    const isOmkeshAdmin = isSuperAdminEmail(headerEmail) || headerRole === 'superadmin' || headerRole === 'admin';
     if (!isOmkeshAdmin) {
       return res.status(403).json({ success: false, message: 'Company Directory access restricted to Super Admin only' });
     }
@@ -16072,7 +16156,7 @@ app.post('/api/rtr/create', authenticateToken, async (req, res) => {
 app.get('/api/rtr/list', authenticateToken, (req, res) => {
   loadRtrAgreements();
   const recruiterEmail = (req.query.recruiterEmail || req.user?.email || '').toLowerCase().trim();
-  const isSuper = req.user?.role === 'superadmin' || req.user?.role === 'admin' || recruiterEmail.includes('omkesh');
+  const isSuper = req.user?.role === 'superadmin' || req.user?.role === 'admin' || isSuperAdminEmail(recruiterEmail);
 
   let list = rtrAgreementsStore;
   if (!isSuper && recruiterEmail) {

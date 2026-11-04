@@ -61,6 +61,25 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [], cur
   const currentUserRef = (currentUser?.refCode || '').toLowerCase().trim()
   const currentUserName = (currentUser?.name || '').toLowerCase().trim()
 
+  const currentUserRole = useMemo(() => {
+    let role = currentUser?.role || ''
+    try {
+      if (!role) {
+        const u = JSON.parse(localStorage.getItem('smarthire_user') || localStorage.getItem('verifyhire_user') || '{}')
+        role = u.role || ''
+      }
+      const activeRole = localStorage.getItem('smarthire_active_role')
+      if (activeRole) role = activeRole
+    } catch (_) {}
+    if (isSuperAdmin || currentUserEmail === 'omkesh@coolsofttech.com' || currentUserEmail === 'omkesh.manjute@smarthire.com' || currentUserEmail === 'omkeshmanjute@gmail.com') {
+      role = 'superadmin'
+    }
+    return (role || 'recruiter').toLowerCase().trim()
+  }, [currentUser, currentUserEmail, isSuperAdmin])
+
+  const isSuper = isSuperAdmin || currentUserRole === 'superadmin' || currentUserRole === 'admin' || currentUserEmail === 'omkesh@coolsofttech.com' || currentUserEmail === 'omkesh.manjute@smarthire.com' || currentUserEmail === 'omkeshmanjute@gmail.com'
+  const isManager = currentUserRole === 'manager'
+
   // Derive list of all available recruiters across the organization
   const allAvailableRecruiters = useMemo(() => {
     const list = [
@@ -110,21 +129,25 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [], cur
 
   // Helper to attach authorization and recruiter identity headers for all screening API calls
   const getAuthHeaders = useCallback((contentTypeJson = false) => {
-    let email = 'omkesh@coolsofttech.com'
-    let role = 'superadmin'
+    let email = currentUserEmail || ''
+    let role = currentUserRole || ''
     try {
-      const u = JSON.parse(localStorage.getItem('smarthire_user') || localStorage.getItem('verifyhire_user') || '{}')
-      if (u.email) email = u.email
-      if (u.role) role = u.role
+      if (!email || !role) {
+        const u = JSON.parse(localStorage.getItem('smarthire_user') || localStorage.getItem('verifyhire_user') || '{}')
+        if (!email && u.email) email = u.email
+        if (!role && u.role) role = u.role
+      }
       const activeRole = localStorage.getItem('smarthire_active_role')
       if (activeRole) role = activeRole
     } catch (_) {}
-    if (currentUser?.email) email = currentUser.email
-    if (currentUser?.role) role = currentUser.role
-    if (isSuperAdmin || email.toLowerCase() === 'omkesh@coolsofttech.com' || email.toLowerCase() === 'omkesh.manjute@smarthire.com') role = 'superadmin'
+    if (!email) email = 'guest@smarthire.com'
+    if (!role) role = 'recruiter'
+    if (isSuperAdmin || email.toLowerCase() === 'omkesh@coolsofttech.com' || email.toLowerCase() === 'omkesh.manjute@smarthire.com' || email.toLowerCase() === 'omkeshmanjute@gmail.com') {
+      role = 'superadmin'
+    }
 
-    let token = localStorage.getItem('smarthire_token') || localStorage.getItem('token') || 'token-omkesh'
-    if (token === 'null' || token === 'undefined' || !token) token = 'token-omkesh'
+    let token = localStorage.getItem('smarthire_token') || localStorage.getItem('token') || `session-${email}`
+    if (token === 'null' || token === 'undefined' || !token) token = `session-${email}`
     const headers = {
       'Authorization': `Bearer ${token}`,
       'x-recruiter-email': email,
@@ -134,7 +157,7 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [], cur
       headers['Content-Type'] = 'application/json'
     }
     return headers
-  }, [currentUser, isSuperAdmin])
+  }, [currentUserEmail, currentUserRole, isSuperAdmin])
 
   // Helper to dynamically resolve recruiter name who generated the screening link
   const getRecruiterName = (session) => {
@@ -404,13 +427,9 @@ SmartHire Recruitment Team`
         headers: getAuthHeaders()
       })
       if (!res.ok && res.status === 401) {
-        // Fallback retry with session token if stored token expired
+        // Fallback retry with user session token if stored token expired
         const retryRes = await fetch(`${API}/sessions`, {
-          headers: {
-            'Authorization': 'Bearer token-omkesh',
-            'x-recruiter-email': 'omkesh@coolsofttech.com',
-            'x-recruiter-role': 'superadmin'
-          }
+          headers: getAuthHeaders()
         })
         const retryData = await retryRes.json()
         if (retryData.success) {
@@ -1097,9 +1116,44 @@ SmartHire Recruitment Team`
   }
 
 
-  // ─── Company-wide session visibility ──────────────────────────────────────
-  // Show all company sessions so recruiting team has full visibility across all candidates
-  const visibleSessions = sessions;
+  // ─── Role-based session visibility & hierarchy resolution ───────────────────
+  const visibleSessions = useMemo(() => {
+    return (sessions || []).filter(s => {
+      if (!s) return false
+
+      // 1. External B2B Client Sessions: NEVER show in ATS recruiter view unless SuperAdmin
+      const isClientSession = Boolean(s.isClientSession || (s.sessionId && s.sessionId.startsWith('SCR-CL-')) || s.clientEmail)
+      if (isClientSession && !isSuper) {
+        return false
+      }
+
+      // 2. SuperAdmin: Full organization-wide visibility into ATS sessions
+      if (isSuper) return true
+
+      const userEmail = currentUserEmail
+      const userName = currentUserName
+      const userFirstName = (userName.split(' ')[0] || '').toLowerCase().trim()
+
+      const recEmail = (s.recruiterEmail || s.createdByEmail || (typeof s.createdBy === 'string' && s.createdBy.includes('@') ? s.createdBy : '')).toLowerCase().trim()
+      const recName = (s.recruiterName || s.createdByName || '').toLowerCase().trim()
+
+      // 3. Manager: Sees own sessions + direct subordinates in reporting hierarchy
+      if (isManager) {
+        if (recEmail && userEmail && recEmail === userEmail) return true
+        if (userFirstName && userFirstName.length >= 3 && recName.includes(userFirstName)) return true
+        // Rule 3 Hierarchy Mappings
+        if (userName.includes('omkesh') && (recName.includes('gourav') || recEmail.includes('gourav'))) return true
+        if (userName.includes('sukamal') && (recName.includes('naveen') || recEmail.includes('naveen'))) return true
+        if (userName.includes('vaibhav') && (recName.includes('rahul') || recEmail.includes('rahul'))) return true
+        return false
+      }
+
+      // 4. Standard Recruiter / Employee: Strictly restricted to their own sessions
+      if (recEmail && userEmail && recEmail === userEmail) return true
+      if (userFirstName && userFirstName.length >= 3 && recName.includes(userFirstName)) return true
+      return false
+    })
+  }, [sessions, isSuper, isManager, currentUserEmail, currentUserName])
 
   // Filtered Sessions (from visible set, after search/status/format/recruiter filters)
   const filteredSessions = visibleSessions.filter(s => {

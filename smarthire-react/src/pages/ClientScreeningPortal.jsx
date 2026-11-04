@@ -324,6 +324,420 @@ export default function ClientScreeningPortal() {
     ((Array.isArray(reviewSession.responses) && reviewSession.responses.length > 0 && reviewSession.responses.some(r => r.transcript || r.response || r.mediaUrl)) || reviewSession.masterMediaUrl)
   )
 
+  // Comprehensive check for mismatch between candidate-entered location and device GPS
+  const checkLocationMismatch = (enteredLoc, gpsGeo) => {
+    if (!enteredLoc && !gpsGeo) return { hasCheck: false, isMismatch: false }
+    const gpsStr = ((gpsGeo && (gpsGeo.cityState || gpsGeo.resolvedAddress)) || '').trim()
+    const entered = String(enteredLoc || '').trim()
+    if (!gpsStr || !entered) return { hasCheck: false, isMismatch: false }
+
+    const cleanTokens = (str) =>
+      str.toLowerCase()
+        .replace(/[^a-z0-9\s]/g, ' ')
+        .split(/\s+/)
+        .filter(t => t.length > 2 && !['city', 'the', 'and', 'state', 'usa', 'united', 'states', 'county', 'town', 'village', 'street', 'ave', 'road'].includes(t))
+
+    const enteredTokens = cleanTokens(entered)
+    const gpsTokens = cleanTokens(gpsStr)
+
+    const stateMap = {
+      wi: 'wisconsin', mo: 'missouri', ct: 'connecticut', tx: 'texas',
+      ca: 'california', ny: 'new york', nc: 'north carolina', il: 'illinois',
+      ga: 'georgia', fl: 'florida', va: 'virginia', oh: 'ohio', mi: 'michigan',
+      pa: 'pennsylvania', nj: 'new jersey', ma: 'massachusetts', co: 'colorado',
+      wa: 'washington', az: 'arizona', tn: 'tennessee', in: 'indiana', md: 'maryland',
+      mh: 'maharashtra', dl: 'delhi', ka: 'karnataka', up: 'uttar pradesh', ts: 'telangana'
+    }
+
+    const expandStates = (tokens) => {
+      const res = new Set(tokens)
+      tokens.forEach(t => {
+        if (stateMap[t]) res.add(stateMap[t])
+        Object.entries(stateMap).forEach(([k, v]) => {
+          if (v === t || v.includes(t)) res.add(k)
+        })
+      })
+      return Array.from(res)
+    }
+
+    const expEntered = expandStates(enteredTokens)
+    const expGps = expandStates(gpsTokens)
+
+    const overlap = expEntered.some(t => expGps.includes(t))
+    const isMismatch = !overlap
+
+    return {
+      hasCheck: true,
+      isMismatch,
+      enteredLocation: entered,
+      actualGpsLocation: gpsStr
+    }
+  }
+
+  // Handle Standalone PDF Candidate Interview Assessment Report Export
+  const handleExportPDFReport = (session) => {
+    if (!session) return
+
+    const candidateName = session.candidateName || 'Candidate'
+    const jobTitle = session.jobTitle || 'Open Position'
+    const email = session.candidateEmail || 'N/A'
+    const phone = session.candidatePhone || 'N/A'
+    const location = session.candidateLocation || 'N/A'
+    const visa = session.visaStatus || session.candidateInfo?.visaStatus || 'US Citizen'
+    const score = session.aiScore || 85
+    const recommendation = session.recommendation || 'Recommended'
+    const takeaways = session.keyTakeaways || 'Candidate completed all screening questions.'
+    const summaries = Array.isArray(session.aiSummary) ? session.aiSummary : []
+    const responses = session.responses || []
+    const proctoring = session.proctoring || {}
+    const geo = session.candidateGeo || session.gpsLocation || null
+    const dateStr = session.submittedAt ? new Date(session.submittedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : new Date().toLocaleDateString()
+
+    const scoreColor = score >= 85 ? '#059669' : score >= 70 ? '#2563eb' : score >= 50 ? '#d97706' : '#dc2626'
+    const scoreBg = score >= 85 ? '#ecfdf5' : score >= 70 ? '#eff6ff' : score >= 50 ? '#fffbeb' : '#fef2f2'
+
+    const recruiterName = session.recruiterName || session.createdByName || clientProfile?.name || 'Talent Team'
+    const audit = checkLocationMismatch(location, geo)
+
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>SmartHire Candidate Interview Report - ${candidateName}</title>
+  <style>
+    @media print {
+      body { margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+      .no-print { display: none !important; }
+      .page-break { page-break-after: always; }
+      @page { margin: 15mm; size: A4 portrait; }
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: #0f172a;
+      background: #ffffff;
+      line-height: 1.5;
+      padding: 36px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 18px;
+      margin-bottom: 22px;
+    }
+    .brand-title {
+      font-size: 24px;
+      font-weight: 900;
+      color: #1e3a8a;
+      letter-spacing: -0.02em;
+    }
+    .brand-sub {
+      font-size: 12px;
+      font-weight: 700;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 2px;
+    }
+    .report-meta {
+      text-align: right;
+      font-size: 12px;
+      color: #64748b;
+      line-height: 1.6;
+    }
+    .section-title {
+      font-size: 13px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #334155;
+      margin: 22px 0 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+    .info-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 14px 16px;
+    }
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      margin-bottom: 7px;
+    }
+    .info-label {
+      color: #64748b;
+      font-weight: 600;
+    }
+    .info-value {
+      font-weight: 700;
+      color: #0f172a;
+    }
+    .score-banner {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      background: ${scoreBg};
+      border: 1.5px solid ${scoreColor}40;
+      border-radius: 10px;
+      padding: 16px 22px;
+      margin-bottom: 18px;
+    }
+    .score-circle {
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      background: #ffffff;
+      border: 3px solid ${scoreColor};
+      color: ${scoreColor};
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 19px;
+      font-weight: 900;
+    }
+    .takeaway-box {
+      font-size: 13.5px;
+      color: #1e293b;
+      background: #f8fafc;
+      border-left: 4px solid #2563eb;
+      padding: 12px 16px;
+      border-radius: 4px;
+      margin-bottom: 18px;
+      font-style: italic;
+    }
+    .bullet-list {
+      margin: 0 0 18px;
+      padding-left: 20px;
+      font-size: 13px;
+      color: #334155;
+    }
+    .bullet-list li {
+      margin-bottom: 6px;
+    }
+    .q-box {
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin-bottom: 14px;
+      background: #ffffff;
+      page-break-inside: avoid;
+    }
+    .q-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .q-badge {
+      font-size: 11px;
+      font-weight: 800;
+      color: #2563eb;
+      text-transform: uppercase;
+    }
+    .q-time {
+      font-size: 11.5px;
+      color: #64748b;
+      font-weight: 700;
+    }
+    .q-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: #0f172a;
+      margin: 0 0 10px;
+    }
+    .transcript-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 12px 14px;
+      font-size: 13px;
+      color: #1e293b;
+      line-height: 1.6;
+    }
+    .footer {
+      margin-top: 36px;
+      border-top: 1px solid #e2e8f0;
+      padding-top: 14px;
+      text-align: center;
+      font-size: 11px;
+      color: #94a3b8;
+    }
+    .print-bar {
+      position: sticky;
+      top: 0;
+      background: #0f172a;
+      color: #ffffff;
+      padding: 12px 24px;
+      border-radius: 8px;
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .print-btn {
+      background: #2563eb;
+      color: #ffffff;
+      border: none;
+      padding: 8px 18px;
+      border-radius: 6px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <div class="print-bar no-print">
+    <div style="font-weight: 700; font-size: 14px;">SmartHire ATS — Candidate Interview Report</div>
+    <div>
+      <button class="print-btn" onclick="window.print()">Print / Save as PDF</button>
+      <button class="print-btn" style="background: #475569; margin-left: 8px;" onclick="window.close()">Close</button>
+    </div>
+  </div>
+
+  <div class="header">
+    <div>
+      <div class="brand-title">SmartHire ATS</div>
+      <div class="brand-sub">Asynchronous Video Screening & AI Assessment Report</div>
+    </div>
+    <div class="report-meta">
+      <div>Report ID: <strong>${session.sessionId || session.id || 'SCR-2026'}</strong></div>
+      <div>Date: <strong>${dateStr}</strong></div>
+      <div>Recruiter: <strong>${recruiterName}</strong></div>
+      <div>Status: <strong>${session.status ? session.status.toUpperCase() : 'SUBMITTED'}</strong></div>
+    </div>
+  </div>
+
+  ${audit.hasCheck ? (audit.isMismatch ? `
+  <div style="background: #fff1f2; border: 1.5px solid #f43f5e; border-radius: 8px; padding: 14px 18px; margin-bottom: 20px;">
+    <div style="display: flex; align-items: center; justify-content: space-between;">
+      <div style="display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 13.5px; color: #be123c;">
+        <span style="font-size: 16px;">⚠️</span> LOCATION MISMATCH DETECTED (PROXIED / REMOTE DISCREPANCY)
+      </div>
+      <span style="font-size: 11px; font-weight: 800; background: #be123c; color: #ffffff; padding: 2px 8px; border-radius: 12px; text-transform: uppercase;">
+        Integrity Alert
+      </span>
+    </div>
+    <div style="margin-top: 10px; font-size: 13px; color: #334155; line-height: 1.6;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 8px;">
+        <div style="background: #ffffff; padding: 8px 12px; border-radius: 6px; border: 1px solid #fecdd3;">
+          <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Candidate Stated Location</div>
+          <div style="font-weight: 800; color: #0f172a; margin-top: 2px;">${audit.enteredLocation}</div>
+        </div>
+        <div style="background: #ffffff; padding: 8px 12px; border-radius: 6px; border: 1px solid #fecdd3;">
+          <div style="font-size: 11px; font-weight: 700; color: #be123c; text-transform: uppercase;">Actual Verified Device GPS</div>
+          <div style="font-weight: 800; color: #be123c; margin-top: 2px;">${audit.actualGpsLocation}</div>
+        </div>
+      </div>
+      <div style="font-size: 11.5px; color: #9f1239; font-weight: 600;">
+        ⚠️ Verification Audit Notice: Candidate entered "${audit.enteredLocation}" as their physical location, but device GPS coordinates captured during the live screening session resolve to "${audit.actualGpsLocation}".
+      </div>
+    </div>
+  </div>
+  ` : `
+  <div style="background: #ecfdf5; border: 1.5px solid #10b981; border-radius: 8px; padding: 12px 18px; margin-bottom: 20px;">
+    <div style="display: flex; align-items: center; justify-content: space-between;">
+      <div style="display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 13.5px; color: #047857;">
+        <span style="font-size: 16px;">✓</span> LOCATION AUTHENTICATED & VERIFIED
+      </div>
+      <span style="font-size: 11px; font-weight: 800; background: #047857; color: #ffffff; padding: 2px 8px; border-radius: 12px; text-transform: uppercase;">
+        Passed
+      </span>
+    </div>
+    <div style="margin-top: 6px; font-size: 12.5px; color: #065f46;">
+      Candidate reported location (<strong>${audit.enteredLocation}</strong>) matches physical GPS device coordinates (<strong>${audit.actualGpsLocation}</strong>).
+    </div>
+  </div>
+  `) : ''}
+
+  <div class="grid-2">
+    <div class="info-card">
+      <div class="info-row"><span class="info-label">Candidate Name:</span><span class="info-value">${candidateName}</span></div>
+      <div class="info-row"><span class="info-label">Email:</span><span class="info-value">${email}</span></div>
+      <div class="info-row"><span class="info-label">Phone:</span><span class="info-value">${phone}</span></div>
+      <div class="info-row"><span class="info-label">Reported Location:</span><span class="info-value">${location}</span></div>
+      <div class="info-row"><span class="info-label">Work Authorization:</span><span class="info-value" style="color: #2563eb;">${visa}</span></div>
+    </div>
+
+    <div class="info-card">
+      <div class="info-row"><span class="info-label">Requisition / Position:</span><span class="info-value">${jobTitle}</span></div>
+      <div class="info-row"><span class="info-label">Desktop Screen Share:</span><span class="info-value" style="color: ${proctoring.screenShared ? '#16a34a' : '#64748b'}">${proctoring.screenShared ? 'Verified Monitor' : 'Standard'}</span></div>
+      <div class="info-row"><span class="info-label">Fullscreen Enforced:</span><span class="info-value" style="color: ${proctoring.fullscreenEnforced ? '#16a34a' : '#64748b'}">${proctoring.fullscreenEnforced ? 'Yes (Enforced)' : 'No'}</span></div>
+      <div class="info-row"><span class="info-label">Tab Violations:</span><span class="info-value" style="color: ${(proctoring.tabViolationsCount || 0) > 0 ? '#dc2626' : '#16a34a'}">${(proctoring.tabViolationsCount || 0) === 0 ? '0 (Clean)' : proctoring.tabViolationsCount}</span></div>
+      ${geo ? `<div class="info-row"><span class="info-label">GPS Geolocation:</span><span class="info-value" style="color: ${audit.isMismatch ? '#be123c' : '#16a34a'};">${geo.cityState || geo.resolvedAddress || `${geo.latitude?.toFixed(3)}°, ${geo.longitude?.toFixed(3)}°`}</span></div>` : ''}
+    </div>
+  </div>
+
+  <div class="score-banner">
+    <div class="score-circle">${score}%</div>
+    <div>
+      <div style="font-size: 17px; font-weight: 900; color: #0f172a;">${recommendation}</div>
+      <div style="font-size: 12px; color: #64748b; font-weight: 600;">Overall AI Requisition Match & Technical Verification Score</div>
+    </div>
+  </div>
+
+  <div class="section-title">AI Executive Summary & Assessment</div>
+  <div class="takeaway-box">"${takeaways}"</div>
+
+  ${summaries.length > 0 ? `
+    <ul class="bullet-list">
+      ${summaries.map(s => `<li>${s}</li>`).join('')}
+    </ul>
+  ` : ''}
+
+  <div class="section-title">Interview Questions & Candidate Spoken Transcripts (${responses.length})</div>
+  ${responses.map((resp, i) => `
+    <div class="q-box">
+      <div class="q-header">
+        <span class="q-badge">Question ${i + 1} • ${resp.format ? resp.format.toUpperCase() : 'VIDEO'}</span>
+        ${typeof resp.startTime === 'number' ? `<span class="q-time">Timestamp: ${Math.floor(resp.startTime / 60)}:${String(Math.floor(resp.startTime % 60)).padStart(2, '0')}</span>` : ''}
+      </div>
+      <div class="q-title">${resp.questionText || `Question ${i + 1}`}</div>
+      <div class="transcript-box">
+        ${resp.transcript && !resp.transcript.includes('Spoken answer captured')
+          ? `<strong>Candidate Answer (AI Speech-to-Text):</strong><br/>"${resp.transcript}"`
+          : `<em>(No spoken answer transcribed for this question or candidate skipped)</em>`}
+      </div>
+    </div>
+  `).join('')}
+
+  ${session.recruiterNotes || session.recruiterRating ? `
+    <div class="section-title">Recruiter Scorecard</div>
+    <div class="info-card">
+      ${session.recruiterRating ? `<div class="info-row"><span class="info-label">Recruiter Rating:</span><span class="info-value">${'★'.repeat(session.recruiterRating)}${'☆'.repeat(5 - session.recruiterRating)} (${session.recruiterRating}/5)</span></div>` : ''}
+      ${session.recruiterNotes ? `<div style="font-size: 13px; color: #334155; margin-top: 6px;"><strong>Recruiter Notes:</strong> ${session.recruiterNotes}</div>` : ''}
+    </div>
+  ` : ''}
+
+  <div class="footer">
+    SmartHire Applicant Tracking & Candidate Verification Platform • Confidential Recruitment Document
+  </div>
+</body>
+</html>
+    `
+
+    const printWin = window.open('', '_blank', 'width=980,height=800')
+    if (printWin) {
+      printWin.document.open()
+      printWin.document.write(htmlContent)
+      printWin.document.close()
+    }
+  }
+
   return (
     <div style={clientStyles.pageContainer}>
       {isAdminPreview && (
@@ -659,6 +1073,25 @@ export default function ClientScreeningPortal() {
                           >
                             {isSubmitted ? 'View Interview' : 'Details'}
                           </button>
+                          {isSubmitted && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleExportPDFReport(session)
+                              }}
+                              style={{
+                                ...clientStyles.tableActionBtn,
+                                color: '#1e3a8a',
+                                fontWeight: '700',
+                                borderColor: '#bfdbfe',
+                                background: '#eff6ff'
+                              }}
+                              title="Open and print candidate assessment report PDF"
+                            >
+                              Report / PDF
+                            </button>
+                          )}
                           {!isSubmitted && (
                             <button
                               type="button"
@@ -1202,7 +1635,7 @@ export default function ClientScreeningPortal() {
                 {hasSubmittedResponses && (
                   <button
                     type="button"
-                    onClick={() => window.print()}
+                    onClick={() => handleExportPDFReport(reviewSession)}
                     style={clientStyles.emailConfigBtn}
                   >
                     Print / PDF Report
@@ -1221,11 +1654,21 @@ export default function ClientScreeningPortal() {
                 <div style={{ fontSize: '12.5px', color: '#334155', marginBottom: '6px' }}>
                   <strong>Email:</strong> {reviewSession.candidateEmail || 'N/A'}
                 </div>
-                <div style={{ fontSize: '12.5px', color: '#334155', marginBottom: '14px' }}>
+                <div style={{ fontSize: '12.5px', color: '#334155', marginBottom: '6px' }}>
                   <strong>Role:</strong> {reviewSession.jobTitle || 'N/A'}
                 </div>
+                {reviewSession.candidateLocation && (
+                  <div style={{ fontSize: '12.5px', color: '#334155', marginBottom: '6px' }}>
+                    <strong>Reported Location:</strong> {reviewSession.candidateLocation}
+                  </div>
+                )}
+                {(reviewSession.visaStatus || reviewSession.candidateInfo?.visaStatus) && (
+                  <div style={{ fontSize: '12.5px', color: '#334155', marginBottom: '6px' }}>
+                    <strong>Work Auth:</strong> {reviewSession.visaStatus || reviewSession.candidateInfo?.visaStatus}
+                  </div>
+                )}
 
-                <div style={{ fontSize: '11px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', marginBottom: '8px' }}>
+                <div style={{ fontSize: '11px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', marginTop: '12px', marginBottom: '8px' }}>
                   AI Fit Assessment
                 </div>
 
@@ -1272,6 +1715,71 @@ export default function ClientScreeningPortal() {
                     </div>
                     <div style={{ fontSize: '11.5px', color: '#64748b', lineHeight: 1.4 }}>
                       AI evaluation, match score, and spoken transcript will appear here automatically once the candidate submits their video answers.
+                    </div>
+                  </div>
+                )}
+
+                {/* Location Verification Audit */}
+                {reviewSession && (reviewSession.candidateLocation || reviewSession.candidateGeo) && (() => {
+                  const audit = checkLocationMismatch(
+                    reviewSession.candidateLocation || reviewSession.candidateInfo?.location,
+                    reviewSession.candidateGeo || reviewSession.gpsLocation
+                  );
+                  if (!audit.hasCheck) return null;
+                  return (
+                    <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid #e2e8f0' }}>
+                      <div style={{ fontSize: '11px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', marginBottom: '6px' }}>
+                        Location & Integrity Audit
+                      </div>
+                      {audit.isMismatch ? (
+                        <div style={{ background: '#fff1f2', border: '1px solid #fecdd3', borderRadius: '6px', padding: '8px 10px', fontSize: '11.5px', color: '#be123c' }}>
+                          <div style={{ fontWeight: '800', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <span>⚠️</span> Location Mismatch Alert
+                          </div>
+                          <div style={{ marginTop: '4px', fontSize: '11px', color: '#475569' }}>
+                            Stated: <strong>{audit.enteredLocation}</strong><br />
+                            GPS: <strong style={{ color: '#be123c' }}>{audit.actualGpsLocation}</strong>
+                          </div>
+                        </div>
+                      ) : (
+                        <div style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '6px', padding: '8px 10px', fontSize: '11.5px', color: '#047857' }}>
+                          <div style={{ fontWeight: '800', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <span>✓</span> Location Verified
+                          </div>
+                          <div style={{ marginTop: '2px', fontSize: '11px', color: '#065f46' }}>
+                            {audit.actualGpsLocation}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+
+                {/* Anti-Cheat Proctoring Telemetry */}
+                {reviewSession?.proctoring && (
+                  <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid #e2e8f0' }}>
+                    <div style={{ fontSize: '11px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', marginBottom: '6px' }}>
+                      Proctoring Verification
+                    </div>
+                    <div style={{ fontSize: '11.5px', color: '#334155', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: '#64748b' }}>Screen Share:</span>
+                        <strong style={{ color: reviewSession.proctoring.screenShared ? '#059669' : '#64748b' }}>
+                          {reviewSession.proctoring.screenShared ? 'Verified Monitor' : 'Standard'}
+                        </strong>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: '#64748b' }}>Fullscreen:</span>
+                        <strong style={{ color: reviewSession.proctoring.fullscreenEnforced ? '#059669' : '#64748b' }}>
+                          {reviewSession.proctoring.fullscreenEnforced ? 'Enforced' : 'No'}
+                        </strong>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: '#64748b' }}>Tab Violations:</span>
+                        <strong style={{ color: (reviewSession.proctoring.tabViolationsCount || 0) > 0 ? '#dc2626' : '#059669' }}>
+                          {(reviewSession.proctoring.tabViolationsCount || 0) === 0 ? '0 (Clean)' : reviewSession.proctoring.tabViolationsCount}
+                        </strong>
+                      </div>
                     </div>
                   </div>
                 )}
