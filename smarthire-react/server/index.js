@@ -14733,11 +14733,6 @@ app.post('/api/contacts/batch-send-jd', express.json(), async (req, res) => {
     return res.status(500).json({ success: false, error: err.message });
   }
 });
-  } catch (err) {
-    console.error('[ContactsAPI] Error in batch-send-jd:', err);
-    return res.status(500).json({ success: false, error: err.message });
-  }
-});
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // MONSTER+ AI CANDIDATE SOURCING & GOOD MATCH ENGINE

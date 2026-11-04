@@ -526,7 +526,11 @@ Looking forward to your prompt response.`;
   const userStr = localStorage.getItem('smarthire_user') || localStorage.getItem('verifyhire_user');
   let userObj = null;
   try { userObj = JSON.parse(userStr); } catch (_) {}
-  const isSuperAdmin = !userObj || userObj.role === 'superadmin' || userObj.role === 'admin' || userObj.email === 'omkeshmanjute@gmail.com' || userObj.email === 'omkesh@coolsofttech.com' || (userObj.email && userObj.email.includes('omkesh'));
+  const isSuperAdmin = Boolean(
+    userObj &&
+    userObj.role !== 'client' &&
+    (userObj.role === 'superadmin' || userObj.role === 'admin' || userObj.email === 'omkesh@coolsofttech.com' || userObj.email === 'omkesh.manjute@smarthire.com')
+  );
 
   if (!isSuperAdmin) {
     return (

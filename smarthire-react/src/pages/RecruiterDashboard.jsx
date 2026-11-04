@@ -404,7 +404,11 @@ function RecruiterDashboard() {
 
   const userName = currentUser?.name || currentUser?.displayName || 'Omkesh'
   const activeRoleOverride = localStorage.getItem('smarthire_active_role')
-  const userRole = activeRoleOverride || currentUser?.role || (userName.toLowerCase().includes('omkesh') ? 'superadmin' : 'recruiter')
+  const isExplicitSuperAdmin = Boolean(currentUser?.email && (
+    currentUser.email.toLowerCase() === 'omkesh@coolsofttech.com' ||
+    currentUser.email.toLowerCase() === 'omkesh.manjute@smarthire.com'
+  ))
+  const userRole = activeRoleOverride || currentUser?.role || (isExplicitSuperAdmin ? 'superadmin' : 'recruiter')
 
   const isAdmin = userRole === 'superadmin' || userRole === 'admin'
   const isSuperAdmin = isAdmin

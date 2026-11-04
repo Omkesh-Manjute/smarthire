@@ -121,7 +121,7 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [], cur
     } catch (_) {}
     if (currentUser?.email) email = currentUser.email
     if (currentUser?.role) role = currentUser.role
-    if (isSuperAdmin || email.toLowerCase().includes('omkesh')) role = 'superadmin'
+    if (isSuperAdmin || email.toLowerCase() === 'omkesh@coolsofttech.com' || email.toLowerCase() === 'omkesh.manjute@smarthire.com') role = 'superadmin'
 
     let token = localStorage.getItem('smarthire_token') || localStorage.getItem('token') || 'token-omkesh'
     if (token === 'null' || token === 'undefined' || !token) token = 'token-omkesh'

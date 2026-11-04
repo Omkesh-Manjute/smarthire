@@ -229,11 +229,20 @@ export default function AtsPlatform() {
     if (userStr) currentUser = JSON.parse(userStr)
   } catch (e) {}
 
+  if (currentUser?.role === 'client') {
+    window.location.href = '/client/screening'
+    return null
+  }
+
   const defaultRole = (currentUser && currentUser.role) ? currentUser.role : 'recruiter'
   const realUserRole = currentUser?.role || 'recruiter'
   const isEmployee = realUserRole === 'employee'
   const isManager = realUserRole === 'manager'
-  const isSuperAdmin = (realUserRole === 'superadmin' || realUserRole === 'admin' || (currentUser?.email && currentUser.email.toLowerCase().includes('omkesh'))) && !isEmployee && !isManager
+  const isExplicitSuperAdmin = Boolean(currentUser?.email && (
+    currentUser.email.toLowerCase() === 'omkesh@coolsofttech.com' ||
+    currentUser.email.toLowerCase() === 'omkesh.manjute@smarthire.com'
+  ))
+  const isSuperAdmin = (realUserRole === 'superadmin' || realUserRole === 'admin' || isExplicitSuperAdmin) && !isEmployee && !isManager && realUserRole !== 'client'
   const canSwitchRoles = isSuperAdmin
   const activeRole = canSwitchRoles ? (localStorage.getItem('smarthire_active_role') || 'superadmin') : defaultRole
   const roleKey = isSuperAdmin ? 'superadmin' : isManager ? 'manager' : isEmployee ? 'employee' : 'recruiter'
@@ -913,18 +922,22 @@ export default function AtsPlatform() {
                     <div style={{ fontSize: '12.5px', fontWeight: '700', color: '#0f172a' }}>{userName}</div>
                     <div style={{ fontSize: '11px', color: '#64748b' }}>{currentUser?.email || 'admin@smarthire.com'}</div>
                   </div>
-                  <div
-                    onClick={() => { setActiveTab('users'); setShowUserDropdown(false) }}
-                    style={{ padding: '8px 14px', fontSize: '12.5px', color: '#334155', cursor: 'pointer' }}
-                  >
-                    Team Management
-                  </div>
-                  <div
-                    onClick={() => { setActiveTab('settings'); setShowUserDropdown(false) }}
-                    style={{ padding: '8px 14px', fontSize: '12.5px', color: '#334155', cursor: 'pointer' }}
-                  >
-                    ATS Settings
-                  </div>
+                  {isSuperAdmin && (
+                    <>
+                      <div
+                        onClick={() => { setActiveTab('users'); setShowUserDropdown(false) }}
+                        style={{ padding: '8px 14px', fontSize: '12.5px', color: '#334155', cursor: 'pointer' }}
+                      >
+                        Team Management
+                      </div>
+                      <div
+                        onClick={() => { setActiveTab('settings'); setShowUserDropdown(false) }}
+                        style={{ padding: '8px 14px', fontSize: '12.5px', color: '#334155', cursor: 'pointer' }}
+                      >
+                        ATS Settings
+                      </div>
+                    </>
+                  )}
                   <div
                     onClick={() => {
                       localStorage.clear()

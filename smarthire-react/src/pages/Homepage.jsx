@@ -278,6 +278,32 @@ function Homepage() {
       const gUser = await loginWithGoogle()
       const emailClean = (gUser.email || '').toLowerCase().trim()
 
+      // 1. Priority Check: Is user an Enterprise B2B Video Screening Client?
+      let isB2bClient = false
+      let b2bClientData = null
+      try {
+        const clientRes = await fetch(`/api/client/portal-data?email=${encodeURIComponent(emailClean)}`)
+        if (clientRes.ok) {
+          const clientJson = await clientRes.json()
+          if (clientJson.success && clientJson.client) {
+            isB2bClient = true
+            b2bClientData = clientJson.client
+          }
+        }
+      } catch (_) {}
+
+      if (isB2bClient && b2bClientData) {
+        const clientProfile = {
+          id: b2bClientData.id || ('cli-' + Date.now()),
+          name: b2bClientData.name || emailClean.split('@')[0],
+          email: emailClean,
+          role: 'client',
+          company: b2bClientData.company || 'Enterprise Partner'
+        }
+        setLoginSession(clientProfile, gUser.idToken || 'client-token')
+        return
+      }
+
       let matched = await getUserProfileByEmailFirestore(emailClean).catch(() => null)
       if (!matched) {
         const raw = localStorage.getItem('smarthire_recruiters')
@@ -360,6 +386,32 @@ function Homepage() {
       }
 
       if (firebaseUser) {
+        // 1. Priority Check: Is user an Enterprise B2B Video Screening Client?
+        let isB2bClient = false
+        let b2bClientData = null
+        try {
+          const clientRes = await fetch(`/api/client/portal-data?email=${encodeURIComponent(inputEmail)}`)
+          if (clientRes.ok) {
+            const clientJson = await clientRes.json()
+            if (clientJson.success && clientJson.client) {
+              isB2bClient = true
+              b2bClientData = clientJson.client
+            }
+          }
+        } catch (_) {}
+
+        if (isB2bClient && b2bClientData) {
+          const clientProfile = {
+            id: b2bClientData.id || ('cli-' + Date.now()),
+            name: b2bClientData.name || inputEmail.split('@')[0],
+            email: inputEmail,
+            role: 'client',
+            company: b2bClientData.company || 'Enterprise Partner'
+          }
+          setLoginSession(clientProfile, firebaseUser.idToken || 'client-token')
+          return
+        }
+
         const firestoreProfile = await getUserProfileByEmailFirestore(inputEmail).catch(() => null)
         let matched = firestoreProfile
         if (!matched) {

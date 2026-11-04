@@ -58,7 +58,11 @@ function Navigation() {
     (user?.name?.toLowerCase().includes('gourav') || user?.email?.toLowerCase().includes('gourav') ? 'Omkesh' : (user?.role === 'employee' ? 'Sukamal Chatterjee' : ''))
 
   const realUserRole = user?.role || 'recruiter'
-  const isSuperAdminAccount = (realUserRole === 'superadmin' || realUserRole === 'admin') || (user?.email && user.email.toLowerCase().includes('omkesh'))
+  const isExplicitSuperAdmin = Boolean(user?.email && (
+    user.email.toLowerCase() === 'omkesh@coolsofttech.com' ||
+    user.email.toLowerCase() === 'omkesh.manjute@smarthire.com'
+  ))
+  const isSuperAdminAccount = ((realUserRole === 'superadmin' || realUserRole === 'admin') || isExplicitSuperAdmin) && realUserRole !== 'client'
   const canSwitchRoles = isSuperAdminAccount
   const defaultRole = user && user.role ? user.role : 'recruiter'
   const [activeRole, setActiveRole] = useState(() => {

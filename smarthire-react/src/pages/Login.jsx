@@ -93,7 +93,33 @@ function Login() {
       const gUser = await loginWithGoogle()
       const emailClean = (gUser.email || '').toLowerCase().trim()
 
-      // 1. Look up user role and hierarchy from Firestore, server roster, or team defaults first
+      // 1. Priority Check: Is user an Enterprise B2B Video Screening Client?
+      let isB2bClient = false
+      let b2bClientData = null
+      try {
+        const clientRes = await fetch(`/api/client/portal-data?email=${encodeURIComponent(emailClean)}`)
+        if (clientRes.ok) {
+          const clientJson = await clientRes.json()
+          if (clientJson.success && clientJson.client) {
+            isB2bClient = true
+            b2bClientData = clientJson.client
+          }
+        }
+      } catch (_) {}
+
+      if (isB2bClient && b2bClientData) {
+        const clientProfile = {
+          id: b2bClientData.id || ('cli-' + Date.now()),
+          name: b2bClientData.name || emailClean.split('@')[0],
+          email: emailClean,
+          role: 'client',
+          company: b2bClientData.company || 'Enterprise Partner'
+        }
+        setLoginSession(clientProfile, gUser.idToken || 'client-token')
+        return
+      }
+
+      // 2. Look up user role and hierarchy from Firestore, server roster, or team defaults
       const firestoreUser = await getUserProfileByEmailFirestore(emailClean)
       let matched = firestoreUser
       if (!matched) {
@@ -117,32 +143,6 @@ function Login() {
           company: matched?.company || 'SmartHire'
         }
         setLoginSession(userProfile, gUser.idToken)
-        return
-      }
-
-      // 2. Only if NOT an internal staff member, check if user is a B2B Video Screening Client
-      let isB2bClient = false
-      let b2bClientData = null
-      try {
-        const clientRes = await fetch(`/api/client/portal-data?email=${encodeURIComponent(emailClean)}`)
-        if (clientRes.ok) {
-          const clientJson = await clientRes.json()
-          if (clientJson.success && clientJson.client) {
-            isB2bClient = true
-            b2bClientData = clientJson.client
-          }
-        }
-      } catch (_) {}
-
-      if (isB2bClient && b2bClientData) {
-        const clientProfile = {
-          id: 'cli-' + Date.now(),
-          name: b2bClientData.name || emailClean.split('@')[0],
-          email: emailClean,
-          role: 'client',
-          company: b2bClientData.company || 'Enterprise Partner'
-        }
-        setLoginSession(clientProfile, gUser.idToken || 'client-token')
         return
       }
 
@@ -218,7 +218,33 @@ function Login() {
       }
 
       if (firebaseUser) {
-        // 1. Look up role and hierarchy from Firestore, server roster, or team defaults first
+        // 1. Priority Check: Is user an Enterprise B2B Video Screening Client?
+        let isB2bClient = false
+        let b2bClientData = null
+        try {
+          const clientRes = await fetch(`/api/client/portal-data?email=${encodeURIComponent(inputEmail)}`)
+          if (clientRes.ok) {
+            const clientJson = await clientRes.json()
+            if (clientJson.success && clientJson.client) {
+              isB2bClient = true
+              b2bClientData = clientJson.client
+            }
+          }
+        } catch (_) {}
+
+        if (isB2bClient && b2bClientData) {
+          const clientProfile = {
+            id: b2bClientData.id || ('cli-' + Date.now()),
+            name: b2bClientData.name || inputEmail.split('@')[0],
+            email: inputEmail,
+            role: 'client',
+            company: b2bClientData.company || 'Enterprise Partner'
+          }
+          setLoginSession(clientProfile, firebaseUser.idToken || 'client-token')
+          return
+        }
+
+        // 2. Look up role and hierarchy from Firestore, server roster, or team defaults
         const firestoreProfile = await getUserProfileByEmailFirestore(inputEmail)
         let matched = firestoreProfile
         if (!matched) {
@@ -242,32 +268,6 @@ function Login() {
             company: matched?.company || 'SmartHire'
           }
           setLoginSession(userProfile, firebaseUser.idToken)
-          return
-        }
-
-        // 2. Only if NOT an internal staff member, check if user is a B2B Video Screening Client
-        let isB2bClient = false
-        let b2bClientData = null
-        try {
-          const clientRes = await fetch(`/api/client/portal-data?email=${encodeURIComponent(inputEmail)}`)
-          if (clientRes.ok) {
-            const clientJson = await clientRes.json()
-            if (clientJson.success && clientJson.client) {
-              isB2bClient = true
-              b2bClientData = clientJson.client
-            }
-          }
-        } catch (_) {}
-
-        if (isB2bClient && b2bClientData) {
-          const clientProfile = {
-            id: 'cli-' + Date.now(),
-            name: b2bClientData.name || inputEmail.split('@')[0],
-            email: inputEmail,
-            role: 'client',
-            company: b2bClientData.company || 'Enterprise Partner'
-          }
-          setLoginSession(clientProfile, firebaseUser.idToken || 'client-token')
           return
         }
 

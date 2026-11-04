@@ -92,7 +92,25 @@ export async function resetPasswordWithEmail(email) {
   if (!auth) {
     throw new Error('Firebase is not configured.')
   }
-  await sendPasswordResetEmail(auth, email)
+  const redirectUrl = typeof window !== 'undefined' && window.location.origin
+    ? `${window.location.origin}/login`
+    : 'https://smarthireus.com/login'
+
+  const actionCodeSettings = {
+    url: redirectUrl,
+    handleCodeInApp: false
+  }
+
+  try {
+    await sendPasswordResetEmail(auth, email, actionCodeSettings)
+  } catch (err) {
+    if (err.code === 'auth/unauthorized-continue-uri') {
+      console.warn('[Firebase] Continue URI unauthorized, falling back to standard reset link', err)
+      await sendPasswordResetEmail(auth, email)
+    } else {
+      throw err
+    }
+  }
 }
 
 /**
