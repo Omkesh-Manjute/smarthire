@@ -66,36 +66,247 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
     - In resume views, every responsibility, project accomplishment, and contribution line must be formatted with an explicit bullet point (`•`) and proper indentation.
     - The engine must automatically detect responsibilities (lines following `Responsibilities:`, action verbs, or list items) even when converted from plain text or Word documents without literal Unicode bullets.
 
-### 2026-11-05 — PDF Candidate Assessment Report in B2B Client Portal & Strict Role-Based Interview Scoping
-- **Context & Objectives**:
-  - The user reported two critical issues:
-    1. *"bhai ye wala bhi nahi a raha hai B2B mai client side so ye bhi update karo"*: The standalone "Candidate Interview Assessment Report" popup (with Location Mismatch Integrity Alert, Candidate Stated Location vs Actual Verified Device GPS, Proctoring telemetry, AI scorecard, takeaways, and question-by-question spoken transcripts) was missing in the B2B Client Portal (`ClientScreeningPortal.jsx`). Previously clicking "Print / PDF Report" in B2B portal just called `window.print()` which printed the portal dashboard rather than generating the official confidential assessment document.
-    2. *"interview sab ko dikh raha hai abhi role base mai kuch issu a gaya hai fix karo isko bhai"*: Screening interviews were visible across all ATS users (`visibleSessions = sessions` in `ScreeningModule.jsx` and `filtered = screeningStore` in `server/index.js`), causing external B2B client interviews to leak into internal recruiter lists, and recruiters to see other recruiters' candidates. Furthermore, `authenticateToken` in `server/index.js` was promoting `omkeshmanjute1@gmail.com` (and anyone without explicit token) to `superadmin`.
-- **Architectural Implementations**:
-  1. *B2B Client Portal PDF Report & Integrity Telemetry (`ClientScreeningPortal.jsx`)*:
-     - Implemented `checkLocationMismatch(enteredLoc, gpsGeo)` and full standalone `handleExportPDFReport(session)` HTML report builder (identical to ATS format shown in user screenshot `media_1793825209681_1e1a2065.png`).
-     - Added dedicated `Report / PDF` action button on completed candidate table rows in `/client/screening`.
-     - Wired the review modal's "Print / PDF Report" header button directly to `handleExportPDFReport(reviewSession)`.
-     - Enhanced review modal left drawer with live Location & Integrity Audit card (highlighting stated location vs actual GPS) and anti-cheat proctoring metrics (screen share, fullscreen enforcement, tab violations count).
-  2. *Strict Multi-Tenant & Role-Based Scoping (`server/index.js` & `ScreeningModule.jsx`)*:
-     - Added `isSuperAdminEmail(email)`: Strictly reserved for `omkesh@coolsofttech.com`, `omkesh.manjute@smarthire.com`, and `omkeshmanjute@gmail.com`. Explicitly prevents `omkeshmanjute1@gmail.com` (B2B test client account) from receiving superadmin rights.
-     - Hardened `authenticateToken`: Non-authenticated or mock sessions resolve role accurately (`superadmin` only for verified superadmin emails, `client` for client portal accounts in `clientCreditsStore`, and `recruiter` by default).
-     - Updated `/api/screening/sessions`:
-       - `client` role: returns strictly sessions created by/for that client.
-       - Standard `recruiter` / `employee`: filters out all `isClientSession` external B2B sessions; restricts results strictly to their own sessions (`recruiterEmail === userEmail || createdByEmail === userEmail`).
-       - `manager` role: returns own sessions + assigned team reportees (`recruitersMock` hierarchy + supervisor pairs: Gourav -> Omkesh, Naveen -> Sukamal, Rahul -> Vaibhav). Never shows external B2B client sessions.
-       - `superadmin`: organization-wide visibility into ATS sessions (excludes client sessions unless explicitly requested via `includeClient=true` or `scope=all`).
-     - Updated `ScreeningModule.jsx` frontend `visibleSessions` to use `useMemo` strictly honoring `isSuper`, `isManager`, and recruiter ownership.
+### 2026-11-12 — Full Platform Recovery: Company Directory, 600+ Candidates, Vendor Hotlists & Infinite Dashboard Loader Fix
+- **Context & Problem Reported**:
+  - The user shared 4 screenshots reporting empty data and UI freeze:
+    1. `smarthireus.com/inbox?tab=hotlist`: Total Bench Candidates: 0, Active Sponsoring Vendors: 0, "No vendor bench candidates found matching your filters."
+    2. `smarthireus.com/ats?tab=contacts`: Unique Companies: 0, Recruiters: 0, stuck on "Loading company directory...".
+    3. `smarthireus.com/dashboard`: Infinitely stuck white screen with spinning infinity logo.
+    4. `smarthireus.com/inbox?tab=candidates`: Displaying only 22 candidates instead of the full 600+ database records.
+- **Root Causes Discovered & Permanently Resolved**:
+  1. *Company Directory 0*: `/api/contacts/extracted` strictly enforced Super Admin role, but `EmailContactsDirectory.jsx` sent empty fetch headers/query params. Express returned HTTP 403 Forbidden. Fixed by passing Bearer token, `x-recruiter-email`, and `x-recruiter-role` headers and query params. Server now serves all 1,069 companies and 2,054 recruiters.
+  2. *Candidate Database Stuck on 22*:
+     - `GET /api/candidates` crashed with `ReferenceError: recruitersStore is not defined` when evaluated for recruiter role. Fixed with global alias `let recruitersStore = recruitersMock;` and safe null-guards.
+     - `RecruiterInbox.jsx` aborted the 2MB candidate stream across network requests at 10 seconds. Increased abort timeout to 35 seconds.
+     - Superadmin resolution fixed for `mock-token-rec-1` to recognize Omkesh as superadmin. Verified 609+ candidates returned in production.
+  3. *Vendor Hotlists 0*: `GET /api/recruiter/vendor-hotlists` checked superadmin authorization but frontend didn't pass role parameters. Added auth headers and query params in `fetchVendorHotlists` and `scopedVendorHotlists`.
+  4. *Dashboard Infinite Spinner*: `lazyWithRetry` returned an unresolved promise when dynamic imports stalled. Added 3-retry exponential backoff with cache-busting `?_v=<timestamp>`, pre-React 7-second emergency hydration reset in `index.html`, and replacement of blank ErrorBoundary spinner with an interactive B2B update banner.
+- **Verification & Deployment**:
+  - Built `smarthire-react` locally with 0 errors and 0 warnings (bundle `index-B82C3odq.js`).
+  - Ran matching engine test suite: 42/42 passed.
+  - Deployed bundle and updated `server/index.js` to AWS Lightsail server (`34.194.119.199`).
+  - Reloaded PM2 `smarthire-ats` (online, 0 errors).
+  - Pruned old assets and deleted deployment tarballs (Rule 5 compliance; 55% disk usage, 8.4GB free).
+  - Live verification on `https://smarthireus.com`: HTML references `index-B82C3odq.js`, `/api/candidates` returns 609 candidates, `/api/contacts/extracted` returns 1,069 companies & 2,054 recruiters.
+
+### 2026-11-03 — Permanent Fix for #AUTH005 & 554 6.6.0: Single-Request NDJSON Streaming with Persistent Server SMTP Pool
+- **Root Cause of the Failure in User Screenshot (8 out of 35 sent, 27 failed)**:
+  1. *Root Cause #1 (Rapid Logins Triggering #AUTH005)*: The frontend loop was making 35 distinct HTTP `fetch()` requests. On each HTTP request, Express created a new nodemailer transporter instance. Even though `pool: true` was on that local transporter, it was destroyed when the HTTP request ended. Thus, 35 separate TLS handshakes and `AUTH LOGIN` attempts hit Yahoo within 3-4 seconds. After 8 successful logins, Yahoo triggered `535 5.7.0 (#AUTH005) Too many bad auth attempts`.
+  2. *Root Cause #2 (Burst Rate Triggering 554 6.6.0)*: Sending emails every 200ms triggered Yahoo's automated spam defense on recipient 8 (`suman@carnegieinfotech.com` -> `554 6.6.0 Error sending message for delivery`).
+- **Architectural Solution Implemented**:
+  1. *Persistent Server-Scope SMTP Connection Pool (`server/index.js`)*:
+     - Moved pooled transporter to a global `Map` (`persistentSmtpPools`).
+     - Exactly ONE connection is authenticated per recruiter and kept open. Subsequent requests or messages NEVER issue another `AUTH LOGIN`.
+  2. *Single-Request NDJSON Live Streaming (`/api/contacts/batch-send-jd?stream=true`)*:
+     - The frontend sends the entire array of selected recipients in ONE single HTTP request.
+     - The backend sends emails sequentially with a 1.2-second pause (complying strictly with Yahoo's anti-burst rate limits).
+     - As each email is dispatched, the server writes an NDJSON chunk: `{ type: 'progress', current: i + 1, total: N, sentCount, failedCount, activeEmail, activeName }`.
+     - The browser reads the stream via `ReadableStream` and updates the React counter (`1, 2, 3... of N`), progress bar, and badges in real-time.
+     - Stopping or canceling aborts the stream cleanly (`AbortController`).
 - **Verification & Deployment Protocol**:
-  - All 42 matching engine unit tests passed (0 failures).
-  - Production build in `smarthire-react`: 0 errors, 0 warnings (built in 6.44s, bundle `index-CegNK7Y4.js`).
-  - Git committed (`6e14c1f`) and pushed to GitHub `origin main`.
-  - Deployed bundle `index-CegNK7Y4.js` and `server/index.js` to AWS Lightsail server (`34.194.119.199`).
+  - Direct local SMTP verification of `omkesh@coolsofttech.com` on `smtp.bizmail.yahoo.com:465`: `STATUS: VERIFIED SUCCESS!`.
+  - Local production build in `smarthire-react`: 0 errors, 0 warnings (bundle `index-Bb1O3u47.js`).
+  - Git committed (`d7f8763`) and pushed to GitHub `origin main`.
+  - Deployed bundle `index-Bb1O3u47.js` and `server/index.js` to AWS Lightsail server (`34.194.119.199`).
+  - Pruned old asset bundles, deleted temporary archives immediately (Rule 5 compliant).
+  - PM2 `smarthire-ats` online.
+  - Live domain `https://smarthireus.com` verified HTTP 200 with bundle `index-Bb1O3u47.js`.
+  - Server disk space: 56% used, 8.2GB free.
+
+### 2026-11-03 — Pure Recruiter Email Outreach: Complete Elimination of Support Fallback in ATS
+- **Context & User Clarification**:
+  - The user explicitly commanded: *"B. SMTP Connection Pooling & Hostinger ऑटो-फेलओवर ye bhai support mai auto flacback ye sab mat karo ye ats hai usmai supprt wale ka koi kam nahi hai okay samjhe kay kay kiya hai ye bhi samjha do"*.
+  - Strict Rule: In ATS Company Directory JD Outreach, emails must ALWAYS originate strictly from the recruiter's own email (`omkesh@coolsofttech.com` / active recruiter profile). `support@smarthireus.com` must NEVER be used as a fallback for recruiter requisitions.
+- **Architectural Implementations**:
+  1. *Complete Support Fallback Removal (`server/index.js` - `/api/contacts/batch-send-jd`)*:
+     - Removed `createFallbackTransporter` and Hostinger `support@smarthireus.com` auto-failover completely from the JD dispatch engine.
+     - Mandated strict recruiter credentials: If SMTP password is not configured for the active recruiter, returns HTTP 400 (`SMTP credentials not configured for <email>. Please check email settings in ATS.`).
+     - Kept SMTP connection pooling (`pool: true, maxConnections: 1, maxMessages: 100, rateDelta: 1000, rateLimit: 2`) strictly on the recruiter's transporter (`smtp.mail.yahoo.com:465`) to prevent rapid reconnects/auth hammering that caused `#AUTH005`.
+     - Direct error reporting: Any SMTP error from the recruiter's account is logged and returned directly to the UI without switching senders.
+  2. *Frontend Recruiter Scope (`EmailContactsDirectory.jsx`)*:
+     - Set default fallback recruiter email strictly to `omkesh@coolsofttech.com` (not support).
+     - Retained real-time progress counter (`1, 2, 3... of N`), "Sending..." button label, animated progress bar, and "Stop Sending" control.
+- **Verification & Deployment Protocol**:
+  - Local production build in `smarthire-react`: 0 errors, 0 warnings (built in 3.13s, bundle `index-G0O2DUVh.js`).
+  - Git committed (`12d0954`) and pushed to GitHub `origin main`.
+  - Deployed bundle `index-G0O2DUVh.js` and `server/index.js` to AWS Lightsail server (`34.194.119.199`).
   - Pruned old asset bundles, deleted temporary archives immediately (Rule 5 compliant).
   - PM2 `smarthire-ats` reloaded successfully.
-  - Live domain `https://smarthireus.com` verified HTTP 200 OK with bundle `index-CegNK7Y4.js`.
-  - Live API verified: `rahul@coolsofttech.com` (recruiter) receives only 0 sessions (strictly scoped), `omkesh@coolsofttech.com` receives all internal ATS sessions, and `omkeshmanjute1@gmail.com` receives only their B2B client sessions.
-  - Server disk space: 55% used, 8.5GB free (Rule 5 compliant).
+  - Live domain `https://smarthireus.com` verified HTTP 200 with bundle `index-G0O2DUVh.js`.
+  - Server disk space: 56% used, 8.2GB free.
+
+### 2026-11-03 — Batch JD Outreach: Real-Time Live Counter (1, 2, 3.. of N), SMTP Pooling & Hostinger Fallback
+- **Context & Objectives**:
+  - The user dispatched a job description to 73 selected corporate recruiters, but only 11 succeeded with 62 failing (`"Successfully dispatched Job Description to 11 out of 73 recruiters!"`).
+  - User commanded:
+    1. Explain why only 11 were sent and what caused the error.
+    2. Change the button label from "Dispatching Emails..." to **"Sending..."**.
+    3. Show a dynamic real-time progress counter (`1, 2, 3... of 73`) and progress bar so the user can clearly see which email is currently being sent in real time.
+    4. Provide clear explanation for "Generate DKIM records" and "Hostinger Developers API / MCP server" shown in their Hostinger screenshots.
+- **Root Cause Analysis (11/73 failure)**:
+  - Nodemailer transporter was recreated or unpooled without connection pooling (`pool: true`), causing 11 separate TCP TLS handshakes and rapid authentications within 2 seconds to `smtp.mail.yahoo.com:465`.
+  - Yahoo Small Business anti-abuse firewall detected rapid logins from the server IP and triggered:
+    `Invalid login: 535 5.7.0 (#AUTH005) Too many bad auth attempts.`
+  - The server catch block lacked automatic failover to the primary Hostinger mailbox (`support@smarthireus.com`), causing all subsequent 62 emails to fail authentication.
+- **Architectural Implementations**:
+  1. *Backend SMTP Resilience (`server/index.js` - `/api/contacts/batch-send-jd`)*:
+     - Fixed variable initialization order for `cfg` and `cleanRecruiterName`.
+     - Enabled connection pooling on the primary transporter: `pool: true, maxConnections: 1, maxMessages: 50, rateDelta: 1000, rateLimit: 2`.
+     - Implemented automatic seamless fallback: If the primary recruiter transporter triggers `AUTH005`, `535`, rate limits, or socket resets, the engine immediately switches to the Hostinger fallback transporter (`support@smarthireus.com` with `replyTo: cleanRecruiterEmail`), re-dispatches the failed email, and continues delivering the remaining emails without interruption.
+     - Returns granular error details per failed recipient (`errors: [{ email, error }]`).
+  2. *Frontend Real-Time Progress Engine (`EmailContactsDirectory.jsx`)*:
+     - Changed dispatch loop from single blocking batch to dynamic sequential delivery with real-time UI state updates on every single email (`1, 2, 3... of 73`).
+     - Displayed live progress box inside the modal:
+       - Header: `Sending email ${current} of ${total}...` with spinning loader.
+       - Visual progress bar: smooth transition percentage (`0%` to `100%`).
+       - Recruiter details: `Currently sending to: Contact Name (Company) • email@domain.com`.
+       - Badges: `Sent: X`, `Failed: Y`, `Remaining: Z`.
+       - "Stop Sending" button to gracefully cancel midway.
+     - Changed button text to `Sending (X/N)...` (disabled during sending).
+     - When finished, displays comprehensive results banner with an expandable "View Failure Details" list showing each failed email and its exact SMTP error.
+- **Verification & Deployment Protocol**:
+  - Local production build in `smarthire-react`: 0 errors, 0 warnings (bundle `index-Dc9egfZu.js`).
+  - Git committed (`4c67a86`) and pushed to GitHub `origin main`.
+  - Deployed bundle and updated `server/index.js` to AWS Lightsail server (`34.194.119.199`).
+  - Pruned old asset bundles, deleted temporary archives immediately (Rule 5 compliant).
+  - PM2 `smarthire-ats` reloaded successfully.
+  - Live domain `https://smarthireus.com` verified HTTP 200 with `index-Dc9egfZu.js`.
+  - Server disk space: 56% used, 8.2GB free.
+
+### 2026-11-03 — Sender Display Name Sanitization: Stripped (SmartHire) from Email Headers
+- **Context & Objectives**:
+  - The user uploaded screenshots showing sent emails from `omkesh@coolsofttech.com` displaying `Omkesh (SmartHire)` as the sender display name in Yahoo Mail.
+  - The user commanded: *"ye batavo company directory se jo email ja raha hai waha mere email ke samne smarthire hata do okay"*.
+  - Objective: Strip `(SmartHire)` from all outgoing email `From:` headers (in both Company Directory batch JD dispatch and recruiter SMTP outreach), ensuring clean, authentic recruiter names (e.g. `"Omkesh" <omkesh@coolsofttech.com>`).
+- **Architectural Implementations**:
+  1. *Batch JD Dispatch (`server/index.js` - `/api/contacts/batch-send-jd`)*:
+     - Sanitized `cleanRecruiterName`: `.replace(/\s*\(SmartHire\)/gi, '').replace(/\s*SmartHire/gi, '').trim()`.
+     - Changed `fromAddress` from `"${cleanRecruiterName} (SmartHire)" <${fromEmail}>` to `"${cleanRecruiterName}" <${fromEmail}>`.
+  2. *Recruiter SMTP Dispatch (`server/index.js` - `/api/recruiter/send-email`)*:
+     - Sanitized `senderDisplayName`: `.replace(/\s*\(SmartHire\)/gi, '').replace(/\s*SmartHire/gi, '').trim()`.
+     - Changed `from:` header to `"${cleanDisplayName}" <${fromEmail}>`.
+- **Verification & Deployment Protocol**:
+  - All 42 matching engine unit tests passed (0 failures).
+  - Git committed (`82ddc74`) and pushed to GitHub `origin main`.
+  - Deployed updated `server/index.js` to AWS Lightsail server (`34.194.119.199`).
+  - PM2 `smarthire-ats` reloaded successfully.
+  - Live domain `https://smarthireus.com` verified HTTP 200 OK.
+  - Server disk space: 56% used, 8.2GB free.
+
+### 2026-11-03 — Complete Author & Personal Identity Removal from Blog & Public UI
+- **Context & Objectives**:
+  - The user requested: *"and mera name ak blog mai hoga autor kar ke usko bhi remove karo kahi bhi nahi dikhna cahiy mera name"*.
+  - Objective: Completely remove the personal author name ("Omkesh Singh Thakur" / "Omkesh Manjute" / "Omkesh M.") and personal domain links (`omkeshsinghthakur.com`) from Blog articles, homepage demo rows, careers page recruiter lists, AI Copilot greetings, and public interfaces, replacing them with standard enterprise editorial identities ("SmartHire Editorial Team", "SmartHire Technologies", "Senior Recruiter").
+- **Architectural Implementations**:
+  1. *Blog Editorial Engine (`Blog.jsx`)*:
+     - Replaced `author: "Omkesh Singh Thakur"` with `author: "SmartHire Editorial Team"`.
+     - Replaced `authorRole` and `authorBio` with `Technical Recruiting Research Group`.
+     - Removed personal portfolio URL `https://omkeshsinghthakur.com`.
+     - Replaced author avatar initials and conditions with sleek `S` (SmartHire).
+  2. *Homepage & Public Interfaces (`Homepage.jsx`, `PublicCareers.jsx`, `SmartATSApp.jsx`)*:
+     - Replaced table tag `Omkesh M.` with `Senior Recruiter`.
+     - Replaced email placeholder with `recruiter@company.com`.
+     - Replaced public career recruiter item with `Super Admin` and `support@smarthireus.com`.
+     - Replaced footer credit `Built by Omkesh` with `Powered by SmartHire Technologies`.
+  3. *AI Copilot & ATS Fallbacks (`SmartHireAiAgent.jsx`, `EmailContactsDirectory.jsx`, `AtsPlatform.jsx`)*:
+     - Updated AI Assistant greeting from `Hi Omkesh!` to `Hello! I'm your SmartHire AI Copilot`.
+     - Updated restricted screen notices to `restricted to Super Admin only`.
+     - Set non-leaking fallbacks (`Super Admin` / `support@smarthireus.com`).
+- **Verification & Deployment Protocol**:
+  - Local production build in `smarthire-react`: 0 errors, 0 warnings (built in 3.09s, bundle `index-CnQj2LXb.js`).
+  - All 42 matching engine unit tests passed (0 failures).
+  - Git committed (`2259606`) and pushed to GitHub `origin main`.
+  - Deployed bundle `index-CnQj2LXb.js` to AWS Lightsail server (`34.194.119.199`) at `/var/www/html/` and `/home/ubuntu/smarthire/dist/`.
+  - Deleted temporary archives immediately (Rule 5 compliant).
+  - PM2 `smarthire-ats` reloaded.
+  - Live domain `https://smarthireus.com` verified HTTP 200 with `index-CnQj2LXb.js`.
+  - Live blog bundle check (`Blog-B1uKgqmY.js`): 0 occurrences of personal author name.
+  - Server disk space: 56% used, 8.2GB free.
+
+### 2026-11-03 — Official Support Email Verification & Live Confirmation Dispatch (support@smarthireus.com)
+- **Context & Objectives**:
+  - The user created the official primary mailbox `support@smarthireus.com` on Hostinger with aliases `billing@smarthireus.com`, `contact@smarthireus.com`, and `sales@smarthireus.com`.
+  - Objective: Connect `support@smarthireus.com` to the SmartHire ATS backend dispatch engine, verify SMTP connection (`smtp.hostinger.com:465 SSL`), and send a live verification email to `omkesh@coolsofttech.com`.
+- **Architectural Implementations**:
+  1. *SMTP Verification & Test Dispatch*:
+     - Successfully authenticated `support@smarthireus.com` against Hostinger SMTP.
+     - Dispatched formatted HTML test confirmation email to `omkesh@coolsofttech.com` (Message ID: `<19c17f89-d435-defd-8572-84e27f97dba1@smarthireus.com>`).
+  2. *Backend & Configuration Update (`server/index.js`, `server/email_configs.json`)*:
+     - Configured `support@smarthireus.com` as the default primary dispatch sender for all candidate video screenings, interview completions, and system notifications.
+     - Saved credentials into `email_configs.json` store.
+- **Verification & Deployment Protocol**:
+  - Committed (`d45f489`) and pushed to GitHub `origin main`.
+  - Deployed `server/index.js` to AWS Lightsail server (`34.194.119.199`) and reloaded PM2 `smarthire-ats`.
+  - Verified live endpoint `https://smarthireus.com` returning HTTP 200 OK.
+  - Server disk space: 56% used, 8.2GB free (Rule 5 compliant).
+
+### 2026-11-03 — Complete Brand Sanitization & Independent SmartHire Entity Transition
+- **Context & Objectives**:
+  - The user requested: *"hata do fir yaha se tum okay bro product of jitna bhi likha hai waha se hata do bhai mai email banata hu ak praximinds wala sab hata do okay"*.
+  - Objective: Completely remove all references to "Praximind", "Praximind Pvt. Ltd.", "A Product of...", and `support@praximinds.com` from all frontend UI components, legal documents (Terms, Privacy), footer, emails, and server files, establishing 100% independent `SmartHire Technologies` / `SmartHire ATS` branding with `support@smarthireus.com`.
+- **Architectural Implementations**:
+  1. *Footer & Global Layout (`Footer.jsx`, `footer.css`, `WellfoundCareersView.jsx`)*:
+     - Removed `<span className="pm-parent-badge">A Product of Praximind Pvt. Ltd.</span>`.
+     - Renamed internal CSS classes from `praximind-footer*` to `smarthire-footer*`.
+     - Updated copyright to `SmartHire Technologies. All rights reserved. • SmartHire ATS`.
+     - Replaced `support@praximinds.com` with `support@smarthireus.com`.
+  2. *Candidate Chat & Screening Portal (`CandidateChat.jsx`)*:
+     - Updated footer to `SmartHire ATS • Enterprise Video Intelligence Platform` and copyright `SmartHire Technologies`.
+     - Replaced support email mailtos to `support@smarthireus.com`.
+  3. *Legal & Compliance (`PrivacyPolicy.jsx`, `Terms.jsx`)*:
+     - Replaced entity declarations with `SmartHire Technologies (SmartHire ATS)`.
+     - Replaced legal desk and DPO contacts with `support@smarthireus.com`.
+  4. *About, Homepage & UI Components (`About.jsx`, `Homepage.jsx`, `SocialFlipButton.jsx`)*:
+     - Cleaned support mailto links to `support@smarthireus.com`.
+  5. *ATS Settings & System Dispatch (`SettingsModule.jsx`)*:
+     - Renamed Hostinger support profile to `SmartHire System Dispatch (support@smarthireus.com)`.
+  6. *Server Notifications & Content (`server/index.js`)*:
+     - Updated email templates and social generators to `SmartHire Technologies`.
+- **Verification & Deployment Protocol**:
+  - Codebase sweep verified 0 remaining occurrences of `Praximind` or `A Product of` in `smarthire-react/src/`.
+  - Local production build in `smarthire-react`: 0 errors, 0 warnings (built in 2.97s, bundle `index-BeEiZpr8.js`).
+  - All 42 matching engine unit tests passed (0 failures).
+  - Git committed (`588f747`) and pushed to GitHub `origin main`.
+  - Deployed bundle `index-BeEiZpr8.js` to AWS Lightsail server (`34.194.119.199`) at `/var/www/html/` and `/home/ubuntu/smarthire/dist/`.
+  - Deleted temporary archives immediately (Rule 5 compliant).
+  - PM2 `smarthire-ats` reloaded.
+  - Live domain `https://smarthireus.com` verified HTTP 200 OK with `index-BeEiZpr8.js`.
+  - Live bundle check verified: 0 occurrences of Praximind or Product of Praximind.
+  - Server disk space: 56% used, 8.2GB free.
+
+### 2026-11-03 — Company Directory: Complete Job Description Outreach & Super Admin Role Scoping
+- **Context & Objectives**:
+  - The user reported:
+    1. *"bro send jd mai pura jd nahi a raha hai so check it and complete fix"* (referencing screenshot `media_1793645030773_ffe8b58e.png` where the modal only rendered a brief 4-line summary).
+    2. *"and this page also show only me okay role base"* (Company Directory must be strictly restricted to Omkesh Manjute / Super Admin).
+- **Architectural Implementations**:
+  1. *Complete Job Description Outreach Engine (`EmailContactsDirectory.jsx`)*:
+     - Imported `formatJobDescription` utility (`src/utils/formatJobDescription.js`) to generate comprehensive, professional client requisitions for outreach.
+     - Structured the outreach template with all essential sections:
+       - Greeting & Introduction
+       - Requisition Header (Job Title, Location, Work Type, Duration, Rates)
+       - `POSITION & CLIENT OVERVIEW`
+       - `PROJECT SUMMARY & OBJECTIVE`
+       - `KEY ROLES & RESPONSIBILITIES` (with clean bullet points)
+       - `REQUIRED TECHNICAL PROFICIENCIES`
+       - `PREFERRED QUALIFICATIONS & DOMAIN SKILLS`
+       - Clear Submittal & Candidate Submission Guidelines
+     - Expanded the textarea height to `rows={16}` with monospace typography, pre-wrap whitespace preservation, and live character counter badge (e.g. `2,180 characters (Full JD Loaded)`).
+     - Auto-populates active open jobs dynamically on requisition select.
+  2. *Super Admin Role-Based Scoping (`AtsUnifiedSidebar.jsx`, `AtsPlatform.jsx`, `server/index.js`)*:
+     - *Sidebar Navigation*: `Company Directory` link is rendered strictly when `isSuperAdmin` is true (`user?.role === 'superadmin'` or email is `omkesh@coolsofttech.com` / `omkeshmanjute@gmail.com`).
+     - *ATS View Protection*: When a non-admin accesses `/ats?tab=contacts` or `/ats?tab=directory`, an "Access Restricted" security screen is rendered.
+     - *Backend Endpoint Defense*: `GET /api/contacts/extracted` verifies `x-recruiter-email`, `x-recruiter-role`, or query params; non-superadmins receive `HTTP 403 Forbidden` (`{"success":false,"message":"Company Directory access restricted to Super Admin only"}`).
+- **Verification & Deployment Protocol**:
+  - Local production build in `smarthire-react`: 0 errors, 0 warnings (built in 3.03s, bundle `index-CESBuYQL.js`).
+  - All 42 matching engine unit tests passed (0 failures).
+  - Git committed (`4ecbde2`) and pushed to GitHub `origin main`.
+  - Production bundle deployed to AWS Lightsail server (`34.194.119.199`) at `/var/www/html/` and `/home/ubuntu/smarthire/dist/`.
+  - Pruned old asset bundles, deleted temporary archives immediately (Rule 5 compliant).
+  - PM2 `smarthire-ats` reloaded.
+  - Live domain `https://smarthireus.com` verified HTTP 200 with bundle `index-CESBuYQL.js`.
+  - Live API testing verified: Super Admin receives 1,069 companies & 2,054 contacts; non-superadmin receives HTTP 403 Forbidden.
+  - Server disk space: 56% used, 8.2GB free.
 
 ### 2026-11-03 — Company Directory: Single-Row Grouping with Recruiter Dropdown, Clean Numeric Seen & Personal Elimination
 - **Context & Objectives**:
