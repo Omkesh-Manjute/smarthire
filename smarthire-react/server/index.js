@@ -2,7 +2,8 @@ import express from 'express'
 import cors from 'cors'
 import multer from 'multer'
 import path from 'path'
-import mongoose from 'mongoose'
+import { initializeApp, getApps, getApp } from 'firebase/app'
+import { getFirestore, doc, setDoc } from 'firebase/firestore'
 import fs from 'fs'
 import { fileURLToPath } from 'url'
 import pdfParse from 'pdf-parse'
@@ -398,30 +399,66 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true })
 }
 
-// ─── MongoDB Integration ──────────────────────────────────────────────────────
-let isMongoConnected = false;
+// ─── Firebase Firestore Cloud Integration (atsCandidates) ───────────────────
+const firebaseConfig = {
+  apiKey: process.env.VITE_FIREBASE_API_KEY || "AIzaSyA2BwkaHIrKbgNO87CIQc7wSpO_ufdxPXQ",
+  authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN || "smart-hire-54d38.firebaseapp.com",
+  projectId: process.env.VITE_FIREBASE_PROJECT_ID || "smart-hire-54d38",
+  storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET || "smart-hire-54d38.firebasestorage.app",
+  messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "464561704549",
+  appId: process.env.VITE_FIREBASE_APP_ID || "1:464561704549:web:2d104181a34a52ae47c08c"
+};
 
-// Drop-in compatible schemas to persist lists to MongoDB Atlas collections
-const CandidatesDoc = mongoose.models.CandidatesStore || mongoose.model('CandidatesStore', new mongoose.Schema({ list: Array }));
-const ReportsDoc = mongoose.models.ReportsStore || mongoose.model('ReportsStore', new mongoose.Schema({ list: Array }));
-const SocialPostsDoc = mongoose.models.SocialPostsStore || mongoose.model('SocialPostsStore', new mongoose.Schema({ list: Array }));
-const JobsDoc = mongoose.models.JobsStore || mongoose.model('JobsStore', new mongoose.Schema({ list: Array }));
-const ScreeningDoc = mongoose.models.ScreeningStore || mongoose.model('ScreeningStore', new mongoose.Schema({ list: Array }));
+let firestoreDb = null;
+try {
+  const firebaseApp = !getApps().length ? initializeApp(firebaseConfig, 'smarthire-server') : getApp('smarthire-server');
+  firestoreDb = getFirestore(firebaseApp);
+  console.log('🔥 Connected to Firebase Firestore successfully (atsCandidates).');
+} catch (fbErr) {
+  console.warn('⚠️ Firebase Firestore server init notice:', fbErr.message);
+}
 
-const RecruiterDoc = mongoose.models.RecruiterStore || mongoose.model('RecruiterStore', new mongoose.Schema({
-  name: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
-  role: { type: String, required: true },
-  refCode: { type: String, default: '' },
-  parentRecruiterName: { type: String, default: '' },
-  company: { type: String, default: 'SmartHire LLC' },
-  isActive: { type: Boolean, default: true },
-  lastLogin: { type: String, default: null },
-  createdAt: { type: String, default: () => new Date().toISOString() }
-}));
+async function saveCandidateToFirestore(cand) {
+  if (!firestoreDb || !cand) return;
+  const canId = String(cand.id || cand.candidate_id || cand.canId || Date.now());
+  try {
+    const payload = {
+      id: canId,
+      canId: canId,
+      name: cand.name || 'Candidate',
+      email: (cand.email || '').toLowerCase().trim(),
+      phone: cand.phone || '',
+      role: cand.role || 'IT Specialist',
+      experience: cand.experience || '5+ Years',
+      location: cand.location || 'Remote / US',
+      skills: Array.isArray(cand.skills) ? cand.skills : (cand.skills ? String(cand.skills).split(',').map(s => s.trim()) : []),
+      status: cand.status || 'New',
+      source: cand.source || 'Yahoo Inbox',
+      sourceCategory: cand.sourceCategory || 'email_inbox',
+      isSpamRecovery: !!cand.isSpamRecovery,
+      folder: cand.folder || (cand.isSpamRecovery ? 'SPAM' : 'INBOX'),
+      recruiter: cand.recruiter || cand.recruiterName || 'Omkesh',
+      recruiterEmail: (cand.recruiterEmail || 'omkesh@coolsofttech.com').toLowerCase().trim(),
+      resumeSnippet: cand.resumeSnippet || (cand.resumeText ? cand.resumeText.slice(0, 300) : ''),
+      resumeUrl: cand.resumeUrl || (cand.file?.local_path ? cand.file.local_path : ''),
+      attachmentName: cand.attachmentName || cand.file?.original_name || '',
+      file: cand.file || null,
+      documents: cand.documents || {},
+      visaStatus: cand.visaStatus || 'US Citizen',
+      targetReqId: cand.targetReqId || null,
+      matchedJobTitle: cand.targetReqId ? (cand.matchedJobTitle || 'Open Requisition') : 'General Talent Pool',
+      matchScore: cand.matchScore || null,
+      updatedAt: new Date().toISOString(),
+      createdAt: cand.createdAt || new Date().toISOString()
+    };
+    await setDoc(doc(firestoreDb, 'atsCandidates', canId), payload, { merge: true });
+  } catch (err) {
+    console.warn(`[Firestore] Sync skipped for candidate ${canId}:`, err.message);
+  }
+}
 
-const recruitersDbPath = path.resolve(__dirname, 'recruiters.json');
+// MongoDB removed — using Firebase Firestore and fast disk caching
+const isMongoConnected = false;
 let recruitersMock = [
   { _id: 'rec-1', name: 'Omkesh', email: 'omkesh@coolsofttech.com', role: 'superadmin', refCode: 'omkesh', parentRecruiterName: '', company: 'SmartHire LLC', isActive: true, password: 'admin', lastLogin: '2026-08-27T18:45:00.000Z', createdAt: '2026-01-10T10:00:00.000Z' }
 ];
@@ -596,38 +633,13 @@ async function resolveRecruiterEmailFromRefCode(refCode) {
 }
 
 
+// Recruiters are loaded and managed from recruiters.json store
 async function seedDefaultRecruiters() {
-  if (!isMongoConnected) return;
-  try {
-    const count = await RecruiterDoc.countDocuments();
-    if (count === 0) {
-      console.log('🌱 Seeding default recruiters into MongoDB Atlas...');
-      const toInsert = recruitersMock.map(r => {
-        const { _id, ...rest } = r;
-        return rest; // Let Mongoose auto-generate ObjectId for DB
-      });
-      await RecruiterDoc.insertMany(toInsert);
-      console.log('✅ Default recruiters seeded successfully!');
-    }
-  } catch (err) {
-    console.error('❌ Failed to seed default recruiters:', err.message);
-  }
+  // Disk store is source of truth
 }
 
 async function connectMongoDB() {
-  const uri = process.env.MONGODB_URI;
-  if (!uri) {
-    console.log('⚠️  MONGODB_URI not configured — running with local files only.');
-    return;
-  }
-  try {
-    await mongoose.connect(uri);
-    isMongoConnected = true;
-    console.log('✅ Connected to MongoDB Atlas successfully.');
-    await seedDefaultRecruiters();
-  } catch (err) {
-    console.error('❌ Failed to connect to MongoDB Atlas:', err.message);
-  }
+  // MongoDB removed — using Firebase Firestore and fast disk caching
 }
 
 // ─── Candidates DB File ───────────────────────────────────────────────────────
@@ -899,15 +911,26 @@ async function loadCandidatesFromDisk() {
   }
 }
 
+let isSavingCandidates = false;
+let pendingSaveCandidates = false;
+
 async function saveCandidatesToDisk() {
+  if (isSavingCandidates) {
+    pendingSaveCandidates = true;
+    return;
+  }
+  isSavingCandidates = true;
   try {
-    fs.writeFileSync(candidatesDbPath, JSON.stringify(candidatesStore, null, 2), 'utf-8')
-    if (isMongoConnected) {
-      await CandidatesDoc.findOneAndUpdate({}, { list: candidatesStore }, { upsert: true });
-      console.log('💾 Saved candidates to MongoDB Atlas.');
-    }
+    const jsonStr = JSON.stringify(candidatesStore);
+    await fs.promises.writeFile(candidatesDbPath, jsonStr, 'utf-8');
   } catch (err) {
-    console.error('⚠️  Failed to save candidates:', err.message)
+    console.error('⚠️  Failed to save candidates:', err.message);
+  } finally {
+    isSavingCandidates = false;
+    if (pendingSaveCandidates) {
+      pendingSaveCandidates = false;
+      saveCandidatesToDisk().catch(() => {});
+    }
   }
 }
 
@@ -2299,9 +2322,6 @@ async function buildCandidateFromFile(storedFilename, senderEmail = '', subject 
 
 // ─── Startup: load from disk + sync any new uploaded files ───────────────────
 async function initializeCandidatesStore() {
-  // Connect to MongoDB Atlas if connection URI is provided
-  await connectMongoDB()
-
   // 1. Load from database / disk
   await loadCandidatesFromDisk()
   await loadReportsFromDisk()
@@ -9690,61 +9710,6 @@ app.get(['/api/admin/recruiters', '/api/recruiters'], async (req, res) => {
   try {
     loadRecruitersFromDisk();
     loadCreditsFromDisk();
-    if (isMongoConnected) {
-      try {
-        const recruiters = await RecruiterDoc.find().sort({ createdAt: -1 });
-        const mongoEmails = new Set(recruiters.map(r => (r.email || '').toLowerCase().trim()));
-        const diskExtra = recruitersMock.filter(m => !mongoEmails.has((m.email || '').toLowerCase().trim()));
-
-        const rawList = [
-          ...recruiters.map(r => ({
-            id: r._id.toString(),
-            name: r.name,
-            email: r.email,
-            role: r.role,
-            parentRecruiterName: r.parentRecruiterName || '',
-            refCode: r.refCode,
-            company: r.company,
-            isActive: r.isActive !== false,
-            lastLogin: r.lastLogin,
-            createdAt: r.createdAt,
-            credits: getRecruiterCredits(r.email)
-          })),
-          ...diskExtra.map(r => ({
-            id: r._id || r.id,
-            name: r.name,
-            email: r.email,
-            role: r.role,
-            parentRecruiterName: r.parentRecruiterName || '',
-            refCode: r.refCode,
-            company: r.company,
-            isActive: r.isActive !== false,
-            lastLogin: r.lastLogin,
-            createdAt: r.createdAt,
-            credits: getRecruiterCredits(r.email)
-          }))
-        ];
-
-        // Security & Scoping: Never expose passwords in inspect element, and filter out B2B clients and deleted recruiters
-        loadDeletedRecruiters();
-        const cleanList = rawList
-          .filter(r => {
-            const em = (r.email || '').toLowerCase().trim();
-            if (em === 'omkesh@coolsofttech.com') return true;
-            if (deletedRecruiterEmails.has(em)) return false;
-            return r.role !== 'client' && em !== 'omkeshmanjute1@gmail.com';
-          })
-          .map(r => {
-            const copy = { ...r };
-            delete copy.password;
-            return copy;
-          });
-
-        return res.json({ success: true, recruiters: cleanList });
-      } catch (mErr) {
-        console.warn('MongoDB recruiters list fallback to disk:', mErr.message);
-      }
-    }
 
     loadDeletedRecruiters();
     const list = recruitersMock
@@ -10208,25 +10173,7 @@ app.post('/api/admin/recruiters/delete', express.json(), async (req, res) => {
     loadRecruitersFromDisk();
     loadCreditsFromDisk();
 
-    // 1. Delete from MongoDB
-    if (isMongoConnected) {
-      try {
-        const orClauses = [];
-        if (cleanEmail) orClauses.push({ email: new RegExp('^' + cleanEmail.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&') + '$', 'i') });
-        if (cleanId) {
-          orClauses.push({ id: cleanId });
-          orClauses.push({ userId: cleanId });
-          if (mongoose.Types.ObjectId.isValid(cleanId)) orClauses.push({ _id: cleanId });
-        }
-        if (cleanName) orClauses.push({ name: new RegExp('^' + cleanName.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&') + '$', 'i') });
 
-        if (orClauses.length > 0) {
-          await RecruiterDoc.deleteMany({ $or: orClauses, email: { $ne: 'omkesh@coolsofttech.com' } });
-        }
-      } catch (mErr) {
-        console.warn('MongoDB delete notice:', mErr.message);
-      }
-    }
 
     // 2. Delete from disk mock recruitersMock
     recruitersMock = recruitersMock.filter(r => {
@@ -10279,15 +10226,7 @@ app.delete('/api/admin/recruiters/:id', async (req, res) => {
     loadRecruitersFromDisk();
     loadCreditsFromDisk();
 
-    if (isMongoConnected) {
-      try {
-        const orClauses = [{ email: lowerId }, { id: decodedId }, { userId: decodedId }];
-        if (emailQuery) orClauses.push({ email: emailQuery });
-        if (mongoose.Types.ObjectId.isValid(decodedId)) orClauses.push({ _id: decodedId });
 
-        await RecruiterDoc.deleteMany({ $or: orClauses, email: { $ne: 'omkesh@coolsofttech.com' } });
-      } catch (e) {}
-    }
 
     recruitersMock = recruitersMock.filter(r => {
       const rEmail = (r.email || '').toLowerCase().trim();
@@ -13480,49 +13419,26 @@ app.get('/api/recruiter/email-streams', (req, res) => {
           timestamp: Date.now()
         });
       } else {
-        // High-Speed Full Requisition Scan (<1ms): Evaluate candidate against ALL active client requisitions
-        let bestJob = null;
-        let bestMatch = { matchScore: 0, matchingSkills: [], missingSkills: [] };
-
-        for (const pj of preclassifiedJobs) {
-          const j = pj.job;
-          const scoreObj = evaluateCandidateJobMatch({ ...c, role: cleanRole, skills: cleanSkills, experience: candidateExp }, j);
-          if (scoreObj.matchScore > bestMatch.matchScore) {
-            bestMatch = scoreObj;
-            bestJob = j;
-          }
-        }
-
-        // Requisition Fit Threshold: >= 60% match assigns the best-fitting active client requisition
-        if (bestJob && bestMatch.matchScore >= 60 && bestMatch.isDomainMatch) {
-          targetJob = bestJob;
-          matchAnalysis = bestMatch;
-        } else {
-          targetJob = null;
-          matchAnalysis = {
-            matchScore: bestMatch.matchScore > 35 ? bestMatch.matchScore : 50,
-            matchingSkills: bestMatch.matchingSkills?.length ? bestMatch.matchingSkills : cleanSkills.slice(0, 3),
-            missingSkills: bestMatch.missingSkills || [],
-            matchingRequiredSkills: bestMatch.matchingRequiredSkills || cleanSkills.slice(0, 3),
-            missingRequiredSkills: bestMatch.missingRequiredSkills || [],
-            matchingPreferredSkills: [],
-            missingPreferredSkills: [],
-            isDomainMatch: false,
-            isTitleMatch: false,
-            titleMatchStatus: 'mismatch',
-            titleMatchLabel: 'General Talent Pool',
-            stateMatchStatus: 'remote_ok',
-            stateMatchLabel: 'US Nationwide',
-            expMatchStatus: 'meets',
-            expMatchLabel: `${candidateExp} Recorded`,
-            hasMissingRequiredSkills: false
-          };
-        }
-        candidateMatchCache.set(candCacheKey, {
-          matchAnalysis,
-          targetJobId: targetJob ? String(targetJob.id).replace(/^J-/, '') : null,
-          timestamp: Date.now()
-        });
+        // General Talent Pool — No auto job pairing during ingestion
+        targetJob = null;
+        matchAnalysis = {
+          matchScore: null,
+          matchingSkills: cleanSkills.slice(0, 3),
+          missingSkills: [],
+          matchingRequiredSkills: cleanSkills.slice(0, 3),
+          missingRequiredSkills: [],
+          matchingPreferredSkills: [],
+          missingPreferredSkills: [],
+          isDomainMatch: false,
+          isTitleMatch: false,
+          titleMatchStatus: 'general',
+          titleMatchLabel: 'General Talent Pool',
+          stateMatchStatus: 'remote_ok',
+          stateMatchLabel: 'US Nationwide',
+          expMatchStatus: 'meets',
+          expMatchLabel: `${candidateExp} Recorded`,
+          hasMissingRequiredSkills: false
+        };
       }
     }
 
@@ -13621,6 +13537,26 @@ app.get('/api/recruiter/email-streams', (req, res) => {
     return (b.matchScore || 0) - (a.matchScore || 0);
   });
 
+  const totalCount = dedupedScopedCandidates.length;
+  const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+  const limit = Math.max(1, parseInt(req.query.limit, 10) || 25);
+  const isAll = req.query.all === 'true' || req.query.fullPool === 'true';
+
+  const activeCount = dedupedScopedCandidates.filter(c => c.status !== 'Archived' && c.status !== 'Rejected' && c.status !== 'Closed').length;
+  const inboxCount = dedupedScopedCandidates.filter(c => c.sourceCategory === 'email_inbox' || (!c.isSpamRecovery && !c.sourceCategory?.includes('spam') && !c.sourceCategory?.includes('monster') && !c.sourceCategory?.includes('dice') && !c.sourceCategory?.includes('vendor'))).length;
+  const spamCount = dedupedScopedCandidates.filter(c => c.sourceCategory === 'email_spam' || c.isSpamRecovery || c.folder === 'SPAM').length;
+  const extensionCount = dedupedScopedCandidates.filter(c => c.sourceCategory === 'monster_plus' || c.sourceCategory === 'dice' || (c.source || '').toLowerCase().includes('monster') || (c.source || '').toLowerCase().includes('dice') || (c.source || '').toLowerCase().includes('extension')).length;
+  const vendorBenchCount = dedupedScopedCandidates.filter(c => c.sourceCategory === 'vendor_bench' || (c.source || '').toLowerCase().includes('vendor') || (c.source || '').toLowerCase().includes('bench')).length;
+  const jobSitesCount = dedupedScopedCandidates.filter(c => {
+    const isExt = c.sourceCategory === 'monster_plus' || c.sourceCategory === 'dice' || (c.source || '').toLowerCase().includes('monster') || (c.source || '').toLowerCase().includes('dice') || (c.source || '').toLowerCase().includes('extension');
+    if (isExt) return false;
+    const cat = (c.sourceCategory || '').toLowerCase();
+    const src = (c.source || '').toLowerCase();
+    return cat === 'careers_portal' || cat === 'job_site' || src.includes('career') || src.includes('job site') || src.includes('indeed') || src.includes('linkedin') || src.includes('/jobs');
+  }).length;
+
+  const pagedCandidates = isAll ? dedupedScopedCandidates : dedupedScopedCandidates.slice((page - 1) * limit, page * limit);
+
   res.json({
     success: true,
     recruiter: {
@@ -13629,18 +13565,49 @@ app.get('/api/recruiter/email-streams', (req, res) => {
       role: role || 'recruiter',
       privateMode: !isSuper
     },
+    total: totalCount,
+    page,
+    limit,
+    totalPages: Math.ceil(totalCount / limit),
     counts: {
-      candidatesTotal: dedupedScopedCandidates.length,
-      inboxResumes: dedupedScopedCandidates.filter(c => c.sourceCategory === 'email_inbox' || c.sourceCategory === 'monster_plus' || c.sourceCategory === 'dice' || c.isNew).length,
-      spamResumes: dedupedScopedCandidates.filter(c => c.sourceCategory === 'email_spam').length,
-      careersResumes: dedupedScopedCandidates.filter(c => c.sourceCategory === 'careers_portal' || c.sourceCategory === 'monster_plus' || c.sourceCategory === 'dice').length,
-      vendorResumes: dedupedScopedCandidates.filter(c => c.sourceCategory === 'vendor_bench').length,
+      total: totalCount,
+      active: activeCount,
+      inbox: inboxCount,
+      spam: spamCount,
+      extension: extensionCount,
+      jobSites: jobSitesCount,
+      vendorBench: vendorBenchCount,
+      candidatesTotal: totalCount,
+      inboxResumes: inboxCount,
+      spamResumes: spamCount,
+      careersResumes: jobSitesCount,
+      vendorResumes: vendorBenchCount,
       requirements: requirementsEmailStore.length,
       vendors: vendorSubmittalsStore.length
     },
-    candidates: dedupedScopedCandidates,
+    candidates: pagedCandidates,
     requirements: requirementsEmailStore,
     vendors: vendorSubmittalsStore
+  });
+});
+
+// GET /api/candidates/:id/resume — On-demand full resume text and documents loader
+app.get('/api/candidates/:id/resume', (req, res) => {
+  const cid = String(req.params.id || '').toLowerCase().trim();
+  const cand = (candidatesStore || []).find(c => {
+    return String(c.id || '').toLowerCase() === cid ||
+           String(c.candidate_id || '').toLowerCase() === cid ||
+           String(c.canId || '').toLowerCase() === cid;
+  });
+  if (!cand) return res.status(404).json({ success: false, message: 'Candidate not found' });
+
+  return res.json({
+    success: true,
+    id: cand.id,
+    name: cand.name,
+    resumeText: cand.resumeText || cand.summary || '',
+    documents: cand.documents || cand.legalDocs || {},
+    file: cand.file || null
   });
 });
 
@@ -13674,37 +13641,24 @@ async function syncEmailResumesInternal(recruiterEmail = 'omkesh@coolsofttech.co
 
       if (Array.isArray(liveEmails) && liveEmails.length > 0) {
         incomingHarvestedResumes = liveEmails.map((item) => {
-          // Calculate true BEST-FIT job among all ACTIVE UNEXPIRED client requisitions
-          let bestJob = null;
-          let bestMatch = { matchScore: 0, matchingSkills: [] };
-
-          for (const j of activeJobs) {
-            const scoreObj = evaluateCandidateJobMatch(item, j);
-            if (scoreObj.matchScore > bestMatch.matchScore) {
-              bestMatch = scoreObj;
-              bestJob = j;
-            }
-          }
-
-          const hasReqFit = bestMatch.matchScore >= 65 && bestJob;
-
           return {
             name: item.name || 'Candidate',
-            email: item.email,
+            email: item.email || '',
             phone: (item.phone && !item.phone.includes('555') && !item.phone.includes('010-0000') && !item.phone.includes('000-0000')) ? item.phone : '',
-            role: item.role || (hasReqFit ? bestJob.title : 'IT Specialist'),
-            location: 'Remote / US',
-            skills: (item.skills && item.skills.length > 0) ? item.skills : (hasReqFit ? bestJob.skills : ['Java', 'SQL', 'Cloud']),
-            experience: '5+ Years',
+            role: item.role || 'IT Specialist',
+            location: item.location || 'Remote / US',
+            skills: (item.skills && item.skills.length > 0) ? item.skills : ['Java', 'SQL', 'Cloud'],
+            experience: item.experience || '5+ Years',
             source: item.isSpamRecovery ? `Yahoo Spam Folder (${item.name || item.email})` : `Yahoo Inbox (${item.name || item.email})`,
             sourceCategory: item.isSpamRecovery ? 'email_spam' : 'email_inbox',
             isSpamRecovery: !!item.isSpamRecovery,
             folder: item.folder || (item.isSpamRecovery ? 'SPAM' : 'INBOX'),
-            suggestedReqId: hasReqFit ? String(bestJob.id).replace('J-', '') : null,
-            matchScore: bestMatch.matchScore || 65,
-            matchedJobTitle: hasReqFit ? bestJob.title : 'General Sourcing Pool',
-            matchedJobClient: hasReqFit ? (bestJob.client || bestJob.customer || 'Direct Client') : 'Talent Pool (No active requisition match)',
-            matchedJobRate: hasReqFit ? (bestJob.budget || bestJob.rate || '$75/hr') : '$70/hr',
+            suggestedReqId: null,
+            targetReqId: null,
+            matchScore: null,
+            matchedJobTitle: 'General Talent Pool',
+            matchedJobClient: 'Talent Pool',
+            matchedJobRate: null,
             resumeText: item.resumeText || '',
             attachmentName: item.attachmentName || null,
             file: item.file || null,
@@ -13763,13 +13717,13 @@ async function syncEmailResumesInternal(recruiterEmail = 'omkesh@coolsofttech.co
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         notes: item.isSpamRecovery 
-          ? `⚠️ RECOVERED FROM YAHOO SPAM FOLDER: Filtered out by email provider. ${item.suggestedReqId ? `AI best-fit matched to Req #${item.suggestedReqId} (${item.matchScore}% Match).` : 'Added to active talent pool.'}`
-          : `Ingested automatically from Yahoo inbox. ${item.suggestedReqId ? `AI best-fit matched to Req #${item.suggestedReqId} (${item.matchScore}% Match).` : 'Added to active talent pool.'}`,
-        targetReqId: item.suggestedReqId,
-        matchScore: item.matchScore,
-        matchedJobTitle: item.matchedJobTitle,
-        matchedJobClient: item.matchedJobClient,
-        matchedJobRate: item.matchedJobRate,
+          ? `⚠️ RECOVERED FROM YAHOO SPAM FOLDER: Filtered out by email provider. Added to General Talent Pool.`
+          : `Ingested automatically from Yahoo inbox. Added to General Talent Pool.`,
+        targetReqId: null,
+        matchScore: null,
+        matchedJobTitle: 'General Talent Pool',
+        matchedJobClient: 'Talent Pool',
+        matchedJobRate: null,
         resumeText: item.resumeText || '',
         attachmentName: item.attachmentName || null,
         file: item.file || null,
@@ -13781,8 +13735,10 @@ async function syncEmailResumesInternal(recruiterEmail = 'omkesh@coolsofttech.co
       candidatesStore.unshift(newCand);
       ingested.push(newCand);
 
-      // Real-time dynamic notification for newly ingested scraped resume
-      const isMatched = Boolean(newCand.targetReqId && newCand.matchScore >= 65);
+      // Cloud Persistence: Synchronize scraped candidate metadata to Firebase Firestore atsCandidates
+      saveCandidateToFirestore(newCand).catch(() => {});
+
+      // Notification for newly ingested scraped resume
       notificationsStore.unshift({
         id: `notif-scraped-${newCand.id}-${Date.now()}`,
         type: 'candidate_scraped',
@@ -13790,13 +13746,11 @@ async function syncEmailResumesInternal(recruiterEmail = 'omkesh@coolsofttech.co
         candidateName: newCand.name || newCand.email,
         candidateEmail: newCand.email,
         role: newCand.role,
-        targetReqId: isMatched ? newCand.targetReqId : null,
-        matchedJobTitle: isMatched ? newCand.matchedJobTitle : 'General Talent Pool',
-        matchScore: newCand.matchScore || 60,
-        isMatched,
-        message: isMatched
-          ? `Matched with ${newCand.matchedJobTitle} (Req #${newCand.targetReqId}) • ${newCand.matchScore}% fit.`
-          : `Added to General Talent Pool (${newCand.role || 'Specialist'}) • No active open requisition match.`,
+        targetReqId: null,
+        matchedJobTitle: 'General Talent Pool',
+        matchScore: null,
+        isMatched: false,
+        message: `New resume ingested: ${newCand.name || newCand.email} (${newCand.role || 'Specialist'}) added to General Talent Pool.`,
         createdAt: new Date().toISOString(),
         read: false,
         assignedRecruiters: [recruiterEmail, 'omkesh@coolsofttech.com']
@@ -17654,7 +17608,6 @@ app.use((error, _req, res, _next) => {
 
 // ─── Start server after initializing databases ───────────────────────────────
 async function startServer() {
-  await connectMongoDB();
   await loadCandidatesFromDisk();
   await loadJobsFromDisk();
   await loadReportsFromDisk();

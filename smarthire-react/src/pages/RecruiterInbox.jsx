@@ -3337,48 +3337,27 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
         try { controller.abort() } catch (e) {}
       }, 35000)
 
-      let streamRes, apiCandsRes, firestoreCandsRes
-      try {
-        const results = await Promise.allSettled([
-          fetch(`/api/recruiter/email-streams?summary=true&${params.toString()}`, { headers: authHeaders, signal: controller.signal }),
-          fetch(`/api/candidates?summary=true&all=true&limit=1000&${params.toString()}`, { headers: authHeaders, signal: controller.signal }),
-          getAllCandidates()
-        ])
-        streamRes = results[0]
-        apiCandsRes = results[1]
-        firestoreCandsRes = results[2]
-      } finally {
-        clearTimeout(fetchTimer)
-      }
-
       let streamList = []
       let countsData = null
 
-      if (streamRes.status === 'fulfilled' && streamRes.value && streamRes.value.ok) {
-        const data = await streamRes.value.json()
-        if (data.success && Array.isArray(data.candidates)) {
-          streamList = data.candidates
-          countsData = data.counts
+      try {
+        const streamRes = await fetch(`/api/recruiter/email-streams?summary=true&all=true&${params.toString()}`, { headers: authHeaders, signal: controller.signal })
+        clearTimeout(fetchTimer)
+        if (streamRes.ok) {
+          const data = await streamRes.json()
+          if (data.success && Array.isArray(data.candidates)) {
+            streamList = data.candidates
+            countsData = data.counts
+          }
         }
+      } catch (fErr) {
+        clearTimeout(fetchTimer)
+        console.warn('Fast talent stream fetch notice:', fErr.message)
       }
 
       let manualAndAtsList = []
 
-      // 1. Merge API Candidates
-      if (apiCandsRes.status === 'fulfilled' && apiCandsRes.value && apiCandsRes.value.ok) {
-        try {
-          const apiData = await apiCandsRes.value.json()
-          const cList = Array.isArray(apiData) ? apiData : (Array.isArray(apiData.candidates) ? apiData.candidates : [])
-          manualAndAtsList.push(...cList)
-        } catch (e) {}
-      }
-
-      // 2. Merge Firestore Candidates
-      if (firestoreCandsRes.status === 'fulfilled' && Array.isArray(firestoreCandsRes.value)) {
-        manualAndAtsList.push(...firestoreCandsRes.value)
-      }
-
-      // 3. Merge LocalStorage Candidates
+      // 1. Merge LocalStorage Candidates (offline fallback)
       try {
         const localRaw = localStorage.getItem('smarthire_all_candidates')
         if (localRaw) {
@@ -4563,6 +4542,24 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
   }, [fetchStreamCandidates])
   useEffect(() => { fetchThreads() }, [fetchThreads])
   useEffect(() => { fetchLeaderboard() }, [fetchLeaderboard])
+
+  // Enterprise MNC Lazy Loader: Fetch full resume text on-demand when candidate is viewed
+  useEffect(() => {
+    if (!selectedCandidate) return
+    const cid = selectedCandidate.id || selectedCandidate.candidate_id || selectedCandidate.canId
+    if (cid && (!selectedCandidate.resumeText || selectedCandidate.resumeText.length < 50)) {
+      fetch(`/api/candidates/${encodeURIComponent(cid)}/resume`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.success && data.resumeText) {
+            setSelectedCandidate(prev => (prev && (prev.id === cid || prev.candidate_id === cid)) 
+              ? { ...prev, resumeText: data.resumeText, documents: data.documents || prev.documents } 
+              : prev)
+          }
+        })
+        .catch(() => {})
+    }
+  }, [selectedCandidate?.id])
 
   const fetchNotifications = useCallback(async () => {
     try {
