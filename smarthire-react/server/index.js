@@ -2439,15 +2439,14 @@ app.get('/api/candidates', authenticateToken, async (req, res) => {
     let subordinateRecruiters = [];
     const roster = Array.isArray(recruitersMock) ? recruitersMock : (Array.isArray(recruitersStore) ? recruitersStore : []);
     subordinateRecruiters = roster.filter(u => {
-        if (!u) return false;
-        const pName = (u.parentRecruiterName || '').toLowerCase().trim();
-        const pId = String(u.parentRecruiterId || '').toLowerCase().trim();
-        const pEmail = (u.parentRecruiterEmail || '').toLowerCase().trim();
-        return (pName && (pName === userName || pName.includes(userName))) ||
-               (pId && pId === userId) ||
-               (pEmail && pEmail === userEmail);
-      });
-    }
+      if (!u) return false;
+      const pName = (u.parentRecruiterName || '').toLowerCase().trim();
+      const pId = String(u.parentRecruiterId || '').toLowerCase().trim();
+      const pEmail = (u.parentRecruiterEmail || '').toLowerCase().trim();
+      return (pName && (pName === userName || pName.includes(userName))) ||
+             (pId && pId === userId) ||
+             (pEmail && pEmail === userEmail);
+    });
     const subNames = subordinateRecruiters.map(u => (u.name || '').toLowerCase().trim()).filter(Boolean);
     const subEmails = subordinateRecruiters.map(u => (u.email || '').toLowerCase().trim()).filter(Boolean);
     const subRefs = subordinateRecruiters.map(u => (u.refCode || '').toLowerCase().trim()).filter(Boolean);
