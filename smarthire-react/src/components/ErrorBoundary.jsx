@@ -31,10 +31,12 @@ export default class ErrorBoundary extends React.Component {
     if (ErrorBoundary.isChunkError(error)) {
       const now = Date.now()
       const lastReload = parseInt(window.sessionStorage.getItem('smarthire_last_chunk_reload') || '0', 10)
-      if (now - lastReload > 10000) {
+      if (now - lastReload > 8000) {
         window.sessionStorage.setItem('smarthire_last_chunk_reload', String(now))
-        console.warn('[SmartHire] Chunk loading error detected, auto-reloading page...')
-        window.location.reload()
+        console.warn('[SmartHire] Chunk loading error detected, auto-reloading with cache buster...')
+        const url = new URL(window.location.href)
+        url.searchParams.set('_v', String(now))
+        window.location.replace(url.toString())
       }
     }
   }
@@ -48,8 +50,83 @@ export default class ErrorBoundary extends React.Component {
     if (this.state.hasError) {
       if (this.state.isChunkRecovering || ErrorBoundary.isChunkError(this.state.error)) {
         return (
-          <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#ffffff' }}>
-            <InfinityLoader text="" showBrand={false} minHeight="85vh" />
+          <div style={{
+            minHeight: '100vh',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: '#ffffff',
+            fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
+            padding: '24px'
+          }}>
+            <div style={{
+              maxWidth: 480,
+              width: '100%',
+              background: '#FFFFFF',
+              border: '1px solid #E2E8F0',
+              borderRadius: 12,
+              padding: '36px 32px',
+              textAlign: 'center',
+              boxShadow: '0 4px 24px rgba(15, 23, 42, 0.08)'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
+                <InfinityLoader text="" showBrand={false} minHeight="70px" />
+              </div>
+              <h2 style={{ fontSize: 19, fontWeight: 800, color: '#0F172A', margin: '0 0 8px 0', letterSpacing: '-0.3px' }}>
+                Platform Update Detected
+              </h2>
+              <p style={{ fontSize: 13.5, color: '#64748B', margin: '0 0 24px 0', lineHeight: 1.5 }}>
+                A newer build of SmartHire ATS has been deployed. Please refresh to load the latest bundle.
+              </p>
+              <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    try {
+                      sessionStorage.clear()
+                      localStorage.removeItem('smarthire_page_reloaded')
+                      localStorage.removeItem('smarthire_last_chunk_reload')
+                    } catch (_) {}
+                    const url = new URL(window.location.href)
+                    url.searchParams.set('_v', String(Date.now()))
+                    window.location.replace(url.toString())
+                  }}
+                  style={{
+                    backgroundColor: '#2563EB',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    borderRadius: 8,
+                    padding: '10px 22px',
+                    fontSize: 13.5,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 6px rgba(37,99,235,0.25)'
+                  }}
+                >
+                  Reload Platform
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    try { sessionStorage.clear() } catch (_) {}
+                    window.location.href = '/inbox?tab=candidates'
+                  }}
+                  style={{
+                    backgroundColor: '#F1F5F9',
+                    color: '#334155',
+                    border: '1px solid #CBD5E1',
+                    borderRadius: 8,
+                    padding: '10px 18px',
+                    fontSize: 13.5,
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Candidate Hub
+                </button>
+              </div>
+            </div>
           </div>
         )
       }

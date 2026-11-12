@@ -59,7 +59,18 @@ export default function EmailContactsDirectory() {
   const fetchCompanies = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch('/api/contacts/extracted');
+      const u = JSON.parse(localStorage.getItem('smarthire_user') || '{}');
+      const activeRole = localStorage.getItem('smarthire_active_role') || u.role || 'superadmin';
+      const myEmail = u.email || 'omkesh@coolsofttech.com';
+      const token = localStorage.getItem('smarthire_token') || '';
+      const headers = {
+        'x-recruiter-email': myEmail,
+        'x-recruiter-role': activeRole,
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      };
+      const res = await fetch(`/api/contacts/extracted?recruiterEmail=${encodeURIComponent(myEmail)}&role=${encodeURIComponent(activeRole)}`, {
+        headers
+      });
       const data = await res.json();
       if (data && data.success) {
         setCompanies(data.companies || []);
@@ -67,6 +78,8 @@ export default function EmailContactsDirectory() {
         setTotalRecruiters(data.totalRecruiters || 0);
         setUpdatedAt(data.updatedAt);
         if (data.account) setAccountEmail(data.account);
+      } else if (data && data.message) {
+        console.warn('Company directory notice:', data.message);
       }
     } catch (err) {
       console.error('Failed to load company directory:', err);
@@ -78,7 +91,9 @@ export default function EmailContactsDirectory() {
 
   const fetchJobs = async () => {
     try {
-      const res = await fetch('/api/jobs');
+      const token = localStorage.getItem('smarthire_token') || '';
+      const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+      const res = await fetch('/api/jobs', { headers });
       const data = await res.json();
       const jobList = Array.isArray(data) ? data : (data.jobs || []);
       const validJobs = jobList.filter(j => j && j.title && (!j.status || j.status.toLowerCase() === 'active' || j.status.toLowerCase() === 'open'));
@@ -92,10 +107,20 @@ export default function EmailContactsDirectory() {
     setIsSyncing(true);
     showToast('Scanning Yahoo IMAP for latest emails. This takes about 30 seconds...');
     try {
+      const u = JSON.parse(localStorage.getItem('smarthire_user') || '{}');
+      const activeRole = localStorage.getItem('smarthire_active_role') || u.role || 'superadmin';
+      const myEmail = u.email || 'omkesh@coolsofttech.com';
+      const token = localStorage.getItem('smarthire_token') || '';
+      const headers = {
+        'Content-Type': 'application/json',
+        'x-recruiter-email': myEmail,
+        'x-recruiter-role': activeRole,
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      };
       const res = await fetch('/api/contacts/sync', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: accountEmail })
+        headers,
+        body: JSON.stringify({ email: accountEmail || myEmail })
       });
       const data = await res.json();
       if (data && data.success) {

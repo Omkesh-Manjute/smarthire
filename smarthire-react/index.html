@@ -86,6 +86,19 @@
         </div>
       </div>
     </div>
+    <script>
+      setTimeout(function() {
+        var r = document.getElementById('root');
+        if (r && r.querySelector('svg') && !r.querySelector('header') && !r.querySelector('nav') && !r.querySelector('.app-shell')) {
+          console.warn('[SmartHire] Initial hydration check: auto-recovering...');
+          var url = new URL(window.location.href);
+          if (!url.searchParams.has('_b')) {
+            url.searchParams.set('_b', String(Date.now()));
+            window.location.replace(url.toString());
+          }
+        }
+      }, 7000);
+    </script>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <script type="module" src="/src/main.jsx"></script>
   </body>

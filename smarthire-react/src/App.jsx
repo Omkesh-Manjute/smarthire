@@ -6,15 +6,14 @@ import InfinityLoader from './components/InfinityLoader'
 
 function lazyWithRetry(componentImport) {
   return lazy(async () => {
-    const pageHasBeenForceRefreshed = window.sessionStorage.getItem('smarthire_page_reloaded') === 'true'
-    for (let i = 0; i < 2; i++) {
+    for (let i = 0; i < 3; i++) {
       try {
         const component = await componentImport()
         window.sessionStorage.removeItem('smarthire_page_reloaded')
         return component
       } catch (err) {
-        if (i < 1) {
-          await new Promise(r => setTimeout(r, 600))
+        if (i < 2) {
+          await new Promise(r => setTimeout(r, (i + 1) * 600))
         }
       }
     }
@@ -24,10 +23,15 @@ function lazyWithRetry(componentImport) {
       window.sessionStorage.removeItem('smarthire_page_reloaded')
       return component
     } catch (error) {
-      console.warn('[SmartHire] Chunk fetch failed after retries, auto-refreshing...', error)
-      if (!pageHasBeenForceRefreshed) {
-        window.sessionStorage.setItem('smarthire_page_reloaded', 'true')
-        window.location.reload()
+      console.warn('[SmartHire] Chunk fetch failed after retries, auto-recovering...', error)
+      const lastReload = parseInt(window.sessionStorage.getItem('smarthire_last_chunk_reload') || '0', 10)
+      const now = Date.now()
+      if (now - lastReload > 8000) {
+        window.sessionStorage.setItem('smarthire_last_chunk_reload', String(now))
+        window.sessionStorage.removeItem('smarthire_page_reloaded')
+        const url = new URL(window.location.href)
+        url.searchParams.set('_v', String(now))
+        window.location.replace(url.toString())
         return new Promise(() => {})
       }
       throw error

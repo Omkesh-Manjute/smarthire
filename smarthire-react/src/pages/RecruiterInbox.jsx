@@ -3326,18 +3326,22 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
       })
 
       const token = localStorage.getItem('smarthire_token') || ''
-      const authHeaders = { 'Authorization': `Bearer ${token}` }
+      const authHeaders = {
+        'Authorization': `Bearer ${token}`,
+        'x-recruiter-email': recEmail,
+        'x-recruiter-role': recRole
+      }
 
       const controller = new AbortController()
       const fetchTimer = setTimeout(() => {
         try { controller.abort() } catch (e) {}
-      }, 10000)
+      }, 35000)
 
       let streamRes, apiCandsRes, firestoreCandsRes
       try {
         const results = await Promise.allSettled([
           fetch(`/api/recruiter/email-streams?summary=true&${params.toString()}`, { headers: authHeaders, signal: controller.signal }),
-          fetch('/api/candidates?summary=true&all=true&limit=1000', { headers: authHeaders, signal: controller.signal }),
+          fetch(`/api/candidates?summary=true&all=true&limit=1000&${params.toString()}`, { headers: authHeaders, signal: controller.signal }),
           getAllCandidates()
         ])
         streamRes = results[0]
@@ -4590,7 +4594,15 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
         (currentUser?.email && currentUser.email.toLowerCase().includes('omkesh'))
       const myEmail = u.email || currentUser?.email || (isOm ? 'omkesh@coolsofttech.com' : 'recruiter@coolsofttech.com')
       const myRole = isOm ? 'superadmin' : (activeRole || u.role || (isManager ? 'manager' : 'recruiter'))
-      const res = await fetch(`/api/recruiter/vendor-hotlists?recruiterEmail=${encodeURIComponent(myEmail)}&role=${encodeURIComponent(myRole)}`)
+      const token = localStorage.getItem('smarthire_token') || ''
+      const authHeaders = {
+        'x-recruiter-email': myEmail,
+        'x-recruiter-role': myRole,
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      }
+      const res = await fetch(`/api/recruiter/vendor-hotlists?recruiterEmail=${encodeURIComponent(myEmail)}&role=${encodeURIComponent(myRole)}`, {
+        headers: authHeaders
+      })
       const data = await res.json()
       if (data && data.success && Array.isArray(data.hotlists)) {
         setVendorHotlists(data.hotlists)
@@ -4606,7 +4618,7 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
     const isOm = isSuperAdmin || 
       (currentUser?.email && currentUser.email.toLowerCase().includes('omkesh')) || 
       (currentUser?.name && currentUser.name.toLowerCase().includes('omkesh'))
-    if (isOm) return vendorHotlists
+    if (isOm || isSuperAdmin) return vendorHotlists
 
     const userMail = (currentUser?.email || '').toLowerCase().trim()
     if (isManager) {
