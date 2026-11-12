@@ -459,6 +459,7 @@ async function saveCandidateToFirestore(cand) {
 
 // MongoDB removed — using Firebase Firestore and fast disk caching
 const isMongoConnected = false;
+const recruitersDbPath = path.resolve(__dirname, 'recruiters.json');
 let recruitersMock = [
   { _id: 'rec-1', name: 'Omkesh', email: 'omkesh@coolsofttech.com', role: 'superadmin', refCode: 'omkesh', parentRecruiterName: '', company: 'SmartHire LLC', isActive: true, password: 'admin', lastLogin: '2026-08-27T18:45:00.000Z', createdAt: '2026-01-10T10:00:00.000Z' }
 ];
