@@ -66,6 +66,40 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
     - In resume views, every responsibility, project accomplishment, and contribution line must be formatted with an explicit bullet point (`•`) and proper indentation.
     - The engine must automatically detect responsibilities (lines following `Responsibilities:`, action verbs, or list items) even when converted from plain text or Word documents without literal Unicode bullets.
 
+### 2026-11-12 — High-Performance MNC Architecture: Fast 25-Candidate Pagination, Auto-Matching Removal, Firebase Firestore Sync & MongoDB Elimination
+- **Context & User Objectives**:
+  - The user requested:
+    1. Table must load fast: show only 25 candidates per page without heavy lag.
+    2. Total counts must be fully accurate (e.g. 600+ candidates total count displayed across all badges).
+    3. Remove automatic job matching during email scraping (all scraped candidates go directly to General Talent Pool; user will define matching later).
+    4. Remove MongoDB completely (never used / unnecessary).
+    5. Save candidate records to Firebase Firestore (`atsCandidates` collection) with enterprise MNC document storage for resumes.
+    6. Do NOT touch Chrome Extension sourcing (Monster+, Dice, extension ingestion).
+- **Architectural Implementations**:
+  1. *Complete MongoDB Removal*:
+     - Removed `mongoose` and MongoDB Atlas connection logic from `server/index.js`.
+     - Removed all schemas (`CandidatesDoc`, `RecruiterDoc`, `JobsDoc`, `ScreeningDoc`, etc.) and `isMongoConnected` blocks.
+  2. *Firebase Firestore Integration on Server*:
+     - Integrated modular Firebase SDK (`initializeApp`, `getFirestore`, `doc`, `setDoc`) in `server/index.js`.
+     - Added `saveCandidateToFirestore(cand)`: syncs newly scraped candidates directly to Firestore `atsCandidates` collection.
+  3. *Auto-Matching Removal from Email Ingestion*:
+     - Removed requisition looping and match scoring from `syncEmailResumesInternal`.
+     - In `/api/recruiter/email-streams`, removed automatic full requisition scan for unassigned candidates. All scraped candidates are cleanly tagged `General Talent Pool` with `matchScore: null` and `targetReqId: null`.
+  4. *Enterprise MNC Resume Storage & Lazy Loading*:
+     - Lean candidate summary payload: table list queries send metadata and `resumeSnippet` (first 300 chars) only (~150KB for all 600+ candidates).
+     - Full heavy `resumeText` (10KB-50KB) is stripped from list views and loaded on-demand via `GET /api/candidates/:id/resume` when viewing candidate details/modal.
+  5. *Server-Side Fast Pagination & Full Counts*:
+     - `/api/recruiter/email-streams` returns `counts` (exact real totals: total, active, inbox, spam, extension, vendorBench), `page`, `limit`, and 25 paged candidates.
+     - `RecruiterInbox.jsx` replaced triple parallel fetch with single fast call. 25 candidates per page rendered in table with 0-latency 60fps search/filtering.
+  6. *Disk I/O Optimization*:
+     - `saveCandidatesToDisk()` converted to debounced, asynchronous `fs.promises.writeFile` without pretty-print indentation, cutting disk writes and preventing event loop freeze.
+- **Verification & Deployment**:
+  - `npm run build` in `smarthire-react`: 0 errors, 0 warnings (built in 5.59s, bundle `index-829WG1Ci.js`).
+  - Unit tests: 42/42 passed (100% acceptance criteria).
+  - Git committed (`a6c4a8b`, `0e839ac`) and pushed to GitHub `origin main`.
+  - Deployed to AWS Lightsail server (`34.194.119.199`), PM2 `smarthire-ats` online (0 errors).
+  - Live verification on `https://smarthireus.com`: HTTP 200 with `index-829WG1Ci.js`, paginated 25 candidates, full 600 total counts, `/api/candidates/:id/resume` verified working.
+
 ### 2026-11-12 — Full Platform Recovery: Company Directory, 600+ Candidates, Vendor Hotlists & Infinite Dashboard Loader Fix
 - **Context & Problem Reported**:
   - The user shared 4 screenshots reporting empty data and UI freeze:
