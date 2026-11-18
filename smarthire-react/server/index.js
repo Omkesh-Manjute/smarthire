@@ -624,9 +624,9 @@ async function resolveRecruiterEmailFromRefCode(refCode) {
   }
   
   const rec = recruitersMock.find(r => 
-    r.refCode.toLowerCase() === cleanRef || 
-    r.refCode.toLowerCase().replace(/[-_]/g, '') === cleanRef.replace(/[-_]/g, '') ||
-    cleanRef.includes(r.refCode.toLowerCase())
+    (r.refCode && r.refCode.toLowerCase() === cleanRef) || 
+    (r.refCode && r.refCode.toLowerCase().replace(/[-_]/g, '') === cleanRef.replace(/[-_]/g, '')) ||
+    (r.refCode && cleanRef.includes(r.refCode.toLowerCase()))
   );
   if (rec) return rec.email.toLowerCase().trim();
   
@@ -1445,15 +1445,53 @@ async function loadScreeningFromDisk() {
   }
 }
 
+let isSavingScreening = false;
+let pendingSaveScreening = false;
+
 async function saveScreeningToDisk() {
+  if (isSavingScreening) {
+    pendingSaveScreening = true;
+    return;
+  }
+  isSavingScreening = true;
   try {
-    fs.writeFileSync(screeningDbPath, JSON.stringify(screeningStore, null, 2), 'utf-8');
-    if (isMongoConnected) {
+    const jsonStr = JSON.stringify(screeningStore);
+    await fs.promises.writeFile(screeningDbPath, jsonStr, 'utf-8');
+    if (typeof isMongoConnected !== 'undefined' && isMongoConnected) {
       await ScreeningDoc.findOneAndUpdate({}, { list: screeningStore }, { upsert: true });
       console.log('💾 Saved screening sessions to MongoDB Atlas.');
     }
   } catch (err) {
     console.error('⚠️  Failed to save screening sessions:', err.message);
+  } finally {
+    isSavingScreening = false;
+    if (pendingSaveScreening) {
+      pendingSaveScreening = false;
+      saveScreeningToDisk().catch(() => {});
+    }
+  }
+}
+
+let isSavingMessages = false;
+let pendingSaveMessages = false;
+
+async function saveMessagesToDisk() {
+  if (isSavingMessages) {
+    pendingSaveMessages = true;
+    return;
+  }
+  isSavingMessages = true;
+  try {
+    const jsonStr = JSON.stringify(messagesStore);
+    await fs.promises.writeFile(MESSAGES_FILE, jsonStr, 'utf-8');
+  } catch (err) {
+    console.error('Failed to save messages:', err.message);
+  } finally {
+    isSavingMessages = false;
+    if (pendingSaveMessages) {
+      pendingSaveMessages = false;
+      saveMessagesToDisk().catch(() => {});
+    }
   }
 }
 
@@ -1990,8 +2028,9 @@ async function parseResumeText(filePath, originalName, mimeType) {
     throw new Error('Unsupported file format. Please upload a PDF, DOCX, DOC, or TXT file.')
   }
 
-  // Normalize and clean Private Use Area characters (\uF000-\uF8FF, e.g. Wingdings bullets \uF0B7), replacement glyphs \uFFFD
+  // Normalize and clean control characters, Private Use Area characters (\uF000-\uF8FF, e.g. Wingdings bullets \uF0B7), replacement glyphs \uFFFD
   return extracted
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, ' ')
     .replace(/[\uF000-\uF8FF]/g, '')
     .replace(/\uFFFD/g, '');
 }
@@ -7196,19 +7235,19 @@ const handlePublicApplication = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Job ID, Name, and Email are required.' });
     }
 
-    const cleanTargetId = String(jobId).replace(/^J-/i, '').trim();
+    const cleanTargetId = String(jobId || '').replace(/^(?:J-|REQ-)/i, '').trim();
     let job = jobsStore.find(j => {
       const jId = String(j.id || '').trim();
-      const jClean = jId.replace(/^J-/i, '').trim();
-      const jReq = String(j.reqId || '').replace(/^J-/i, '').trim();
-      const jVms = String(j.vmsNumber || '').replace(/^J-/i, '').trim();
-      const jPos = String(j.positionNumber || '').replace(/^J-/i, '').trim();
+      const jClean = jId.replace(/^(?:J-|REQ-)/i, '').trim();
+      const jReq = String(j.reqId || '').replace(/^(?:J-|REQ-)/i, '').trim();
+      const jVms = String(j.vmsNumber || '').replace(/^(?:J-|REQ-)/i, '').trim();
+      const jPos = String(j.positionNumber || '').replace(/^(?:J-|REQ-)/i, '').trim();
       return (
-        jId === String(jobId).trim() ||
-        jClean === cleanTargetId ||
-        (jReq && jReq === cleanTargetId) ||
-        (jVms && jVms === cleanTargetId) ||
-        (jPos && jPos === cleanTargetId)
+        jId.toLowerCase() === String(jobId).toLowerCase().trim() ||
+        (cleanTargetId && jClean.toLowerCase() === cleanTargetId.toLowerCase()) ||
+        (cleanTargetId && jReq && jReq.toLowerCase() === cleanTargetId.toLowerCase()) ||
+        (cleanTargetId && jVms && jVms.toLowerCase() === cleanTargetId.toLowerCase()) ||
+        (cleanTargetId && jPos && jPos.toLowerCase() === cleanTargetId.toLowerCase())
       );
     });
 
@@ -7261,7 +7300,9 @@ const handlePublicApplication = async (req, res) => {
 
     if (resumeText && jobSkills.length > 0) {
       const textLower = resumeText.toLowerCase();
-      jobSkills.forEach(s => {
+      jobSkills.forEach(rawSkill => {
+        const s = String(rawSkill || '').trim();
+        if (!s) return;
         if (textLower.includes(s.toLowerCase())) {
           matched_skills.push(s);
         } else {
@@ -7371,8 +7412,9 @@ const handlePublicApplication = async (req, res) => {
     saveScreeningToDisk();
 
     // Create initial message in messages persistence store so it instantly shows up in Recruiter Inbox
+    const randSuffix = Math.floor(1000 + Math.random() * 9000);
     const initMsg = {
-      id: 'MSG-' + Date.now(),
+      id: `MSG-${Date.now()}-${randSuffix}`,
       candidateId: sessionId,
       sender: 'candidate',
       text: `Applied for ${job.title}. Please review my profile.`,
@@ -7382,10 +7424,10 @@ const handlePublicApplication = async (req, res) => {
       read: false
     };
     messagesStore.push(initMsg);
-    try { fs.writeFileSync(MESSAGES_FILE, JSON.stringify(messagesStore, null, 2)); } catch(e) {}
+    saveMessagesToDisk();
 
     // Sync into candidatesStore (ATS database) & Firestore
-    let savedCandidateId = 'C-' + Date.now().toString().slice(-5);
+    let savedCandidateId = `C-${Date.now().toString().slice(-5)}-${randSuffix}`;
     try {
       const cleanCandEmail = candidateEmail
         .trim()
@@ -7494,14 +7536,30 @@ const handlePublicApplication = async (req, res) => {
       };
 
       if (existingIndex >= 0) {
-        savedCandidateId = candidatesStore[existingIndex].id || candidatesStore[existingIndex].candidate_id || candidateId;
+        const existingCand = candidatesStore[existingIndex];
+        savedCandidateId = existingCand.id || existingCand.candidate_id || candidateId;
+
+        // Preserve existing uploaded file and URLs if this submission did not attach a new binary
+        const finalFileObj = uploadedFileObj || existingCand.file || null;
+        const finalResumeFileUrl = resumeFileUrl || body.resumeFileUrl || body.resumeUrl || existingCand.resumeFileUrl || existingCand.resume_file || (finalFileObj?.local_path) || null;
+        const finalResumeFileName = (uploadedFileObj ? resumeFileName : null) || existingCand.resumeFileName || (finalFileObj?.original_name) || resumeFileName || 'Uploaded_Resume.pdf';
+        const finalResumeText = (resumeText && resumeText.length > 50) 
+          ? resumeText 
+          : (existingCand.resumeText || existingCand.resume_text || resumeText);
+
         candidatesStore[existingIndex] = {
-          ...candidatesStore[existingIndex],
+          ...existingCand,
           ...candidateDoc,
           id: savedCandidateId,
           candidate_id: savedCandidateId,
-          documents: { ...(candidatesStore[existingIndex].documents || {}), ...resumeDocEntry },
-          legalDocs: { ...(candidatesStore[existingIndex].legalDocs || {}), ...resumeDocEntry },
+          file: finalFileObj,
+          resumeFileName: finalResumeFileName,
+          resumeFileUrl: finalResumeFileUrl,
+          resume_file: finalResumeFileUrl,
+          resumeText: finalResumeText,
+          resume_text: finalResumeText,
+          documents: { ...(existingCand.documents || {}), ...(uploadedFileObj ? resumeDocEntry : {}) },
+          legalDocs: { ...(existingCand.legalDocs || {}), ...(uploadedFileObj ? resumeDocEntry : {}) },
           updatedAt: nowIso,
           updated_at: nowIso
         };

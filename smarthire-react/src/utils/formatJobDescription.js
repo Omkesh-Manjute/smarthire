@@ -74,9 +74,25 @@ export const KNOWN_TITLE_MAP = [
   { match: /business analyst 5.*164891/i, positionNumber: '164891', reqId: '158949', title: 'Business Analyst 5' },
 ];
 
+export function normalizeJobId(val) {
+  if (!val) return '';
+  return String(val)
+    .trim()
+    .replace(/^#+/, '')
+    .replace(/^(?:J-|REQ-|REQ_|REQ\s*#?)/i, '')
+    .replace(/\/+$/, '')
+    .trim();
+}
+
 export function resolveReqId(rawId = '', job = {}) {
-  const strId = String(rawId || job?.reqId || job?.id || '').replace('J-', '').replace('REQ-', '').trim();
-  const title = String(job?.title || '');
+  let actualId = rawId;
+  let actualJob = job;
+  if (rawId && typeof rawId === 'object') {
+    actualJob = rawId;
+    actualId = rawId.reqId || rawId.id || rawId.jobId || '';
+  }
+  const strId = normalizeJobId(actualId || actualJob?.reqId || actualJob?.id || actualJob?.jobId || '');
+  const title = String(actualJob?.title || '');
 
   // 1. If InfoOrigin source or authentic 4-5 digit InfoOrigin Req ID (e.g. 7589, 7588), RETURN IT DIRECTLY!
   if (job?.source === 'InfoOrigin' || job?.client === 'InfoOrigin' || job?.company === 'InfoOrigin' || strId.startsWith('IO-')) {

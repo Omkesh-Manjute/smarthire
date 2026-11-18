@@ -222,6 +222,11 @@
   transform: scale(1.06);
 }
 
+.kss-linkedin {
+  background: #0a66c2 !important;
+  border-color: #08529c !important;
+}
+
 .kss-whatsapp {
   background: #25d366 !important;
   border-color: #20bd5a !important;

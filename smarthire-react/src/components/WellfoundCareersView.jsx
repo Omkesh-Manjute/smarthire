@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { resolveReqId } from '../utils/formatJobDescription'
+import { resolveReqId, normalizeJobId } from '../utils/formatJobDescription'
 import ShareSheet from './ui/ShareSheet'
 
 // ─── Crisp SVG Icons for Wellfound UI ───────────────────────────────────────
@@ -529,6 +529,7 @@ export default function WellfoundCareersView({
   const [activeCategoryFilter, setActiveCategoryFilter] = useState('all')
   const [currentPage, setCurrentPage] = useState(1)
   const PAGE_SIZE = 15 // 15 requisitions per page matching authentic StaffingOrigin pagination
+  const [dismissedNotFound, setDismissedNotFound] = useState(false)
 
   // Selected Job for Page 2 (Job Detail View)
   const [selectedJobId, setSelectedJobId] = useState(() => {
@@ -540,6 +541,11 @@ export default function WellfoundCareersView({
     return null
   })
   const centerPanelRef = useRef(null)
+
+  // Reset dismissed not-found banner on job change
+  useEffect(() => {
+    setDismissedNotFound(false)
+  }, [selectedJobId])
 
   // Listen to browser navigation popstate (Back/Forward buttons)
   useEffect(() => {
@@ -562,6 +568,7 @@ export default function WellfoundCareersView({
   // Select a job to open Page 2
   const handleSelectJob = (jobId) => {
     setSelectedJobId(jobId)
+    setDismissedNotFound(false)
     if (typeof window !== 'undefined') {
       const url = new URL(window.location.href)
       if (jobId) {
@@ -570,6 +577,8 @@ export default function WellfoundCareersView({
         url.searchParams.delete('jobId')
         url.searchParams.delete('job')
       }
+      url.searchParams.delete('apply')
+      url.searchParams.delete('action')
       window.history.pushState({}, '', url.pathname + url.search)
     }
     if (centerPanelRef.current) {
@@ -668,8 +677,58 @@ export default function WellfoundCareersView({
   // Selected Job object for Page 2
   const selectedJob = useMemo(() => {
     if (!selectedJobId) return null
-    return (jobs || []).find(j => j.id === selectedJobId) || null
+    const targetClean = normalizeJobId(selectedJobId)
+    const targetRaw = String(selectedJobId).trim()
+    return (jobs || []).find(j => {
+      if (!j) return false
+      const jRaw = String(j.id || '').trim()
+      if (jRaw === targetRaw) return true
+      const jClean = normalizeJobId(j.id)
+      const reqClean = normalizeJobId(j.reqId)
+      const resolvedReq = normalizeJobId(resolveReqId(j.id, j))
+      return (
+        (targetClean && jClean === targetClean) ||
+        (targetClean && reqClean === targetClean) ||
+        (targetClean && resolvedReq === targetClean) ||
+        (targetClean && jRaw === `J-${targetClean}`) ||
+        (targetClean && jRaw === `REQ-${targetClean}`)
+      )
+    }) || null
   }, [jobs, selectedJobId])
+
+  // Helper to determine if a candidate has already applied to this job
+  const isJobApplied = (job) => {
+    if (!job || !appliedJobs) return false
+    const jId = String(job.id || '').trim()
+    const reqId = String(job.reqId || '').trim()
+    const cleanId = normalizeJobId(jId)
+    const cleanReq = normalizeJobId(reqId)
+    const resolvedReq = normalizeJobId(resolveReqId(job.id, job))
+
+    if (Array.isArray(appliedJobs)) {
+      return appliedJobs.some(a => {
+        const aId = typeof a === 'string' ? a : String(a?.jobId || a?.id || '')
+        const aClean = normalizeJobId(aId)
+        return (
+          aId === jId ||
+          (cleanId && aClean === cleanId) ||
+          aId === reqId ||
+          (cleanReq && aClean === cleanReq) ||
+          (resolvedReq && aClean === resolvedReq)
+        )
+      })
+    }
+
+    return Boolean(
+      appliedJobs[jId] ||
+      (cleanId && appliedJobs[cleanId]) ||
+      (cleanId && appliedJobs[`J-${cleanId}`]) ||
+      (cleanId && appliedJobs[`REQ-${cleanId}`]) ||
+      (reqId && appliedJobs[reqId]) ||
+      (cleanReq && appliedJobs[cleanReq]) ||
+      (resolvedReq && appliedJobs[resolvedReq])
+    )
+  }
 
   // Strictly filter for open, non-expired jobs across all public views
   const openJobs = useMemo(() => {
@@ -819,7 +878,7 @@ export default function WellfoundCareersView({
         "identifier": {
           "@type": "PropertyValue",
           "name": "SmartHire ATS",
-          "value": resolveReqId(selectedJob)
+          "value": resolveReqId(selectedJob.reqId || selectedJob.id, selectedJob)
         },
         "datePosted": selectedJob.creationDate ? new Date(selectedJob.creationDate).toISOString().split('T')[0] : '2026-09-15',
         "validThrough": validUntil,
@@ -955,18 +1014,40 @@ export default function WellfoundCareersView({
         {/* Column 1: Role Title & Experience */}
         <div style={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
           <div style={{ minWidth: 0, flex: 1 }}>
-            <h4 style={{
-              margin: '0 0 3px',
-              fontSize: 14.5,
-              fontWeight: 700,
-              color: colors.textPrimary,
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              letterSpacing: '-0.01em'
-            }}>
-              {cleanTitle}
-            </h4>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
+              <h4 style={{
+                margin: 0,
+                fontSize: 14.5,
+                fontWeight: 700,
+                color: colors.textPrimary,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                letterSpacing: '-0.01em'
+              }}>
+                {cleanTitle}
+              </h4>
+              {isJobApplied(job) && (
+                <span style={{
+                  fontSize: 10.5,
+                  fontWeight: 700,
+                  padding: '1px 7px',
+                  borderRadius: 12,
+                  backgroundColor: '#DCFCE7',
+                  color: '#15803D',
+                  border: '1px solid #86EFAC',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 3,
+                  flexShrink: 0
+                }}>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  Applied
+                </span>
+              )}
+            </div>
             <div style={{ fontSize: 11.5, color: colors.textSecondary, display: 'flex', alignItems: 'center', gap: 6 }}>
               <span style={{ fontWeight: 600, color: '#2563EB' }}>
                 {formatExperience ? formatExperience(job) : '5+ Years Exp'}
@@ -1522,25 +1603,26 @@ export default function WellfoundCareersView({
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             {candidateUser ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                {/* Profile Pill */}
                 <div
                   onClick={() => onOpenProfileModal && onOpenProfileModal()}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 6,
+                    gap: 7,
                     padding: '4px 10px 4px 6px',
                     borderRadius: 20,
-                    backgroundColor: isLight ? '#F3F4F6' : '#1E293B',
+                    backgroundColor: isLight ? '#F1F5F9' : '#1E293B',
                     border: `1px solid ${colors.border}`,
                     cursor: 'pointer'
                   }}
-                  title="Click to view & edit Candidate Profile & Submitted Applications"
+                  title="Click to view Candidate Profile & Master Resume"
                 >
                   <div style={{
                     width: 24,
                     height: 24,
                     borderRadius: '50%',
-                    backgroundColor: '#0A0E1A',
+                    backgroundColor: '#0F172A',
                     color: '#FFFFFF',
                     display: 'flex',
                     alignItems: 'center',
@@ -1550,24 +1632,74 @@ export default function WellfoundCareersView({
                   }}>
                     {(candidateUser.name || candidateUser.email || 'U').charAt(0).toUpperCase()}
                   </div>
-                  <span style={{ fontSize: 12.5, fontWeight: 600, color: colors.textPrimary }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: colors.textPrimary }}>
                     {candidateUser.name || candidateUser.email?.split('@')[0]}
                   </span>
-                  <span style={{ fontSize: 11, color: '#2563EB', fontWeight: 700, marginLeft: 2 }}>Edit Profile</span>
                 </div>
+
+                {/* Prominent Edit Profile Button */}
                 <button
+                  type="button"
+                  onClick={() => onOpenProfileModal && onOpenProfileModal()}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 5,
+                    backgroundColor: isLight ? '#EFF6FF' : 'rgba(37, 99, 235, 0.15)',
+                    border: `1px solid ${isLight ? '#BFDBFE' : 'rgba(37, 99, 235, 0.35)'}`,
+                    color: '#2563EB',
+                    fontSize: 12.5,
+                    fontWeight: 600,
+                    padding: '5px 11px',
+                    borderRadius: 6,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                  title="Edit Profile & Master Resume"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                  <span>Edit Profile</span>
+                </button>
+
+                {/* Prominent Logout Button */}
+                <button
+                  type="button"
                   onClick={handleCandidateSignOut}
                   style={{
-                    background: 'none',
-                    border: 'none',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 5,
+                    backgroundColor: isLight ? '#F8FAFC' : '#1E293B',
+                    border: `1px solid ${colors.border}`,
                     color: colors.textSecondary,
                     fontSize: 12.5,
-                    fontWeight: 500,
+                    fontWeight: 600,
+                    padding: '5px 11px',
+                    borderRadius: 6,
                     cursor: 'pointer',
-                    padding: '4px 6px'
+                    transition: 'all 0.15s ease'
                   }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = '#DC2626'
+                    e.currentTarget.style.borderColor = '#FCA5A5'
+                    e.currentTarget.style.backgroundColor = isLight ? '#FEF2F2' : '#3B1818'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = colors.textSecondary
+                    e.currentTarget.style.borderColor = colors.border
+                    e.currentTarget.style.backgroundColor = isLight ? '#F8FAFC' : '#1E293B'
+                  }}
+                  title="Sign out / Logout"
                 >
-                  Sign out
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                    <polyline points="16 17 21 12 16 7"/>
+                    <line x1="21" y1="12" x2="9" y2="12"/>
+                  </svg>
+                  <span>Logout</span>
                 </button>
               </div>
             ) : (
@@ -1611,11 +1743,49 @@ export default function WellfoundCareersView({
         </div>
       </header>
 
+      {/* ─── Loading indicator when targeted job is resolving ─── */}
+      {loading && selectedJobId && (
+        <div style={{ maxWidth: 1560, margin: '40px auto', padding: '60px 24px', textAlign: 'center' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 12, padding: '16px 28px', borderRadius: 12, backgroundColor: colors.cardBg, border: `1px solid ${colors.border}` }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={colors.accentCoral} strokeWidth="2.5" style={{ animation: 'spin 1s linear infinite' }}>
+              <circle cx="12" cy="12" r="10" strokeDasharray="32" strokeDashoffset="12" />
+            </svg>
+            <span style={{ fontSize: 14, fontWeight: 600, color: colors.textPrimary }}>Loading requisition #{selectedJobId}...</span>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Dismissible Alert Banner when targeted job is not found ─── */}
+      {!loading && selectedJobId && !selectedJob && !dismissedNotFound && (
+        <div style={{ maxWidth: 1200, margin: '20px auto 0', padding: '14px 20px', borderRadius: 10, backgroundColor: isLight ? '#FEF2F2' : '#2D1517', border: `1px solid ${isLight ? '#FCA5A5' : '#7F1D1D'}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2.2">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            <span style={{ fontSize: 13.5, fontWeight: 600, color: isLight ? '#991B1B' : '#FCA5A5' }}>
+              Requisition #{selectedJobId} was not found or is no longer available. Showing all available positions below.
+            </span>
+          </div>
+          <button
+            onClick={() => setDismissedNotFound(true)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: isLight ? '#991B1B' : '#FCA5A5', padding: 4, display: 'flex' }}
+            aria-label="Dismiss alert"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+      )}
+
       {/* ═══════════════════════════════════════════════════════════════════════
           PAGE 1: ALL JOBS CATEGORIZED FRONT PAGE (When !selectedJob)
           Matches media_1789659179557.png
       ═══════════════════════════════════════════════════════════════════════ */}
-      {!selectedJob && (
+      {!selectedJob && !(loading && selectedJobId) && (
         <main>
           {/* ── 1. Hero Section ── */}
           <section style={{
@@ -2516,8 +2686,9 @@ export default function WellfoundCareersView({
                       {/* Top Row: Title & Right Arrow */}
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
                         <div style={{ minWidth: 0, flex: 1 }}>
-                          <h4 style={{
-                              margin: '0 0 2px',
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                            <h4 style={{
+                              margin: 0,
                               fontSize: 14.5,
                               fontWeight: 700,
                               color: colors.textPrimary,
@@ -2528,7 +2699,28 @@ export default function WellfoundCareersView({
                             }}>
                               {cleanTitle}
                             </h4>
-                            <div style={{
+                            {isJobApplied(job) && (
+                              <span style={{
+                                fontSize: 10,
+                                fontWeight: 700,
+                                padding: '1px 6px',
+                                borderRadius: 10,
+                                backgroundColor: '#DCFCE7',
+                                color: '#15803D',
+                                border: '1px solid #86EFAC',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 2,
+                                flexShrink: 0
+                              }}>
+                                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                                  <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                                Applied
+                              </span>
+                            )}
+                          </div>
+                          <div style={{
                             fontSize: 12,
                             fontWeight: 600,
                             color: colors.textSecondary,
@@ -2719,7 +2911,7 @@ export default function WellfoundCareersView({
 
                     {/* VengeanceUI Share Sheet for Job */}
                     <ShareSheet
-                      url={typeof window !== 'undefined' ? `${window.location.origin}/jobs?jobId=${resolveReqId(selectedJob) || selectedJob.id}` : ''}
+                      url={typeof window !== 'undefined' ? `${window.location.origin}/jobs?jobId=${normalizeJobId(selectedJob.id || selectedJob.reqId) || selectedJob.id}` : ''}
                       title={`${selectedJob.jobTitle || selectedJob.title || 'Career Opening'} at SmartHire`}
                       text={`Check out this opening: ${selectedJob.jobTitle || selectedJob.title || 'Role'} in ${selectedJob.location || 'Remote'} on SmartHire!`}
                       trigger={
@@ -2752,6 +2944,26 @@ export default function WellfoundCareersView({
                       }
                     />
 
+                    {isJobApplied(selectedJob) && (
+                      <span style={{
+                        fontSize: 12,
+                        fontWeight: 700,
+                        padding: '6px 12px',
+                        borderRadius: 8,
+                        backgroundColor: '#DCFCE7',
+                        color: '#15803D',
+                        border: '1px solid #86EFAC',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 5
+                      }}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                        Applied
+                      </span>
+                    )}
+
                     <button
                       disabled={isSelectedJobExpired}
                       onClick={() => !isSelectedJobExpired && handleApplyClick && handleApplyClick(selectedJob)}
@@ -2771,7 +2983,7 @@ export default function WellfoundCareersView({
                       onMouseEnter={(e) => { if (!isSelectedJobExpired) e.currentTarget.style.opacity = '0.88' }}
                       onMouseLeave={(e) => { if (!isSelectedJobExpired) e.currentTarget.style.opacity = '1' }}
                     >
-                      {isSelectedJobExpired ? 'Position Closed' : 'Apply Now'}
+                      {isSelectedJobExpired ? 'Position Closed' : isJobApplied(selectedJob) ? 'Applied (Re-Apply)' : 'Apply Now'}
                     </button>
                   </div>
                 </div>
@@ -3202,12 +3414,32 @@ export default function WellfoundCareersView({
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                     <ShareSheet
-                      url={typeof window !== 'undefined' ? `${window.location.origin}/jobs?jobId=${resolveReqId(selectedJob) || selectedJob.id}` : ''}
+                      url={typeof window !== 'undefined' ? `${window.location.origin}/jobs?jobId=${normalizeJobId(selectedJob.id || selectedJob.reqId) || selectedJob.id}` : ''}
                       title={`${selectedJob.jobTitle || selectedJob.title || 'Career Opening'} at SmartHire`}
                       text={`Check out this opening: ${selectedJob.jobTitle || selectedJob.title || 'Role'} in ${selectedJob.location || 'Remote'} on SmartHire!`}
                       label="Share Opening"
                       variant="outline"
                     />
+
+                    {isJobApplied(selectedJob) && (
+                      <span style={{
+                        fontSize: 12,
+                        fontWeight: 700,
+                        padding: '8px 14px',
+                        borderRadius: 8,
+                        backgroundColor: '#DCFCE7',
+                        color: '#15803D',
+                        border: '1px solid #86EFAC',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 5
+                      }}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                        Applied
+                      </span>
+                    )}
 
                     <button
                       disabled={isSelectedJobExpired}
@@ -3228,7 +3460,7 @@ export default function WellfoundCareersView({
                       onMouseEnter={(e) => { if (!isSelectedJobExpired) e.currentTarget.style.opacity = '0.88' }}
                       onMouseLeave={(e) => { if (!isSelectedJobExpired) e.currentTarget.style.opacity = '1' }}
                     >
-                      {isSelectedJobExpired ? 'Position Closed' : 'Apply for this position →'}
+                      {isSelectedJobExpired ? 'Position Closed' : isJobApplied(selectedJob) ? 'Applied (Re-Apply) →' : 'Apply for this position →'}
                     </button>
                   </div>
                 </div>

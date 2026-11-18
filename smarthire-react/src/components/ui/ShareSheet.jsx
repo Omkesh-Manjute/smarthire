@@ -103,6 +103,16 @@ function Brand({ name }) {
       </svg>
     )
   }
+  if (name === 'linkedin') {
+    return (
+      <svg viewBox="0 0 32 32" width="20" height="20" fill="none" aria-hidden="true">
+        <path
+          fill="white"
+          d="M8.5 11.5H5.1V22.5H8.5V11.5ZM6.8 6.5C5.7 6.5 4.8 7.4 4.8 8.5C4.8 9.6 5.7 10.5 6.8 10.5C7.9 10.5 8.8 9.6 8.8 8.5C8.8 7.4 7.9 6.5 6.8 6.5ZM26.9 16.5C26.9 13.5 25.3 11.3 22 11.3C20.3 11.3 19.3 12.2 18.8 13.1V11.5H15.5V22.5H18.9V16.9C18.9 15.4 19.2 14 21.1 14C23 14 23.1 15.8 23.1 17V22.5H26.9V16.5Z"
+        />
+      </svg>
+    )
+  }
   if (name === 'x') {
     return (
       <svg viewBox="0 0 32 32" width="20" height="20" fill="none" aria-hidden="true">
@@ -224,6 +234,7 @@ export function ShareSheet({
     const msg = message.trim() || title
     const q = encodeURIComponent
     const targets = {
+      linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${q(link)}`,
       whatsapp: `https://api.whatsapp.com/send?text=${q(`${msg} ${link}`)}`,
       telegram: `https://t.me/share/url?url=${q(link)}&text=${q(msg)}`,
       x: `https://twitter.com/intent/tweet?url=${q(link)}&text=${q(msg)}`,
@@ -270,6 +281,7 @@ export function ShareSheet({
 
   const channels = [
     { id: 'link', label: 'Copy Link', icon: <Icon name="link" size={18} /> },
+    { id: 'linkedin', label: 'LinkedIn', brand: 'linkedin' },
     { id: 'whatsapp', label: 'WhatsApp', brand: 'whatsapp' },
     { id: 'telegram', label: 'Telegram', brand: 'telegram' },
     { id: 'x', label: 'X', brand: 'x' },

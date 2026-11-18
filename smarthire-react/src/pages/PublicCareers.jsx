@@ -1,17 +1,18 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { useNavigate, useSearchParams, Link } from 'react-router-dom'
+import { useNavigate, useSearchParams, useParams, Link } from 'react-router-dom'
 import CandidateMessengerWidget from '../components/CandidateMessengerWidget'
 import SmartHireBotWidget from '../components/SmartHireBotWidget'
 import { saveCareerApplication, getAtsJobs, saveRequisitionCandidates, saveCandidate } from '../lib/atsFirestore'
 import { loginWithGoogle, formatAuthError } from '../lib/firebase'
-import { formatJobDescription, resolveJobLocation, cleanJobTitleWithPositionNumber, resolveReqId } from '../utils/formatJobDescription'
+import { formatJobDescription, resolveJobLocation, cleanJobTitleWithPositionNumber, resolveReqId, normalizeJobId } from '../utils/formatJobDescription'
 import WellfoundCareersView from '../components/WellfoundCareersView'
 import CandidateProfileModal from '../components/CandidateProfileModal'
 
 export default function PublicCareers() {
   const navigate = useNavigate()
+  const { jobId: pathJobId } = useParams()
   const [searchParams] = useSearchParams()
-  const targetJobId = searchParams.get('jobId') || searchParams.get('job')
+  const targetJobId = pathJobId || searchParams.get('jobId') || searchParams.get('job')
 
   const ALL_SMARTHIRE_RECRUITERS = [
     { name: 'Super Admin', email: 'support@smarthireus.com', refCode: 'omkesh', role: 'Super Admin' },
@@ -285,7 +286,113 @@ export default function PublicCareers() {
   const [isGoogleSigningIn, setIsGoogleSigningIn] = useState(false)
   const [candidateLoginError, setCandidateLoginError] = useState('')
 
-  const handleCandidateProfileUpdate = (updatedUser, updatedProfile, resumeFile) => {
+  // Master Saved Resume Record (persists across jobs & reloads)
+  const [masterResumeRecord, setMasterResumeRecord] = useState(() => {
+    try {
+      const saved = localStorage.getItem('smarthire_saved_master_resume')
+      return saved ? JSON.parse(saved) : null
+    } catch (_) { return null }
+  })
+
+  // Centralized candidate profile persistence helper (atomic update across keys & state)
+  const persistCandidateProfileData = (profileData = {}) => {
+    try {
+      let existingProfile = {}
+      try {
+        const saved = localStorage.getItem('smarthire_candidate_profile')
+        if (saved) existingProfile = JSON.parse(saved)
+      } catch (_) {}
+
+      let existingUser = {}
+      try {
+        const savedU = localStorage.getItem('smarthire_candidate_user')
+        if (savedU) existingUser = JSON.parse(savedU)
+      } catch (_) {}
+
+      const cleanName = profileData.name || existingProfile.name || existingUser.name || ''
+      const cleanEmail = profileData.email || existingProfile.email || existingUser.email || ''
+      const cleanPhone = profileData.phone || existingProfile.phone || existingUser.phone || ''
+      const cleanLocation = profileData.location || profileData.currentLocation || existingProfile.location || existingUser.location || ''
+      const cleanRelocate = profileData.relocatePref || existingProfile.relocatePref || existingUser.relocatePref || 'Yes'
+      const cleanVisa = profileData.visaStatus || existingProfile.visaStatus || existingUser.visaStatus || 'US Citizen'
+      const cleanContract = profileData.contractType || existingProfile.contractType || existingUser.contractType || 'C2C'
+      const cleanRate = profileData.expectedRate !== undefined ? profileData.expectedRate : (existingProfile.expectedRate !== undefined ? existingProfile.expectedRate : (existingUser.expectedRate || ''))
+      const cleanResumeName = profileData.resumeFileName || existingProfile.resumeFileName || existingUser.resumeFileName || ''
+
+      const mergedProfile = {
+        ...existingProfile,
+        ...profileData,
+        name: cleanName,
+        email: cleanEmail,
+        phone: cleanPhone,
+        location: cleanLocation,
+        relocatePref: cleanRelocate,
+        visaStatus: cleanVisa,
+        contractType: cleanContract,
+        expectedRate: cleanRate,
+        resumeFileName: cleanResumeName,
+        updatedAt: new Date().toISOString()
+      }
+
+      const mergedUser = {
+        ...existingUser,
+        name: cleanName,
+        email: cleanEmail,
+        phone: cleanPhone,
+        location: cleanLocation,
+        relocatePref: cleanRelocate,
+        visaStatus: cleanVisa,
+        contractType: cleanContract,
+        expectedRate: cleanRate,
+        resumeFileName: cleanResumeName
+      }
+
+      localStorage.setItem('smarthire_candidate_profile', JSON.stringify(mergedProfile))
+      localStorage.setItem('smarthire_candidate_user', JSON.stringify(mergedUser))
+      setCandidateUser(mergedUser)
+
+      return { profile: mergedProfile, user: mergedUser }
+    } catch (err) {
+      console.warn('Failed to persist candidate profile data:', err)
+      return null
+    }
+  }
+
+  const reconstructFileFromBase64 = (base64Str, filename = 'Resume.pdf', mimeType) => {
+    if (!base64Str || typeof base64Str !== 'string') return null
+    try {
+      const cleanFilename = filename && filename.trim() ? filename.trim() : 'Resume.pdf'
+      let mime = mimeType || 'application/octet-stream'
+      let rawBase64 = base64Str
+
+      if (base64Str.includes(',')) {
+        const parts = base64Str.split(',')
+        const mimeMatch = parts[0].match(/:(.*?);/)
+        if (mimeMatch && mimeMatch[1]) mime = mimeMatch[1]
+        rawBase64 = parts[1]
+      } else {
+        const ext = cleanFilename.split('.').pop().toLowerCase()
+        if (ext === 'pdf') mime = 'application/pdf'
+        else if (ext === 'docx') mime = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        else if (ext === 'doc') mime = 'application/msword'
+        else if (ext === 'txt') mime = 'text/plain'
+      }
+
+      rawBase64 = rawBase64.replace(/\s/g, '')
+      const bstr = atob(rawBase64)
+      let n = bstr.length
+      const u8arr = new Uint8Array(n)
+      while (n--) {
+        u8arr[n] = bstr.charCodeAt(n)
+      }
+      return new File([u8arr], cleanFilename, { type: mime, lastModified: Date.now() })
+    } catch (err) {
+      console.warn('Could not reconstruct File from base64:', err)
+      return null
+    }
+  }
+
+  const handleCandidateProfileUpdate = (updatedUser, updatedProfile, resumeFileObj, resumeTextVal, resumeBase64Val) => {
     setCandidateUser(updatedUser)
     if (updatedProfile.name) setCandidateName(updatedProfile.name)
     if (updatedProfile.email) setCandidateEmail(updatedProfile.email)
@@ -295,16 +402,35 @@ export default function PublicCareers() {
     if (updatedProfile.visaStatus) setVisaStatus(updatedProfile.visaStatus)
     if (updatedProfile.contractType) setContractType(updatedProfile.contractType)
     if (updatedProfile.expectedRate) setExpectedRate(updatedProfile.expectedRate)
-    if (resumeFile) setResumeFile(resumeFile)
+
+    let activeFile = resumeFileObj
+    if (!activeFile && resumeBase64Val) {
+      activeFile = reconstructFileFromBase64(resumeBase64Val, updatedProfile.resumeFileName || 'Resume.pdf')
+    }
+    if (activeFile) {
+      setResumeFile(activeFile)
+      const rec = {
+        name: activeFile.name,
+        type: activeFile.type || 'application/octet-stream',
+        size: activeFile.size || 0,
+        base64: resumeBase64Val,
+        text: resumeTextVal || '',
+        updatedAt: new Date().toISOString()
+      }
+      setMasterResumeRecord(rec)
+    }
+    if (resumeTextVal) setResumeText(resumeTextVal)
   }
 
   const handleCandidateLogin = (userObj) => {
     setCandidateUser(userObj)
-    try { localStorage.setItem('smarthire_candidate_user', JSON.stringify(userObj)) } catch(e) {}
+    persistCandidateProfileData(userObj)
     setShowLoginModal(false)
     setCandidateLoginError('')
     if (userObj.name) setCandidateName(userObj.name)
     if (userObj.email) setCandidateEmail(userObj.email)
+    if (userObj.phone) setCandidatePhone(userObj.phone)
+    if (userObj.location) setCurrentLocation(userObj.location)
     if (targetJobForLogin) {
       openApplicationModal(targetJobForLogin)
       setTargetJobForLogin(null)
@@ -561,13 +687,25 @@ export default function PublicCareers() {
       if (data.success && Array.isArray(data.jobs) && data.jobs.length > 0) {
         setJobs(data.jobs)
         if (targetJobId) {
-          const cleanTarget = String(targetJobId).replace('J-', '')
-          const match = data.jobs.find(j => 
-            j.id === targetJobId || 
-            String(j.id).replace('J-', '') === cleanTarget ||
-            j.id === `J-${cleanTarget}`
-          )
-          if (match) openApplicationModal(match)
+          const cleanTarget = normalizeJobId(targetJobId)
+          const targetRaw = String(targetJobId).trim()
+          const match = data.jobs.find(j => {
+            if (!j) return false
+            const jRaw = String(j.id || '').trim()
+            if (jRaw === targetRaw) return true
+            const jClean = normalizeJobId(j.id)
+            const reqClean = normalizeJobId(j.reqId)
+            const resolvedReq = normalizeJobId(resolveReqId(j.id, j))
+            return (
+              (cleanTarget && jClean === cleanTarget) ||
+              (cleanTarget && reqClean === cleanTarget) ||
+              (cleanTarget && resolvedReq === cleanTarget) ||
+              (cleanTarget && jRaw === `J-${cleanTarget}`) ||
+              (cleanTarget && jRaw === `REQ-${cleanTarget}`)
+            )
+          })
+          const shouldAutoOpenModal = searchParams.get('apply') === 'true' || searchParams.get('action') === 'apply'
+          if (match && shouldAutoOpenModal) openApplicationModal(match)
         }
         setLoading(false)
         return
@@ -581,13 +719,25 @@ export default function PublicCareers() {
       if (firestoreJobs && firestoreJobs.length > 0) {
         setJobs(firestoreJobs)
         if (targetJobId) {
-          const cleanTarget = String(targetJobId).replace('J-', '')
-          const match = firestoreJobs.find(j => 
-            j.id === targetJobId || 
-            String(j.id).replace('J-', '') === cleanTarget ||
-            j.id === `J-${cleanTarget}`
-          )
-          if (match) openApplicationModal(match)
+          const cleanTarget = normalizeJobId(targetJobId)
+          const targetRaw = String(targetJobId).trim()
+          const match = firestoreJobs.find(j => {
+            if (!j) return false
+            const jRaw = String(j.id || '').trim()
+            if (jRaw === targetRaw) return true
+            const jClean = normalizeJobId(j.id)
+            const reqClean = normalizeJobId(j.reqId)
+            const resolvedReq = normalizeJobId(resolveReqId(j.id, j))
+            return (
+              (cleanTarget && jClean === cleanTarget) ||
+              (cleanTarget && reqClean === cleanTarget) ||
+              (cleanTarget && resolvedReq === cleanTarget) ||
+              (cleanTarget && jRaw === `J-${cleanTarget}`) ||
+              (cleanTarget && jRaw === `REQ-${cleanTarget}`)
+            )
+          })
+          const shouldAutoOpenModal = searchParams.get('apply') === 'true' || searchParams.get('action') === 'apply'
+          if (match && shouldAutoOpenModal) openApplicationModal(match)
         }
       }
     } catch (fErr) {
@@ -606,27 +756,60 @@ export default function PublicCareers() {
     setSubmitSuccess(null)
     setSubmitError('')
     setSubmitting(false)
-    setResumeFile(null)
-    setResumeText('')
 
-    // Auto-populate from saved candidate profile if available
+    // Auto-populate from saved candidate profile or user if available
     let profile = {}
     try {
       const savedProfile = localStorage.getItem('smarthire_candidate_profile')
       if (savedProfile) profile = JSON.parse(savedProfile)
     } catch (e) {}
 
-    setCandidateName(profile.name || candidateUser?.name || '')
-    setCandidateEmail(profile.email || candidateUser?.email || '')
-    setCandidatePhone(profile.phone || candidateUser?.phone || '')
-    setCurrentLocation(profile.location || '')
-    if (profile.relocatePref) setRelocatePref(profile.relocatePref)
-    if (profile.contractType) setContractType(profile.contractType)
-    if (profile.visaStatus) setVisaStatus(profile.visaStatus)
-    if (profile.expectedRate) setExpectedRate(profile.expectedRate)
+    let user = candidateUser || {}
+    if (!user.email) {
+      try {
+        const savedUser = localStorage.getItem('smarthire_candidate_user')
+        if (savedUser) user = JSON.parse(savedUser)
+      } catch (e) {}
+    }
 
-    setAutoFillSuccess(Boolean(profile.name || candidateUser?.name))
-    setDetailsVerified(Boolean(profile.name || candidateUser?.name))
+    setCandidateName(profile.name || user.name || candidateName || '')
+    setCandidateEmail(profile.email || user.email || candidateEmail || '')
+    setCandidatePhone(profile.phone || user.phone || candidatePhone || '')
+    setCurrentLocation(profile.location || user.location || currentLocation || '')
+    if (profile.relocatePref || user.relocatePref) setRelocatePref(profile.relocatePref || user.relocatePref)
+    if (profile.contractType || user.contractType) setContractType(profile.contractType || user.contractType)
+    if (profile.visaStatus || user.visaStatus) setVisaStatus(profile.visaStatus || user.visaStatus)
+    if (profile.expectedRate || user.expectedRate) setExpectedRate(profile.expectedRate || user.expectedRate)
+
+    // Check for existing master resume (in memory or localStorage)
+    let activeResume = resumeFile
+    let activeResumeText = resumeText
+    if (!activeResume) {
+      let rec = masterResumeRecord
+      if (!rec) {
+        try {
+          const raw = localStorage.getItem('smarthire_saved_master_resume')
+          if (raw) rec = JSON.parse(raw)
+        } catch (_) {}
+      }
+      if (rec && rec.base64) {
+        activeResume = reconstructFileFromBase64(rec.base64, rec.name, rec.type)
+        activeResumeText = rec.text || activeResumeText || ''
+        setMasterResumeRecord(rec)
+      }
+    }
+
+    if (activeResume) {
+      setResumeFile(activeResume)
+      if (activeResumeText) setResumeText(activeResumeText)
+      setAutoFillSuccess(true)
+      setDetailsVerified(true)
+    } else {
+      setResumeFile(null)
+      setResumeText('')
+      setAutoFillSuccess(Boolean(profile.name || candidateUser?.name))
+      setDetailsVerified(Boolean(profile.name || candidateUser?.name))
+    }
     setParsedSkills([])
   }
 
@@ -640,6 +823,19 @@ export default function PublicCareers() {
     setAutoFillSuccess(false)
     setParsedSkills([])
     setSubmitError('')
+
+    // Read and store as master resume base64 first to avoid race conditions
+    let base64Data = ''
+    try {
+      base64Data = await new Promise((resolve) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve(reader.result || '')
+        reader.onerror = () => resolve('')
+        reader.readAsDataURL(file)
+      })
+    } catch (_) {
+      base64Data = ''
+    }
 
     try {
       const formData = new FormData()
@@ -657,6 +853,8 @@ export default function PublicCareers() {
       } catch (_) {
         result = { success: false, message: 'Could not read resume parser response.' }
       }
+
+      let extractedResumeText = ''
       if (result.success) {
         const p = result.profile || result
         let rawExtractedName = String(p.name || result.name || '').trim()
@@ -668,7 +866,7 @@ export default function PublicCareers() {
         const extractedPhone = p.phone || result.phone
         const extractedLocation = p.location || result.location
         const extractedSkills = Array.isArray(p.skills) ? p.skills : (Array.isArray(result.skills) ? result.skills : [])
-        const extractedResumeText = p.resumeText || result.text || ''
+        extractedResumeText = p.resumeText || result.text || ''
         if (extractedEmail) setCandidateEmail(extractedEmail)
         if (extractedPhone) setCandidatePhone(extractedPhone)
         if (extractedLocation) setCurrentLocation(extractedLocation)
@@ -681,6 +879,15 @@ export default function PublicCareers() {
         if (extractedEmail || extractedPhone || extractedLocation || (rawExtractedName && rawExtractedName.toUpperCase() !== 'PDF')) {
           setAutoFillSuccess(true)
         }
+
+        // Persist parsed profile fields immediately to localStorage
+        persistCandidateProfileData({
+          name: (rawExtractedName && rawExtractedName.toUpperCase() !== 'PDF') ? rawExtractedName : undefined,
+          email: extractedEmail || undefined,
+          phone: extractedPhone || undefined,
+          location: extractedLocation || undefined,
+          resumeFileName: file.name
+        })
       } else {
         if (file.name) {
           const fallback = cleanNameFromFileName(file.name)
@@ -688,8 +895,23 @@ export default function PublicCareers() {
         }
         const text = await file.text().catch(() => '')
         if (text && text.length > 50 && !/[\x00-\x08\x0E-\x1F]/.test(text.slice(0, 200))) {
+          extractedResumeText = text
           setResumeText(text)
         }
+      }
+
+      // Atomically persist master resume record with both base64 and parsed text
+      if (base64Data) {
+        const masterRec = {
+          name: file.name,
+          type: file.type || 'application/octet-stream',
+          size: file.size,
+          base64: base64Data,
+          text: extractedResumeText || '',
+          updatedAt: new Date().toISOString()
+        }
+        setMasterResumeRecord(masterRec)
+        try { localStorage.setItem('smarthire_saved_master_resume', JSON.stringify(masterRec)) } catch (_) {}
       }
     } catch (err) {
       console.error('Resume parsing error:', err)
@@ -915,17 +1137,42 @@ export default function PublicCareers() {
         setAppliedJobs(updated)
         try { localStorage.setItem('smarthire_applied_jobs', JSON.stringify(updated)) } catch(e) {}
 
+        // Persist submitted profile atomically so repeat applications rehydrate effortlessly
+        persistCandidateProfileData({
+          name: parsedName,
+          email: candidateEmail.trim(),
+          phone: candidatePhone.trim(),
+          location: currentLocation.trim(),
+          relocatePref,
+          visaStatus,
+          contractType,
+          expectedRate,
+          resumeFileName: resumeFile?.name || ''
+        })
+
         const newApp = {
           fName: parsedName.split(' ')[0] || parsedName,
           lName: parsedName.split(' ').slice(1).join(' ') || '',
           name: parsedName,
+          candidateName: parsedName,
           email: candidateEmail.trim(),
+          candidateEmail: candidateEmail.trim(),
           phone: candidatePhone.trim() || '—',
           canId: data.candidateId || String(Math.floor(10000 + Math.random() * 89999)),
           reqId: safeJobId.replace(/^J-/i, ''),
           jobId: safeJobId,
           jobTitle: selectedJob.title,
+          role: selectedJob.title,
+          client: selectedJob.client || selectedJob.source || selectedJob.company || 'Direct Client',
+          payRate: expectedRate ? `$${expectedRate}/hr` : 'Negotiable',
+          expectedRate: expectedRate ? `$${expectedRate}/hr` : '',
+          visaStatus: visaStatus || 'US Citizen',
+          contractType: contractType || 'C2C',
+          currentLocation: currentLocation.trim() || '—',
+          location: currentLocation.trim() || '—',
+          relocatePref: relocatePref || 'Yes',
           appliedDate: new Date().toLocaleDateString('en-US') + ' ' + new Date().toLocaleTimeString('en-US'),
+          createdAt: new Date().toISOString(),
           status: 'Int-SubmittedToManager',
           comments: `Submitted from SmartHire Careers via ${activeRecruiter.name}`,
           recruiter: activeRecruiter.name,
@@ -964,9 +1211,9 @@ export default function PublicCareers() {
           sourceCategory: 'careers_portal',
           sourceLabel: 'Job Site',
           appliedFrom: 'Job Site Application',
-          jobSource: selectedJob.source || (selectedJob.client === 'InfoOrigin' ? 'InfoOrigin' : 'COOLSOFT'),
-          matchedJobClient: selectedJob.client || selectedJob.source || 'COOLSOFT',
-          client: selectedJob.client || selectedJob.source || 'COOLSOFT',
+          jobSource: selectedJob.source || (selectedJob.client === 'InfoOrigin' ? 'InfoOrigin' : 'Direct Client'),
+          matchedJobClient: selectedJob.client || selectedJob.source || 'Direct Client',
+          client: selectedJob.client || selectedJob.source || 'Direct Client',
           skills: Array.isArray(selectedJob.skills) ? selectedJob.skills : ['Core Proficiencies'],
           reqId: resolvedReqId || cleanReqId,
           targetReqId: resolvedReqId || cleanReqId,
@@ -1043,7 +1290,7 @@ export default function PublicCareers() {
     }}>
       {/* ─── WELLFOUND CAREERS MASTER VIEW (ZONAL & CLASSIC REMOVED) ─── */}
       <WellfoundCareersView
-        jobs={activeOpenJobs}
+        jobs={jobs}
         filteredJobs={filteredJobs}
         loading={loading}
         targetJobId={targetJobId}
@@ -1365,14 +1612,18 @@ export default function PublicCareers() {
                       style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
                     />
                     {resumeFile ? (
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, color: '#16A34A', fontWeight: 700, fontSize: 13 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, color: '#16A34A', fontWeight: 700, fontSize: 13, flexWrap: 'wrap' }}>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                         <span>{resumeFile.name} ({(resumeFile.size / 1024).toFixed(1)} KB)</span>
+                        <span style={{ fontSize: 11, backgroundColor: '#DCFCE7', color: '#15803D', padding: '2px 8px', borderRadius: 4, fontWeight: 700 }}>
+                          Auto-Attached Master Resume
+                        </span>
                         <button
                           type="button"
-                          onClick={(e) => { e.stopPropagation(); setResumeFile(null); setResumeText(''); setCandidateName(''); setAutoFillSuccess(false); }}
+                          onClick={(e) => { e.stopPropagation(); setResumeFile(null); setResumeText(''); setAutoFillSuccess(false); }}
                           style={{ background: 'transparent', border: 'none', color: '#DC2626', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}
                         >
-                          Remove
+                          Replace
                         </button>
                       </div>
                     ) : (
@@ -1458,6 +1709,57 @@ export default function PublicCareers() {
                     </div>
                   </div>
 
+                  {/* Row: Location & Work Authorization */}
+                  <div style={{ display: 'flex', gap: 12 }}>
+                    <div style={{ flex: 1 }}>
+                      <label style={{ fontSize: 12, fontWeight: 700, color: theme.textPrimary, display: 'block', marginBottom: 4 }}>Current Location (City, State)</label>
+                      <input
+                        type="text"
+                        value={currentLocation}
+                        onChange={(e) => setCurrentLocation(e.target.value)}
+                        placeholder="e.g. Austin, TX or Remote"
+                        style={{
+                          width: '100%',
+                          backgroundColor: theme.inputBg,
+                          border: `1px solid ${theme.inputBorder}`,
+                          color: theme.textPrimary,
+                          borderRadius: 8,
+                          padding: '10px 12px',
+                          fontSize: 13,
+                          outline: 'none',
+                          boxSizing: 'border-box'
+                        }}
+                      />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <label style={{ fontSize: 12, fontWeight: 700, color: theme.textPrimary, display: 'block', marginBottom: 4 }}>Work Authorization / Visa Status</label>
+                      <select
+                        value={visaStatus}
+                        onChange={(e) => setVisaStatus(e.target.value)}
+                        style={{
+                          width: '100%',
+                          backgroundColor: theme.inputBg,
+                          border: `1px solid ${theme.inputBorder}`,
+                          color: theme.textPrimary,
+                          borderRadius: 8,
+                          padding: '10px 12px',
+                          fontSize: 13,
+                          outline: 'none',
+                          boxSizing: 'border-box'
+                        }}
+                      >
+                        <option value="US Citizen">US Citizen</option>
+                        <option value="Green Card">Green Card</option>
+                        <option value="H-1B">H-1B</option>
+                        <option value="OPT/CPT">OPT/CPT</option>
+                        <option value="TN Visa">TN Visa</option>
+                        <option value="EAD">EAD</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Row: Contract Type & Relocation Preference */}
                   <div style={{ display: 'flex', gap: 12 }}>
                     <div style={{ flex: 1 }}>
                       <label style={{ fontSize: 12, fontWeight: 700, color: theme.textPrimary, display: 'block', marginBottom: 4 }}>Contract Type</label>
@@ -1479,15 +1781,14 @@ export default function PublicCareers() {
                         <option value="C2C">C2C (Corp-to-Corp)</option>
                         <option value="W2">W2 Hourly / Salaried</option>
                         <option value="1099">1099 Independent</option>
+                        <option value="Full-Time">Full-Time Direct Hire</option>
                       </select>
                     </div>
                     <div style={{ flex: 1 }}>
-                      <label style={{ fontSize: 12, fontWeight: 700, color: theme.textPrimary, display: 'block', marginBottom: 4 }}>Expected Rate ($/hr)</label>
-                      <input
-                        type="number"
-                        value={expectedRate}
-                        onChange={(e) => setExpectedRate(e.target.value)}
-                        placeholder="e.g. 75"
+                      <label style={{ fontSize: 12, fontWeight: 700, color: theme.textPrimary, display: 'block', marginBottom: 4 }}>Relocation Preference</label>
+                      <select
+                        value={relocatePref}
+                        onChange={(e) => setRelocatePref(e.target.value)}
                         style={{
                           width: '100%',
                           backgroundColor: theme.inputBg,
@@ -1499,8 +1800,34 @@ export default function PublicCareers() {
                           outline: 'none',
                           boxSizing: 'border-box'
                         }}
-                      />
+                      >
+                        <option value="Yes">Yes, willing to relocate</option>
+                        <option value="No">No, local only</option>
+                        <option value="Remote Only">Remote Only</option>
+                      </select>
                     </div>
+                  </div>
+
+                  {/* Row: Expected Rate */}
+                  <div>
+                    <label style={{ fontSize: 12, fontWeight: 700, color: theme.textPrimary, display: 'block', marginBottom: 4 }}>Expected Rate ($/hr)</label>
+                    <input
+                      type="number"
+                      value={expectedRate}
+                      onChange={(e) => setExpectedRate(e.target.value)}
+                      placeholder="e.g. 75"
+                      style={{
+                        width: '100%',
+                        backgroundColor: theme.inputBg,
+                        border: `1px solid ${theme.inputBorder}`,
+                        color: theme.textPrimary,
+                        borderRadius: 8,
+                        padding: '10px 12px',
+                        fontSize: 13,
+                        outline: 'none',
+                        boxSizing: 'border-box'
+                      }}
+                    />
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>

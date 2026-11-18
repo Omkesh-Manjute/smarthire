@@ -129,7 +129,9 @@ function App() {
         <Routes>
           <Route path="/" element={<Homepage />} />
           <Route path="/jobs" element={<PublicCareers />} />
+          <Route path="/jobs/:jobId" element={<PublicCareers />} />
           <Route path="/careers" element={<Navigate to="/jobs" replace />} />
+          <Route path="/careers/:jobId" element={<PublicCareers />} />
           <Route path="/blog" element={<Blog />} />
           <Route path="/blog/:slug" element={<Blog />} />
           <Route path="/dashboard" element={<ProtectedRoute><RecruiterDashboard /></ProtectedRoute>} />

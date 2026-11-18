@@ -25,6 +25,9 @@ export default function CandidateProfileModal({
   const [expectedRate, setExpectedRate] = useState('')
   const [resumeFileName, setResumeFileName] = useState('')
   const [resumeFileObj, setResumeFileObj] = useState(null)
+  const [resumeBase64, setResumeBase64] = useState('')
+  const [resumeText, setResumeText] = useState('')
+  const [isParsingResume, setIsParsingResume] = useState(false)
   const [applications, setApplications] = useState([])
 
   // Load existing profile & applications on modal open or user change
@@ -37,19 +40,35 @@ export default function CandidateProfileModal({
       if (savedProfile) profile = JSON.parse(savedProfile)
     } catch (e) {}
 
-    const currentUser = candidateUser || {}
+    let savedResume = null
+    try {
+      const rawResume = localStorage.getItem('smarthire_saved_master_resume')
+      if (rawResume) savedResume = JSON.parse(rawResume)
+    } catch (e) {}
+
+    let storedUser = {}
+    try {
+      const rawUser = localStorage.getItem('smarthire_candidate_user')
+      if (rawUser) storedUser = JSON.parse(rawUser)
+    } catch (e) {}
+
+    const currentUser = candidateUser || storedUser || {}
     setName(profile.name || currentUser.name || '')
     setEmail(profile.email || currentUser.email || '')
     setPhone(profile.phone || currentUser.phone || '')
     setLocation(profile.location || currentUser.location || '')
-    setRelocatePref(profile.relocatePref || 'Yes')
-    setVisaStatus(profile.visaStatus || 'US Citizen')
-    setContractType(profile.contractType || 'C2C')
+    setRelocatePref(profile.relocatePref || currentUser.relocatePref || 'Yes')
+    setVisaStatus(profile.visaStatus || currentUser.visaStatus || 'US Citizen')
+    setContractType(profile.contractType || currentUser.contractType || 'C2C')
     setEmployer(profile.employer || currentUser.employer || '')
     setPrimarySkill(profile.primarySkill || '')
     setExperience(profile.experience || '')
-    setExpectedRate(profile.expectedRate || '')
-    setResumeFileName(profile.resumeFileName || '')
+    setExpectedRate(profile.expectedRate || currentUser.expectedRate || '')
+    setResumeFileName(profile.resumeFileName || savedResume?.name || '')
+    if (savedResume?.base64) {
+      setResumeBase64(savedResume.base64)
+      if (savedResume.text) setResumeText(savedResume.text)
+    }
 
     // Load submitted applications
     try {
@@ -73,6 +92,39 @@ export default function CandidateProfileModal({
     if (file) {
       setResumeFileObj(file)
       setResumeFileName(file.name)
+      setIsParsingResume(true)
+
+      // 1. Read file as Base64 for permanent local persistence
+      const reader = new FileReader()
+      reader.onload = async () => {
+        const base64Str = reader.result
+        setResumeBase64(base64Str)
+
+        // 2. Auto-parse via /api/parse-resume to populate candidate details
+        try {
+          const formData = new FormData()
+          formData.append('resume', file)
+          const res = await fetch('/api/parse-resume', { method: 'POST', body: formData })
+          const data = await res.json()
+          if (data.success) {
+            const p = data.profile || data
+            if (!name && p.name) setName(p.name)
+            if (!email && p.email) setEmail(p.email)
+            if (!phone && p.phone) setPhone(p.phone)
+            if (!location && p.location) setLocation(p.location)
+            const sk = p.skills || data.skills
+            if (!primarySkill && Array.isArray(sk) && sk.length > 0) {
+              setPrimarySkill(sk.slice(0, 3).join(', '))
+            }
+            if (data.resumeText) setResumeText(data.resumeText)
+          }
+        } catch (err) {
+          console.warn('Resume auto-fill error:', err)
+        } finally {
+          setIsParsingResume(false)
+        }
+      }
+      reader.readAsDataURL(file)
     }
   }
 
@@ -102,15 +154,34 @@ export default function CandidateProfileModal({
         name: updatedProfile.name,
         email: updatedProfile.email,
         phone: updatedProfile.phone,
+        location: updatedProfile.location,
         visaStatus: updatedProfile.visaStatus,
         contractType: updatedProfile.contractType,
+        expectedRate: updatedProfile.expectedRate,
         employer: updatedProfile.employer,
         resumeFileName: updatedProfile.resumeFileName
       }
       localStorage.setItem('smarthire_candidate_user', JSON.stringify(updatedUser))
 
+      // Persist master resume record
+      if (resumeBase64 && (resumeFileName || resumeFileObj)) {
+        const masterResumeRecord = {
+          name: resumeFileName || resumeFileObj?.name || 'Resume.pdf',
+          type: resumeFileObj?.type || 'application/octet-stream',
+          size: resumeFileObj?.size || 0,
+          base64: resumeBase64,
+          text: resumeText || '',
+          updatedAt: new Date().toISOString()
+        }
+        try {
+          localStorage.setItem('smarthire_saved_master_resume', JSON.stringify(masterResumeRecord))
+        } catch (e) {
+          console.warn('LocalStorage limit reached for master resume base64', e)
+        }
+      }
+
       if (onUpdateProfile) {
-        onUpdateProfile(updatedUser, updatedProfile, resumeFileObj)
+        onUpdateProfile(updatedUser, updatedProfile, resumeFileObj, resumeText, resumeBase64)
       }
     } catch (e) {
       console.error('Failed to save profile:', e)
@@ -446,7 +517,7 @@ export default function CandidateProfileModal({
                     type="text"
                     value={employer}
                     onChange={(e) => setEmployer(e.target.value)}
-                    placeholder="e.g. Coolsoft LLC or Independent"
+                    placeholder="e.g. Apex Systems, Cognizant, or Independent"
                     style={{
                       width: '100%',
                       padding: '9px 12px',
@@ -536,10 +607,17 @@ export default function CandidateProfileModal({
                 padding: '16px 18px',
                 borderRadius: 8,
                 backgroundColor: colors.surface,
-                border: `1px dashed ${colors.border}`
+                border: `1px dashed ${resumeFileName ? '#16A34A' : colors.border}`
               }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: colors.textPrimary, marginBottom: 4 }}>
-                  Resume Document (PDF or Word)
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: colors.textPrimary }}>
+                    Resume Document (PDF or Word)
+                  </div>
+                  {isParsingResume && (
+                    <span style={{ fontSize: 11, color: '#2563EB', fontWeight: 700 }}>
+                      Extracting details & skills...
+                    </span>
+                  )}
                 </div>
                 <p style={{ fontSize: 12, color: colors.textSecondary, margin: '0 0 10px' }}>
                   Upload your master resume. It will be pre-attached whenever you click 1-click apply.
@@ -568,9 +646,21 @@ export default function CandidateProfileModal({
                     {resumeFileName ? 'Replace Resume' : 'Attach Resume'}
                   </label>
                   {resumeFileName ? (
-                    <span style={{ fontSize: 13, color: '#16A34A', fontWeight: 600 }}>
-                      Current: {resumeFileName}
-                    </span>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ fontSize: 13, color: '#16A34A', fontWeight: 600 }}>
+                        Current: {resumeFileName}
+                      </span>
+                      <span style={{
+                        fontSize: 11,
+                        fontWeight: 700,
+                        backgroundColor: '#DCFCE7',
+                        color: '#15803D',
+                        padding: '2px 8px',
+                        borderRadius: 4
+                      }}>
+                        Master Resume Ready
+                      </span>
+                    </div>
                   ) : (
                     <span style={{ fontSize: 12.5, color: colors.textSecondary }}>
                       No resume uploaded yet
@@ -713,13 +803,13 @@ export default function CandidateProfileModal({
                               )}
                             </td>
                             <td style={{ padding: '8px 12px', borderRight: `1px solid ${colors.gridBorder}`, color: colors.textSecondary }}>
-                              {app.client || app.matchedJobClient || 'Enterprise Client'}
+                              {app.client || app.matchedJobClient || app.jobClient || 'Direct Client'}
                             </td>
                             <td style={{ padding: '8px 12px', textAlign: 'center', borderRight: `1px solid ${colors.gridBorder}`, fontWeight: 600, color: '#16A34A' }}>
                               {app.payRate || app.expectedRate || 'Negotiable'}
                             </td>
                             <td style={{ padding: '8px 12px', textAlign: 'center', borderRight: `1px solid ${colors.gridBorder}`, color: colors.textSecondary }}>
-                              {app.visaStatus || app.payRateType || 'C2C'}
+                              {app.visaStatus || app.contractType || app.payRateType || 'C2C'}
                             </td>
                             <td style={{ padding: '8px 12px', textAlign: 'center', borderRight: `1px solid ${colors.gridBorder}`, color: colors.textSecondary, whiteSpace: 'nowrap' }}>
                               {app.assignedOn || (app.createdAt ? new Date(app.createdAt).toLocaleDateString() : 'Recent')}
