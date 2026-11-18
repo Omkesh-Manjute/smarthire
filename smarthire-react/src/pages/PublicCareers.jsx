@@ -38,8 +38,9 @@ export default function PublicCareers() {
 
   const getJobPostTimezones = (job) => {
     let date = null
-    if (job.id && job.id.startsWith('J-')) {
-      const ts = parseInt(job.id.replace('J-', ''), 10)
+    const jobIdStr = String(job.id || '')
+    if (jobIdStr.startsWith('J-')) {
+      const ts = parseInt(jobIdStr.replace('J-', ''), 10)
       if (!isNaN(ts)) {
         date = new Date(ts)
       }
@@ -649,24 +650,35 @@ export default function PublicCareers() {
         body: formData
       })
 
-      const result = await response.json()
-      if (result.success && result.profile) {
-        const p = result.profile
-        let rawExtractedName = (p.name || '').trim()
+      const rawText = await response.text()
+      let result = {}
+      try {
+        result = rawText ? JSON.parse(rawText) : {}
+      } catch (_) {
+        result = { success: false, message: 'Could not read resume parser response.' }
+      }
+      if (result.success) {
+        const p = result.profile || result
+        let rawExtractedName = String(p.name || result.name || '').trim()
         if (!rawExtractedName || rawExtractedName.toUpperCase() === 'PDF') {
           rawExtractedName = cleanNameFromFileName(file.name)
         }
         if (rawExtractedName && rawExtractedName.toUpperCase() !== 'PDF') setCandidateName(rawExtractedName)
-        if (p.email) setCandidateEmail(p.email)
-        if (p.phone) setCandidatePhone(p.phone)
-        if (p.location) setCurrentLocation(p.location)
-        if (Array.isArray(p.skills) && p.skills.length > 0) setParsedSkills(p.skills)
-        if (p.resumeText) setResumeText(p.resumeText)
+        const extractedEmail = p.email || result.email
+        const extractedPhone = p.phone || result.phone
+        const extractedLocation = p.location || result.location
+        const extractedSkills = Array.isArray(p.skills) ? p.skills : (Array.isArray(result.skills) ? result.skills : [])
+        const extractedResumeText = p.resumeText || result.text || ''
+        if (extractedEmail) setCandidateEmail(extractedEmail)
+        if (extractedPhone) setCandidatePhone(extractedPhone)
+        if (extractedLocation) setCurrentLocation(extractedLocation)
+        if (extractedSkills.length > 0) setParsedSkills(extractedSkills)
+        if (extractedResumeText) setResumeText(extractedResumeText)
         if (!rawExtractedName && file.name) {
           const fallback = cleanNameFromFileName(file.name)
           if (fallback && fallback.toUpperCase() !== 'PDF') setCandidateName(fallback)
         }
-        if (p.email || p.phone || p.location || (rawExtractedName && rawExtractedName.toUpperCase() !== 'PDF')) {
+        if (extractedEmail || extractedPhone || extractedLocation || (rawExtractedName && rawExtractedName.toUpperCase() !== 'PDF')) {
           setAutoFillSuccess(true)
         }
       } else {
@@ -675,7 +687,7 @@ export default function PublicCareers() {
           if (fallback && fallback.toUpperCase() !== 'PDF') setCandidateName(fallback)
         }
         const text = await file.text().catch(() => '')
-        if (text && text.length > 50) {
+        if (text && text.length > 50 && !/[\x00-\x08\x0E-\x1F]/.test(text.slice(0, 200))) {
           setResumeText(text)
         }
       }
@@ -696,14 +708,17 @@ export default function PublicCareers() {
       const formData = new FormData()
       formData.append('resume', file)
       const res = await fetch('/api/parse-resume', { method: 'POST', body: formData })
-      const result = await res.json()
-      if (result.success && result.profile) {
-        const p = result.profile
-        const name = p.name || cleanNameFromFileName(file.name)
+      const rawText = await res.text()
+      let result = {}
+      try { result = rawText ? JSON.parse(rawText) : {} } catch (_) {}
+      if (result.success) {
+        const p = result.profile || result
+        const name = p.name || result.name || cleanNameFromFileName(file.name)
         if (name && name.toUpperCase() !== 'PDF') setCvCandidateName(name)
-        if (p.email) setCvCandidateEmail(p.email)
-        if (p.phone) setCvCandidatePhone(p.phone)
-        if (p.skills && p.skills[0]) setCvPreferredRole(p.skills.slice(0, 3).join(', '))
+        if (p.email || result.email) setCvCandidateEmail(p.email || result.email)
+        if (p.phone || result.phone) setCvCandidatePhone(p.phone || result.phone)
+        const sk = p.skills || result.skills
+        if (Array.isArray(sk) && sk[0]) setCvPreferredRole(sk.slice(0, 3).join(', '))
       } else {
         const fallbackName = cleanNameFromFileName(file.name)
         if (fallbackName) setCvCandidateName(fallbackName)
@@ -828,11 +843,15 @@ export default function PublicCareers() {
     const activeRecruiter = resolveRecruiterFromRef(recruiterRef) || ALL_SMARTHIRE_RECRUITERS[0]
 
     try {
+      const safeJobId = String(selectedJob?.id || selectedJob?.reqId || '')
       let res
       if (resumeFile) {
         const formData = new FormData()
         formData.append('resume', resumeFile)
-        formData.append('jobId', selectedJob.id)
+        formData.append('jobId', safeJobId)
+        formData.append('jobTitle', selectedJob?.title || '')
+        formData.append('jobLocation', selectedJob?.location || '')
+        formData.append('jobClient', selectedJob?.client || selectedJob?.source || '')
         formData.append('candidateName', validName)
         formData.append('candidateEmail', candidateEmail.trim())
         formData.append('candidatePhone', candidatePhone.trim())
@@ -853,7 +872,10 @@ export default function PublicCareers() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            jobId: selectedJob.id,
+            jobId: safeJobId,
+            jobTitle: selectedJob?.title || '',
+            jobLocation: selectedJob?.location || '',
+            jobClient: selectedJob?.client || selectedJob?.source || '',
             candidateName: validName,
             candidateEmail: candidateEmail.trim(),
             candidatePhone: candidatePhone.trim(),
@@ -869,21 +891,27 @@ export default function PublicCareers() {
         })
       }
 
-      const data = await res.json()
+      const rawResp = await res.text()
+      let data = {}
+      try {
+        data = rawResp ? JSON.parse(rawResp) : {}
+      } catch (_) {
+        data = { success: false, message: `Server returned an unexpected response (${res.status}). Please try again.` }
+      }
 
       if (data.success) {
         const parsedName = data.candidateName || validName
         const appRecord = {
           sessionId: data.sessionId || 'SCR-' + Date.now(),
           candidateId: data.candidateId || data.sessionId || 'SCR-' + Date.now(),
-          jobId: selectedJob.id,
+          jobId: safeJobId,
           jobTitle: selectedJob.title,
           candidateName: parsedName,
           candidateEmail: candidateEmail.trim(),
           appliedAt: new Date().toISOString()
         }
 
-        const updated = { ...appliedJobs, [selectedJob.id]: appRecord }
+        const updated = { ...appliedJobs, [safeJobId]: appRecord }
         setAppliedJobs(updated)
         try { localStorage.setItem('smarthire_applied_jobs', JSON.stringify(updated)) } catch(e) {}
 
@@ -894,8 +922,8 @@ export default function PublicCareers() {
           email: candidateEmail.trim(),
           phone: candidatePhone.trim() || '—',
           canId: data.candidateId || String(Math.floor(10000 + Math.random() * 89999)),
-          reqId: selectedJob.id.replace('J-', ''),
-          jobId: selectedJob.id,
+          reqId: safeJobId.replace(/^J-/i, ''),
+          jobId: safeJobId,
           jobTitle: selectedJob.title,
           appliedDate: new Date().toLocaleDateString('en-US') + ' ' + new Date().toLocaleTimeString('en-US'),
           status: 'Int-SubmittedToManager',
@@ -978,20 +1006,19 @@ export default function PublicCareers() {
           localStorage.setItem('smarthire_all_candidates', JSON.stringify(updatedAll))
         } catch (e) {}
 
-        try {
-          await saveCareerApplication({
-            ...newApp,
-            currentLocation: currentLocation.trim(),
-            relocatePref,
-            contractType,
-            visaStatus,
-            expectedRate,
-            resumeFileName: resumeFile?.name || 'Candidate_Resume.pdf',
-            resumeText: resumeText || `${parsedName} applied for ${selectedJob.title}`
-          }, resumeFile || resumeText)
-        } catch(fireErr) {
+        saveCareerApplication({
+          ...newApp,
+          currentLocation: currentLocation.trim(),
+          relocatePref,
+          contractType,
+          visaStatus,
+          expectedRate,
+          resumeFileName: resumeFile?.name || 'Candidate_Resume.pdf',
+          resumeUrl: data.resumeFileUrl || '',
+          resumeText: resumeText || `${parsedName} applied for ${selectedJob.title}`
+        }, resumeFile || null).catch(fireErr => {
           console.warn('Firebase saveCareerApplication note:', fireErr)
-        }
+        })
 
         setSubmitSuccess({ ...data, candidateName: parsedName, appRecord, recruiterName: activeRecruiter.name })
       } else {

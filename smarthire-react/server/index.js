@@ -1585,6 +1585,14 @@ app.use(express.json({
   }
 }))
 app.use(express.urlencoded({ limit: '50mb', extended: true }))
+// Express 5 leaves req.body undefined when no body parser matches (e.g. empty body or multipart without multer).
+// Ensure req.body is always at least {} so route handlers never crash with destructuring TypeErrors.
+app.use((req, _res, next) => {
+  if (req.body === undefined) {
+    req.body = {};
+  }
+  next();
+})
 app.use('/uploads', express.static(uploadDir))
 if (fs.existsSync(distPath)) {
   app.use(express.static(distPath, {
@@ -1619,6 +1627,9 @@ const allowedMimeTypes = new Set([
   'application/pdf',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'application/msword',
+  'text/plain',
+  'application/rtf',
+  'text/rtf',
 ])
 
 const upload = multer({
@@ -1626,17 +1637,24 @@ const upload = multer({
   limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (_req, file, callback) => {
     const ext = path.extname(file.originalname).toLowerCase()
-    const validExt = ext === '.pdf' || ext === '.docx' || ext === '.doc'
+    const validExt = ext === '.pdf' || ext === '.docx' || ext === '.doc' || ext === '.txt' || ext === '.rtf'
     const validMime = allowedMimeTypes.has(file.mimetype)
 
     if (!validExt && !validMime) {
-      callback(new Error('Only PDF and DOCX/DOC files are allowed'))
+      callback(new Error('Only PDF, DOCX, DOC, TXT, and RTF resume files are allowed'))
       return
     }
 
     callback(null, true)
   },
 })
+
+const optionalResumeUpload = (req, res, next) => {
+  if (req.is('multipart/form-data')) {
+    return upload.single('resume')(req, res, next)
+  }
+  return next()
+}
 
 const allowedDocMimeTypes = new Set([
   'application/pdf',
@@ -1954,8 +1972,10 @@ async function parseResumeText(filePath, originalName, mimeType) {
     } catch (e) {
       extracted = fs.readFileSync(filePath, 'utf-8')
     }
+  } else if (name.endsWith('.txt') || name.endsWith('.rtf') || mimeType === 'text/plain' || mimeType === 'application/rtf' || mimeType === 'text/rtf') {
+    extracted = fs.readFileSync(filePath, 'utf-8')
   } else {
-    throw new Error('Unsupported file format. Please upload a PDF or DOCX file.')
+    throw new Error('Unsupported file format. Please upload a PDF, DOCX, DOC, or TXT file.')
   }
 
   // Normalize and clean Private Use Area characters (\uF000-\uF8FF, e.g. Wingdings bullets \uF0B7), replacement glyphs \uFFFD
@@ -7053,241 +7073,43 @@ app.post('/api/screening/:sessionId/recruiter', authenticateToken, handleUpdateS
 app.patch('/api/screening/:sessionId/recruiter', authenticateToken, handleUpdateScreeningRecruiter);
 
 
-// Direct candidate submission endpoint (public careers portal - NO redirection)
-app.post('/api/screening/public-submit', async (req, res) => {
-  const {
-    jobId,
-    candidateName,
-    candidateEmail,
-    candidatePhone,
-    visaStatus,
-    contractType,
-    currentLocation,
-    relocatePref,
-    expectedRate,
-    resumeText,
-    resumeFileName,
-    recruiterRef
-  } = req.body;
-
-  if (!jobId || !candidateName || !candidateEmail) {
-    return res.status(400).json({ success: false, message: 'Job ID, Name, and Email are required.' });
-  }
-
-  const job = jobsStore.find(j => j.id === jobId);
-  if (!job) {
-    return res.status(404).json({ success: false, message: 'Target job vacancy not found.' });
-  }
-
-  const recruiterEmailResolved = await resolveRecruiterEmailFromRefCode(recruiterRef);
-
-  if (isJobExpired(job)) {
-    return res.status(400).json({
-      success: false,
-      message: 'This job vacancy has expired or been closed, and is no longer accepting new candidate applications.'
-    });
-  }
-
-  // Extract candidate name from resume text if available, fallback to user name
-  const finalCandidateName = extractNameFromResumeText(resumeText, candidateName.trim());
-
-  // Calculate skill match score dynamically
-  const jobSkills = job.skills || [];
-  const matched_skills = [];
-  const missing_skills = [];
-
-  if (resumeText && jobSkills.length > 0) {
-    const textLower = resumeText.toLowerCase();
-    jobSkills.forEach(s => {
-      if (textLower.includes(s.toLowerCase())) {
-        matched_skills.push(s);
-      } else {
-        missing_skills.push(s);
-      }
-    });
-  } else {
-    missing_skills.push(...jobSkills);
-  }
-
-  const matchedSkillsCount = matched_skills.length;
-  const skillRatio = jobSkills.length > 0 ? (matchedSkillsCount / jobSkills.length) : 0.85;
-  const matchScore = Math.min(98, Math.max(65, Math.round(skillRatio * 30 + 68)));
-
-  const sessionId = 'SCR-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
-  const newSession = {
-    sessionId,
-    jobId: job.id,
-    targetReqId: job.reqId || job.id,
-    reqId: job.reqId || job.id,
-    jobReqId: job.reqId || job.id,
-    jobSource: job.source || (job.client === 'InfoOrigin' ? 'InfoOrigin' : 'COOLSOFT'),
-    matchedJobClient: job.client || job.source || 'COOLSOFT',
-    matchedJobTitle: job.title,
-    jobTitle: job.title,
-    jobSkills: job.skills || [],
-    jobPreferredSkills: job.preferredSkills || [],
-    jobExperience: job.experience || 'Any',
-    jobLocation: job.location || 'Any',
-    jobClient: job.client || job.source || 'General Client',
-    source: 'Job Site',
-    sourceCategory: 'careers_portal',
-    sourceLabel: 'Job Site Application',
-    appliedFrom: 'Job Site Application',
-    targetPayRate: job.targetPayRate || null,
-    maxPayRate: job.maxPayRate || null,
-    candidateName: finalCandidateName,
-    candidateEmail: candidateEmail.trim(),
-    candidatePhone: candidatePhone || '',
-    visaStatus: visaStatus || 'US Citizen',
-    contractType: contractType || 'C2C',
-    currentLocation: currentLocation || 'US Resident',
-    relocatePref: relocatePref || 'Yes',
-    expectedRate: expectedRate || 'TBD',
-    status: matchScore >= 60 ? 'submitted' : 'rejected',
-    createdAt: new Date().toISOString(),
-    submittedAt: new Date().toISOString(),
-    createdBy: recruiterEmailResolved || '',
-    recruiterEmail: recruiterEmailResolved || '',
-    referredBy: recruiterEmailResolved || '',
-    submittedBy: recruiterEmailResolved || '',
-    resumeFileName: resumeFileName || 'Candidate_Resume.pdf',
-    resumeText: resumeText || `${finalCandidateName} - ${job.title} Applicant. Skills: ${jobSkills.join(', ')}`,
-    extractedProfile: {
-      name: finalCandidateName,
-      email: candidateEmail,
-      phone: candidatePhone,
-      visa_status: visaStatus,
-      contract_type: contractType,
-      location: currentLocation,
-      relocate: relocatePref,
-      target_rate: expectedRate,
-      extracted_skills: matched_skills
-    },
-    jdMatch: {
-      match_score: matchScore,
-      matched_skills: matched_skills,
-      missing_skills: missing_skills,
-      fit_verdict: matchScore >= 75 ? 'Strong Match' : matchScore >= 60 ? 'Moderate Match' : 'Potential Mismatch'
-    },
-    chatHistory: [
-      {
-        role: 'assistant',
-        content: `Hi ${finalCandidateName}, thank you for submitting your direct candidate application for ${job.title}. Your profile and resume have been automatically analyzed by AI.`
-      },
-      {
-        role: 'user',
-        content: `Submitted application via Public Portal. Current Location: ${currentLocation || 'N/A'}, Ready to Relocate: ${relocatePref || 'Yes'}, Contract Type: ${contractType || 'C2C'}, Target Rate: $${expectedRate || 'N/A'}/hr.`
-      },
-      {
-        role: 'assistant',
-        content: `Application Received! AI Match Evaluation Score: ${matchScore}%. Profile Status: ${matchScore >= 60 ? 'QUALIFIED FOR RECRUITER REVIEW' : 'AUTO-FILTERED'}.`
-      }
-    ],
-    screeningComplete: true,
-    conversationStage: 'submitted'
-  };
-
-  screeningStore.unshift(newSession);
-  saveScreeningToDisk();
-
-  // Create initial message in messages persistence store so it instantly shows up in Recruiter Inbox
-  const initMsg = {
-    id: 'MSG-' + Date.now(),
-    candidateId: sessionId,
-    sender: 'candidate',
-    text: `Applied for ${job.title}. Please review my profile.`,
-    candidateName: finalCandidateName,
-    jobTitle: job.title,
-    timestamp: new Date().toISOString(),
-    read: false
-  };
-  messagesStore.push(initMsg);
-  try { fs.writeFileSync(MESSAGES_FILE, JSON.stringify(messagesStore, null, 2)); } catch(e) {}
-
-  // ALSO sync into candidatesStore (ATS database)
-  try {
-    const existingIndex = candidatesStore.findIndex(c => c.email && c.email.toLowerCase() === candidateEmail.trim().toLowerCase());
-    const candidateId = 'C-' + Date.now().toString().slice(-5);
-    const candidateDoc = {
-      candidate_id: candidateId,
-      id: candidateId,
-      job_id: job.id,
-      job_title: job.title,
-      targetReqId: job.reqId || job.id,
-      reqId: job.reqId || job.id,
-      jobReqId: job.reqId || job.id,
-      jobSource: job.source || (job.client === 'InfoOrigin' ? 'InfoOrigin' : 'COOLSOFT'),
-      matchedJobClient: job.client || job.source || 'COOLSOFT',
-      matchedJobTitle: job.title,
-      client: job.client || job.source || 'COOLSOFT',
-      name: finalCandidateName,
-      email: candidateEmail.trim(),
-      phone: candidatePhone || '',
-      location: currentLocation || 'US Resident',
-      visa_status: visaStatus || 'US Citizen',
-      contract_type: contractType || 'C2C',
-      target_rate: expectedRate || 'TBD',
-      relocate: relocatePref || 'Yes',
-      status: matchScore >= 70 ? 'Shortlisted' : 'Applied',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      createdBy: recruiterEmailResolved || '',
-      recruiterEmail: recruiterEmailResolved || '',
-      submittedBy: recruiterEmailResolved || '',
-      source: 'Job Site',
-      sourceCategory: 'careers_portal',
-      sourceLabel: 'Job Site',
-      appliedFrom: 'Job Site Application',
-      extracted_profile: {
-        name: finalCandidateName,
-        email: candidateEmail.trim(),
-        phone: candidatePhone || '',
-        location: currentLocation || '',
-        visa_status: visaStatus || '',
-        contract_type: contractType || '',
-        target_rate: expectedRate || '',
-        skills: matched_skills
-      },
-      jd_match: {
-        match_score: matchScore,
-        matched_skills: matched_skills,
-        missing_skills: missing_skills,
-        fit_verdict: matchScore >= 75 ? 'Strong Match' : matchScore >= 60 ? 'Moderate Match' : 'Potential Mismatch'
-      },
-      resume_text: resumeText || ''
-    };
-
-    if (existingIndex >= 0) {
-      candidatesStore[existingIndex] = { ...candidatesStore[existingIndex], ...candidateDoc, updated_at: new Date().toISOString() };
-    } else {
-      candidatesStore.unshift(candidateDoc);
-    }
-    saveCandidatesToDisk();
-  } catch (err) {
-    console.warn('Could not sync to candidatesStore:', err.message);
-  }
-
-  res.json({
-    success: true,
-    sessionId,
-    matchScore,
-    candidateName: finalCandidateName,
-    jobTitle: job.title
-  });
-});
-
-// Parse resume file endpoint (Public Careers Portal)
+// Parse resume file endpoint (Public Careers Portal & Recruiter Dashboard)
 app.post('/api/parse-resume', upload.single('resume'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ success: false, message: 'No resume file uploaded' });
     }
     const text = await parseResumeText(req.file.path, req.file.originalname, req.file.mimetype);
-    
-    // Extract candidate details via regexes
+
+    // Extract candidate details via regexes & helper
     const emailMatch = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
-    const phoneMatch = text.match(/(?:\+?\d{1,3}[\s-]?)?\(?\d{3}\)?[\s-]?\d{3}[\s-]?\d{4}/);
-    const locationMatch = text.match(/([A-Z][a-zA-Z\s]{2,15},\s*[A-Z]{2})/);
+    const phoneMatch = text.match(/(?:\+?\d{1,3}[\s.-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}/);
+    const locationMatch = text.match(/\b([A-Z][a-zA-Z]{1,18}(?: [A-Z][a-zA-Z]{1,15})?,\s*[A-Z]{2})\b/);
+
+    let extractedName = extractNameFromResumeText(text, '') || '';
+    if (!extractedName && req.file.originalname) {
+      let cleanFile = req.file.originalname.replace(/\.(pdf|docx|doc|txt|rtf)$/i, '');
+      cleanFile = cleanFile.replace(/\(\d+\)/g, ' ').replace(/%20|_|-/g, ' ');
+      cleanFile = cleanFile.replace(/\b(resume|cv|curriculum|vitae|profile|applicant|candidate|full|stack|java|python|net|dot|developer|engineer|architect|lead|senior|sr|jr|junior|analyst|manager|consultant|specialist|updated|latest|draft|final|202\d|201\d)\b/gi, ' ');
+      cleanFile = cleanFile.replace(/[^a-zA-Z\s]/g, ' ').replace(/\s+/g, ' ').trim();
+      const parts = cleanFile.split(' ').filter(Boolean).slice(0, 3);
+      if (parts.length >= 1) {
+        extractedName = parts.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+      }
+    }
+
+    const commonSkills = [
+      'Java', 'Spring Boot', 'Microservices', 'C#', '.NET', 'ASP.NET', 'React', 'Angular', 'Vue',
+      'Node.js', 'TypeScript', 'JavaScript', 'Python', 'SQL', 'PostgreSQL', 'Oracle', 'MongoDB',
+      'AWS', 'Azure', 'GCP', 'Docker', 'Kubernetes', 'Terraform', 'CI/CD', 'Jenkins', 'Git',
+      'REST API', 'GraphQL', 'Kafka', 'Snowflake', 'Spark', 'Databricks', 'Power BI', 'Tableau',
+      'Salesforce', 'SAP', 'ServiceNow', 'Workday', 'QA', 'Selenium', 'Playwright', 'Agile', 'Scrum'
+    ];
+    const textLower = (text || '').toLowerCase();
+    const extractedSkills = commonSkills.filter(skill => {
+      const escaped = skill.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      return new RegExp(`(?:^|[^a-z0-9])${escaped}(?:$|[^a-z0-9])`, 'i').test(textLower);
+    }).slice(0, 12);
 
     // Cleanup temp uploaded file from disk
     try {
@@ -7296,24 +7118,45 @@ app.post('/api/parse-resume', upload.single('resume'), async (req, res) => {
       console.warn('Temporary file cleanup failed:', e.message);
     }
 
+    const email = emailMatch ? emailMatch[0].trim() : null;
+    const phone = phoneMatch ? phoneMatch[0].trim() : null;
+    const location = locationMatch ? locationMatch[1].trim() : null;
+
     res.json({
       success: true,
       text,
-      email: emailMatch ? emailMatch[0].trim() : null,
-      phone: phoneMatch ? phoneMatch[0].trim() : null,
-      location: locationMatch ? locationMatch[1].trim() : null
+      name: extractedName || null,
+      email,
+      phone,
+      location,
+      skills: extractedSkills,
+      profile: {
+        name: extractedName || '',
+        email: email || '',
+        phone: phone || '',
+        location: location || '',
+        skills: extractedSkills,
+        resumeText: text
+      }
     });
   } catch (err) {
     console.error('Error parsing resume:', err);
+    if (req.file?.path) {
+      try { fs.unlinkSync(req.file.path); } catch (_) {}
+    }
     res.json({ success: false, message: err.message || 'Error parsing resume text.' });
   }
 });
 
-// Multipart file upload application endpoint (Public Careers Portal & Mobile App)
+// Unified candidate application endpoint (supports BOTH multipart/form-data with resume file AND application/json)
 const handlePublicApplication = async (req, res) => {
   try {
+    const body = req.body || {};
     const {
       jobId,
+      jobTitle: fallbackJobTitle,
+      jobLocation: fallbackJobLocation,
+      jobClient: fallbackJobClient,
       candidateName,
       candidateEmail,
       candidatePhone,
@@ -7323,9 +7166,10 @@ const handlePublicApplication = async (req, res) => {
       relocatePref,
       expectedRate,
       recruiterRef,
+      resumeFileName: bodyResumeFileName,
       source: customSource,
       sourceCategory: customSourceCat
-    } = req.body;
+    } = body;
 
     const appliedSource = customSource || 'Job Site';
     const appliedCategory = customSourceCat || (appliedSource.toLowerCase().includes('mobile') ? 'mobile_app' : 'careers_portal');
@@ -7334,7 +7178,35 @@ const handlePublicApplication = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Job ID, Name, and Email are required.' });
     }
 
-    const job = jobsStore.find(j => j.id === jobId);
+    const cleanTargetId = String(jobId).replace(/^J-/i, '').trim();
+    let job = jobsStore.find(j => {
+      const jId = String(j.id || '').trim();
+      const jClean = jId.replace(/^J-/i, '').trim();
+      const jReq = String(j.reqId || '').replace(/^J-/i, '').trim();
+      const jVms = String(j.vmsNumber || '').replace(/^J-/i, '').trim();
+      const jPos = String(j.positionNumber || '').replace(/^J-/i, '').trim();
+      return (
+        jId === String(jobId).trim() ||
+        jClean === cleanTargetId ||
+        (jReq && jReq === cleanTargetId) ||
+        (jVms && jVms === cleanTargetId) ||
+        (jPos && jPos === cleanTargetId)
+      );
+    });
+
+    if (!job && fallbackJobTitle) {
+      job = {
+        id: String(jobId),
+        reqId: cleanTargetId,
+        title: String(fallbackJobTitle),
+        location: String(fallbackJobLocation || 'Remote'),
+        client: String(fallbackJobClient || 'SmartHire'),
+        source: String(fallbackJobClient || 'COOLSOFT'),
+        skills: [],
+        preferredSkills: []
+      };
+    }
+
     if (!job) {
       return res.status(404).json({ success: false, message: 'Target job vacancy not found.' });
     }
@@ -7348,9 +7220,9 @@ const handlePublicApplication = async (req, res) => {
       });
     }
 
-    let resumeText = req.body.resumeText || '';
+    let resumeText = body.resumeText || '';
     let resumeFileUrl = null;
-    let resumeFileName = 'Uploaded_Resume.pdf';
+    let resumeFileName = bodyResumeFileName || 'Uploaded_Resume.pdf';
 
     if (req.file) {
       resumeFileName = req.file.originalname;
@@ -7494,10 +7366,11 @@ const handlePublicApplication = async (req, res) => {
     messagesStore.push(initMsg);
     try { fs.writeFileSync(MESSAGES_FILE, JSON.stringify(messagesStore, null, 2)); } catch(e) {}
 
-    // Sync into candidatesStore (ATS database)
+    // Sync into candidatesStore (ATS database) & Firestore
+    let savedCandidateId = 'C-' + Date.now().toString().slice(-5);
     try {
       const existingIndex = candidatesStore.findIndex(c => c.email && c.email.toLowerCase() === candidateEmail.trim().toLowerCase());
-      const candidateId = 'C-' + Date.now().toString().slice(-5);
+      const candidateId = savedCandidateId;
       const candidateDoc = {
         candidate_id: candidateId,
         id: candidateId,
@@ -7549,9 +7422,12 @@ const handlePublicApplication = async (req, res) => {
       };
 
       if (existingIndex >= 0) {
-        candidatesStore[existingIndex] = { ...candidatesStore[existingIndex], ...candidateDoc, updated_at: new Date().toISOString() };
+        savedCandidateId = candidatesStore[existingIndex].id || candidatesStore[existingIndex].candidate_id || candidateId;
+        candidatesStore[existingIndex] = { ...candidatesStore[existingIndex], ...candidateDoc, id: savedCandidateId, candidate_id: savedCandidateId, updated_at: new Date().toISOString() };
+        saveCandidateToFirestore(candidatesStore[existingIndex]).catch(() => {});
       } else {
         candidatesStore.unshift(candidateDoc);
+        saveCandidateToFirestore(candidateDoc).catch(() => {});
       }
       saveCandidatesToDisk();
     } catch (err) {
@@ -7561,6 +7437,7 @@ const handlePublicApplication = async (req, res) => {
     res.json({
       success: true,
       sessionId,
+      candidateId: savedCandidateId,
       matchScore,
       candidateName: finalCandidateName,
       jobTitle: job.title,
@@ -7572,8 +7449,9 @@ const handlePublicApplication = async (req, res) => {
   }
 };
 
-app.post('/api/screening/public-submit-file', upload.single('resume'), handlePublicApplication);
-app.post('/api/applications', upload.single('resume'), handlePublicApplication);
+app.post('/api/screening/public-submit', optionalResumeUpload, handlePublicApplication);
+app.post('/api/screening/public-submit-file', optionalResumeUpload, handlePublicApplication);
+app.post('/api/applications', optionalResumeUpload, handlePublicApplication);
 
 // Get all screening sessions (recruiter dashboard)
 app.get('/api/screening/sessions', authenticateToken, (req, res) => {

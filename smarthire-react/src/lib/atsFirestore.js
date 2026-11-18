@@ -365,7 +365,7 @@ export async function saveCareerApplication(appData, resumeFileOrDataUrl = null)
       const storageRef = ref(storage, storagePath)
 
       if (typeof resumeFileOrDataUrl === 'string') {
-        const format = resumeFileOrDataUrl.startsWith('data:') ? 'data_url' : 'base64'
+        const format = resumeFileOrDataUrl.startsWith('data:') ? 'data_url' : 'raw'
         await uploadString(storageRef, resumeFileOrDataUrl, format)
       } else if (resumeFileOrDataUrl instanceof File || resumeFileOrDataUrl instanceof Blob) {
         await uploadBytes(storageRef, resumeFileOrDataUrl)
