@@ -4,7 +4,7 @@ import CandidateMessengerWidget from '../components/CandidateMessengerWidget'
 import SmartHireBotWidget from '../components/SmartHireBotWidget'
 import { saveCareerApplication, getAtsJobs, saveRequisitionCandidates, saveCandidate } from '../lib/atsFirestore'
 import { loginWithGoogle, formatAuthError } from '../lib/firebase'
-import { formatJobDescription, resolveJobLocation, cleanJobTitleWithPositionNumber, resolveReqId, normalizeJobId } from '../utils/formatJobDescription'
+import { formatJobDescription, resolveJobLocation, cleanJobTitleWithPositionNumber, resolveReqId, normalizeJobId, resolvePositionNumber } from '../utils/formatJobDescription'
 import WellfoundCareersView from '../components/WellfoundCareersView'
 import CandidateProfileModal from '../components/CandidateProfileModal'
 
@@ -696,10 +696,14 @@ export default function PublicCareers() {
             const jClean = normalizeJobId(j.id)
             const reqClean = normalizeJobId(j.reqId)
             const resolvedReq = normalizeJobId(resolveReqId(j.id, j))
+            const posNum = normalizeJobId(resolvePositionNumber(j))
+            const sourceId = normalizeJobId(j.sourceId)
             return (
               (cleanTarget && jClean === cleanTarget) ||
               (cleanTarget && reqClean === cleanTarget) ||
               (cleanTarget && resolvedReq === cleanTarget) ||
+              (cleanTarget && posNum === cleanTarget) ||
+              (cleanTarget && sourceId === cleanTarget) ||
               (cleanTarget && jRaw === `J-${cleanTarget}`) ||
               (cleanTarget && jRaw === `REQ-${cleanTarget}`)
             )
@@ -728,10 +732,14 @@ export default function PublicCareers() {
             const jClean = normalizeJobId(j.id)
             const reqClean = normalizeJobId(j.reqId)
             const resolvedReq = normalizeJobId(resolveReqId(j.id, j))
+            const posNum = normalizeJobId(resolvePositionNumber(j))
+            const sourceId = normalizeJobId(j.sourceId)
             return (
               (cleanTarget && jClean === cleanTarget) ||
               (cleanTarget && reqClean === cleanTarget) ||
               (cleanTarget && resolvedReq === cleanTarget) ||
+              (cleanTarget && posNum === cleanTarget) ||
+              (cleanTarget && sourceId === cleanTarget) ||
               (cleanTarget && jRaw === `J-${cleanTarget}`) ||
               (cleanTarget && jRaw === `REQ-${cleanTarget}`)
             )

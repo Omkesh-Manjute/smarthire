@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { resolveReqId, normalizeJobId } from '../utils/formatJobDescription'
+import { resolveReqId, normalizeJobId, resolvePositionNumber } from '../utils/formatJobDescription'
 import ShareSheet from './ui/ShareSheet'
 
 // ─── Crisp SVG Icons for Wellfound UI ───────────────────────────────────────
@@ -530,6 +530,29 @@ export default function WellfoundCareersView({
   const [currentPage, setCurrentPage] = useState(1)
   const PAGE_SIZE = 15 // 15 requisitions per page matching authentic StaffingOrigin pagination
   const [dismissedNotFound, setDismissedNotFound] = useState(false)
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false)
+  const profileDropdownRef = useRef(null)
+
+  // Close profile dropdown on outside click or Escape key
+  useEffect(() => {
+    if (!isProfileDropdownOpen) return
+    const handleClickOutside = (e) => {
+      if (profileDropdownRef.current && !profileDropdownRef.current.contains(e.target)) {
+        setIsProfileDropdownOpen(false)
+      }
+    }
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setIsProfileDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isProfileDropdownOpen])
 
   // Selected Job for Page 2 (Job Detail View)
   const [selectedJobId, setSelectedJobId] = useState(() => {
@@ -572,7 +595,13 @@ export default function WellfoundCareersView({
     if (typeof window !== 'undefined') {
       const url = new URL(window.location.href)
       if (jobId) {
-        url.searchParams.set('jobId', jobId)
+        const targetJob = (jobs || []).find(j => {
+          if (!j) return false
+          const jRaw = String(j.id || '').trim()
+          return jRaw === String(jobId).trim() || normalizeJobId(j.id) === normalizeJobId(jobId) || normalizeJobId(j.reqId) === normalizeJobId(jobId)
+        })
+        const pNum = targetJob ? resolvePositionNumber(targetJob) : normalizeJobId(jobId)
+        url.searchParams.set('jobId', pNum || jobId)
       } else {
         url.searchParams.delete('jobId')
         url.searchParams.delete('job')
@@ -686,10 +715,14 @@ export default function WellfoundCareersView({
       const jClean = normalizeJobId(j.id)
       const reqClean = normalizeJobId(j.reqId)
       const resolvedReq = normalizeJobId(resolveReqId(j.id, j))
+      const posNum = normalizeJobId(resolvePositionNumber(j))
+      const sourceId = normalizeJobId(j.sourceId)
       return (
         (targetClean && jClean === targetClean) ||
         (targetClean && reqClean === targetClean) ||
         (targetClean && resolvedReq === targetClean) ||
+        (targetClean && posNum === targetClean) ||
+        (targetClean && sourceId === targetClean) ||
         (targetClean && jRaw === `J-${targetClean}`) ||
         (targetClean && jRaw === `REQ-${targetClean}`)
       )
@@ -1602,21 +1635,23 @@ export default function WellfoundCareersView({
           {/* Right Header Controls: Compact Auth */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             {candidateUser ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                {/* Profile Pill */}
-                <div
-                  onClick={() => onOpenProfileModal && onOpenProfileModal()}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, position: 'relative' }} ref={profileDropdownRef}>
+                {/* Interactive Profile Pill Trigger */}
+                <button
+                  type="button"
+                  onClick={() => setIsProfileDropdownOpen(prev => !prev)}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: 7,
                     padding: '4px 10px 4px 6px',
                     borderRadius: 20,
-                    backgroundColor: isLight ? '#F1F5F9' : '#1E293B',
-                    border: `1px solid ${colors.border}`,
-                    cursor: 'pointer'
+                    backgroundColor: isProfileDropdownOpen ? (isLight ? '#E2E8F0' : '#334155') : (isLight ? '#F1F5F9' : '#1E293B'),
+                    border: `1px solid ${isProfileDropdownOpen ? '#2563EB' : colors.border}`,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
                   }}
-                  title="Click to view Candidate Profile & Master Resume"
+                  title="Click for Profile, Edit & Logout menu"
                 >
                   <div style={{
                     width: 24,
@@ -1635,7 +1670,195 @@ export default function WellfoundCareersView({
                   <span style={{ fontSize: 13, fontWeight: 700, color: colors.textPrimary }}>
                     {candidateUser.name || candidateUser.email?.split('@')[0]}
                   </span>
-                </div>
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke={colors.textSecondary}
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    style={{
+                      transform: isProfileDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                      transition: 'transform 0.15s ease'
+                    }}
+                  >
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </button>
+
+                {/* Profile Click Dropdown Menu */}
+                {isProfileDropdownOpen && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: 'calc(100% + 8px)',
+                      right: 0,
+                      width: 260,
+                      backgroundColor: colors.cardBg,
+                      border: `1px solid ${colors.border}`,
+                      borderRadius: 12,
+                      boxShadow: isLight ? '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)' : '0 10px 25px -5px rgba(0, 0, 0, 0.5)',
+                      padding: '8px 0',
+                      zIndex: 1000,
+                      animation: 'fadeIn 0.15s ease-out'
+                    }}
+                  >
+                    {/* User Info Header */}
+                    <div style={{ padding: '8px 16px 12px 16px', borderBottom: `1px solid ${colors.borderLight}` }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+                        <div style={{
+                          width: 34,
+                          height: 34,
+                          borderRadius: '50%',
+                          backgroundColor: '#2563EB',
+                          color: '#FFFFFF',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: 14,
+                          fontWeight: 700,
+                          flexShrink: 0
+                        }}>
+                          {(candidateUser.name || candidateUser.email || 'U').charAt(0).toUpperCase()}
+                        </div>
+                        <div style={{ minWidth: 0, overflow: 'hidden' }}>
+                          <div style={{ fontSize: 13.5, fontWeight: 700, color: colors.textPrimary, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {candidateUser.name || 'Candidate'}
+                          </div>
+                          <div style={{ fontSize: 11.5, color: colors.textSecondary, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {candidateUser.email || ''}
+                          </div>
+                        </div>
+                      </div>
+                      <div style={{ marginTop: 6 }}>
+                        <span style={{
+                          fontSize: 10.5,
+                          fontWeight: 700,
+                          padding: '2px 8px',
+                          borderRadius: 10,
+                          backgroundColor: '#DCFCE7',
+                          color: '#15803D',
+                          border: '1px solid #86EFAC',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 4
+                        }}>
+                          <span style={{ width: 5, height: 5, borderRadius: '50%', backgroundColor: '#10B981', display: 'inline-block' }} />
+                          Verified Candidate
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Actions List */}
+                    <div style={{ padding: '6px 8px' }}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsProfileDropdownOpen(false)
+                          if (onOpenProfileModal) onOpenProfileModal()
+                        }}
+                        style={{
+                          width: '100%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 10,
+                          padding: '9px 12px',
+                          borderRadius: 8,
+                          backgroundColor: 'transparent',
+                          border: 'none',
+                          color: colors.textPrimary,
+                          fontSize: 13,
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          transition: 'background-color 0.12s ease'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.hoverBg}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                      >
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                        <span>Edit Profile & Master Resume</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsProfileDropdownOpen(false)
+                          if (onOpenProfileModal) onOpenProfileModal()
+                        }}
+                        style={{
+                          width: '100%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 10,
+                          padding: '9px 12px',
+                          borderRadius: 8,
+                          backgroundColor: 'transparent',
+                          border: 'none',
+                          color: colors.textPrimary,
+                          fontSize: 13,
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          transition: 'background-color 0.12s ease'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.hoverBg}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                      >
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                          <polyline points="14 2 14 8 20 8"/>
+                          <line x1="16" y1="13" x2="8" y2="13"/>
+                          <line x1="16" y1="17" x2="8" y2="17"/>
+                          <polyline points="10 9 9 9 8 9"/>
+                        </svg>
+                        <span>My Applications</span>
+                      </button>
+                    </div>
+
+                    <div style={{ height: 1, backgroundColor: colors.borderLight, margin: '4px 0' }} />
+
+                    <div style={{ padding: '4px 8px 2px 8px' }}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsProfileDropdownOpen(false)
+                          handleCandidateSignOut()
+                        }}
+                        style={{
+                          width: '100%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 10,
+                          padding: '9px 12px',
+                          borderRadius: 8,
+                          backgroundColor: 'transparent',
+                          border: 'none',
+                          color: '#DC2626',
+                          fontSize: 13,
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          transition: 'background-color 0.12s ease'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = isLight ? '#FEF2F2' : '#3B1818'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                      >
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                          <polyline points="16 17 21 12 16 7"/>
+                          <line x1="21" y1="12" x2="9" y2="12"/>
+                        </svg>
+                        <span>Logout</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {/* Prominent Edit Profile Button */}
                 <button
@@ -2911,9 +3134,9 @@ export default function WellfoundCareersView({
 
                     {/* VengeanceUI Share Sheet for Job */}
                     <ShareSheet
-                      url={typeof window !== 'undefined' ? `${window.location.origin}/jobs?jobId=${normalizeJobId(selectedJob.id || selectedJob.reqId) || selectedJob.id}` : ''}
-                      title={`${selectedJob.jobTitle || selectedJob.title || 'Career Opening'} at SmartHire`}
-                      text={`Check out this opening: ${selectedJob.jobTitle || selectedJob.title || 'Role'} in ${selectedJob.location || 'Remote'} on SmartHire!`}
+                      url={typeof window !== 'undefined' ? `${window.location.origin}/jobs?jobId=${resolvePositionNumber(selectedJob) || normalizeJobId(selectedJob.id || selectedJob.reqId) || selectedJob.id}` : ''}
+                      title={`${selectedJob.jobTitle || selectedJob.title || 'Career Opening'}${resolvePositionNumber(selectedJob) ? ` (Position #${resolvePositionNumber(selectedJob)})` : ''} at SmartHire`}
+                      text={`Check out this opening: ${selectedJob.jobTitle || selectedJob.title || 'Role'}${resolvePositionNumber(selectedJob) ? ` (Position #${resolvePositionNumber(selectedJob)})` : ''} in ${selectedJob.location || 'Remote'} on SmartHire!`}
                       trigger={
                         <button
                           type="button"
@@ -3016,6 +3239,21 @@ export default function WellfoundCareersView({
                         borderRadius: 4
                       }}>
                         India
+                      </span>
+                    )}
+
+                    {Boolean(resolvePositionNumber(selectedJob)) && (
+                      <span style={{
+                        fontSize: '11px',
+                        fontWeight: 800,
+                        letterSpacing: '0.05em',
+                        color: isLight ? '#4338CA' : '#A5B4FC',
+                        background: isLight ? '#EEF2FF' : 'rgba(67, 56, 202, 0.2)',
+                        border: `1px solid ${isLight ? '#C7D2FE' : '#4F46E5'}`,
+                        padding: '2px 8px',
+                        borderRadius: 4
+                      }}>
+                        Position #{resolvePositionNumber(selectedJob)}
                       </span>
                     )}
 
@@ -3414,9 +3652,9 @@ export default function WellfoundCareersView({
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                     <ShareSheet
-                      url={typeof window !== 'undefined' ? `${window.location.origin}/jobs?jobId=${normalizeJobId(selectedJob.id || selectedJob.reqId) || selectedJob.id}` : ''}
-                      title={`${selectedJob.jobTitle || selectedJob.title || 'Career Opening'} at SmartHire`}
-                      text={`Check out this opening: ${selectedJob.jobTitle || selectedJob.title || 'Role'} in ${selectedJob.location || 'Remote'} on SmartHire!`}
+                      url={typeof window !== 'undefined' ? `${window.location.origin}/jobs?jobId=${resolvePositionNumber(selectedJob) || normalizeJobId(selectedJob.id || selectedJob.reqId) || selectedJob.id}` : ''}
+                      title={`${selectedJob.jobTitle || selectedJob.title || 'Career Opening'}${resolvePositionNumber(selectedJob) ? ` (Position #${resolvePositionNumber(selectedJob)})` : ''} at SmartHire`}
+                      text={`Check out this opening: ${selectedJob.jobTitle || selectedJob.title || 'Role'}${resolvePositionNumber(selectedJob) ? ` (Position #${resolvePositionNumber(selectedJob)})` : ''} in ${selectedJob.location || 'Remote'} on SmartHire!`}
                       label="Share Opening"
                       variant="outline"
                     />

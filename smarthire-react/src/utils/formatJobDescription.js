@@ -84,6 +84,42 @@ export function normalizeJobId(val) {
     .trim();
 }
 
+export function resolvePositionNumber(job = {}) {
+  if (!job) return '';
+  if (typeof job === 'string' || typeof job === 'number') {
+    return normalizeJobId(job);
+  }
+  // 1. Explicit positionNumber on job object
+  if (job.positionNumber && String(job.positionNumber).trim()) {
+    return String(job.positionNumber).trim();
+  }
+  // 2. Parenthesized number in title, e.g. "(808496)" or "(66166)" or "(84888)"
+  const title = String(job.title || job.jobTitle || '');
+  const titleMatch = title.match(/\((\d{4,8})\)/);
+  if (titleMatch && titleMatch[1]) {
+    return titleMatch[1];
+  }
+  // 3. sourceId (e.g. "84888" from JobsInHand or other VMS source)
+  if (job.sourceId && String(job.sourceId).trim()) {
+    return String(job.sourceId).trim();
+  }
+  // 4. vmsNumber / position_number
+  if (job.vmsNumber && String(job.vmsNumber).trim()) {
+    return String(job.vmsNumber).trim();
+  }
+  if (job.position_number && String(job.position_number).trim()) {
+    return String(job.position_number).trim();
+  }
+  // 5. Look in KNOWN_TITLE_MAP
+  for (const item of KNOWN_TITLE_MAP) {
+    if (item.match && item.match.test(title)) {
+      return item.positionNumber;
+    }
+  }
+  // Fallback to reqId or id
+  return normalizeJobId(job.reqId || job.id || job.jobId || '');
+}
+
 export function resolveReqId(rawId = '', job = {}) {
   let actualId = rawId;
   let actualJob = job;

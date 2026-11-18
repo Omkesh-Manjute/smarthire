@@ -1432,7 +1432,17 @@ async function loadScreeningFromDisk() {
     }
     if (fs.existsSync(screeningDbPath)) {
       const raw = fs.readFileSync(screeningDbPath, 'utf-8');
-      screeningStore = JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      // Filter out any raw career job applications that were mistakenly stored as interview screening sessions
+      screeningStore = (Array.isArray(parsed) ? parsed : []).filter(s => {
+        if (!s) return false;
+        if (s.appliedFrom === 'Job Site Application' || s.sourceCategory === 'Careers' || s.appliedFrom === 'Mobile App Application') {
+          if (!s.screeningInvited && (!s.responses || s.responses.length === 0) && !s.videoUrl && !s.audioUrl) {
+            return false;
+          }
+        }
+        return true;
+      });
       console.log(`📂 Loaded ${screeningStore.length} screening session(s) from disk.`);
     } else {
       screeningStore = [];
@@ -7408,8 +7418,11 @@ const handlePublicApplication = async (req, res) => {
       conversationStage: 'submitted'
     };
 
-    screeningStore.unshift(newSession);
-    saveScreeningToDisk();
+    // NOTE: Do NOT push public career applications into screeningStore.
+    // Video & Audio Screening is strictly for candidates who were invited to an asynchronous interview or created via /api/screening/create.
+    // Career applicants are saved into candidatesStore and messagesStore below.
+    // screeningStore.unshift(newSession);
+    // saveScreeningToDisk();
 
     // Create initial message in messages persistence store so it instantly shows up in Recruiter Inbox
     const randSuffix = Math.floor(1000 + Math.random() * 9000);
@@ -7605,6 +7618,17 @@ app.get('/api/screening/sessions', authenticateToken, (req, res) => {
 
   loadScreeningFromDisk();
   let list = [...screeningStore];
+
+  // Filter out any raw job site applications that may exist in screeningStore (they belong in candidate database, not video/audio screening)
+  list = list.filter(s => {
+    if (!s) return false;
+    if (s.appliedFrom === 'Job Site Application' || s.sourceCategory === 'Careers' || s.appliedFrom === 'Mobile App Application') {
+      if (!s.screeningInvited && (!s.responses || s.responses.length === 0) && !s.videoUrl && !s.audioUrl) {
+        return false;
+      }
+    }
+    return true;
+  });
 
   if (isClient) {
     // Client role: strictly scoped to sessions they created or own
