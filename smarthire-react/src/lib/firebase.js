@@ -1,6 +1,12 @@
 import { initializeApp, getApps, getApp } from 'firebase/app'
 import {
+  initializeAuth,
   getAuth,
+  browserLocalPersistence,
+  browserSessionPersistence,
+  inMemoryPersistence,
+  browserPopupRedirectResolver,
+  setPersistence,
   GoogleAuthProvider,
   signInWithPopup,
   signInWithEmailAndPassword,
@@ -25,11 +31,74 @@ const firebaseConfig = {
 }
 
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp()
-export const auth = getAuth(app)
+
+// Use localStorage/sessionStorage/memory persistence instead of IndexedDB.
+// Firebase Auth v12.17's IndexedDB persistence closes on visibilitychange/popup focus
+// transitions and throws "Database is closing/hidden" during Google sign-in popups.
+let authInstance
+try {
+  authInstance = initializeAuth(app, {
+    persistence: [
+      browserLocalPersistence,
+      browserSessionPersistence,
+      inMemoryPersistence
+    ],
+    popupRedirectResolver: browserPopupRedirectResolver
+  })
+} catch (err) {
+  authInstance = getAuth(app)
+  setPersistence(authInstance, browserLocalPersistence).catch(() => {
+    setPersistence(authInstance, inMemoryPersistence).catch(() => {})
+  })
+}
+
+export const auth = authInstance
 export const db = getFirestore(app)
 export const storage = getStorage(app)
 export const googleProvider = new GoogleAuthProvider()
 googleProvider.setCustomParameters({ prompt: 'select_account' })
+
+function isTransientStorageAuthError(err) {
+  const msg = String(err?.message || '').toLowerCase()
+  const code = String(err?.code || '').toLowerCase()
+  return (
+    msg.includes('database is closing') ||
+    msg.includes('closing/hidden') ||
+    msg.includes('indexeddb') ||
+    code === 'auth/web-storage-unsupported'
+  )
+}
+
+async function withAuthPersistenceRetry(operation) {
+  try {
+    return await operation()
+  } catch (err) {
+    if (!isTransientStorageAuthError(err)) {
+      throw err
+    }
+    console.warn('[Firebase Auth] Transient browser storage error detected, switching to safe persistence and retrying:', err?.message)
+    try {
+      await setPersistence(auth, browserLocalPersistence)
+    } catch (_) {
+      try {
+        await setPersistence(auth, inMemoryPersistence)
+      } catch (__) {}
+    }
+    await new Promise(resolve => setTimeout(resolve, 200))
+    return await operation()
+  }
+}
+
+export function formatAuthError(err, fallback = 'Sign-in failed. Please try again.') {
+  if (!err) return fallback
+  if (err.code === 'auth/popup-closed-by-user') return 'Google sign-in popup was closed before completing.'
+  if (err.code === 'auth/cancelled-popup-request') return 'Another sign-in popup is already open. Please try again.'
+  if (err.code === 'auth/popup-blocked') return 'Pop-up was blocked by your browser. Please allow pop-ups for this site or sign in with email.'
+  if (err.code === 'auth/unauthorized-domain') return 'Domain sign-in is updating. Please sign in with your email below.'
+  if (err.code === 'auth/network-request-failed') return 'Network connection interrupted. Please check your internet and try again.'
+  if (isTransientStorageAuthError(err)) return 'Browser session storage temporarily reset. Please click sign in once more or use email sign-in below.'
+  return err.message || fallback
+}
 
 /**
  * Sign in using Google OAuth Popup
@@ -38,7 +107,9 @@ export async function loginWithGoogle() {
   if (!auth) {
     throw new Error('Firebase is not configured. Please add VITE_FIREBASE_API_KEY to your .env file.')
   }
-  const result = await signInWithPopup(auth, googleProvider)
+  const result = await withAuthPersistenceRetry(() =>
+    signInWithPopup(auth, googleProvider, browserPopupRedirectResolver)
+  )
   const user = result.user
   return {
     uid: user.uid,
@@ -56,7 +127,9 @@ export async function loginWithEmail(email, password) {
   if (!auth) {
     throw new Error('Firebase is not configured. Please add VITE_FIREBASE_API_KEY to your .env file.')
   }
-  const result = await signInWithEmailAndPassword(auth, email, password)
+  const result = await withAuthPersistenceRetry(() =>
+    signInWithEmailAndPassword(auth, email, password)
+  )
   const user = result.user
   return {
     uid: user.uid,
@@ -74,7 +147,9 @@ export async function signupWithEmail(email, password) {
   if (!auth) {
     throw new Error('Firebase is not configured. Please add VITE_FIREBASE_API_KEY to your .env file.')
   }
-  const result = await createUserWithEmailAndPassword(auth, email, password)
+  const result = await withAuthPersistenceRetry(() =>
+    createUserWithEmailAndPassword(auth, email, password)
+  )
   const user = result.user
   return {
     uid: user.uid,

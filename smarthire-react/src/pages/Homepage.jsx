@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import SiteLayout from '../components/SiteLayout'
 import PricingSection from '../components/PricingSection'
-import { loginWithGoogle, loginWithEmail, resetPasswordWithEmail } from '../lib/firebase'
+import { loginWithGoogle, loginWithEmail, resetPasswordWithEmail, formatAuthError } from '../lib/firebase'
 import { getUserProfileByEmailFirestore, saveInquiryFirestore } from '../lib/atsFirestore'
 import CreepyButton from '../components/ui/CreepyButton'
 import FaqAccordion from '../components/ui/FaqAccordion'
@@ -327,7 +327,7 @@ function Homepage() {
       setLoginSession(userProfile, gUser.idToken)
     } catch (err) {
       console.warn('Google sign-in error:', err)
-      setErrorMessage(err.code === 'auth/popup-closed-by-user' ? 'Google sign-in popup was closed.' : (err.message || 'Google sign-in failed.'))
+      setErrorMessage(formatAuthError(err, 'Google sign-in failed.'))
     } finally {
       setIsGoogleSigningIn(false)
     }
@@ -2950,6 +2950,17 @@ function Homepage() {
                       {isLoggingIn ? 'Verifying Credentials...' : 'Sign In to ATS Console →'}
                     </button>
                   </form>
+
+                  <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid #e2e8f0', textAlign: 'center', fontSize: 12.5, color: '#64748b' }}>
+                    Applying for an open role?{' '}
+                    <Link
+                      to="/jobs"
+                      onClick={() => setShowLoginModal(false)}
+                      style={{ color: '#2563eb', fontWeight: 700, textDecoration: 'none' }}
+                    >
+                      Go to Careers Portal →
+                    </Link>
+                  </div>
                 </>
               ) : (
                 /* FORGOT PASSWORD VIEW */

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import SiteLayout from '../components/SiteLayout'
-import { loginWithGoogle, loginWithEmail, resetPasswordWithEmail } from '../lib/firebase'
+import { loginWithGoogle, loginWithEmail, resetPasswordWithEmail, formatAuthError } from '../lib/firebase'
 import { getUserProfileByEmailFirestore } from '../lib/atsFirestore'
 
 function Login() {
@@ -158,7 +158,7 @@ function Login() {
       setLoginSession(userProfile, gUser.idToken)
     } catch (err) {
       console.warn('Google sign-in error:', err)
-      setAuthError(err.code === 'auth/popup-closed-by-user' ? 'Google sign-in popup was closed.' : (err.message || 'Google sign-in failed.'))
+      setAuthError(formatAuthError(err, 'Google sign-in failed.'))
     } finally {
       setIsGoogleSigningIn(false)
     }
