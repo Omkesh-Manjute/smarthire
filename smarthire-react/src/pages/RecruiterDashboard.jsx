@@ -9784,9 +9784,9 @@ Email: ${myEmail}
                           onClick={handleScrapeLiveJobs}
                           disabled={isScrapingJobs}
                           className="tf-btn-action-scrape"
-                          title="Scrape and sync live job requisitions from JobsInHand (COOLSOFT)"
+                          title="Scrape and sync live job requisitions from JobsInHand"
                         >
-                          {isScrapingJobs ? 'Syncing COOLSOFT...' : 'Scrape Live JDs'}
+                          {isScrapingJobs ? 'Syncing Requisitions...' : 'Scrape Live JDs'}
                         </button>
                         <button
                           type="button"
@@ -9832,7 +9832,7 @@ Email: ${myEmail}
                   </span>
                   {[
                     { key: 'All', label: 'All Portals', count: jobs.length },
-                    { key: 'COOLSOFT', label: 'COOLSOFT', count: coolsoftJobsCount },
+                    { key: 'COOLSOFT', label: 'Direct Client', count: coolsoftJobsCount },
                     { key: 'InfoOrigin', label: 'InfoOrigin', count: infooriginJobsCount }
                   ].map(tab => (
                     <button
@@ -10023,7 +10023,7 @@ Email: ${myEmail}
                                     </span>
                                   ) : (
                                     <span style={{ fontSize: '10px', fontWeight: 700, padding: '1px 5px', borderRadius: '4px', background: '#EFF6FF', color: '#1D4ED8', border: '1px solid #BFDBFE', letterSpacing: '0.02em' }}>
-                                      COOLSOFT
+                                      Direct Client
                                     </span>
                                   )}
                                 </div>

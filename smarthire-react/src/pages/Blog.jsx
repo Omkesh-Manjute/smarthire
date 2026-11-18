@@ -883,7 +883,7 @@ export default function Blog() {
               <Link key={label} to={href} style={{ color: '#4B5563', textDecoration: 'none', fontWeight: 500 }}>{label}</Link>
             ))}
           </div>
-          <p style={{ margin: 0, color: '#9CA3AF', fontSize: 12 }}>© 2026 SmartHire / COOLSOFT LLC. All rights reserved.</p>
+          <p style={{ margin: 0, color: '#9CA3AF', fontSize: 12 }}>© 2026 SmartHire Technologies. All rights reserved.</p>
         </div>
       </footer>
     </div>

@@ -409,8 +409,8 @@ export function formatStructuredWordResume(resumeText, blindResume = false) {
 
   let raw = blindResume
     ? resumeText
-        .replace(/[\w.-]+@[\w.-]+\.\w+/g, '[Contact details available via CoolSoft LLC]')
-        .replace(/\+?1?[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/g, '[Contact details available via CoolSoft LLC]')
+        .replace(/[\w.-]+@[\w.-]+\.\w+/g, '[Contact details available via SmartHire]')
+        .replace(/\+?1?[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/g, '[Contact details available via SmartHire]')
         .replace(/linkedin\.com\/in\/[\w.-]+/gi, 'linkedin.com/in/[Agency-Verified-Profile]')
     : resumeText;
 
@@ -592,8 +592,8 @@ export function formatStructuredNebraskaResume(resumeText, blindResume = false, 
 
   const raw = blindResume
     ? resumeText
-        .replace(/[\w.-]+@[\w.-]+\.\w+/g, '[Contact details available via CoolSoft LLC]')
-        .replace(/\+?1?[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/g, '[Contact details available via CoolSoft LLC]')
+        .replace(/[\w.-]+@[\w.-]+\.\w+/g, '[Contact details available via SmartHire]')
+        .replace(/\+?1?[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/g, '[Contact details available via SmartHire]')
         .replace(/linkedin\.com\/in\/[\w.-]+/gi, 'linkedin.com/in/[Agency-Verified-Profile]')
     : resumeText;
 
@@ -938,7 +938,7 @@ export function getCleanRtrEmailDetails({
   const recEmail = currentUser?.email || 'omkesh@coolsofttech.com';
   const recRole = currentUser?.role === 'superadmin' ? 'Lead Technical Recruiter / Talent Acquisition' : (currentUser?.title || 'Lead Technical Recruiter');
   const recPhone = currentUser?.phone || '502-327-9805';
-  const recruiterSignature = `Thanks & Regards,\n\n${recName}\n${recRole}\nCOOLSOFT LLC\nEmail: ${recEmail}\nPhone: ${recPhone}\nWeb: https://www.coolsofttech.com`;
+  const recruiterSignature = `Thanks & Regards,\n\n${recName}\n${recRole}\nSmartHire Technologies\nEmail: ${recEmail}\nPhone: ${recPhone}\nWeb: https://smarthireus.com`;
 
   let subject = '';
   let ackBody = '';
@@ -951,7 +951,7 @@ export function getCleanRtrEmailDetails({
 
     ackBody = `Right to Represent Acknowledgement
 
-By inserting my full legal name below, I acknowledge and agree that [COOLSOFT LLC] has the sole right to represent me in matters of work assignment relating to the ${contractTitle} by submitting my professional resume to the Contract's Managed Service Provider, Computer Aid, Inc. for the requirement identified below.
+By inserting my full legal name below, I acknowledge and agree that [SmartHire] has the sole right to represent me in matters of work assignment relating to the ${contractTitle} by submitting my professional resume to the Contract's Managed Service Provider, Computer Aid, Inc. for the requirement identified below.
 
 I also acknowledge and verify that all the information contained in my resume related to my technical credentials is accurate and is based on educational training and professional experience obtained throughout my career.
 
@@ -971,7 +971,7 @@ Candidate Employment Type if Selected for Engagement (W2, 1099, C2C):
     ackBody = `Right to Represent Acknowledgement
 State of Nebraska Staff Augmentation Services
 
-By replying to this email with your confirmation, you acknowledge and agree that COOLSOFT LLC has the exclusive right to represent you for active requisition #${reqNumber} (${title}) with the State of Nebraska.
+By replying to this email with your confirmation, you acknowledge and agree that SmartHire has the exclusive right to represent you for active requisition #${reqNumber} (${title}) with the State of Nebraska.
 
 I also acknowledge and verify that all the information contained in my resume related to my technical credentials is accurate and is based on educational training and professional experience obtained throughout my career.
 
@@ -988,13 +988,13 @@ Candidate Employment Type:
 ${emp}`;
   } else if (selectedTemplate === 'south_carolina_sosc') {
     subject = `SOSC Right to Represent-Posting ID -${reqNumber}`;
-    ackBody = `Please confirm that COOLSOFT LLC has the right to submit you for consideration to the ${title} - position at "SOSC" under posting ${reqNumber}.`;
+    ackBody = `Please confirm that SmartHire has the right to submit you for consideration to the ${title} - position at "SOSC" under posting ${reqNumber}.`;
     const fullEmailBody = `Hi ${fname},
 
 ${ackBody}
 
 Please reply directly to this email confirming your authorization:
-"I, ${name}, confirm that COOLSOFT LLC has the right to submit me for consideration to the ${title} position at SOSC under posting ${reqNumber}."
+"I, ${name}, confirm that SmartHire has the right to submit me for consideration to the ${title} position at SOSC under posting ${reqNumber}."
 
 ${recruiterSignature}`;
 
@@ -1010,7 +1010,7 @@ ${recruiterSignature}`;
 Contract Representation & Exclusivity Agreement • DIR-CPO-ITSA-0442
 
 1. Scope of Representation:
-The undersigned candidate hereby grants COOLSOFT LLC the exclusive authorization to submit credentials, resume, and rate proposal for active requisition #${reqNumber} (${title}) issued under the Texas DIR Cooperative Contracts Program.
+The undersigned candidate hereby grants SmartHire the exclusive authorization to submit credentials, resume, and rate proposal for active requisition #${reqNumber} (${title}) issued under the Texas DIR Cooperative Contracts Program.
 
 2. Candidate Acknowledgment:
 Candidate acknowledges that only one submittal per candidate is permitted by the State of Texas for each Solicitation ID. Dual representation will lead to immediate disqualification.
@@ -1031,7 +1031,7 @@ Requisition / Requirement Number: #${reqNumber}
 Target Position Title: ${title}
 Client Agency: State of Florida
 Agreed Hourly Submittal Rate: $${rate}/hour (${emp})
-Exclusive Representation Partner: COOLSOFT LLC
+Exclusive Representation Partner: SmartHire
 
 KEY EXHIBIT E CERTIFICATION & LEGAL DISCLOSURE:
 1. Under Penalty of Perjury: Candidate certifies that all information in their resume submitted for consideration of the State of Florida contract position is true, correct, complete, and made in good faith. If an omission, falsification, misstatement, or misrepresentation has been made regarding education, work ability, experience, employment history, or fitness for employment, candidate may be disqualified, and reported for civil and/or criminal penalties under sections 287.133 or 817.566, Florida Statutes, and US DHS for deportation if non-US citizen.
@@ -1050,7 +1050,7 @@ State Driver's License / Official ID`;
 ${ackBody}
 
 Please reply directly to this email confirming your authorization:
-"I, ${name}, certify under penalty of perjury that my resume is true and complete, and I confirm that COOLSOFT LLC has the exclusive right to submit me for consideration to the ${title} position under State of Florida Contract No. 80101507-23-STC-ITSA (Req #${reqNumber}) at $${rate}/hr (${emp}), and I agree to all terms of Exhibit E."
+"I, ${name}, certify under penalty of perjury that my resume is true and complete, and I confirm that SmartHire has the exclusive right to submit me for consideration to the ${title} position under State of Florida Contract No. 80101507-23-STC-ITSA (Req #${reqNumber}) at $${rate}/hr (${emp}), and I agree to all terms of Exhibit E."
 
 ${recruiterSignature}`;
 
@@ -1064,9 +1064,9 @@ ${recruiterSignature}`;
     // Standard Direct Client RTR
     subject = `Right to Represent (RTR): ${title} (Req #${reqNumber}) - ${client}`;
     ackBody = `Exclusive Right to Represent & Authorization Agreement (RTR)
-COOLSOFT LLC Staff Augmentation Services • Requisition #${reqNumber} (${client})
+SmartHire Staff Augmentation Services • Requisition #${reqNumber} (${client})
 
-I, ${name}, hereby grant COOLSOFT LLC the exclusive authorization to represent and submit my candidate credentials for the ${title} requirement (Req #${reqNumber}) with ${client}.
+I, ${name}, hereby grant SmartHire the exclusive authorization to represent and submit my candidate credentials for the ${title} requirement (Req #${reqNumber}) with ${client}.
 
 I confirm that I am legally authorized to work in the United States (${coversheet.visaStatus || 'Valid'}) and have not authorized any other staffing agency or vendor to submit my resume for this engagement.
 
@@ -1087,7 +1087,7 @@ ${ackBody}
 --------------------------------------------------
 
 Please reply directly to this email confirming your authorization:
-"I, ${name}, confirm and agree that COOLSOFT LLC has the exclusive right to represent me for ${title} (${reqNumber}) at $${rate}/hr (${emp})."
+"I, ${name}, confirm and agree that SmartHire has the exclusive right to represent me for ${title} (${reqNumber}) at $${rate}/hr (${emp})."
 
 ${recruiterSignature}`;
 
@@ -1191,14 +1191,14 @@ export function generateRichEmailHtml({
 <body style="margin: 0; padding: 20px; background-color: #F8FAFC; font-family: Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
   <div style="max-width: 680px; margin: 0 auto; background-color: #FFFFFF; border: 1px solid #CBD5E1; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
     <div style="background-color: #0F172A; padding: 16px 24px; border-bottom: 3px solid #2563EB;">
-      <div style="color: #FFFFFF; font-size: 16px; font-weight: bold; letter-spacing: -0.01em;">COOLSOFT LLC</div>
+      <div style="color: #FFFFFF; font-size: 16px; font-weight: bold; letter-spacing: -0.01em;">SmartHire Technologies</div>
       <div style="color: #94A3B8; font-size: 11px; margin-top: 2px;">Staff Augmentation & Talent Acquisition • Req #${escapeHtml(reqStr)}</div>
     </div>
     <div style="padding: 24px 28px; color: #1E293B;">
       ${formattedBlocks}
     </div>
     <div style="background-color: #F1F5F9; padding: 12px 24px; border-top: 1px solid #E2E8F0; text-align: center; font-size: 11px; color: #64748B;">
-      COOLSOFT LLC • 1902 Campus Place, Suite 12, Louisville, KY 40299 • https://www.coolsofttech.com
+      SmartHire Technologies • https://smarthireus.com
     </div>
   </div>
 </body>
@@ -1227,7 +1227,7 @@ export function generateRichEmailHtml({
 <body style="margin: 0; padding: 20px; background-color: #F8FAFC; font-family: Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
   <div style="max-width: 720px; margin: 0 auto; background-color: #FFFFFF; border: 1px solid #CBD5E1; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
     <div style="background-color: #0F172A; padding: 18px 24px; border-bottom: 3px solid #2563EB;">
-      <div style="color: #FFFFFF; font-size: 17px; font-weight: bold;">COOLSOFT LLC — CANDIDATE SUBMITTAL PACKAGE</div>
+      <div style="color: #FFFFFF; font-size: 17px; font-weight: bold;">SmartHire Technologies — CANDIDATE SUBMITTAL PACKAGE</div>
       <div style="color: #94A3B8; font-size: 12px; margin-top: 3px;">
         Candidate: <span style="background-color: #FFFF00; color: #000000; font-weight: bold; padding: 2px 5px; border-radius: 2px;">${escapeHtml(candName)}</span> • ${escapeHtml(roleStr)} (Req #${escapeHtml(reqStr)})
       </div>
@@ -1302,10 +1302,10 @@ export function generateRichEmailHtml({
       </div>
       ` : ''}
       <div style="margin-top: 24px; padding-top: 14px; border-top: 1px solid #E2E8F0; font-size: 12.5px; color: #475569; line-height: 1.5;">
-        <strong>COOLSOFT LLC Submissions Team</strong><br/>
+        <strong>SmartHire Submissions Team</strong><br/>
         Email: ${escapeHtml(currentUser?.email || 'submissions@coolsofttech.com')}<br/>
         Phone: ${escapeHtml(currentUser?.phone || '502-327-9805')}<br/>
-        Web: <a href="https://www.coolsofttech.com" style="color: #2563EB;">https://www.coolsofttech.com</a>
+        Web: <a href="https://smarthireus.com" style="color: #2563EB;">https://smarthireus.com</a>
       </div>
     </div>
   </div>
@@ -1321,7 +1321,7 @@ export const SUBMITTAL_TEMPLATES = [
     id: 'standard',
     name: 'Standard US Direct Client Format',
     badge: 'Direct Client',
-    agencyName: 'CoolSoft LLC',
+    agencyName: 'SmartHire',
     mspName: 'Direct Client Account Team',
     contractName: 'Master Professional Services Agreement',
     hasCaiBox: false,
@@ -1331,7 +1331,7 @@ export const SUBMITTAL_TEMPLATES = [
     id: 'florida_fdot',
     name: 'State of Florida (Exhibit E — Resume Self-Certification)',
     badge: 'Florida Exhibit E',
-    agencyName: 'COOLSOFT LLC',
+    agencyName: 'SmartHire',
     mspName: 'State of Florida IT Staff Augmentation',
     contractName: 'IT Staff Augmentation Services (Contract No. 80101507-23-STC-ITSA) — Exhibit E',
     hasCaiBox: false,
@@ -1341,7 +1341,7 @@ export const SUBMITTAL_TEMPLATES = [
     id: 'south_carolina_sosc',
     name: 'State of South Carolina (SOSC Format)',
     badge: 'South Carolina SOSC',
-    agencyName: 'COOLSOFT LLC',
+    agencyName: 'SmartHire',
     mspName: 'State of South Carolina (SOSC)',
     contractName: 'State of South Carolina IT Staff Augmentation Services',
     hasCaiBox: false,
@@ -1351,7 +1351,7 @@ export const SUBMITTAL_TEMPLATES = [
     id: 'nc_cai',
     name: 'State of North Carolina (NC VectorVMS / CAI Format)',
     badge: 'NC VectorVMS / CAI',
-    agencyName: 'COOLSOFT LLC',
+    agencyName: 'SmartHire',
     mspName: 'Computer Aid, Inc. (CAI)',
     contractName: 'North Carolina IT Supplemental Services Contract',
     defaultCaiManager: 'Nicole Walker',
@@ -1364,7 +1364,7 @@ export const SUBMITTAL_TEMPLATES = [
     id: 'georgia_cai',
     name: 'State of Georgia (GDOT / VectorVMS / CAI Format)',
     badge: 'Georgia VectorVMS / CAI',
-    agencyName: 'COOLSOFT LLC',
+    agencyName: 'SmartHire',
     mspName: 'Computer Aid, Inc. (CAI)',
     contractName: "State of Georgia's IT Staffing Services Contract",
     defaultCaiManager: 'Tim Brodrick',
@@ -1377,7 +1377,7 @@ export const SUBMITTAL_TEMPLATES = [
     id: 'nebraska_state',
     name: 'State of Nebraska (Official State Template Format)',
     badge: 'Nebraska State',
-    agencyName: 'CoolSoft LLC',
+    agencyName: 'SmartHire',
     mspName: 'State of Nebraska IT Services',
     contractName: 'State of Nebraska Staff Augmentation Services',
     hasCaiBox: false,
@@ -1387,7 +1387,7 @@ export const SUBMITTAL_TEMPLATES = [
     id: 'texas_dir',
     name: 'State Government / Texas DIR Matrix Format',
     badge: 'Texas DIR',
-    agencyName: 'CoolSoft LLC',
+    agencyName: 'SmartHire',
     mspName: 'Texas Department of Information Resources',
     contractName: 'DIR Cooperative Contracts Program (DIR-CPO-ITSA-0442)',
     hasCaiBox: false,
@@ -1397,7 +1397,7 @@ export const SUBMITTAL_TEMPLATES = [
     id: 'msp_vms',
     name: 'MSP / VMS Matrix (Fieldglass & Beeline)',
     badge: 'Fieldglass / Beeline',
-    agencyName: 'CoolSoft LLC',
+    agencyName: 'SmartHire',
     mspName: 'Contingent Workforce MSP',
     contractName: 'VMS Contingent Labor Staffing Agreement',
     hasCaiBox: false,
@@ -1407,7 +1407,7 @@ export const SUBMITTAL_TEMPLATES = [
     id: 'prime_vendor',
     name: 'Prime Vendor C2C Presentation',
     badge: 'C2C Prime Partner',
-    agencyName: 'CoolSoft LLC',
+    agencyName: 'SmartHire',
     mspName: 'Prime Vendor / Implementation Partner',
     contractName: 'Subcontracting Corp-to-Corp Agreement',
     hasCaiBox: false,
@@ -1918,7 +1918,7 @@ export default function SubmittalPackPage() {
         highestEducation: finalEdu,
         noticePeriod: 'Immediate / 2 Weeks',
         interviewAvailability: 'Flexible with 24 Hours Notice (Video)',
-        linkedinUrl: cand.linkedinUrl || 'Represented Exclusively via CoolSoft LLC',
+        linkedinUrl: cand.linkedinUrl || 'Represented Exclusively via SmartHire',
         references: 'Available upon client request',
         skillsMatrix: matrix
       }))
@@ -1985,7 +1985,7 @@ EDUCATION & CERTIFICATIONS
             </div>
             <div style="text-align: right; font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #334155;">
               <div style="font-weight: bold; color: #000000;">State of Nebraska IT Services</div>
-              <div>Submitted via COOLSOFT LLC</div>
+              <div>Submitted via SmartHire</div>
             </div>
           </div>
         </div>
@@ -2020,7 +2020,7 @@ EDUCATION & CERTIFICATIONS
           ${candidateName}
         </p>
         <p style="margin: 2px 0 18px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11.5px; color: #334155;">
-          ${positionTitle} • Req #${vmsNumber} (${clientAgency}) • Represented via COOLSOFT LLC
+          ${positionTitle} • Req #${vmsNumber} (${clientAgency}) • Represented via SmartHire
         </p>
 
         <!-- Structured Resume Body (Summary, Skills, Experience with Project Titles & Bullets, Education) -->
@@ -2047,7 +2047,7 @@ EDUCATION & CERTIFICATIONS
               </div>
             </div>
             <div style="text-align: right; font-family: Arial, Helvetica, sans-serif;">
-              <div style="font-size: 13.5px; font-weight: bold; color: #0F172A;">COOLSOFT LLC</div>
+              <div style="font-size: 13.5px; font-weight: bold; color: #0F172A;">SmartHire</div>
               <div style="font-size: 11px; color: #64748B;">Florida State Prime Contractor</div>
               <div style="font-size: 11px; color: #64748B;">Req #${vmsNumber} • Exhibit E</div>
             </div>
@@ -2059,7 +2059,7 @@ EDUCATION & CERTIFICATIONS
             <span>•</span>
             <span>Experience: ${coversheet.totalExperience}</span>
             <span>•</span>
-            <span style="color: #059669; font-weight: bold;">Represented exclusively via COOLSOFT LLC</span>
+            <span style="color: #059669; font-weight: bold;">Represented exclusively via SmartHire</span>
           </div>
         </div>
 
@@ -2135,7 +2135,7 @@ EDUCATION & CERTIFICATIONS
 
         <!-- Body Paragraph 1 (Verdana 10.5px/11px, justified) -->
         <p style="margin: 0 0 12px 0; text-align: justify; font-family: Verdana, Geneva, sans-serif; font-size: 11px; line-height: 1.6; color: #000000;">
-          By signing below, I acknowledge and agree that <b>[COOLSOFT LLC]</b> has the sole right to represent me in matters of work assignment relating the North Carolina IT Supplemental Services Contract by submitting my professional resume to the Contract’s Managed Service Provider, Computer Aid, Inc. for the requirement identified below.
+          By signing below, I acknowledge and agree that <b>[SmartHire]</b> has the sole right to represent me in matters of work assignment relating the North Carolina IT Supplemental Services Contract by submitting my professional resume to the Contract’s Managed Service Provider, Computer Aid, Inc. for the requirement identified below.
         </p>
 
         <!-- Body Paragraph 2 (Verdana 10.5px/11px, justified) -->
@@ -2195,7 +2195,7 @@ EDUCATION & CERTIFICATIONS
 
         <!-- Body Paragraph 1 (Verdana 10.5px/11px, justified) -->
         <p style="margin: 0 0 12px 0; text-align: justify; font-family: Verdana, Geneva, sans-serif; font-size: 11px; line-height: 1.6; color: #000000;">
-          By inserting my full legal name below, I acknowledge and agree that <b>[COOLSOFT LLC]</b> has the sole right to represent me in matters of work assignment relating to the State of Georgia’s IT Staffing Services Contract by submitting my professional resume to the Contract’s Managed Service Provider, Computer Aid, Inc. for the requirement identified below.
+          By inserting my full legal name below, I acknowledge and agree that <b>[SmartHire]</b> has the sole right to represent me in matters of work assignment relating to the State of Georgia’s IT Staffing Services Contract by submitting my professional resume to the Contract’s Managed Service Provider, Computer Aid, Inc. for the requirement identified below.
         </p>
 
         <!-- Body Paragraph 2 (Verdana 10.5px/11px, justified) -->
@@ -2269,7 +2269,7 @@ EDUCATION & CERTIFICATIONS
           Hi <span style="background-color: #FFFF00; font-weight: bold; padding: 1px 6px;">${candidateFirst}</span>,
         </p>
         <p style="margin: 0 0 16px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11.5px; line-height: 1.6; color: #000000;">
-          Please confirm that COOLSOFT LLC has the right to submit you for consideration to the <span style="background-color: #FFFF00; font-weight: bold; padding: 1px 6px;">${positionTitle}</span> - position at "SOSC" under posting <span style="background-color: #FFFF00; font-weight: bold; padding: 1px 6px;">${vmsNumber}</span>.
+          Please confirm that SmartHire has the right to submit you for consideration to the <span style="background-color: #FFFF00; font-weight: bold; padding: 1px 6px;">${positionTitle}</span> - position at "SOSC" under posting <span style="background-color: #FFFF00; font-weight: bold; padding: 1px 6px;">${vmsNumber}</span>.
         </p>
 
         <!-- Candidate Confirmation Reply Section -->
@@ -2278,7 +2278,7 @@ EDUCATION & CERTIFICATIONS
             Candidate Reply Confirmation:
           </p>
           <p style="margin: 0; font-family: Verdana, Geneva, sans-serif; font-size: 11.5px; line-height: 1.5; color: #0F172A; font-style: italic;">
-            "I, <span style="background-color: #FFFF00; font-weight: bold; padding: 1px 6px;">${candidateName}</span>, confirm that COOLSOFT LLC has the right to submit me for consideration to the ${positionTitle} position at SOSC under posting ${vmsNumber}."
+            "I, <span style="background-color: #FFFF00; font-weight: bold; padding: 1px 6px;">${candidateName}</span>, confirm that SmartHire has the right to submit me for consideration to the ${positionTitle} position at SOSC under posting ${vmsNumber}."
           </p>
         </div>
 
@@ -2299,7 +2299,7 @@ EDUCATION & CERTIFICATIONS
           Contract Representation & Exclusivity Agreement • DIR-CPO-ITSA-0442
         </p>
         <p style="margin: 0 0 10px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11px; line-height: 1.6; color: #000000;">
-          1. <b>Scope of Representation</b>: The undersigned candidate hereby grants COOLSOFT LLC the exclusive authorization to submit credentials, resume, and rate proposal for active requisition #${vmsNumber} (${positionTitle}) issued under the Texas DIR Cooperative Contracts Program.
+          1. <b>Scope of Representation</b>: The undersigned candidate hereby grants SmartHire the exclusive authorization to submit credentials, resume, and rate proposal for active requisition #${vmsNumber} (${positionTitle}) issued under the Texas DIR Cooperative Contracts Program.
         </p>
         <p style="margin: 0 0 10px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11px; line-height: 1.6; color: #000000;">
           2. <b>Candidate Acknowledgment</b>: Candidate acknowledges that only one submittal per candidate is permitted by the State of Texas for each Solicitation ID. Dual representation will lead to immediate disqualification.
@@ -2339,7 +2339,7 @@ EDUCATION & CERTIFICATIONS
 
         <!-- Body Paragraph 1 (Verdana 10.5px/11px, justified) -->
         <p style="margin: 0 0 12px 0; text-align: justify; font-family: Verdana, Geneva, sans-serif; font-size: 11px; line-height: 1.6; color: #000000;">
-          By replying to this email with your confirmation, you acknowledge and agree that <b>[COOLSOFT LLC]</b> has the exclusive right to represent you for active requisition #${vmsNumber} (<b>${positionTitle}</b>) with the <b>State of Nebraska</b>.
+          By replying to this email with your confirmation, you acknowledge and agree that <b>[SmartHire]</b> has the exclusive right to represent you for active requisition #${vmsNumber} (<b>${positionTitle}</b>) with the <b>State of Nebraska</b>.
         </p>
 
         <!-- Body Paragraph 2 (Verdana 10.5px/11px, justified) -->
@@ -2551,11 +2551,11 @@ EDUCATION & CERTIFICATIONS
           Exclusive Right to Represent & Authorization Agreement (RTR)
         </h3>
         <div style="font-family: Verdana, Geneva, sans-serif; font-size: 11.5px; color: #64748B;">
-          CoolSoft LLC Staff Augmentation Services • Requisition #${vmsNumber} (${clientAgency})
+          SmartHire Staff Augmentation Services • Requisition #${vmsNumber} (${clientAgency})
         </div>
       </div>
       <p style="margin: 0 0 12px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11.5px; line-height: 1.6; color: #000000;">
-        I, <span style="background-color: #FFFF00; font-weight: bold; padding: 2px 6px;">${candidateName}</span>, hereby grant COOLSOFT LLC the exclusive authorization to represent and submit my candidate credentials for the <b>${positionTitle}</b> requirement (Req #${vmsNumber}) with <b>${clientAgency}</b>.
+        I, <span style="background-color: #FFFF00; font-weight: bold; padding: 2px 6px;">${candidateName}</span>, hereby grant SmartHire the exclusive authorization to represent and submit my candidate credentials for the <b>${positionTitle}</b> requirement (Req #${vmsNumber}) with <b>${clientAgency}</b>.
       </p>
       <p style="margin: 0 0 12px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11.5px; line-height: 1.6; color: #000000;">
         I confirm that I am legally authorized to work in the United States (${coversheet.visaStatus}) and have not authorized any other staffing agency or vendor to submit my resume for this engagement.
@@ -2640,7 +2640,7 @@ EDUCATION & CERTIFICATIONS
     return `=====================================================
 CANDIDATE SUBMISSION COVERSHEET — ${coversheet.clientName.toUpperCase()}
 REQUISITION: #${coversheet.jobId} - ${coversheet.targetRole}
-AGENCY: CoolSoft LLC / SmartHire Recruiting Partner
+AGENCY: SmartHire Recruiting Partner
 PRESENTATION FORMAT: ${activeTemplateMeta.name}
 =====================================================
 
@@ -2656,7 +2656,7 @@ Proposed Billing / Pay Rate: ${coversheet.proposedRate} (${employmentType})
 Highest Education / Degree: ${coversheet.highestEducation}
 Availability / Notice:      ${coversheet.noticePeriod}
 Interview Availability:     ${coversheet.interviewAvailability}
-Representation Status:      Exclusive via CoolSoft LLC
+Representation Status:      Exclusive via SmartHire
 
 ${activeTemplateMeta.hasCaiBox ? `-----------------------------------------------------
 MSP / CAI CONTRACT MANAGER DETAILS:
@@ -2743,7 +2743,7 @@ ${coversheet.references}
     const cand = candidates.find(c => c.id === selectedCandidateId)
     setEmailTo(cand?.recruiterEmail || 'account-manager@coolsofttech.com')
     setEmailSubject(`Candidate Submittal: ${coversheet.candidateLegalName} — ${positionTitle} (Req #${vmsNumber} - ${clientAgency})`)
-    setEmailBody(`Hi Team,\n\nPlease find attached the submittal package and presentation coversheet for ${coversheet.candidateLegalName} for the ${positionTitle} opening with ${clientAgency}.\n\nCandidate is confirmed at ${coversheet.proposedRate} (${employmentType}) with ${coversheet.visaStatus} work authorization and is available on ${coversheet.noticePeriod}.\n\nBest regards,\nSmartHire Submissions Team\nCoolSoft LLC`)
+    setEmailBody(`Hi Team,\n\nPlease find attached the submittal package and presentation coversheet for ${coversheet.candidateLegalName} for the ${positionTitle} opening with ${clientAgency}.\n\nCandidate is confirmed at ${coversheet.proposedRate} (${employmentType}) with ${coversheet.visaStatus} work authorization and is available on ${coversheet.noticePeriod}.\n\nBest regards,\nSmartHire Submissions Team`)
     setShowEmailModal(true)
   }
 

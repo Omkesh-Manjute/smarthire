@@ -2745,10 +2745,47 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
   const [comparisonCandidates, setComparisonCandidates] = useState([])
   const [comparisonJob, setComparisonJob] = useState(null)
 
+  const handleCandidateResumeDownload = (cand) => {
+    if (!cand) return
+    const resFile = resolveCandidateResumeFile(cand)
+    if (resFile?.url) {
+      const a = document.createElement('a')
+      a.href = resFile.url
+      a.download = resFile.name || `${(cand.name || 'Candidate').replace(/\s+/g, '_')}_Resume`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+    } else {
+      const txt = cand.resumeText || cand.resume_text || getFullResumeText(cand) || `${cand.name || 'Candidate'} Resume`
+      const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${(cand.name || 'Candidate').replace(/\s+/g, '_')}_Resume.txt`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      setTimeout(() => URL.revokeObjectURL(url), 1000)
+    }
+  }
+
   const handleOpenComparisonModal = (candsToCompare = null, job = null) => {
     let list = candsToCompare
     if (!list || !Array.isArray(list) || list.length === 0) {
-      list = filteredCandidates.filter(c => selectedCardIds.has(c.id || c.email))
+      const isSelected = (c) => {
+        if (!c) return false
+        return Boolean(
+          (c.id && selectedCardIds.has(c.id)) ||
+          (c.candidate_id && selectedCardIds.has(c.candidate_id)) ||
+          (c.email && selectedCardIds.has(c.email)) ||
+          (c._id && selectedCardIds.has(c._id)) ||
+          selectedCardIds.has(c.id || c.email)
+        )
+      }
+      list = filteredCandidates.filter(isSelected)
+      if ((!list || list.length < 2) && selectedCardIds.size >= 2) {
+        list = (roleScopedCandidates || []).filter(isSelected)
+      }
     }
     if (!list || list.length < 2) {
       alert('Please select at least 2 candidates to compare side-by-side.')
@@ -2939,7 +2976,7 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
         role: thread?.role || (isLead ? 'Lead Recruiter & Reporting Supervisor' : 'Recruiter / Sourcing Specialist'),
         phone: thread?.phone || '+1 (555) 019-2834',
         location: thread?.location || 'United States / Remote',
-        company: thread?.company || 'COOLSOFT LLC / SmartHire',
+        company: thread?.company || 'SmartHire',
         skills: isLead 
           ? ['Team Supervision', 'Requisition Approvals', 'Client Delivery', 'Rate Clearances', 'Candidate Intake']
           : ['Candidate Sourcing', 'Resume Verification', 'RTR Screening', 'Boolean Search', 'Candidate Engagement'],
@@ -3122,7 +3159,7 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
         email: parentRecruiterEmail,
         phone: '+1 (571) 660-5778',
         role: 'Lead Recruiter & Reporting Supervisor',
-        company: 'COOLSOFT LLC / SmartHire',
+        company: 'SmartHire',
         location: 'Richmond, VA / Remote',
         status: 'online',
         isOnline: true,
@@ -3195,7 +3232,7 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
         email: mem.email,
         phone: mem.phone || '+1 (555) 019-2834',
         role: mem.role || 'Recruiter / Sourcing Specialist',
-        company: mem.company || 'COOLSOFT LLC / SmartHire',
+        company: mem.company || 'SmartHire',
         location: mem.location || 'United States',
         refCode: mem.refCode || safeCode,
         status: 'online',
@@ -3657,7 +3694,7 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
     const jobRate = cand.matchedJobRate || activeTargetJob?.rate || '$75/hr'
     const jobClient = cand.matchedJobClient || activeTargetJob?.client || 'State Agency'
 
-    const defaultSubject = `Opportunity: ${jobTitle} (Req #${targetReq}) | COOLSOFT LLC`
+    const defaultSubject = `Opportunity: ${jobTitle} (Req #${targetReq}) | SmartHire`
     setEmailSubject(defaultSubject)
 
     const candFirstName = (cand.name || 'Candidate').split(' ')[0]
@@ -3665,7 +3702,7 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
     const myName = u.name || currentUser?.name || (isSuperAdmin ? 'Super Admin' : 'Lead Recruiter')
     const myEmail = u.email || currentUser?.email || (isSuperAdmin ? 'omkesh@coolsofttech.com' : 'recruiter@coolsofttech.com')
 
-    const defaultBody = `Hi ${candFirstName},\n\nI reviewed your resume for the ${jobTitle} position (Req #${targetReq}) with our client ${jobClient} (${jobRate}). Your technical background and experience are a strong fit for this project.\n\nCould you please review and confirm:\n1. Your current work authorization status?\n2. Your updated hourly rate expectation for this position?\n3. Your immediate availability for a brief technical screening call?\n\nPlease reply directly to this email or feel free to attach your latest updated resume.\n\nWith Regards,\n${myName}\nLead Recruiter\nCOOLSOFT LLC | ${myEmail}\nhttp://www.coolsofttech.com`
+    const defaultBody = `Hi ${candFirstName},\n\nI reviewed your resume for the ${jobTitle} position (Req #${targetReq}) with our client ${jobClient} (${jobRate}). Your technical background and experience are a strong fit for this project.\n\nCould you please review and confirm:\n1. Your current work authorization status?\n2. Your updated hourly rate expectation for this position?\n3. Your immediate availability for a brief technical screening call?\n\nPlease reply directly to this email or feel free to attach your latest updated resume.\n\nWith Regards,\n${myName}\nLead Recruiter\nSmartHire | ${myEmail}\nhttps://smarthireus.com`
 
     setEmailBody(defaultBody)
     setEmailSuccessToast('')
@@ -5484,8 +5521,8 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
     const myEmail = u.email || currentUser?.email || (isSuperAdmin ? 'omkesh@coolsofttech.com' : 'recruiter@coolsofttech.com')
 
     setEmailTo(activeCandidate.email || '')
-    setEmailSubject(`Opportunity: ${jobTitle} (Req #${targetReq}) | COOLSOFT LLC`)
-    setEmailBody(`Hi ${candFirstName},\n\nI reviewed your resume for the ${jobTitle} position (Req #${targetReq}) with our client ${jobClient} (${jobRate}). Your technical background and experience are a strong fit for this project.\n\nCould you please review and confirm:\n1. Your current work authorization status?\n2. Your updated hourly rate expectation for this position?\n3. Your immediate availability for a brief technical screening call?\n\nPlease reply directly to this email or feel free to attach your latest updated resume.\n\nWith Regards,\n${myName}\nLead Recruiter\nCOOLSOFT LLC | ${myEmail}\nhttp://www.coolsofttech.com`)
+    setEmailSubject(`Opportunity: ${jobTitle} (Req #${targetReq}) | SmartHire`)
+    setEmailBody(`Hi ${candFirstName},\n\nI reviewed your resume for the ${jobTitle} position (Req #${targetReq}) with our client ${jobClient} (${jobRate}). Your technical background and experience are a strong fit for this project.\n\nCould you please review and confirm:\n1. Your current work authorization status?\n2. Your updated hourly rate expectation for this position?\n3. Your immediate availability for a brief technical screening call?\n\nPlease reply directly to this email or feel free to attach your latest updated resume.\n\nWith Regards,\n${myName}\nLead Recruiter\nSmartHire | ${myEmail}\nhttps://smarthireus.com`)
     setEmailCc('')
     setEmailBcc('')
     setShowCcInput(false)
@@ -5738,16 +5775,16 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
 
     if (key === 'rtr') {
       setEmailSubject(`Right to Represent (RTR) Authorization: ${jobTitle} (Req #${targetReq})`)
-      setEmailBody(`Hi ${candFirstName},\n\nPlease confirm your authorization for COOLSOFT LLC to represent you exclusively for the following client opportunity:\n\n- Position: ${jobTitle}\n- Requisition ID: Req #${targetReq}\n- Client: ${jobClient}\n- Proposed Rate: ${jobRate}\n\nBy replying 'I AUTHORIZE COOLSOFT LLC TO SUBMIT MY PROFILE FOR REQ #${targetReq}', you grant us permission to present your resume and credentials to the client.\n\nWith Regards,\n${myName}\nLead Recruiter\nCOOLSOFT LLC | ${myEmail}\nhttp://www.coolsofttech.com`)
+      setEmailBody(`Hi ${candFirstName},\n\nPlease confirm your authorization for SmartHire to represent you exclusively for the following client opportunity:\n\n- Position: ${jobTitle}\n- Requisition ID: Req #${targetReq}\n- Client: ${jobClient}\n- Proposed Rate: ${jobRate}\n\nBy replying 'I AUTHORIZE SMARTHIRE TO SUBMIT MY PROFILE FOR REQ #${targetReq}', you grant us permission to present your resume and credentials to the client.\n\nWith Regards,\n${myName}\nLead Recruiter\nSmartHire | ${myEmail}\nhttps://smarthireus.com`)
     } else if (key === 'screen') {
-      setEmailSubject(`Technical Screening Call: ${jobTitle} (Req #${targetReq}) | COOLSOFT LLC`)
-      setEmailBody(`Hi ${candFirstName},\n\nWe reviewed your credentials for the ${jobTitle} role and would like to schedule a 15-minute technical pre-screening call.\n\nPlease let us know your earliest availability today or tomorrow (EDT / CDT).\n\nWith Regards,\n${myName}\nLead Recruiter\nCOOLSOFT LLC | ${myEmail}\nhttp://www.coolsofttech.com`)
+      setEmailSubject(`Technical Screening Call: ${jobTitle} (Req #${targetReq}) | SmartHire`)
+      setEmailBody(`Hi ${candFirstName},\n\nWe reviewed your credentials for the ${jobTitle} role and would like to schedule a 15-minute technical pre-screening call.\n\nPlease let us know your earliest availability today or tomorrow (EDT / CDT).\n\nWith Regards,\n${myName}\nLead Recruiter\nSmartHire | ${myEmail}\nhttps://smarthireus.com`)
     } else if (key === 'rate') {
       setEmailSubject(`Rate & Work Authorization Confirmation: ${jobTitle} (Req #${targetReq})`)
-      setEmailBody(`Hi ${candFirstName},\n\nPrior to client submittal for ${jobTitle} (Req #${targetReq}), please confirm:\n1. Your final all-inclusive C2C or W2 hourly rate.\n2. Your current visa / work authorization copy.\n3. Your current location and relocation willingness.\n\nWith Regards,\n${myName}\nLead Recruiter\nCOOLSOFT LLC | ${myEmail}\nhttp://www.coolsofttech.com`)
+      setEmailBody(`Hi ${candFirstName},\n\nPrior to client submittal for ${jobTitle} (Req #${targetReq}), please confirm:\n1. Your final all-inclusive C2C or W2 hourly rate.\n2. Your current visa / work authorization copy.\n3. Your current location and relocation willingness.\n\nWith Regards,\n${myName}\nLead Recruiter\nSmartHire | ${myEmail}\nhttps://smarthireus.com`)
     } else if (key === 'interview') {
-      setEmailSubject(`Client Interview Shortlist: ${jobTitle} (Req #${targetReq}) - COOLSOFT LLC`)
-      setEmailBody(`Hi ${candFirstName},\n\nGreat news! The client (${jobClient}) has shortlisted your profile for an interview for the ${jobTitle} position.\n\nPlease confirm your availability for a 45-minute video interview this week and provide 2-3 preferred time slots.\n\nWith Regards,\n${myName}\nLead Recruiter\nCOOLSOFT LLC | ${myEmail}\nhttp://www.coolsofttech.com`)
+      setEmailSubject(`Client Interview Shortlist: ${jobTitle} (Req #${targetReq}) - SmartHire`)
+      setEmailBody(`Hi ${candFirstName},\n\nGreat news! The client (${jobClient}) has shortlisted your profile for an interview for the ${jobTitle} position.\n\nPlease confirm your availability for a 45-minute video interview this week and provide 2-3 preferred time slots.\n\nWith Regards,\n${myName}\nLead Recruiter\nSmartHire | ${myEmail}\nhttps://smarthireus.com`)
     }
   }
 
@@ -10602,7 +10639,7 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                                   borderRadius: 6,
                                   padding: '6px 12px'
                                 }}>
-                                  <strong>{myName}</strong> &lt;{myEmail}&gt; <span style={{ color: C.textSecondary, fontWeight: 500 }}>(COOLSOFT LLC Recruiter Dispatch)</span>
+                                  <strong>{myName}</strong> &lt;{myEmail}&gt; <span style={{ color: C.textSecondary, fontWeight: 500 }}>(SmartHire Recruiter Dispatch)</span>
                                 </div>
                               </div>
 
@@ -11816,7 +11853,7 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                               if (e.target.checked) {
                                 setSelectedCardIds(new Set(filteredCandidates.map(c => c.id || c.email)))
                               } else {
-                                selectedCardIds(new Set())
+                                setSelectedCardIds(new Set())
                               }
                             }}
                           />
@@ -13605,7 +13642,7 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
               <button
                 type="button"
                 title="Insert Link"
-                onClick={() => setEmailBody(prev => prev + ' https://www.coolsofttech.com')}
+                onClick={() => setEmailBody(prev => prev + ' https://smarthireus.com')}
                 style={{ background: 'none', border: 'none', color: C.textSecondary, cursor: 'pointer', padding: '4px 6px', fontSize: 12, fontWeight: 700, borderRadius: 4 }}
               >
                 Link
@@ -13616,7 +13653,7 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                 type="button"
                 title="Launch in Desktop Outlook / Apple Mail"
                 onClick={() => {
-                  const fullSig = `\n\nWith Regards,\n${currentUser?.name || (isSuperAdmin ? 'Super Admin' : 'Lead Recruiter')}\nLead Recruiter\nCOOLSOFT LLC | ${currentUser?.email || (isSuperAdmin ? 'omkesh@coolsofttech.com' : 'recruiter@coolsofttech.com')}\nhttp://www.coolsofttech.com`
+                  const fullSig = `\n\nWith Regards,\n${currentUser?.name || (isSuperAdmin ? 'Super Admin' : 'Lead Recruiter')}\nLead Recruiter\nSmartHire | ${currentUser?.email || (isSuperAdmin ? 'omkesh@coolsofttech.com' : 'recruiter@coolsofttech.com')}\nhttps://smarthireus.com`
                   const fullText = emailBody.includes('Regards') ? emailBody : `${emailBody}${fullSig}`
                   const url = `mailto:${encodeURIComponent(emailTo)}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(fullText)}`
                   window.location.href = url
@@ -13675,7 +13712,7 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
           const colleagueRole = candidateDetails.role || activeThread?.role || 'Recruiter / Sourcing Specialist';
           const colleagueEmail = candidateDetails.email || activeThread?.email || '';
           const colleaguePhone = candidateDetails.phone || activeThread?.phone || '+1 (555) 019-2834';
-          const colleagueCompany = activeThread?.company || candidateDetails.company || 'COOLSOFT LLC / SmartHire';
+          const colleagueCompany = activeThread?.company || candidateDetails.company || 'SmartHire';
           const colleagueLocation = activeThread?.location || candidateDetails.location || 'United States / Remote';
           const isOnline = Boolean(activeThread?.isOnline || activeThread?.status === 'online');
 
@@ -15695,7 +15732,7 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
           handleSendJobDetails(cand)
         }}
         onDownloadResume={(cand) => {
-          if (cand) handleDownloadResume(cand)
+          if (cand) handleCandidateResumeDownload(cand)
         }}
       />
 

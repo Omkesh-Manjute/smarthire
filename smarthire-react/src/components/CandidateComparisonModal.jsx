@@ -86,13 +86,21 @@ export default function CandidateComparisonModal({
   onSelectPrimary = null,
   onDownloadResume = null
 }) {
-  const [activeCandidateList, setActiveCandidateList] = useState(candidates)
+  const [removedIds, setRemovedIds] = useState(() => new Set())
   const [copiedNotification, setCopiedNotification] = useState(false)
 
-  // Synchronize when candidates prop changes
+  // Reset removedIds whenever modal is opened or candidates change
   useEffect(() => {
-    setActiveCandidateList(candidates)
-  }, [candidates])
+    if (isOpen) {
+      setRemovedIds(new Set())
+    }
+  }, [isOpen, candidates])
+
+  // Derive active candidate list synchronously so it never returns null due to state lag
+  const activeCandidateList = useMemo(() => {
+    if (!Array.isArray(candidates)) return []
+    return candidates.filter(c => c && !removedIds.has(c.id || c.email))
+  }, [candidates, removedIds])
 
   // Close on Escape key
   useEffect(() => {
@@ -112,12 +120,14 @@ export default function CandidateComparisonModal({
   const reqClient = targetJob?.client || targetJob?.customer || activeCandidateList[0]?.matchedJobClient || activeCandidateList[0]?.client || 'Direct Client'
   const reqBudget = targetJob?.budget || targetJob?.payRate || targetJob?.targetPayRate || '$75/hr'
   const reqSkills = (targetJob?.skills && Array.isArray(targetJob.skills) && targetJob.skills.length > 0)
-    ? targetJob.skills
-    : ['.NET', 'C#', 'ASP.NET Core', 'SQL Server', 'REST API']
+    ? targetJob.skills.map(s => (typeof s === 'object' && s ? (s.name || s.skill || String(s)) : String(s)).trim()).filter(Boolean)
+    : (typeof targetJob?.skills === 'string'
+      ? targetJob.skills.split(/[,|•\n]+/).map(s => s.trim()).filter(Boolean)
+      : ['.NET', 'C#', 'ASP.NET Core', 'SQL Server', 'REST API'])
 
   // Helper to safely parse candidate skills
   const getCandidateSkills = (c) => {
-    if (Array.isArray(c?.skills)) return c.skills.map(s => String(s).trim()).filter(Boolean)
+    if (Array.isArray(c?.skills)) return c.skills.map(s => (typeof s === 'object' && s ? (s.name || s.skill || String(s)) : String(s)).trim()).filter(Boolean)
     if (typeof c?.skills === 'string') return c.skills.split(/[,|•\n]+/).map(s => s.trim()).filter(Boolean)
     return []
   }
@@ -133,7 +143,8 @@ export default function CandidateComparisonModal({
       if (candRole && reqTitle.toLowerCase().includes(candRole)) s += 35
       let matchedCount = 0
       reqSkills.forEach(reqSk => {
-        if (skillsLower.some(sk => sk.includes(reqSk.toLowerCase()) || reqSk.toLowerCase().includes(sk))) {
+        const reqStr = String(reqSk).toLowerCase()
+        if (skillsLower.some(sk => sk.includes(reqStr) || reqStr.includes(sk))) {
           matchedCount++
         }
       })
@@ -141,12 +152,14 @@ export default function CandidateComparisonModal({
       score = Math.min(98, s)
     }
 
-    const matchedSkills = reqSkills.filter(reqSk => 
-      skillsLower.some(sk => sk.includes(reqSk.toLowerCase()) || reqSk.toLowerCase().includes(sk))
-    )
-    const missingSkills = reqSkills.filter(reqSk => 
-      !skillsLower.some(sk => sk.includes(reqSk.toLowerCase()) || reqSk.toLowerCase().includes(sk))
-    )
+    const matchedSkills = reqSkills.filter(reqSk => {
+      const reqStr = String(reqSk).toLowerCase()
+      return skillsLower.some(sk => sk.includes(reqStr) || reqStr.includes(sk))
+    })
+    const missingSkills = reqSkills.filter(reqSk => {
+      const reqStr = String(reqSk).toLowerCase()
+      return !skillsLower.some(sk => sk.includes(reqStr) || reqStr.includes(sk))
+    })
 
     let exp = String(c?.experience || c?.extracted_profile?.experience || '').trim()
     if (!exp || exp === '5+ Years' || exp.toLowerCase() === 'null') exp = '10+ Yrs'
@@ -194,7 +207,11 @@ export default function CandidateComparisonModal({
   // Handle Remove candidate from comparison
   const handleRemoveCandidate = (idToRemove) => {
     if (activeCandidateList.length <= 1) return
-    setActiveCandidateList(prev => prev.filter(c => (c.id || c.email) !== idToRemove))
+    setRemovedIds(prev => {
+      const next = new Set(prev)
+      next.add(idToRemove)
+      return next
+    })
   }
 
   // Handle Copy AI Summary
@@ -575,7 +592,7 @@ export default function CandidateComparisonModal({
                   <td key={c.id || c.email} style={{ padding: '10px 14px', border: `1px solid ${C.borderGrid}`, color: C.textPrimary }}>
                     <div>{c.cleanLocation}</div>
                     <div style={{ fontSize: 11, color: C.textSecondary, marginTop: 2 }}>
-                      Relocate: {c.relocate || 'Open'}
+                      Relocate: {String(c.relocate || c.relocation || c.relocatePref || 'Open')}
                     </div>
                   </td>
                 ))}

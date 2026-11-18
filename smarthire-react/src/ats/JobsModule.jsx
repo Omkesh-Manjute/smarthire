@@ -482,7 +482,7 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 14 }}>
         {[
           { label: 'Total Postings', value: safeJobs.length, color: '#0f172a', bg: '#f1f5f9', svg: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg> },
-          { label: 'COOLSOFT Requisitions', value: coolsoftCount, color: '#2563eb', bg: '#eff6ff', svg: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg> },
+          { label: 'Direct Client Requisitions', value: coolsoftCount, color: '#2563eb', bg: '#eff6ff', svg: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg> },
           { label: 'InfoOrigin Requisitions', value: infooriginCount, color: '#4f46e5', bg: '#eef2ff', svg: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="12 6 12 12 16 14"></polygon></svg> },
           { label: 'Candidates Linked', value: safeCandidates.length, color: '#0284c7', bg: '#f0f9ff', svg: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg> },
           { label: 'Submissions', value: safeSubmissions.length, color: '#16a34a', bg: '#f0fdf4', svg: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 16 12 12 8 16"></polyline><line x1="12" y1="12" x2="12" y2="21"></line><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"></path><polyline points="16 16 12 12 8 16"></polyline></svg> },
@@ -679,7 +679,7 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
                 boxShadow: sourceFilter === 'COOLSOFT' ? '0 1px 2px rgba(0,0,0,0.06)' : 'none'
               }}
             >
-              COOLSOFT ({coolsoftCount})
+              Direct Client ({coolsoftCount})
             </button>
             <button
               type="button"
@@ -797,7 +797,7 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
                           color: isInfoOrigin ? '#4f46e5' : '#1d4ed8',
                           border: `1px solid ${isInfoOrigin ? '#c7d2fe' : '#bfdbfe'}`
                         }}>
-                          {isInfoOrigin ? 'InfoOrigin' : 'COOLSOFT'}
+                          {isInfoOrigin ? 'InfoOrigin' : 'Direct Client'}
                         </span>
                         {job.client && job.client !== 'InfoOrigin' && job.client !== 'General Client' && job.client !== 'State Client' && (
                           <span style={{ fontSize: '11px', color: '#64748b' }}>({job.client})</span>
@@ -1043,7 +1043,7 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
                     padding: '2px 8px',
                     borderRadius: 4
                   }}>
-                    {(jdModalJob.source === 'InfoOrigin' || jdModalJob.client === 'InfoOrigin') ? 'INFO ORIGIN' : 'COOLSOFT LLC'}
+                    {(jdModalJob.source === 'InfoOrigin' || jdModalJob.client === 'InfoOrigin') ? 'INFO ORIGIN' : 'DIRECT CLIENT'}
                   </span>
                   <span style={{ fontSize: 12, color: '#64748b' }}>· Req #{resolveReqId(jdModalJob.reqId || jdModalJob.id, jdModalJob)}</span>
                 </div>

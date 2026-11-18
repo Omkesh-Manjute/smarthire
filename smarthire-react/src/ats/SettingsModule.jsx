@@ -69,7 +69,7 @@ function SettingsModule() {
       imapHost: 'imap.mail.yahoo.com',
       imapPort: 993,
       appPassword: '',
-      signature: `With Regards,\n${rec ? rec.name : 'Technical Recruiter'}\nCOOLSOFT LLC | SmartHire ATS`
+      signature: `With Regards,\n${rec ? rec.name : 'Technical Recruiter'}\nSmartHire ATS`
     }
   })
   const [emailCfgSaving, setEmailCfgSaving] = useState(false)

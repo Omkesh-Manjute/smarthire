@@ -1181,7 +1181,7 @@ EDUCATION & CERTIFICATIONS
     const targetClient = currentJob?.client || 'Enterprise Client'
     const fullJdBody = currentJob?.fullDescription || currentJob?.rawDescription || currentJob?.description || ''
 
-    setOutreachSubject(`Immediate Opportunity: ${targetTitle} — COOLSOFT LLC`)
+    setOutreachSubject(`Immediate Opportunity: ${targetTitle} — SmartHire`)
 
     const draftedBody = `Hi ${cand.name},
 
@@ -1209,9 +1209,9 @@ Looking forward to your quick response!
 
 Best regards,
 ${currentUser?.name || 'Technical Recruiter'}
-COOLSOFT LLC
+SmartHire Recruiting Partner
 Email: ${activeUserEmail}
-Website: https://www.coolsofttech.com | https://smarthireus.com`
+Website: https://smarthireus.com`
 
     setOutreachEmailBody(draftedBody)
     setShowEmailModal(true)
@@ -2969,7 +2969,7 @@ Website: https://www.coolsofttech.com | https://smarthireus.com`
             {/* Email Form */}
             <div style={{ padding: '16px 20px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div style={{ padding: '8px 12px', backgroundColor: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 6, fontSize: 12, color: '#1E40AF' }}>
-                This outreach message is drafted with COOLSOFT LLC agency branding and includes the <strong>complete Job Description</strong> of the selected active requirement. You can edit the text before sending or copy it.
+                This outreach message is drafted with SmartHire agency branding and includes the <strong>complete Job Description</strong> of the selected active requirement. You can edit the text before sending or copy it.
               </div>
 
               {/* Subject */}

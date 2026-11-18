@@ -69,7 +69,7 @@ Rate Increase:
 Please do not impose a rate increase for any subsequent year of the contract as part of your bid response.
 
 Right to Represent (RTR) & Exclusivity Confirmation:
-I hereby confirm that COOLSOFT LLC has the exclusive right to represent me for this requisition with the Florida Department of Transportation. I have not submitted my resume for this position through any other vendor or agency.`,
+I hereby confirm that SmartHire has the exclusive right to represent me for this requisition with the Florida Department of Transportation. I have not submitted my resume for this position through any other vendor or agency.`,
   defaultFields: [
     { id: 'f1', type: 'signature', label: 'Signature', fieldName: 'CandidateSignature', required: true, x: 60, y: 780, signerIndex: 0 },
     { id: 'f2', type: 'date', label: 'Date signed', fieldName: 'DateSigned', required: true, x: 420, y: 780, signerIndex: 0 },
@@ -111,7 +111,7 @@ const PREBUILT_TEMPLATES = [
 Contract Representation & Exclusivity Agreement
 
 1. Scope of Representation
-The undersigned candidate hereby grants COOLSOFT LLC the exclusive authorization to submit credentials, resume, and rate proposal for active requisitions issued under the Texas DIR Cooperative Contracts Program.
+The undersigned candidate hereby grants SmartHire the exclusive authorization to submit credentials, resume, and rate proposal for active requisitions issued under the Texas DIR Cooperative Contracts Program.
 
 2. Candidate Acknowledgment
 Candidate acknowledges that only one submittal per candidate is permitted by the State of Texas for each Solicitation ID. Dual representation will lead to immediate disqualification.
@@ -135,21 +135,21 @@ Exclusivity Window: 60 Days from signature date.`,
     doc: {
       id: 'standard-rtr-doc',
       title: 'Exclusive Right to Represent & Authorization Agreement',
-      contractNo: 'COOLSOFT-RTR-2026',
+      contractNo: 'SMARTHIRE-RTR-2026',
       maxBillRate: '$85.00',
       clientName: 'Direct Enterprise Client',
       content: `EXCLUSIVE RIGHT TO REPRESENTATION (RTR)
 
 To: Hiring Client & Account Management
-From: COOLSOFT LLC Staff Augmentation Team
+From: SmartHire Staff Augmentation Team
 
 Candidate Declaration:
-I grant COOLSOFT LLC the exclusive right to represent and submit my profile for the position described herein. I confirm that I am legally authorized to work in the United States and have not authorized any other staffing agency or prime vendor to submit my credentials for this client requirement.
+I grant SmartHire the exclusive right to represent and submit my profile for the position described herein. I confirm that I am legally authorized to work in the United States and have not authorized any other staffing agency or prime vendor to submit my credentials for this client requirement.
 
 Terms:
 1. Representation is exclusive for a period of sixty (60) days.
 2. Agreed rate is binding and cannot be altered following client submission.
-3. Candidate agrees to be available for technical and behavioral interviews arranged by COOLSOFT.`,
+3. Candidate agrees to be available for technical and behavioral interviews arranged by SmartHire.`,
       defaultFields: [
         { id: 'f1', type: 'signature', label: 'Signature', fieldName: 'CandidateSignature', required: true, x: 60, y: 520, signerIndex: 0 },
         { id: 'f2', type: 'date', label: 'Date signed', fieldName: 'DateSigned', required: true, x: 420, y: 520, signerIndex: 0 },
@@ -172,7 +172,7 @@ Terms:
       content: `RIGHT TO REPRESENT ACKNOWLEDGEMENT
 State of North Carolina IT Supplemental Services Contract
 
-By signing below, I acknowledge and agree that COOLSOFT LLC has the sole right to represent me in matters of work assignment relating the North Carolina IT Supplemental Services Contract by submitting my professional resume to the Contract's Managed Service Provider, Computer Aid, Inc. for the requirement identified below.
+By signing below, I acknowledge and agree that SmartHire has the sole right to represent me in matters of work assignment relating the North Carolina IT Supplemental Services Contract by submitting my professional resume to the Contract's Managed Service Provider, Computer Aid, Inc. for the requirement identified below.
 
 I also acknowledge and verify that all the information contained in my resume related to my technical credentials is accurate and is based on educational training and professional experience obtained throughout my career.
 
@@ -200,7 +200,7 @@ Contract Manager: Nicole Walker (nicole.walker@cai.io | 910-520-1506)`,
       content: `RIGHT TO REPRESENT ACKNOWLEDGEMENT
 State of Georgia's IT Staffing Services Contract
 
-By inserting my full legal name below, I acknowledge and agree that COOLSOFT LLC has the sole right to represent me in matters of work assignment relating to the State of Georgia's IT Staffing Services Contract by submitting my professional resume to the Contract's Managed Service Provider, Computer Aid, Inc. for the requirement identified below.
+By inserting my full legal name below, I acknowledge and agree that SmartHire has the sole right to represent me in matters of work assignment relating to the State of Georgia's IT Staffing Services Contract by submitting my professional resume to the Contract's Managed Service Provider, Computer Aid, Inc. for the requirement identified below.
 
 I also acknowledge and verify that all the information contained in my resume related to my technical credentials is accurate and is based on educational training and professional experience obtained throughout my career.
 
@@ -228,7 +228,7 @@ Contract Manager: Tim Brodrick (Timothy.Brodrick@cai.io | 678-427-3660)`,
       content: `RIGHT TO REPRESENT ACKNOWLEDGEMENT
 State of Nebraska Staff Augmentation Services
 
-By replying to this email or digitally signing below with your confirmation, you acknowledge and agree that COOLSOFT LLC has the exclusive right to represent you for active requisitions with the State of Nebraska.
+By replying to this email or digitally signing below with your confirmation, you acknowledge and agree that SmartHire has the exclusive right to represent you for active requisitions with the State of Nebraska.
 
 I also acknowledge and verify that all the information contained in my resume related to my technical credentials is accurate and is based on educational training and professional experience obtained throughout my career.
 
@@ -255,10 +255,10 @@ Candidate Representation Term: 60 Days`,
       clientName: 'State of South Carolina (SOSC)',
       content: `SOSC RIGHT TO REPRESENT - POSTING ID -[Req #]
 
-Please confirm that COOLSOFT LLC has the right to submit you for consideration to the [Position Title] - position at "SOSC" under posting [Req #].
+Please confirm that SmartHire has the right to submit you for consideration to the [Position Title] - position at "SOSC" under posting [Req #].
 
 Candidate Declaration:
-I, [Candidate Full Legal Name], confirm that COOLSOFT LLC has the exclusive right to submit me for consideration to the [Position Title] position at "SOSC" under posting [Req #].
+I, [Candidate Full Legal Name], confirm that SmartHire has the exclusive right to submit me for consideration to the [Position Title] position at "SOSC" under posting [Req #].
 
 Agreed Hourly Rate: As designated in submittal packaging.
 Client Agency: State of South Carolina (SOSC)
@@ -1219,7 +1219,7 @@ export default function SmartSignRtrPage() {
             {/* Legal Seal Footer */}
             <div style={{ marginTop: 56, paddingTop: 18, borderTop: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11, color: '#94A3B8' }}>
               <span>Tamper-evident audit trail certified pursuant to U.S. Electronic Signatures in Global and National Commerce Act (ESIGN)</span>
-              <span>COOLSOFT LLC • https://smarthireus.com</span>
+              <span>SmartHire Technologies • https://smarthireus.com</span>
             </div>
           </div>
         </div>
@@ -1877,7 +1877,7 @@ export default function SmartSignRtrPage() {
           </button>
 
           <div style={{ marginTop: 'auto', paddingTop: 20, fontSize: 11.5, color: '#94A3B8', borderTop: '1px solid #F1F5F9' }}>
-            COOLSOFT Recruiting Tech<br />
+            SmartHire Recruiting Tech<br />
             ESIGN & UETA Compliant
           </div>
         </aside>
@@ -1890,7 +1890,7 @@ export default function SmartSignRtrPage() {
           {activeTab === 'home' && (
             <div style={{ maxWidth: 1040, margin: '0 auto' }}>
               <h1 style={{ fontSize: 26, fontWeight: 900, color: '#0F172A', marginBottom: 4 }}>
-                Hello, COOLSOFT!
+                Hello, SmartHire!
               </h1>
               <div style={{ fontSize: 13.5, color: '#64748B', marginBottom: 28 }}>
                 Your documents summary for the last 30 days
@@ -2575,12 +2575,12 @@ export default function SmartSignRtrPage() {
                   <button
                     type="button"
                     onClick={() => {
-                      setSigners([{ id: 's-me', name: 'COOLSOFT Recruiter', email: 'omkesh@coolsofttech.com', color: '#0284C7' }])
+                      setSigners([{ id: 's-me', name: 'SmartHire Recruiter', email: 'omkesh@coolsofttech.com', color: '#0284C7' }])
                       showToast('Set signer as myself')
                     }}
                     style={{ background: 'none', border: 'none', color: '#0061FE', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
                   >
-                    ✍️ I'm the only signer
+                    I'm the only signer
                   </button>
                 </div>
 
@@ -3531,7 +3531,7 @@ export default function SmartSignRtrPage() {
                         <label style={{ display: 'block', fontSize: 11.5, fontWeight: 700, color: '#475569', marginBottom: 6 }}>Message to signers (optional):</label>
                         <textarea
                           rows={4}
-                          value={emailMessage || `Hi ${signers[0]?.name || ''},\n\nPlease review and electronically sign this Florida Exhibit E Resume Self-Certification document for our client submission.\n\nThank you,\nCOOLSOFT Staffing Team`}
+                          value={emailMessage || `Hi ${signers[0]?.name || ''},\n\nPlease review and electronically sign this Florida Exhibit E Resume Self-Certification document for our client submission.\n\nThank you,\nSmartHire Staffing Team`}
                           onChange={(e) => setEmailMessage(e.target.value)}
                           style={{ width: '100%', padding: '9px 12px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 13, resize: 'vertical', lineHeight: 1.5 }}
                         />
