@@ -761,9 +761,39 @@ const renderZohoStatusBadge = (status = 'New') => {
   )
 }
 
+function resolveCandidateResumeFile(cand) {
+  if (!cand) return { url: '', name: '', storedName: '', mime: '' }
+  const directPath =
+    cand.file?.local_path ||
+    cand.resumeFileUrl ||
+    cand.resume_file ||
+    cand.documents?.resume?.storageUrl ||
+    cand.documents?.resume?.fileUrl ||
+    cand.documents?.resume?.url ||
+    ''
+  const storedName = cand.file?.stored_name || (directPath ? String(directPath).split('/').pop() : '')
+  const origName =
+    cand.file?.original_name ||
+    cand.resumeFileName ||
+    cand.documents?.resume?.fileName ||
+    cand.documents?.resume?.name ||
+    storedName ||
+    ''
+  let url = directPath ? String(directPath) : ''
+  if (!url && storedName) url = `/uploads/${storedName}`
+  const mime = cand.file?.mime_type || ''
+  return { url, name: origName, storedName, mime }
+}
+
 function getFullResumeText(candidate) {
   if (!candidate) return ''
-  const rawResumeText = typeof candidate?.resumeText === 'string' ? candidate.resumeText.trim() : ''
+  const rawCandidateText =
+    (typeof candidate?.resumeText === 'string' && candidate.resumeText.trim()) ||
+    (typeof candidate?.resume_text === 'string' && candidate.resume_text.trim()) ||
+    (typeof candidate?.extracted_profile?.resumeText === 'string' && candidate.extracted_profile.resumeText.trim()) ||
+    (typeof candidate?.documents?.resume?.resumeText === 'string' && candidate.documents.resume.resumeText.trim()) ||
+    ''
+  const rawResumeText = rawCandidateText.trim()
   if (rawResumeText.length > 50) {
     const isForwardStubOnly = rawResumeText.length < 250 && (
       rawResumeText.toLowerCase().includes('please find my resume attached') ||
@@ -1059,14 +1089,19 @@ const highlightResumeText = (text, matchingSkills = [], searchQuery = '', enable
         justifyContent: 'center',
         gap: 10
       }}>
-        <div style={{ width: 44, height: 44, borderRadius: '50%', backgroundColor: '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>
-          📄
+        <div style={{ width: 44, height: 44, borderRadius: '50%', backgroundColor: '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748B' }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="16" y1="13" x2="8" y2="13" />
+            <line x1="16" y1="17" x2="8" y2="17" />
+          </svg>
         </div>
         <div style={{ fontWeight: 700, color: '#1E293B', fontSize: 14 }}>
           No Direct Resume Text Extracted
         </div>
         <div style={{ fontSize: 12.5, color: '#64748B', maxWidth: 440, lineHeight: 1.5 }}>
-          The candidate's original resume document is attached. Please click <strong>Download</strong> or view the original file under <strong>Attachments</strong> in the left sidebar.
+          If a resume file is attached, click <strong>Download Resume</strong> above or view the original file under <strong>Attachments</strong> in the left sidebar.
         </div>
       </div>
     )
@@ -1760,15 +1795,16 @@ function getCandidateAllDocuments(cand) {
   if (!cand) return docs
 
   // 1. Resume
-  if (cand.file?.stored_name || cand.documents?.resume?.storageUrl || cand.file?.original_name) {
-    const fileName = cand.file?.original_name || cand.documents?.resume?.fileName || cand.file?.stored_name || `${(cand.name || 'Candidate').replace(/\s+/g, '_')}_Resume.docx`
-    const fileUrl = cand.file?.stored_name ? `/uploads/${cand.file.stored_name}` : (cand.documents?.resume?.storageUrl || '')
+  const resolvedResume = resolveCandidateResumeFile(cand)
+  if (resolvedResume.url || resolvedResume.name) {
+    const fileName = resolvedResume.name || `${(cand.name || 'Candidate').replace(/\s+/g, '_')}_Resume.docx`
+    const fileUrl = resolvedResume.url
     const isPdf = fileName.toLowerCase().endsWith('.pdf')
     docs.push({
       id: 'resume',
       key: 'resume',
       category: 'Resume (Original File)',
-      type: isPdf ? 'PDF' : 'DOCX',
+      type: isPdf ? 'PDF' : (fileName.toLowerCase().endsWith('.txt') ? 'TXT' : 'DOCX'),
       fileName,
       fileUrl,
       verified: true,
@@ -2478,7 +2514,8 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
 
   // Candidates View Mode: 'card' (Candidate Card / Split View) or 'table' (Database Table View)
   const [inboxSubMode, setInboxSubMode] = useState('table')
-  const [activeTobuTab, setActiveTobuTab] = useState('overview')
+  const [activeTobuTab, setActiveTobuTab] = useState('resume')
+  const [isLoadingResume, setIsLoadingResume] = useState(false)
   const [tableCategory, setTableCategory] = useState(() => {
     try {
       const qCat = searchParams.get('category') || searchParams.get('tab')
@@ -4543,24 +4580,6 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
   useEffect(() => { fetchThreads() }, [fetchThreads])
   useEffect(() => { fetchLeaderboard() }, [fetchLeaderboard])
 
-  // Enterprise MNC Lazy Loader: Fetch full resume text on-demand when candidate is viewed
-  useEffect(() => {
-    if (!selectedCandidate) return
-    const cid = selectedCandidate.id || selectedCandidate.candidate_id || selectedCandidate.canId
-    if (cid && (!selectedCandidate.resumeText || selectedCandidate.resumeText.length < 50)) {
-      fetch(`/api/candidates/${encodeURIComponent(cid)}/resume`)
-        .then(res => res.json())
-        .then(data => {
-          if (data && data.success && data.resumeText) {
-            setSelectedCandidate(prev => (prev && (prev.id === cid || prev.candidate_id === cid)) 
-              ? { ...prev, resumeText: data.resumeText, documents: data.documents || prev.documents } 
-              : prev)
-          }
-        })
-        .catch(() => {})
-    }
-  }, [selectedCandidate?.id])
-
   const fetchNotifications = useCallback(async () => {
     try {
       setNotificationsLoading(true)
@@ -5291,6 +5310,56 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
     (c.id && activeCandidate?.id && c.id === activeCandidate.id) ||
     (c.email && activeCandidate?.email && c.email === activeCandidate.email)
   )
+
+  // Enterprise MNC Lazy Loader: Fetch full resume text, file metadata & documents on-demand when viewing candidate
+  useEffect(() => {
+    if (inboxSubMode !== 'card' || !activeCandidate) {
+      setIsLoadingResume(false)
+      return
+    }
+    const cid = String(activeCandidate.id || activeCandidate.candidate_id || activeCandidate.canId || '').trim()
+    const currentText = getFullResumeText(activeCandidate)
+    const currentFile = resolveCandidateResumeFile(activeCandidate)
+    if (!cid || (currentText.length >= 50 && currentFile.url)) {
+      setIsLoadingResume(false)
+      return
+    }
+    let cancelled = false
+    setIsLoadingResume(true)
+    fetch(`/api/candidates/${encodeURIComponent(cid)}/resume`)
+      .then(res => res.json())
+      .then(data => {
+        if (cancelled) return
+        if (data && data.success) {
+          const patch = {
+            ...(data.resumeText ? { resumeText: data.resumeText, resume_text: data.resumeText } : {}),
+            ...(data.documents ? { documents: data.documents } : {}),
+            ...(data.file ? { file: data.file } : {}),
+            ...(data.resumeFileUrl ? { resumeFileUrl: data.resumeFileUrl, resume_file: data.resumeFileUrl } : {})
+          }
+          if (Object.keys(patch).length > 0) {
+            setSelectedCandidate(prev => {
+              const target = prev || activeCandidate
+              const prevId = String(target?.id || target?.candidate_id || target?.canId || '').trim()
+              return prevId === cid ? { ...target, ...patch } : prev
+            })
+            setStreamCandidates(prev =>
+              Array.isArray(prev)
+                ? prev.map(item => {
+                    const itemId = String(item?.id || item?.candidate_id || item?.canId || '').trim()
+                    return itemId === cid ? { ...item, ...patch } : item
+                  })
+                : prev
+            )
+          }
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setIsLoadingResume(false)
+      })
+    return () => { cancelled = true }
+  }, [inboxSubMode, activeCandidate?.id, activeCandidate?.candidate_id, activeCandidate?.canId])
 
   // Ensure drawerReqId synchronizes whenever active candidate changes
   useEffect(() => {
@@ -8757,64 +8826,8 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                   </button>
                 </div>
 
-                {/* Right Action Cluster: Transfer, Email, Share, Download */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <button
-                    type="button"
-                    onClick={() => handleRunLiveAiScan(activeCandidate)}
-                    disabled={isLiveAiScanning}
-                    style={{
-                      background: 'linear-gradient(135deg, #1E40AF 0%, #2563EB 50%, #4F46E5 100%)',
-                      color: '#FFFFFF',
-                      border: 'none',
-                      borderRadius: 6,
-                      padding: '7px 14px',
-                      fontSize: 12,
-                      fontWeight: 800,
-                      cursor: isLiveAiScanning ? 'not-allowed' : 'pointer',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 6,
-                      boxShadow: '0 2px 6px rgba(37,99,235,0.25)'
-                    }}
-                    title="Run real-time deep AI Match Scan & Fit Analysis"
-                  >
-                    <IconZap /> <span>{isLiveAiScanning ? 'AI Scanning...' : '⚡ AI Match Scan'}</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleOpenLinkedInModal(activeCandidate)}
-                    style={{
-                      background: activeCandidate?.linkedinVerification
-                        ? (activeCandidate.linkedinVerification.overallStatus === 'MATCH'
-                            ? 'linear-gradient(135deg, #059669 0%, #10B981 100%)'
-                            : (activeCandidate.linkedinVerification.overallStatus === 'CONFLICT'
-                                ? 'linear-gradient(135deg, #DC2626 0%, #EF4444 100%)'
-                                : 'linear-gradient(135deg, #D97706 0%, #F59E0B 100%)'))
-                        : 'linear-gradient(135deg, #0077B5 0%, #0A66C2 100%)',
-                      color: '#FFFFFF',
-                      border: 'none',
-                      borderRadius: 6,
-                      padding: '7px 14px',
-                      fontSize: 12,
-                      fontWeight: 800,
-                      cursor: 'pointer',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 6,
-                      boxShadow: '0 2px 6px rgba(10, 102, 194, 0.25)'
-                    }}
-                    title="Verify candidate companies, titles, dates and skills against authorized LinkedIn profile"
-                  >
-                    <IconLinkedIn />
-                    <span>
-                      {activeCandidate?.linkedinVerification
-                        ? `LinkedIn: ${activeCandidate.linkedinVerification.overallStatus === 'MATCH' ? '✅ Verified' : (activeCandidate.linkedinVerification.overallStatus === 'CONFLICT' ? '❌ Conflict' : '⚠ Partial')} (${activeCandidate.linkedinVerification.confidenceScore}%)`
-                        : 'Check with LinkedIn'}
-                    </span>
-                  </button>
-
+                {/* Right Action Cluster: Refined Enterprise Controls */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                   <button
                     type="button"
                     onClick={() => handleOpenPushModal(activeCandidate)}
@@ -8823,97 +8836,109 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                       color: '#FFFFFF',
                       border: 'none',
                       borderRadius: 6,
-                      padding: '7px 14px',
+                      padding: '6px 12px',
                       fontSize: 12,
-                      fontWeight: 800,
+                      fontWeight: 700,
                       cursor: 'pointer',
                       display: 'inline-flex',
                       alignItems: 'center',
-                      gap: 6,
-                      boxShadow: '0 2px 6px rgba(37,99,235,0.25)'
+                      gap: 5
                     }}
                     title="Push candidate to Jobs in Hand / active requisition"
                   >
-                    <span>Push to Jobs in Hand ↗</span>
+                    <span>Push to Jobs</span> <span>↗</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleOpenLinkedInModal(activeCandidate)}
+                    style={{
+                      background: activeCandidate?.linkedinVerification
+                        ? (activeCandidate.linkedinVerification.overallStatus === 'MATCH'
+                            ? '#ECFDF5'
+                            : (activeCandidate.linkedinVerification.overallStatus === 'CONFLICT' ? '#FEF2F2' : '#FFFBEB'))
+                        : C.inputBg,
+                      color: activeCandidate?.linkedinVerification
+                        ? (activeCandidate.linkedinVerification.overallStatus === 'MATCH'
+                            ? '#047857'
+                            : (activeCandidate.linkedinVerification.overallStatus === 'CONFLICT' ? '#B91C1C' : '#B45309'))
+                        : C.textPrimary,
+                      border: `1px solid ${
+                        activeCandidate?.linkedinVerification
+                          ? (activeCandidate.linkedinVerification.overallStatus === 'MATCH'
+                              ? '#A7F3D0'
+                              : (activeCandidate.linkedinVerification.overallStatus === 'CONFLICT' ? '#FECACA' : '#FDE68A'))
+                          : C.border
+                      }`,
+                      borderRadius: 6,
+                      padding: '6px 10px',
+                      fontSize: 12,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 5
+                    }}
+                    title="Verify candidate companies, titles, dates and skills against LinkedIn profile"
+                  >
+                    <IconLinkedIn />
+                    <span>
+                      {activeCandidate?.linkedinVerification
+                        ? `LinkedIn ${activeCandidate.linkedinVerification.overallStatus === 'MATCH' ? 'Verified' : (activeCandidate.linkedinVerification.overallStatus === 'CONFLICT' ? 'Conflict' : 'Partial')} (${activeCandidate.linkedinVerification.confidenceScore}%)`
+                        : 'LinkedIn'}
+                    </span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => handleOpenSubmittalPack(activeCandidate)}
                     style={{
-                      background: '#0F766E',
-                      color: '#FFFFFF',
-                      border: 'none',
+                      background: C.inputBg,
+                      color: C.textPrimary,
+                      border: `1px solid ${C.border}`,
                       borderRadius: 6,
-                      padding: '7px 14px',
+                      padding: '6px 10px',
                       fontSize: 12,
-                      fontWeight: 800,
+                      fontWeight: 700,
                       cursor: 'pointer',
                       display: 'inline-flex',
                       alignItems: 'center',
-                      gap: 6,
-                      boxShadow: '0 2px 6px rgba(15, 118, 110, 0.25)'
+                      gap: 5
                     }}
                     title="Format Client Coversheet & Branded Submittal Pack"
                   >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                       <polyline points="14 2 14 8 20 8" />
                       <line x1="9" y1="15" x2="15" y2="15" />
                       <line x1="9" y1="11" x2="15" y2="11" />
                     </svg>
-                    <span>Submittal Pack</span>
+                    <span>Submittal</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => handleOpenSmartSignRtr(activeCandidate)}
                     style={{
-                      background: '#4338CA',
-                      color: '#FFFFFF',
-                      border: 'none',
+                      background: C.inputBg,
+                      color: C.textPrimary,
+                      border: `1px solid ${C.border}`,
                       borderRadius: 6,
-                      padding: '7px 14px',
+                      padding: '6px 10px',
                       fontSize: 12,
-                      fontWeight: 800,
+                      fontWeight: 700,
                       cursor: 'pointer',
                       display: 'inline-flex',
                       alignItems: 'center',
-                      gap: 6,
-                      boxShadow: '0 2px 6px rgba(67, 56, 202, 0.25)'
+                      gap: 5
                     }}
                     title="Generate and send SmartSign Right to Represent (RTR) digital agreement"
                   >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M12 19l7-7 3 3-7 7-3-3z" />
                       <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z" />
                     </svg>
-                    <span>Request RTR</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      handleOpenEmailModal(activeCandidate)
-                      setActiveTobuTab('emails')
-                    }}
-                    style={{
-                      background: activeTobuTab === 'emails' ? '#5B21B6' : '#7C3AED',
-                      color: '#FFFFFF',
-                      border: 'none',
-                      borderRadius: 6,
-                      padding: '7px 14px',
-                      fontSize: 12,
-                      fontWeight: 800,
-                      cursor: 'pointer',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 6,
-                      boxShadow: '0 2px 6px rgba(124,58,237,0.3)'
-                    }}
-                    title={`Draft email to ${activeCandidate?.name} from ${currentUser?.email || 'omkesh@coolsofttech.com'}`}
-                  >
-                    <IconMail /> <span>Email Candidate</span>
+                    <span>RTR</span>
                   </button>
 
                   <button
@@ -8923,88 +8948,35 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                       background: C.inputBg,
                       border: `1px solid ${C.border}`,
                       borderRadius: 6,
-                      padding: '7px 12px',
+                      padding: '6px 10px',
                       fontSize: 12,
                       fontWeight: 700,
                       color: C.textPrimary,
                       cursor: 'pointer',
                       display: 'inline-flex',
                       alignItems: 'center',
-                      gap: 6
+                      gap: 5
                     }}
                     title="Share Candidate via Email"
                   >
                     <IconShare /> <span>Share</span>
                   </button>
 
-                  {activeCandidate?.file?.stored_name ? (
-                    <a
-                      href={`/uploads/${activeCandidate.file.stored_name}`}
-                      download={activeCandidate.file.original_name || activeCandidate.file.stored_name}
-                      style={{
-                        background: C.inputBg,
-                        border: `1px solid ${C.border}`,
-                        borderRadius: 6,
-                        padding: '7px 12px',
-                        fontSize: 12,
-                        fontWeight: 700,
-                        color: C.textPrimary,
-                        cursor: 'pointer',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 6,
-                        textDecoration: 'none'
-                      }}
-                      title="Download Original Resume File"
-                    >
-                      <IconDownload /> <span>Download Resume</span>
-                    </a>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (!activeCandidate) return
-                        const element = document.createElement('a')
-                        const file = new Blob([candResumeText], { type: 'text/plain' })
-                        element.href = URL.createObjectURL(file)
-                        element.download = `${(activeCandidate.name || 'Candidate').replace(/\s+/g, '_')}_Resume.txt`
-                        document.body.appendChild(element)
-                        element.click()
-                      }}
-                      style={{
-                        background: C.inputBg,
-                        border: `1px solid ${C.border}`,
-                        borderRadius: 6,
-                        padding: '7px 12px',
-                        fontSize: 12,
-                        fontWeight: 700,
-                        color: C.textPrimary,
-                        cursor: 'pointer',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 6
-                      }}
-                      title="Download Resume Text"
-                    >
-                      <IconDownload /> <span>Download Resume</span>
-                    </button>
-                  )}
-
                   <button
                     type="button"
                     onClick={() => handleDeleteCandidate(activeCandidate)}
                     style={{
-                      background: 'rgba(239, 68, 68, 0.1)',
-                      border: '1px solid rgba(239, 68, 68, 0.3)',
+                      background: 'rgba(239, 68, 68, 0.08)',
+                      border: '1px solid rgba(239, 68, 68, 0.25)',
                       borderRadius: 6,
-                      padding: '7px 12px',
+                      padding: '6px 10px',
                       fontSize: 12,
                       fontWeight: 700,
-                      color: '#EF4444',
+                      color: '#DC2626',
                       cursor: 'pointer',
                       display: 'inline-flex',
                       alignItems: 'center',
-                      gap: 6
+                      gap: 5
                     }}
                     title="Delete Candidate"
                   >
@@ -9013,68 +8985,67 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                 </div>
               </div>
 
-              {/* Tobu Candidate Card Split View */}
-              <div style={{ flex: 1, display: 'flex', overflow: 'hidden', backgroundColor: C.bg }}>
+              {/* Clean Enterprise Candidate Side Panel + Right Resume Workspace */}
+              <div style={{ flex: 1, display: 'flex', overflow: 'hidden', backgroundColor: isLight ? '#F8FAFC' : C.bg }}>
                 
-                {/* LEFT SIDEBAR: Candidate Dossier & Documents Locker (~310px) */}
+                {/* LEFT SIDE PANEL: Clean Candidate Profile Card + Compact Attachments (~350px) */}
                 <div style={{
-                  width: 320,
-                  minWidth: 290,
-                  maxWidth: 360,
+                  width: 350,
+                  minWidth: 310,
+                  maxWidth: 380,
                   flexShrink: 0,
                   borderRight: `1px solid ${C.border}`,
-                  backgroundColor: C.surface,
+                  backgroundColor: isLight ? '#FFFFFF' : C.surface,
                   overflowY: 'auto',
-                  padding: '18px 20px',
+                  padding: '20px',
                   display: 'flex',
                   flexDirection: 'column',
                   gap: 16
                 }}>
 
-
-                  {/* MONSTER-STYLE CANDIDATE PROFILE CARD (Screenshot 5) */}
+                  {/* CLEAN FLOATING CANDIDATE CARD (Matches Enterprise Mockup) */}
                   <div style={{
                     backgroundColor: isLight ? '#FFFFFF' : C.cardBg,
-                    border: `1px solid ${C.border}`,
-                    borderRadius: 10,
-                    padding: '16px',
-                    boxShadow: isLight ? '0 1px 4px rgba(0,0,0,0.04)' : 'none',
+                    border: `1px solid ${isLight ? '#E2E8F0' : C.border}`,
+                    borderRadius: 12,
+                    padding: '20px',
+                    boxShadow: isLight ? '0 2px 10px rgba(15, 23, 42, 0.04)' : 'none',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: 12
+                    gap: 14
                   }}>
-                    {/* Top Row: Checkbox, Star Favorite, Name & External Link */}
-                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <input
-                          type="checkbox"
-                          checked={Boolean(activeCandidate?.id && selectedCardIds.has(activeCandidate.id))}
-                          onChange={() => {
-                            if (!activeCandidate?.id) return
-                            setSelectedCardIds(prev => {
-                              const next = new Set(prev)
-                              if (next.has(activeCandidate.id)) next.delete(activeCandidate.id)
-                              else next.add(activeCandidate.id)
-                              return next
-                            })
-                          }}
-                          style={{ width: 16, height: 16, cursor: 'pointer', accentColor: '#2563EB' }}
-                          title="Select candidate for bulk actions"
-                        />
-                      </div>
+                    {/* Top Row: Checkbox & Received Date */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                      <input
+                        type="checkbox"
+                        checked={Boolean(activeCandidate?.id && selectedCardIds.has(activeCandidate.id))}
+                        onChange={() => {
+                          if (!activeCandidate?.id) return
+                          setSelectedCardIds(prev => {
+                            const next = new Set(prev)
+                            if (next.has(activeCandidate.id)) next.delete(activeCandidate.id)
+                            else next.add(activeCandidate.id)
+                            return next
+                          })
+                        }}
+                        style={{ width: 16, height: 16, cursor: 'pointer', accentColor: '#2563EB', borderRadius: 4 }}
+                        title="Select candidate for bulk actions"
+                      />
 
-                      <span style={{ fontSize: 11, color: C.textSecondary, fontWeight: 600 }}>
-                        {activeCandidate?.createdAt ? new Date(activeCandidate.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' }) : 'Recent'}
+                      <span style={{ fontSize: 12, color: C.textSecondary, fontWeight: 600 }}>
+                        {(activeCandidate?.createdAt || activeCandidate?.created_at)
+                          ? new Date(activeCandidate.createdAt || activeCandidate.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+                          : 'Recent'}
                       </span>
                     </div>
 
-                    {/* Candidate Name & Role */}
+                    {/* Candidate Name & Role Subtitle */}
                     <div>
                       <h2 style={{
-                        fontSize: 17,
+                        fontSize: 19,
                         fontWeight: 800,
                         color: C.textPrimary,
-                        margin: '0 0 2px',
+                        margin: 0,
                         lineHeight: 1.25,
                         display: 'flex',
                         alignItems: 'center',
@@ -9085,331 +9056,205 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                           href={`https://www.google.com/search?q=${encodeURIComponent((activeCandidate?.name || '') + ' ' + (activeCandidate?.role || ''))}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          style={{ color: '#2563EB', textDecoration: 'none', fontSize: 13 }}
+                          style={{ color: '#2563EB', textDecoration: 'none', fontSize: 14, fontWeight: 700 }}
                           title="Search online"
                         >
                           ↗
                         </a>
                       </h2>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: '#2563EB', marginTop: 2 }}>
-                        {activeCandidate?.role || (candSkillsList.length > 0 ? `${candSkillsList[0]} Specialist` : 'Software Specialist')}
+                      <div style={{ fontSize: 13.5, fontWeight: 600, color: isLight ? '#475569' : '#94A3B8', marginTop: 3 }}>
+                        {activeCandidate?.role || activeCandidate?.job_title || (candSkillsList.length > 0 ? `${candSkillsList[0]} Specialist` : 'IT Specialist')}
                       </div>
-                    </div>
-
-                    {/* Live AI Match Scan Trigger Button (Prompt: left card mai ak chota sa button AI Match) */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
-                      <button
-                        type="button"
-                        onClick={() => handleRunLiveAiScan(activeCandidate)}
-                        disabled={isLiveAiScanning}
-                        style={{
-                          flex: 1,
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: 6,
-                          background: 'linear-gradient(135deg, #1E40AF 0%, #2563EB 50%, #4F46E5 100%)',
-                          color: '#FFFFFF',
-                          border: 'none',
-                          borderRadius: 6,
-                          padding: '7px 12px',
-                          fontSize: 12,
-                          fontWeight: 800,
-                          cursor: isLiveAiScanning ? 'not-allowed' : 'pointer',
-                          boxShadow: '0 2px 6px rgba(37, 99, 235, 0.25)',
-                          transition: 'all 0.15s ease'
-                        }}
-                        title="Run real-time deep AI Match Scan & Fit Analysis against target requisition"
-                      >
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ animation: isLiveAiScanning ? 'spin 1s linear infinite' : 'none' }}>
-                          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-                        </svg>
-                        <span>{isLiveAiScanning ? 'Scanning Live AI...' : 'AI Match (Live Scan)'}</span>
-                      </button>
-                      {liveAiMatchResult && liveAiCandidate?.id === activeCandidate?.id && (
-                        <button
-                          type="button"
-                          onClick={() => setShowLiveAiModal(true)}
-                          style={{
-                            background: isLight ? '#EFF6FF' : 'rgba(37,99,235,0.15)',
-                            border: '1px solid #BFDBFE',
-                            color: '#1D4ED8',
-                            borderRadius: 6,
-                            padding: '7px 9px',
-                            fontSize: 11,
-                            fontWeight: 800,
-                            cursor: 'pointer',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 3
-                          }}
-                          title="View detailed AI match analysis"
-                        >
-                          <span>{liveAiMatchResult.score}% Fit</span> ↗
-                        </button>
+                      {activeCandidate?.email && (
+                        <div style={{ fontSize: 11.5, color: C.textSecondary, marginTop: 4, wordBreak: 'break-all' }}>
+                          {activeCandidate.email}
+                          {activeCandidate?.phone ? ` · ${activeCandidate.phone}` : ''}
+                        </div>
                       )}
                     </div>
 
-                    {/* LinkedIn Verification Trigger Button */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
-                      <button
-                        type="button"
-                        onClick={() => handleOpenLinkedInModal(activeCandidate)}
-                        style={{
-                          flex: 1,
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: 6,
-                          background: activeCandidate?.linkedinVerification
-                            ? (activeCandidate.linkedinVerification.overallStatus === 'MATCH'
-                                ? '#ECFDF5'
-                                : (activeCandidate.linkedinVerification.overallStatus === 'CONFLICT' ? '#FEF2F2' : '#FFFBEB'))
-                            : '#EFF6FF',
-                          color: activeCandidate?.linkedinVerification
-                            ? (activeCandidate.linkedinVerification.overallStatus === 'MATCH'
-                                ? '#047857'
-                                : (activeCandidate.linkedinVerification.overallStatus === 'CONFLICT' ? '#B91C1C' : '#B45309'))
-                            : '#0A66C2',
-                          border: `1px solid ${
-                            activeCandidate?.linkedinVerification
-                              ? (activeCandidate.linkedinVerification.overallStatus === 'MATCH'
-                                  ? '#A7F3D0'
-                                  : (activeCandidate.linkedinVerification.overallStatus === 'CONFLICT' ? '#FECACA' : '#FDE68A'))
-                              : '#BFDBFE'
-                          }`,
-                          borderRadius: 6,
-                          padding: '6px 12px',
-                          fontSize: 11.5,
-                          fontWeight: 800,
-                          cursor: 'pointer'
-                        }}
-                        title="Verify candidate companies, dates & skills on LinkedIn"
-                      >
-                        <IconLinkedIn />
-                        <span>
-                          {activeCandidate?.linkedinVerification
-                            ? `LinkedIn ${activeCandidate.linkedinVerification.overallStatus === 'MATCH' ? '✅ Verified' : (activeCandidate.linkedinVerification.overallStatus === 'CONFLICT' ? '❌ Conflict' : '⚠ Partial')} (${activeCandidate.linkedinVerification.confidenceScore}%)`
-                            : 'Check with LinkedIn'}
-                        </span>
-                      </button>
-                    </div>
-
-                    {/* Quick Action Chips: Submittal Pack & SmartSign RTR */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
-                      <button
-                        type="button"
-                        onClick={() => handleOpenSubmittalPack(activeCandidate)}
-                        style={{
-                          flex: 1,
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: 6,
-                          background: isLight ? '#F0FDF4' : 'rgba(15,118,110,0.15)',
-                          color: '#0F766E',
-                          border: '1px solid #99F6E4',
-                          borderRadius: 6,
-                          padding: '6px 10px',
-                          fontSize: 11.5,
-                          fontWeight: 700,
-                          cursor: 'pointer'
-                        }}
-                        title="Format Client Submittal Pack & Coversheet"
-                      >
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                          <polyline points="14 2 14 8 20 8" />
-                          <line x1="9" y1="15" x2="15" y2="15" />
-                        </svg>
-                        <span>Submittal Pack</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => handleOpenSmartSignRtr(activeCandidate)}
-                        style={{
-                          flex: 1,
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: 6,
-                          background: isLight ? '#EEF2FF' : 'rgba(67,56,202,0.15)',
-                          color: '#4338CA',
-                          border: '1px solid #C7D2FE',
-                          borderRadius: 6,
-                          padding: '6px 10px',
-                          fontSize: 11.5,
-                          fontWeight: 700,
-                          cursor: 'pointer'
-                        }}
-                        title="Request SmartSign Right to Represent (RTR)"
-                      >
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M12 19l7-7 3 3-7 7-3-3z" />
-                          <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z" />
-                        </svg>
-                        <span>Request RTR</span>
-                      </button>
-                    </div>
-
-                    {/* Location & Local Verification Badge */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                      <div style={{ fontSize: 12, color: C.textSecondary, display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <span style={{ fontWeight: 600, color: C.textPrimary }}>
+                    {/* Location & Visa Status Row */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      <div style={{ fontSize: 12.5, color: C.textSecondary, display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
+                        <span style={{ fontWeight: 700, color: C.textPrimary }}>
                           {(() => {
                             const l = activeCandidate?.location || '';
                             return (l && !l.toLowerCase().includes('search on') && !l.toLowerCase().includes('webpage')) ? l : 'United States';
                           })()}
                         </span>
-                        {activeCandidate?.visaStatus && (
+                        {(activeCandidate?.visaStatus || activeCandidate?.visa_status) && (
                           <span style={{
-                            fontSize: 10,
-                            fontWeight: 700,
+                            fontSize: 11,
+                            fontWeight: 600,
                             background: isLight ? '#F1F5F9' : '#334155',
                             color: isLight ? '#475569' : '#CBD5E1',
-                            padding: '1px 5px',
-                            borderRadius: 4,
+                            padding: '2px 8px',
+                            borderRadius: 6,
                             border: `1px solid ${isLight ? '#E2E8F0' : '#475569'}`
                           }}>
-                            {String(activeCandidate.visaStatus).replace(/\s*\(.*?\)/g, '')}
+                            {String(activeCandidate.visaStatus || activeCandidate.visa_status).replace(/\s*\(.*?\)/g, '')}
                           </span>
                         )}
                       </div>
 
-                      {/* Local Fit Badge */}
-                      {(() => {
-                        const matchedJob = activeCandidate?.targetReqId 
-                          ? openJobsList.find(j => String(j.id || '').replace(/^J-/, '') === String(activeCandidate.targetReqId).replace(/^J-/, ''))
-                          : null;
-                        const locFit = evaluateCandidateLocationFit(activeCandidate, matchedJob);
-                        return renderLocationBadge(locFit);
-                      })()}
+                      {/* Clean Blue Pill Location/Work-Mode Badge */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                        {(() => {
+                          const matchedJob = activeCandidate?.targetReqId
+                            ? openJobsList.find(j => String(j.id || '').replace(/^J-/, '') === String(activeCandidate.targetReqId).replace(/^J-/, ''))
+                            : null;
+                          const locFit = evaluateCandidateLocationFit(activeCandidate, matchedJob);
+                          return renderLocationBadge(locFit);
+                        })()}
+                        {liveAiMatchResult && liveAiCandidate?.id === activeCandidate?.id && (
+                          <button
+                            type="button"
+                            onClick={() => setShowLiveAiModal(true)}
+                            style={{
+                              background: isLight ? '#EFF6FF' : 'rgba(37,99,235,0.15)',
+                              border: '1px solid #BFDBFE',
+                              color: '#1D4ED8',
+                              borderRadius: 12,
+                              padding: '2px 8px',
+                              fontSize: 11,
+                              fontWeight: 700,
+                              cursor: 'pointer'
+                            }}
+                          >
+                            {liveAiMatchResult.score}% Fit ↗
+                          </button>
+                        )}
+                      </div>
                     </div>
 
-                    {/* Monster-Style Work Experience Short Card */}
+                    {/* Structured Work Experience Summary */}
                     {(() => {
                       const candStats = extractCandidateExperienceStats(activeCandidate)
                       const candEducation = extractCandidateEducation(activeCandidate)
                       return (
                         <div style={{
-                          borderTop: `1px solid ${C.border}`,
-                          paddingTop: 10,
+                          borderTop: `1px solid ${isLight ? '#F1F5F9' : C.border}`,
+                          paddingTop: 12,
                           display: 'flex',
                           flexDirection: 'column',
-                          gap: 6,
-                          fontSize: 11.5
+                          gap: 8,
+                          fontSize: 12.5,
+                          lineHeight: 1.45
                         }}>
                           <div>
-                            <span style={{ color: C.textSecondary, fontWeight: 700 }}>Current: </span>
-                            <strong style={{ color: C.textPrimary }}>
+                            <span style={{ color: C.textSecondary, fontWeight: 600 }}>Current: </span>
+                            <strong style={{ color: C.textPrimary, fontWeight: 700 }}>
                               {candStats.currentTitle} at {candStats.currentEmployer}
                             </strong>
                           </div>
 
                           <div>
-                            <span style={{ color: C.textSecondary, fontWeight: 700 }}>Previous: </span>
+                            <span style={{ color: C.textSecondary, fontWeight: 600 }}>Previous: </span>
                             <span style={{ color: C.textPrimary }}>
                               {candStats.previousTitle} at {candStats.previousEmployer}
                             </span>
                           </div>
 
                           <div>
-                            <span style={{ color: C.textSecondary, fontWeight: 700 }}>Education: </span>
+                            <span style={{ color: C.textSecondary, fontWeight: 600 }}>Education: </span>
                             <span style={{ color: C.textPrimary }}>{candEducation}</span>
                           </div>
                         </div>
                       )
                     })()}
 
-                    {/* Top Skills Chips (Monster Style) */}
+                    {/* Compact Skills Row */}
                     {candSkillsList.length > 0 && (
-                      <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 10 }}>
-                        <div style={{ fontSize: 10.5, fontWeight: 700, color: C.textSecondary, textTransform: 'uppercase', marginBottom: 6 }}>
-                          Skills
-                        </div>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                          {candSkillsList.slice(0, 5).map((sk, sIdx) => (
-                            <span
-                              key={sIdx}
-                              style={{
-                                fontSize: 11,
-                                fontWeight: 600,
-                                backgroundColor: isLight ? '#F1F5F9' : '#334155',
-                                border: `1px solid ${isLight ? '#E2E8F0' : '#475569'}`,
-                                color: C.textPrimary,
-                                padding: '2px 7px',
-                                borderRadius: 4
-                              }}
-                            >
-                              {sk}
-                            </span>
-                          ))}
-                          {candSkillsList.length > 5 && (
-                            <span
-                              onClick={() => setActiveTobuTab('analytics')}
-                              style={{
-                                fontSize: 10.5,
-                                fontWeight: 700,
-                                color: '#2563EB',
-                                backgroundColor: '#EFF6FF',
-                                border: '1px solid #BFDBFE',
-                                padding: '2px 6px',
-                                borderRadius: 4,
-                                cursor: 'pointer'
-                              }}
-                              title="Click to view all skills in Analytics tab"
-                            >
-                              +{candSkillsList.length - 5} more
-                            </span>
-                          )}
-                        </div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, paddingTop: 2 }}>
+                        {candSkillsList.slice(0, 6).map((sk, sIdx) => (
+                          <span
+                            key={sIdx}
+                            style={{
+                              fontSize: 11,
+                              fontWeight: 600,
+                              backgroundColor: isLight ? '#F8FAFC' : '#334155',
+                              border: `1px solid ${isLight ? '#E2E8F0' : '#475569'}`,
+                              color: isLight ? '#334155' : '#E2E8F0',
+                              padding: '2px 8px',
+                              borderRadius: 5
+                            }}
+                          >
+                            {sk}
+                          </span>
+                        ))}
+                        {candSkillsList.length > 6 && (
+                          <span
+                            onClick={() => setActiveTobuTab('analytics')}
+                            style={{
+                              fontSize: 11,
+                              fontWeight: 700,
+                              color: '#2563EB',
+                              backgroundColor: '#EFF6FF',
+                              border: '1px solid #BFDBFE',
+                              padding: '2px 7px',
+                              borderRadius: 5,
+                              cursor: 'pointer'
+                            }}
+                          >
+                            +{candSkillsList.length - 6}
+                          </span>
+                        )}
                       </div>
                     )}
 
-                    {/* Quick Action Buttons */}
-                    <div style={{ display: 'flex', gap: 6, marginTop: 4, borderTop: `1px solid ${C.border}`, paddingTop: 10 }}>
+                    {/* Clean Enterprise 3-Button Row: AI Match | Email | Analytics (Matches Mockup) */}
+                    <div style={{ display: 'flex', gap: 8, marginTop: 4, borderTop: `1px solid ${isLight ? '#F1F5F9' : C.border}`, paddingTop: 14 }}>
                       <button
                         type="button"
                         onClick={() => handleRunLiveAiScan(activeCandidate)}
                         disabled={isLiveAiScanning}
                         style={{
-                          backgroundColor: '#1E40AF',
-                          color: '#FFFFFF',
-                          border: 'none',
-                          borderRadius: 6,
-                          padding: '7px 9px',
+                          flex: 1,
+                          backgroundColor: isLight ? '#FFFFFF' : C.inputBg,
+                          color: C.textPrimary,
+                          border: `1px solid ${isLight ? '#CBD5E1' : C.border}`,
+                          borderRadius: 8,
+                          padding: '8px 8px',
                           fontSize: 12,
-                          fontWeight: 800,
+                          fontWeight: 700,
                           cursor: isLiveAiScanning ? 'not-allowed' : 'pointer',
                           display: 'inline-flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          gap: 4
+                          gap: 5,
+                          transition: 'background 0.15s ease, border-color 0.15s ease'
                         }}
                         title="Run real-time deep AI Match Scan"
                       >
-                        <IconZap /> <span>AI Match</span>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M12 3l1.9 5.8L20 11l-6.1 2.2L12 19l-1.9-5.8L4 11l6.1-2.2L12 3z" />
+                        </svg>
+                        <span>{isLiveAiScanning ? 'Scanning...' : 'AI Match'}</span>
                       </button>
 
                       <button
                         type="button"
-                        onClick={() => handleOpenEmailModal(activeCandidate)}
+                        onClick={() => {
+                          handleOpenEmailModal(activeCandidate)
+                          setActiveTobuTab('emails')
+                        }}
                         style={{
                           flex: 1,
-                          backgroundColor: '#2563EB',
-                          color: '#FFFFFF',
-                          border: 'none',
-                          borderRadius: 6,
-                          padding: '7px 8px',
+                          backgroundColor: isLight ? '#FFFFFF' : C.inputBg,
+                          color: C.textPrimary,
+                          border: `1px solid ${isLight ? '#CBD5E1' : C.border}`,
+                          borderRadius: 8,
+                          padding: '8px 8px',
                           fontSize: 12,
                           fontWeight: 700,
                           cursor: 'pointer',
                           display: 'inline-flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          gap: 4
+                          gap: 5,
+                          transition: 'background 0.15s ease, border-color 0.15s ease'
                         }}
+                        title="Email candidate"
                       >
                         <IconMail /> <span>Email</span>
                       </button>
@@ -9418,22 +9263,24 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                         type="button"
                         onClick={() => setActiveTobuTab('analytics')}
                         style={{
-                          backgroundColor: isLight ? '#F8FAFC' : C.inputBg,
-                          border: `1px solid ${C.border}`,
-                          color: C.textPrimary,
-                          borderRadius: 6,
-                          padding: '7px 10px',
+                          flex: 1,
+                          backgroundColor: activeTobuTab === 'analytics' ? (isLight ? '#EFF6FF' : 'rgba(37,99,235,0.18)') : (isLight ? '#FFFFFF' : C.inputBg),
+                          border: `1px solid ${activeTobuTab === 'analytics' ? '#93C5FD' : (isLight ? '#CBD5E1' : C.border)}`,
+                          color: activeTobuTab === 'analytics' ? '#1D4ED8' : C.textPrimary,
+                          borderRadius: 8,
+                          padding: '8px 8px',
                           fontSize: 12,
                           fontWeight: 700,
                           cursor: 'pointer',
                           display: 'inline-flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          gap: 4
+                          gap: 4,
+                          transition: 'background 0.15s ease, border-color 0.15s ease'
                         }}
                         title="View deep analysis, career gaps, and full fit breakdown"
                       >
-                        <span>Analytics ↗</span>
+                        <span>Analytics</span>
                       </button>
                     </div>
                   </div>
@@ -9665,58 +9512,64 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                         }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                             {/* Download Button */}
-                            {activeCandidate?.file?.stored_name ? (
-                              <a
-                                href={`/uploads/${activeCandidate.file.stored_name}`}
-                                download={activeCandidate.file.original_name || activeCandidate.file.stored_name}
-                                style={{
-                                  background: '#2563EB',
-                                  color: '#FFFFFF',
-                                  border: 'none',
-                                  borderRadius: 6,
-                                  padding: '6px 14px',
-                                  fontSize: 12,
-                                  fontWeight: 800,
-                                  cursor: 'pointer',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: 6,
-                                  textDecoration: 'none',
-                                  boxShadow: '0 2px 5px rgba(37,99,235,0.2)'
-                                }}
-                              >
-                                <IconDownload /> <span>Download Resume</span>
-                              </a>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  if (!activeCandidate) return
-                                  const element = document.createElement('a')
-                                  const file = new Blob([candResumeText], { type: 'text/plain' })
-                                  element.href = URL.createObjectURL(file)
-                                  element.download = `${(activeCandidate.name || 'Candidate').replace(/\s+/g, '_')}_Resume.txt`
-                                  document.body.appendChild(element)
-                                  element.click()
-                                }}
-                                style={{
-                                  background: '#2563EB',
-                                  color: '#FFFFFF',
-                                  border: 'none',
-                                  borderRadius: 6,
-                                  padding: '6px 14px',
-                                  fontSize: 12,
-                                  fontWeight: 800,
-                                  cursor: 'pointer',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: 6,
-                                  boxShadow: '0 2px 5px rgba(37,99,235,0.2)'
-                                }}
-                              >
-                                <IconDownload /> <span>Download Resume</span>
-                              </button>
-                            )}
+                            {(() => {
+                              const resFile = resolveCandidateResumeFile(activeCandidate)
+                              if (resFile.url) {
+                                return (
+                                  <a
+                                    href={resFile.url}
+                                    download={resFile.name || `${(activeCandidate?.name || 'Candidate').replace(/\s+/g, '_')}_Resume`}
+                                    style={{
+                                      background: '#2563EB',
+                                      color: '#FFFFFF',
+                                      border: 'none',
+                                      borderRadius: 6,
+                                      padding: '6px 14px',
+                                      fontSize: 12,
+                                      fontWeight: 800,
+                                      cursor: 'pointer',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: 6,
+                                      textDecoration: 'none',
+                                      boxShadow: '0 2px 5px rgba(37,99,235,0.2)'
+                                    }}
+                                  >
+                                    <IconDownload /> <span>Download Resume</span>
+                                  </a>
+                                )
+                              }
+                              return (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (!activeCandidate) return
+                                    const element = document.createElement('a')
+                                    const file = new Blob([candResumeText], { type: 'text/plain' })
+                                    element.href = URL.createObjectURL(file)
+                                    element.download = `${(activeCandidate.name || 'Candidate').replace(/\s+/g, '_')}_Resume.txt`
+                                    document.body.appendChild(element)
+                                    element.click()
+                                  }}
+                                  style={{
+                                    background: '#2563EB',
+                                    color: '#FFFFFF',
+                                    border: 'none',
+                                    borderRadius: 6,
+                                    padding: '6px 14px',
+                                    fontSize: 12,
+                                    fontWeight: 800,
+                                    cursor: 'pointer',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: 6,
+                                    boxShadow: '0 2px 5px rgba(37,99,235,0.2)'
+                                  }}
+                                >
+                                  <IconDownload /> <span>Download Resume</span>
+                                </button>
+                              )
+                            })()}
 
                             {/* Top 5 Skill Occurrence Frequency Chips (Interactive like Tobu.ai Screenshot 3) */}
                             {candidateFrequencies.slice(0, 5).map((sk, idx) => (
@@ -9797,22 +9650,40 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
 
                         {/* Resume Paper Canvas — Inline PDF / DOCX banner + text / plain text */}
                         {(() => {
-                          const fileMime = activeCandidate?.file?.mime_type || ''
-                          const fileName = activeCandidate?.file?.stored_name || ''
-                          const fileUrl = fileName ? `/uploads/${fileName}` : ''
-                          const isPdf = fileMime === 'application/pdf' || fileName.toLowerCase().endsWith('.pdf')
-                          const isDocx = fileMime.includes('wordprocessingml') || fileName.toLowerCase().endsWith('.docx') || fileName.toLowerCase().endsWith('.doc')
+                          if (isLoadingResume && (!candResumeText || candResumeText.length < 50)) {
+                            return (
+                              <div style={{
+                                backgroundColor: '#FFFFFF',
+                                padding: '48px 32px',
+                                borderRadius: 10,
+                                border: '1px solid #E2E8F0',
+                                textAlign: 'center',
+                                color: '#475569',
+                                fontSize: 13.5,
+                                fontWeight: 600
+                              }}>
+                                Loading full candidate resume...
+                              </div>
+                            )
+                          }
+
+                          const resFile = resolveCandidateResumeFile(activeCandidate)
+                          const fileMime = resFile.mime || ''
+                          const fileName = resFile.name || resFile.storedName || ''
+                          const fileUrl = resFile.url || ''
+                          const isPdf = fileMime === 'application/pdf' || fileName.toLowerCase().endsWith('.pdf') || fileUrl.toLowerCase().endsWith('.pdf')
+                          const isDocx = fileMime.includes('wordprocessingml') || fileName.toLowerCase().endsWith('.docx') || fileName.toLowerCase().endsWith('.doc') || fileUrl.toLowerCase().endsWith('.docx') || fileUrl.toLowerCase().endsWith('.doc')
 
                           if (isPdf && fileUrl) {
                             return (
                               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: C.surface, border: `1px solid ${C.border}`, borderRadius: 6, padding: '8px 14px' }}>
                                   <span style={{ fontSize: 12, fontWeight: 700, color: C.textSecondary }}>
-                                    Original PDF Document: <strong style={{ color: '#2563EB' }}>{activeCandidate.file.original_name || fileName}</strong>
+                                    Original PDF Document: <strong style={{ color: '#2563EB' }}>{fileName}</strong>
                                   </span>
                                   <a
                                     href={fileUrl}
-                                    download={activeCandidate.file.original_name || fileName}
+                                    download={fileName || 'Resume.pdf'}
                                     style={{
                                       background: '#EFF6FF',
                                       color: '#1D4ED8',
@@ -9859,11 +9730,11 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                                   padding: '10px 16px'
                                 }}>
                                   <span style={{ fontSize: 12.5, fontWeight: 700, color: '#047857' }}>
-                                    Resume on file: <strong style={{ color: '#0F172A' }}>{activeCandidate.file.original_name || fileName}</strong>
+                                    Resume on file: <strong style={{ color: '#0F172A' }}>{fileName}</strong>
                                   </span>
                                   <a
                                     href={fileUrl}
-                                    download={activeCandidate.file.original_name || fileName}
+                                    download={fileName || 'Resume.docx'}
                                     style={{
                                       background: '#047857',
                                       color: '#FFFFFF',

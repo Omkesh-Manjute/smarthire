@@ -286,7 +286,7 @@ export default function AtsUnifiedSidebar({
     <aside style={{
       width: sidebarCollapsed ? '64px' : '240px',
       minWidth: sidebarCollapsed ? '64px' : '240px',
-      background: '#3F0E40',
+      background: '#1F0F24',
       display: 'flex',
       flexDirection: 'column',
       height: '100vh',
@@ -307,7 +307,7 @@ export default function AtsUnifiedSidebar({
         justifyContent: 'space-between',
         padding: sidebarCollapsed ? '0 16px' : '0 18px',
         borderBottom: '1px solid rgba(255,255,255,0.08)',
-        background: '#350d36'
+        background: '#170B1B'
       }}>
         {!sidebarCollapsed && (
           <div
@@ -397,7 +397,7 @@ export default function AtsUnifiedSidebar({
                 padding: sidebarCollapsed ? '10px 0' : '8px 12px',
                 justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
                 borderRadius: '6px',
-                background: isActive ? '#1164A3' : 'transparent',
+                background: isActive ? 'rgba(255,255,255,0.14)' : 'transparent',
                 color: isActive ? '#ffffff' : 'rgba(255,255,255,0.72)',
                 fontWeight: isActive ? '700' : '500',
                 fontSize: '13px',
@@ -446,7 +446,7 @@ export default function AtsUnifiedSidebar({
                     justifyContent: 'space-between',
                     padding: sidebarCollapsed ? '10px 0' : '7px 10px',
                     borderRadius: '6px',
-                    background: isGroupActive && !isOpen ? 'rgba(17, 100, 163, 0.25)' : 'transparent',
+                    background: isGroupActive && !isOpen ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
                     color: isGroupActive ? '#ffffff' : 'rgba(255,255,255,0.75)',
                     fontSize: '11px',
                     fontWeight: '700',
@@ -457,11 +457,11 @@ export default function AtsUnifiedSidebar({
                     userSelect: 'none'
                   }}
                   onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = '#ffffff' }}
-                  onMouseLeave={e => { e.currentTarget.style.background = isGroupActive && !isOpen ? 'rgba(17, 100, 163, 0.25)' : 'transparent'; e.currentTarget.style.color = isGroupActive ? '#ffffff' : 'rgba(255,255,255,0.75)' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = isGroupActive && !isOpen ? 'rgba(255, 255, 255, 0.1)' : 'transparent'; e.currentTarget.style.color = isGroupActive ? '#ffffff' : 'rgba(255,255,255,0.75)' }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: sidebarCollapsed ? 'center' : 'flex-start', width: sidebarCollapsed ? '100%' : 'auto' }}>
                     <span style={{ display: 'inline-flex', alignItems: 'center' }}>
-                      {renderAtsIcon(grp.icon, 14, isGroupActive ? '#38bdf8' : 'rgba(255,255,255,0.75)')}
+                      {renderAtsIcon(grp.icon, 14, isGroupActive ? '#A78BFA' : 'rgba(255,255,255,0.72)')}
                     </span>
                     {!sidebarCollapsed && <span>{grp.label}</span>}
                   </div>
@@ -503,9 +503,9 @@ export default function AtsUnifiedSidebar({
                             alignItems: 'center',
                             justifyContent: 'space-between',
                             padding: '6px 10px',
-                            borderRadius: '5px',
-                            background: isItemActive ? '#1164A3' : 'transparent',
-                            color: isItemActive ? '#ffffff' : 'rgba(255,255,255,0.7)',
+                            borderRadius: '6px',
+                            background: isItemActive ? 'rgba(255,255,255,0.14)' : 'transparent',
+                            color: isItemActive ? '#ffffff' : 'rgba(255,255,255,0.72)',
                             fontSize: '12.5px',
                             fontWeight: isItemActive ? '700' : '500',
                             cursor: 'pointer',

@@ -803,7 +803,10 @@ function normalizeAndDeduplicateCandidates(list) {
     if (!c) continue;
     const p = c.extracted_profile || {};
     const rawName = (c.name && c.name.trim() !== '' && c.name !== 'Candidate') ? c.name : (p.name || '');
-    const rawEmail = (c.email && c.email.trim() !== '') ? c.email : (p.email || c.email_context?.sender_email || '');
+    const rawEmailRaw = (c.email && c.email.trim() !== '') ? c.email : (p.email || c.email_context?.sender_email || '');
+    const rawEmail = String(rawEmailRaw)
+      .trim()
+      .replace(/\.(com|net|org|edu|gov|io|co|us|in|ai|dev|tech|info)(?:linkedin|github|portfolio|phone|mobile|cell|email|resume|cv|http|www).*$/i, '.$1');
 
     // Skip empty ghost records without name or email
     if (!rawName && !rawEmail) continue;
@@ -816,12 +819,12 @@ function normalizeAndDeduplicateCandidates(list) {
     const skills = (Array.isArray(c.skills) && c.skills.length > 0) ? c.skills : (p.skills || []);
     const cleanRole = (c.role && c.role !== 'Senior Specialist' && c.role.trim() !== '') 
       ? c.role 
-      : (p.role || (skills.length > 0 ? `${skills[0]} Specialist` : 'Software Specialist'));
+      : (c.job_title || p.role || (skills.length > 0 ? `${skills[0]} Specialist` : 'Software Specialist'));
 
     const rawCandPhone = c.phone || p.phone || '';
     const cleanPhone = (rawCandPhone && !rawCandPhone.includes('555') && !rawCandPhone.includes('010-0000') && !rawCandPhone.includes('000-0000')) ? rawCandPhone : '';
 
-    const rawResume = c.resumeText || p.raw_text || c.email_context?.body || '';
+    const rawResume = c.resumeText || c.resume_text || p.raw_text || c.email_context?.body || '';
     let cleanResume = rawResume;
     let detectedAttachment = c.attachmentName || null;
     if (rawResume && (rawResume.includes('Content-Type:') || rawResume.includes('boundary=') || rawResume.includes('BODY[TEXT]') || rawResume.includes('base64') || rawResume.includes('Content-Disposition:'))) {
@@ -831,6 +834,12 @@ function normalizeAndDeduplicateCandidates(list) {
         detectedAttachment = cleaned.attachmentNames[0];
       }
     }
+
+    const normalizedFile = c.file || (c.resume_file ? {
+      original_name: c.resumeFileName || path.basename(String(c.resume_file)),
+      stored_name: path.basename(String(c.resume_file)),
+      local_path: String(c.resume_file)
+    } : null);
 
     normalized.push({
       ...c,
@@ -845,9 +854,12 @@ function normalizeAndDeduplicateCandidates(list) {
       skills: skills.length > 0 ? skills : ['Java', 'SQL', 'Cloud Technologies'],
       experience: c.experience || (p.experience_years ? `${p.experience_years}+ Years` : '5+ Years'),
       visaStatus: c.visaStatus || c.visa_status || 'US Citizen',
+      createdAt: c.createdAt || c.created_at || c.receivedAt || c.updatedAt || c.updated_at,
       targetReqId: c.targetReqId || (c.job_id && c.job_id !== 'J-DEFAULT' ? String(c.job_id).replace(/^J-/, '') : null),
       matchScore: c.matchScore || c.jd_match?.match_score || 70,
-      resumeText: cleanResume
+      resumeText: cleanResume,
+      file: normalizedFile,
+      resumeFileUrl: c.resumeFileUrl || c.resume_file || normalizedFile?.local_path || null
     });
   }
 
@@ -7081,8 +7093,14 @@ app.post('/api/parse-resume', upload.single('resume'), async (req, res) => {
     }
     const text = await parseResumeText(req.file.path, req.file.originalname, req.file.mimetype);
 
-    // Extract candidate details via regexes & helper
-    const emailMatch = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+    // Extract candidate details via regexes & helper (strip common PDF/DOCX glued labels like .comLinkedIn)
+    const rawEmailMatch = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,20}/);
+    const cleanedEmail = rawEmailMatch
+      ? rawEmailMatch[0]
+          .replace(/\.(com|net|org|edu|gov|io|co|us|in|ai|dev|tech|info)(?:linkedin|github|portfolio|phone|mobile|cell|email|resume|cv|http|www).*$/i, '.$1')
+          .trim()
+      : null;
+    const emailMatch = cleanedEmail ? [cleanedEmail] : null;
     const phoneMatch = text.match(/(?:\+?\d{1,3}[\s.-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}/);
     const locationMatch = text.match(/\b([A-Z][a-zA-Z]{1,18}(?: [A-Z][a-zA-Z]{1,15})?,\s*[A-Z]{2})\b/);
 
@@ -7369,13 +7387,57 @@ const handlePublicApplication = async (req, res) => {
     // Sync into candidatesStore (ATS database) & Firestore
     let savedCandidateId = 'C-' + Date.now().toString().slice(-5);
     try {
-      const existingIndex = candidatesStore.findIndex(c => c.email && c.email.toLowerCase() === candidateEmail.trim().toLowerCase());
+      const cleanCandEmail = candidateEmail
+        .trim()
+        .replace(/\.(com|net|org|edu|gov|io|co|us|in|ai|dev|tech|info)(?:linkedin|github|portfolio|phone|mobile|cell|email|resume|cv|http|www).*$/i, '.$1');
+      const existingIndex = candidatesStore.findIndex(c => c.email && c.email.toLowerCase() === cleanCandEmail.toLowerCase());
       const candidateId = savedCandidateId;
+      const nowIso = new Date().toISOString();
+      const uploadedFileObj = req.file ? {
+        original_name: req.file.originalname,
+        stored_name: req.file.filename,
+        size_bytes: req.file.size,
+        mime_type: req.file.mimetype,
+        local_path: resumeFileUrl
+      } : (resumeFileUrl ? {
+        original_name: resumeFileName || path.basename(resumeFileUrl),
+        stored_name: path.basename(resumeFileUrl),
+        local_path: resumeFileUrl
+      } : null);
+
+      const commonCandSkills = [
+        'Java', 'Spring Boot', 'Microservices', 'C#', '.NET', 'ASP.NET', 'React', 'Angular', 'Vue',
+        'Node.js', 'TypeScript', 'JavaScript', 'Python', 'SQL', 'PostgreSQL', 'Oracle', 'MongoDB',
+        'AWS', 'Azure', 'GCP', 'Docker', 'Kubernetes', 'Terraform', 'CI/CD', 'Jenkins', 'Git',
+        'REST API', 'GraphQL', 'Kafka', 'Snowflake', 'Spark', 'Databricks', 'Power BI', 'Tableau',
+        'Salesforce', 'SAP', 'ServiceNow', 'Workday', 'QA', 'Selenium', 'Playwright', 'Agile', 'Scrum'
+      ];
+      const lowerRes = (resumeText || '').toLowerCase();
+      const autoSkills = commonCandSkills.filter(sk => {
+        const esc = sk.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        return new RegExp(`(?:^|[^a-z0-9])${esc}(?:$|[^a-z0-9])`, 'i').test(lowerRes);
+      }).slice(0, 12);
+      const finalSkills = Array.from(new Set([...(matched_skills || []), ...autoSkills])).slice(0, 15);
+
+      const resumeDocEntry = uploadedFileObj ? {
+        resume: {
+          name: uploadedFileObj.original_name,
+          fileName: uploadedFileObj.original_name,
+          storageUrl: resumeFileUrl,
+          fileUrl: resumeFileUrl,
+          url: resumeFileUrl,
+          uploadedAt: nowIso,
+          category: 'Resume'
+        }
+      } : {};
+
       const candidateDoc = {
         candidate_id: candidateId,
         id: candidateId,
         job_id: job.id,
         job_title: job.title,
+        role: job.title || 'Applicant',
+        skills: finalSkills.length > 0 ? finalSkills : (job.skills || []).slice(0, 6),
         targetReqId: job.reqId || job.id,
         reqId: job.reqId || job.id,
         jobReqId: job.reqId || job.id,
@@ -7384,16 +7446,20 @@ const handlePublicApplication = async (req, res) => {
         matchedJobTitle: job.title,
         client: job.client || job.source || 'COOLSOFT',
         name: finalCandidateName,
-        email: candidateEmail.trim(),
+        email: cleanCandEmail,
         phone: candidatePhone || '',
         location: currentLocation || 'US Resident',
+        visaStatus: visaStatus || 'US Citizen',
         visa_status: visaStatus || 'US Citizen',
+        contractType: contractType || 'C2C',
         contract_type: contractType || 'C2C',
         target_rate: expectedRate || 'TBD',
         relocate: relocatePref || 'Yes',
         status: matchScore >= 70 ? 'Shortlisted' : 'Applied',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        createdAt: nowIso,
+        created_at: nowIso,
+        updatedAt: nowIso,
+        updated_at: nowIso,
         createdBy: recruiterEmailResolved || '',
         recruiterEmail: recruiterEmailResolved || '',
         submittedBy: recruiterEmailResolved || '',
@@ -7403,13 +7469,13 @@ const handlePublicApplication = async (req, res) => {
         appliedFrom: appliedSource === 'Mobile App' ? 'Mobile App Application' : 'Job Site Application',
         extracted_profile: {
           name: finalCandidateName,
-          email: candidateEmail.trim(),
+          email: cleanCandEmail,
           phone: candidatePhone || '',
           location: currentLocation || '',
           visa_status: visaStatus || '',
           contract_type: contractType || '',
           target_rate: expectedRate || '',
-          skills: matched_skills
+          skills: finalSkills
         },
         jd_match: {
           match_score: matchScore,
@@ -7417,13 +7483,28 @@ const handlePublicApplication = async (req, res) => {
           missing_skills: missing_skills,
           fit_verdict: matchScore >= 75 ? 'Strong Match' : matchScore >= 60 ? 'Moderate Match' : 'Potential Mismatch'
         },
+        resumeText: resumeText || '',
         resume_text: resumeText || '',
-        resume_file: resumeFileUrl
+        resumeFileName,
+        resumeFileUrl,
+        resume_file: resumeFileUrl,
+        file: uploadedFileObj,
+        documents: resumeDocEntry,
+        legalDocs: resumeDocEntry
       };
 
       if (existingIndex >= 0) {
         savedCandidateId = candidatesStore[existingIndex].id || candidatesStore[existingIndex].candidate_id || candidateId;
-        candidatesStore[existingIndex] = { ...candidatesStore[existingIndex], ...candidateDoc, id: savedCandidateId, candidate_id: savedCandidateId, updated_at: new Date().toISOString() };
+        candidatesStore[existingIndex] = {
+          ...candidatesStore[existingIndex],
+          ...candidateDoc,
+          id: savedCandidateId,
+          candidate_id: savedCandidateId,
+          documents: { ...(candidatesStore[existingIndex].documents || {}), ...resumeDocEntry },
+          legalDocs: { ...(candidatesStore[existingIndex].legalDocs || {}), ...resumeDocEntry },
+          updatedAt: nowIso,
+          updated_at: nowIso
+        };
         saveCandidateToFirestore(candidatesStore[existingIndex]).catch(() => {});
       } else {
         candidatesStore.unshift(candidateDoc);
@@ -13346,19 +13427,30 @@ app.get('/api/recruiter/email-streams', (req, res) => {
       }
     }
 
-    const { legalDocs: _unusedLd, resumeData: _unusedRd, ...cleanCandidate } = c;
+    const { legalDocs: _unusedLd, resumeData: _unusedRd, resume_text: _unusedRt, ...cleanCandidate } = c;
 
+    const rawResumeText = c.resumeText || c.resume_text || '';
     const isFullResumeRequested = req.query.full === 'true';
     const isSummaryRequested = req.query.summary === 'true' || !isFullResumeRequested;
     const optResumeText = isFullResumeRequested 
-      ? (c.resumeText || '') 
-      : (isSummaryRequested ? '' : ((c.resumeText && c.resumeText.length > 2000) ? c.resumeText.slice(0, 2000) : (c.resumeText || '')));
+      ? rawResumeText 
+      : (isSummaryRequested ? '' : ((rawResumeText.length > 2000) ? rawResumeText.slice(0, 2000) : rawResumeText));
+
+    const resolvedFileObj = c.file || (c.resume_file ? {
+      original_name: c.resumeFileName || path.basename(String(c.resume_file)),
+      stored_name: path.basename(String(c.resume_file)),
+      local_path: String(c.resume_file)
+    } : null);
 
     return {
       ...cleanCandidate,
+      createdAt: c.createdAt || c.created_at || c.receivedAt || c.updatedAt || c.updated_at,
+      visaStatus: c.visaStatus || c.visa_status || 'US Citizen',
+      file: resolvedFileObj,
+      resumeFileUrl: c.resumeFileUrl || c.resume_file || resolvedFileObj?.local_path || null,
       resumeText: optResumeText,
-      resumeSnippet: (c.resumeText || '').slice(0, 350),
-      hasFullResume: Boolean(c.resumeText && c.resumeText.length > 0),
+      resumeSnippet: rawResumeText.slice(0, 350),
+      hasFullResume: Boolean(rawResumeText.length > 0 || resolvedFileObj),
       name: cleanName,
       email: cleanEmail,
       role: cleanRole,
@@ -13402,7 +13494,7 @@ app.get('/api/recruiter/email-streams', (req, res) => {
   // Newest candidates strictly at the very top (Row #1)
   dedupedScopedCandidates.sort((a, b) => {
     const getT = (cand) => {
-      const d = cand.receivedAt || cand.receivedDate || cand.createdAt || cand.updatedAt || cand.date;
+      const d = cand.receivedAt || cand.receivedDate || cand.createdAt || cand.created_at || cand.updatedAt || cand.updated_at || cand.date;
       if (!d) return 0;
       const t = new Date(d).getTime();
       return isNaN(t) ? 0 : t;
@@ -13471,7 +13563,7 @@ app.get('/api/recruiter/email-streams', (req, res) => {
 });
 
 // GET /api/candidates/:id/resume — On-demand full resume text and documents loader
-app.get('/api/candidates/:id/resume', (req, res) => {
+app.get('/api/candidates/:id/resume', async (req, res) => {
   const cid = String(req.params.id || '').toLowerCase().trim();
   const cand = (candidatesStore || []).find(c => {
     return String(c.id || '').toLowerCase() === cid ||
@@ -13480,13 +13572,76 @@ app.get('/api/candidates/:id/resume', (req, res) => {
   });
   if (!cand) return res.status(404).json({ success: false, message: 'Candidate not found' });
 
+  let resolvedResumeText = cand.resumeText || cand.resume_text || cand.documents?.resume?.resumeText || cand.summary || '';
+  let resolvedFile = cand.file || (cand.resume_file ? {
+    original_name: cand.resumeFileName || path.basename(String(cand.resume_file)),
+    stored_name: path.basename(String(cand.resume_file)),
+    local_path: String(cand.resume_file)
+  } : null);
+
+  // Fallback 1: Check matching screening session (Careers Portal applications)
+  if ((!resolvedResumeText || resolvedResumeText.length < 50) && Array.isArray(screeningStore)) {
+    const candEmailLower = String(cand.email || '').toLowerCase().trim();
+    const matchedSession = screeningStore.find(s =>
+      (candEmailLower && String(s.candidateEmail || '').toLowerCase().trim() === candEmailLower) ||
+      String(s.sessionId || '').toLowerCase() === cid
+    );
+    if (matchedSession) {
+      if (matchedSession.resumeText && matchedSession.resumeText.length > resolvedResumeText.length) {
+        resolvedResumeText = matchedSession.resumeText;
+      }
+      if (!resolvedFile && matchedSession.resumeFileUrl) {
+        resolvedFile = {
+          original_name: matchedSession.resumeFileName || path.basename(String(matchedSession.resumeFileUrl)),
+          stored_name: path.basename(String(matchedSession.resumeFileUrl)),
+          local_path: String(matchedSession.resumeFileUrl)
+        };
+      }
+    }
+  }
+
+  // Fallback 2: Live-parse uploaded resume file on disk if resume text is still empty
+  if ((!resolvedResumeText || resolvedResumeText.length < 50) && resolvedFile) {
+    const candidateFilePaths = [];
+    if (resolvedFile.stored_name) {
+      candidateFilePaths.push(path.join(uploadDir, resolvedFile.stored_name));
+      candidateFilePaths.push(path.join(candidateDocsDir, resolvedFile.stored_name));
+    }
+    if (resolvedFile.local_path && resolvedFile.local_path.startsWith('/uploads/')) {
+      candidateFilePaths.push(path.join(uploadDir, resolvedFile.local_path.replace(/^\/uploads\//, '')));
+    }
+    for (const fp of candidateFilePaths) {
+      if (fs.existsSync(fp)) {
+        try {
+          const parsed = await parseResumeText(fp, resolvedFile.original_name || path.basename(fp), resolvedFile.mime_type || '');
+          if (parsed && parsed.trim().length > 30) {
+            resolvedResumeText = parsed.trim();
+            cand.resumeText = resolvedResumeText;
+            cand.file = resolvedFile;
+            saveCandidatesToDisk();
+            break;
+          }
+        } catch (_) {}
+      }
+    }
+  }
+
+  // Backfill camelCase resumeText & file in memory if loaded from snake_case
+  if (resolvedResumeText && !cand.resumeText) {
+    cand.resumeText = resolvedResumeText;
+  }
+  if (resolvedFile && !cand.file) {
+    cand.file = resolvedFile;
+  }
+
   return res.json({
     success: true,
     id: cand.id,
     name: cand.name,
-    resumeText: cand.resumeText || cand.summary || '',
+    resumeText: resolvedResumeText,
     documents: cand.documents || cand.legalDocs || {},
-    file: cand.file || null
+    file: resolvedFile || null,
+    resumeFileUrl: cand.resumeFileUrl || cand.resume_file || resolvedFile?.local_path || null
   });
 });
 
