@@ -66,6 +66,157 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
     - In resume views, every responsibility, project accomplishment, and contribution line must be formatted with an explicit bullet point (`•`) and proper indentation.
     - The engine must automatically detect responsibilities (lines following `Responsibilities:`, action verbs, or list items) even when converted from plain text or Word documents without literal Unicode bullets.
 
+### 2026-11-19 — Candidate Comparison Modal Activation & Outer Branding Sanitization (Coolsoft Removal)
+- **Root Cause & Fix for Candidate Comparison Matrix ("Compare Selected (2) Not Working")**:
+  1. *Premature Null Return in `CandidateComparisonModal.jsx`*:
+     - Previously initialized `useState(candidates)` which remained `[]` on initial render when `isOpen` became true, causing line 107 (`if (!isOpen || !activeCandidateList || activeCandidateList.length === 0) return null`) to return `null` immediately.
+     - Replaced `useState(candidates)` with synchronous `useMemo` filtering out `removedIds`, ensuring the modal renders instantly on the first tick when opened.
+  2. *Missing Download Handler & In-Scope Integrity in `RecruiterInbox.jsx` (Rule 1)*:
+     - Implemented `handleCandidateResumeDownload(cand)` in `RecruiterInbox.jsx` leveraging `resolveCandidateResumeFile(cand)` for authenticated document downloads or sanitized text blobs, replacing the undeclared `handleDownloadResume` reference.
+  3. *Bulletproof Multi-Candidate Selection Resolution*:
+     - Upgraded `handleOpenComparisonModal` to inspect `c.id`, `c.candidate_id`, `c.email`, `c._id`, and fallback to `roleScopedCandidates`, ensuring selected candidates are never dropped across filters or pagination.
+     - Fixed master table checkbox uncheck typo `selectedCardIds(new Set())` -> `setSelectedCardIds(new Set())`.
+- **Outer Branding Sanitization (Coolsoft Removal from Public & Outer Surfaces)**:
+  - Per user instruction ("coolsoft outer mai nahi hona under ke page mai chalega"):
+  - `Blog.jsx`: Removed `COOLSOFT LLC` from public publication footer -> `© 2026 SmartHire Technologies. All rights reserved.`
+  - `Login.jsx`: Updated default mock recruiter agency branding from `COOLSOFT LLC` to `SmartHire`.
+  - `JobsModule.jsx`: Replaced public-facing tabs and headers with `Direct Client`.
+  - `MonsterSourcingModule.jsx`: Sanitized outreach templates and headers to `SmartHire`.
+  - `SmartSignRtrPage.jsx`: Replaced legal RTR header, seal footer, and acknowledgement blocks with `SmartHire Technologies`.
+  - `SubmittalPackPage.jsx`: Sanitized public client presentation coversheets and state templates to `SmartHire`.
+- **Verification & Deployment Protocol**:
+  - Matching engine unit tests: 42/42 passed.
+  - Production build: `npm run build` in `smarthire-react` completed in 6.03s with 0 errors, 0 warnings (main bundle `index-BfeOQzBv.js`).
+  - Git committed (`7d0a37e`) and pushed to GitHub `origin main`.
+  - Deployed to AWS Lightsail (`34.194.119.199`), temporary archives removed immediately, asset bundles pruned (5 newest retained), disk space verified at 55% (8.4GB free; Rule 5 compliance).
+  - PM2 `smarthire-ats` reloaded and verified online.
+  - Live server verification on `https://smarthireus.com`: HTTP 200 OK serving bundle `index-BfeOQzBv.js`, zero coolsoft occurrences in `/blog` bundle.
+
+### 2026-11-19 — Enterprise AI Side-by-Side Candidate Comparison Matrix for Applied Requisitions
+- **Feature Overview**:
+  - Implemented an institutional, enterprise-grade `CandidateComparisonModal.jsx` side-by-side comparison matrix for applicants applying to requisitions.
+  - Recruiter can select 2, 3, or 4 candidates and trigger deep head-to-head AI analysis, comparing Match Score, Visa Status, Experience, Target Rate vs Client Budget, Location/Relocation, Matched Core Skills, Missing Skills, and AI Verdict (Primary Submittal vs Backup Fit).
+  - Includes Executive AI Recommendation Banner highlighting the top candidate pick and rationale.
+  - Multi-access trigger points in `RecruiterInbox.jsx`:
+    1. Table toolbar: `Compare Selected (X)` button appears whenever $\ge 2$ checkboxes are selected.
+    2. Quick 1-click `AI Compare Applicants (X)` button appears whenever viewing applicants for a requisition.
+    3. Candidate side panel: `Compare X Applicants for this Req` button appears when candidate belongs to a multi-applicant requisition.
+  - 1-click action buttons in comparison columns: `Select for Submittal`, `Screen (Invite to 1-way Video)`, `Download Resume`.
+- **Verification & Deployment Protocol**:
+  - 42/42 matching engine unit tests passed.
+  - `npm run build` in `smarthire-react`: 0 errors, 0 warnings (completed in 3.27s, bundle `index-2WMuZGqW.js`).
+  - Git committed (`3022078`) and pushed to GitHub `origin main`.
+  - Deployed to AWS Lightsail (`34.194.119.199`), temporary archives removed immediately, assets pruned (kept 5 newest), PM2 `smarthire-ats` online.
+  - Live verification on `https://smarthireus.com`: HTTP 200 OK serving bundle `index-2WMuZGqW.js`.
+
+### 2026-11-19 — Position Number Sharing, Profile Click Dropdown, Video Screening Fix & Matching Engine Deep Dive
+- **User Requirements & Issues Addressed**:
+  1. *Video & Audio Screening Pollution*: Direct job applicants (`Dayareddy Developper` and `Faizuddin`) were mistakenly appearing in the Recruiter's "AI Video Screening" / "Candidate Video & Audio Screening" tab (`/ats?tab=screening`) with status "New Submitted" and "Link Active", even though no interview screening link was ever sent to them.
+  2. *Position Number in Share Links*: Sharing jobs (e.g. `159574`) previously exposed raw internal IDs (`jobId=159574`). User requested the authentic Position Number (e.g. `84888`) to be used in share URLs, titles, and details.
+  3. *Profile Click Dropdown*: Clicking on the top-right candidate avatar/pill `[(W) Work ai ▾]` must open an interactive dropdown menu with Profile details, "Edit Profile & Resume", "My Applications", and "Logout".
+  4. *Matching Engine Explanation*: Comprehensive explanation of why Dayareddy and Faizuddin mapped to `Req #159574` and how the 98% vs 62% match scores are computed.
+- **Root Cause & Fix for Screening Pollution**:
+  - In `server/index.js`, `handlePublicApplication` (called by `/api/screening/public-submit`) was unshifting `newSession` into `screeningStore` and writing to `screening_sessions.json`.
+  - Removed `screeningStore.unshift(newSession)` from `handlePublicApplication`.
+  - Added filter in `loadScreeningFromDisk` and `GET /api/screening/sessions` to exclude raw job site applications.
+  - Cleaned server `screening_sessions.json`, purging the 2 false `.NET Web Developer III` sessions (verified 0 sessions remaining for Req #159574).
+- **Position Number & Sharing Architecture**:
+  - Added `resolvePositionNumber(job)` in `formatJobDescription.js` resolving `positionNumber`, title parenthesized numbers (e.g. `(808496)`), `sourceId` (e.g. `84888`), and `KNOWN_TITLE_MAP`.
+  - In `WellfoundCareersView.jsx`: `ShareSheet` generates `https://smarthireus.com/jobs?jobId=${resolvePositionNumber(job)}`.
+  - Both `jobId=84888` and `jobId=159574` resolve seamlessly on the portal. Added `Position #84888` badge to the job details view.
+- **Candidate Top Profile Dropdown**:
+  - Upgraded top header avatar/pill in `WellfoundCareersView.jsx` with rotating chevron `▾`, candidate info header, "Edit Profile & Master Resume", "My Applications", and "Logout".
+  - Full outside click & ESC key dismiss listeners.
+- **Verification & Deployment**:
+  - Matching engine tests: 42/42 passed.
+  - Production build: `npm run build` completed in 3.36s with 0 errors, 0 warnings (bundle `index-DK9labdp.js`).
+  - Git committed (`fbece5c`) and pushed to GitHub `origin main`.
+  - Deployed to AWS Lightsail (`34.194.119.199`), cleaned archives, pruned old assets, reloaded PM2 `smarthire-ats`.
+  - Live server verification on `https://smarthireus.com`: HTTP 200, bundle `index-DK9labdp.js`, `/jobs?jobId=84888` HTTP 200, 0 screening sessions for Req #159574.
+
+### 2026-11-19 — Candidate Master Resume Auto-Apply, Deep Linking, Teamwork Hardening & Live Deployment
+- **User Requirements & Core Objectives**:
+  1. Remove "Coolsoft" references from candidate profile placeholders & examples.
+  2. Implement master resume persistence & auto-apply across jobs: candidate saves profile or uploads resume once, and can 1-click apply to any other job without re-uploading.
+  3. Direct job sharing: fix ShareSheet URL (previously resolved to `jobId=[object Object]`), ensure opening a shared link opens that exact job detail view without premature modal popup.
+  4. Top profile controls: provide prominent, distinct "Edit Profile" and "Logout" buttons on the top header.
+  5. End-to-end verification via Teamwork multi-agent team under heavy application load conditions.
+- **Implementations**:
+  1. *Placeholder Sanitization*: Changed `CandidateProfileModal.jsx` employer placeholder from `e.g. Coolsoft LLC or Independent` to `e.g. Apex Systems, Cognizant, or Independent`.
+  2. *Master Resume Persistence & 1-Click Auto-Apply*:
+     - Unified `smarthire_saved_master_resume`, `smarthire_candidate_profile`, and `smarthire_candidate_user` in `localStorage`.
+     - Hardened `reconstructFileFromBase64` to cleanly decode base64 byte arrays into authentic `File` objects.
+     - In `PublicCareers.jsx`, `openApplicationModal` rehydrates the master resume and auto-populates candidate fields (Name, Email, Phone, Location, Work Authorization, Contract Type, Expected Rate), displaying "Auto-Attached Master Resume" with 1-click apply.
+  3. *Direct Job Deep Linking & Sharing*:
+     - Fixed `resolveReqId` in `formatJobDescription.js` to safely unpack object arguments rather than evaluating to `[object Object]`.
+     - Added `normalizeJobId` supporting raw numeric, `J-`, and `REQ-` prefixes.
+     - Updated `selectedJob` in `WellfoundCareersView.jsx` to load direct targets while strictly gating modal opening behind `apply=true` or `action=apply`.
+     - Added `/jobs/:jobId` and `/careers/:jobId` direct routes in `App.jsx`, and integrated official LinkedIn share API in `ShareSheet.jsx`.
+  4. *Header Profile Controls*:
+     - Redesigned top right candidate auth controls in `WellfoundCareersView.jsx` with candidate avatar/name, dedicated "Edit Profile" button with SVG pencil icon, and "Logout" button with SVG exit icon.
+  5. *Backend Hardening (`server/index.js`)*:
+     - Preserves existing candidate resume files and parsed text across repeated applications.
+     - Asynchronous debounced disk I/O (`saveScreeningToDisk`, `saveMessagesToDisk`).
+     - Control character sanitization in `parseResumeText`.
+- **Verification & Deployment Protocol**:
+  - Independent Teamwork Victory Audit: **VICTORY CONFIRMED**.
+  - Matching engine unit tests: 42/42 passed.
+  - Production build: `npm run build` completed in 3.32s with 0 errors, 0 warnings (bundle `index-DnNH7TqX.js`).
+  - Git committed (`a29f726`) and pushed to GitHub `origin main`.
+  - Deployed to AWS Lightsail (`34.194.119.199`), extracted to `/var/www/html/` and `/home/ubuntu/smarthire/dist/`.
+  - Pruned old assets (kept 5 newest `index-*.js`), deleted temporary archives immediately (Rule 5 compliance; 55% disk usage, 8.4GB free).
+  - PM2 `smarthire-ats` reloaded and verified online.
+  - Live server verification on `https://smarthireus.com`: HTTP 200, bundle `index-DnNH7TqX.js`, `/jobs?jobId=159575` and `/jobs/159575` HTTP 200.
+
+### 2026-11-18 — Enterprise Candidate Side Panel UI & Permanent Fix for Missing Resume Text / Download Link on Applied Candidates
+- **Root Cause of "No Direct Resume Text Extracted"**:
+  1. *Schema Key Mismatch*: In `/api/screening/public-submit`, candidates were stored in `candidates.json` using snake_case `resume_text` and `resume_file`, but `GET /api/candidates/:id/resume` and `GET /api/recruiter/email-streams` strictly looked for camelCase `resumeText` and `file`. As a result, the on-demand loader returned `resumeText: ''` and `file: null`.
+  2. *Frontend File Resolution*: In `RecruiterInbox.jsx`, the resume download buttons and canvas viewer only checked `activeCandidate.file.stored_name`. When `file` was missing or null, the download button fell back to a plain text blob and the canvas displayed "No Direct Resume Text Extracted", despite the 20KB+ parsed resume and `.docx` file existing on server disk.
+  3. *Sidebar & Side Panel Styling*: The user requested the authentic enterprise dark sidebar (`#1F0F24` / `#170B1B`) and a clean floating card side panel (checkbox, received date, candidate name with search arrow, role, location, visa badge, work experience summary, and 3-button row: `AI Match`, `Email`, `Analytics`).
+- **Fixes Implemented**:
+  1. *Unified Resume Resolution*: Added `resolveCandidateResumeFile(cand)` in `RecruiterInbox.jsx` inspecting `file`, `local_path`, `resumeFileUrl`, `resume_file`, `resumeUrl`, and `documents.resume`.
+  2. *Dual-Case Text & File Normalization*: Updated `normalizeAndDeduplicateCandidates`, `syncEmailResumesInternal`, and `GET /api/candidates/:id/resume` in `server/index.js` to normalize `resume_text` into `resumeText`, auto-parse any attached `.docx`/`.pdf`/`.txt` file from disk if text is empty, and provide fallback to `screeningStore`.
+  3. *Side Panel UI Upgrade*: Restyled `AtsUnifiedSidebar.jsx` with institutional deep plum branding (`#1F0F24`, `#170B1B`), subtle active states (`rgba(255,255,255,0.14)`), and redesigned the left candidate card in `RecruiterInbox.jsx` to match the requested layout.
+  4. *Email Glued Label Sanitizer*: Automatically cleans trailing email artifacts like `.comLinkedIn` into valid `.com` emails across ingestion and application routes.
+- **Verification & Deployment**:
+  - Local end-to-end API test verified submit, email streams, and lazy resume loader (11,645 chars parsed).
+  - Matching engine unit tests: 42/42 passed.
+  - `npm run build`: 0 errors, 0 warnings (`index-Xu5MTpnU.js`, `RecruiterInbox-C0SKs6TJ.js`).
+  - Committed (`56de6b1`) and pushed to `origin main`.
+  - Deployed to AWS Lightsail (`34.194.119.199`), PM2 `smarthire-ats` online, disk at 55% (8.4GB free).
+  - Live server verification on `https://smarthireus.com`: HTTP 200, Faizuddin (`C-76605`) verified returning `resumeTextLen: 20044`, `file: "1795011876317_Faizuddin_Sr_.Net_Full_Stack_Developer__1_.docx"`, and live file download.
+
+### 2026-11-18 — Permanent Fix for Candidate Application Submission (`req.body` undefined on multipart), Resume Auto-Fill & Express 5 Body Guard
+- **Root Causes Found & Resolved**:
+  1. `POST /api/screening/public-submit` in `server/index.js` lacked `multer` middleware while `PublicCareers.jsx` sent `FormData` (`multipart/form-data`) whenever a resume was attached — causing Express 5 (`express@5.2.1`) to leave `req.body === undefined` and throw `Cannot destructure property 'jobId' of 'req.body' as it is undefined`.
+  2. Global Express 5 safety: added middleware ensuring `req.body = {}` whenever `req.body === undefined`, protecting all 70+ server routes from destructuring crashes.
+  3. Resume Auto-Fill (`POST /api/parse-resume`): previously omitted `profile: { name, email, phone, location, skills, resumeText }`, so auto-fill never populated candidate fields in `PublicCareers.jsx`. Now returns full structured `profile` alongside top-level fields and cleanly supports `.pdf`, `.docx`, `.doc`, `.txt`, and `.rtf`.
+  4. Flexible Job ID lookup & Firestore sync: unified `/api/screening/public-submit`, `/api/screening/public-submit-file`, and `/api/applications` via `optionalResumeUpload` + `handlePublicApplication`, supporting prefixed/unprefixed numeric job IDs (e.g. `159574` / `J-159574`), fallback job metadata, and non-blocking Firestore sync (`saveCandidateToFirestore` + `saveCareerApplication`).
+  5. Frontend hardening in `PublicCareers.jsx` & `atsFirestore.js`: stringified `selectedJob.id` before `.replace()`, safe JSON response parsing, non-blocking Firestore sync, and fixed plain-text `uploadString` format (`'raw'` vs `'base64'`).
+- **Verification & Deployment**:
+  - Local live end-to-end API tests: 6/6 passed + real `.docx` parse & submit verified.
+  - Matching engine unit tests: 42/42 passed.
+  - `npm run build`: 0 errors, 0 warnings (`index-DZl-6jsO.js`, `PublicCareers-Dbj0RETj.js`).
+  - Committed (`aefd987`) and pushed to `origin main`.
+  - Deployed frontend bundle + `server/index.js` to AWS Lightsail (`34.194.119.199`), cleaned archives & pruned old bundles (55% disk usage, 8.4GB free), PM2 `smarthire-ats` online.
+  - Live verification on `https://smarthireus.com`: HTTP 200 (`index-DZl-6jsO.js`), `/jobs?jobId=159574` HTTP 200, live `/api/parse-resume` `.docx` verified returning full `profile`, live `/api/screening/public-submit` multipart & empty-body verified with zero destructure errors.
+
+### 2026-11-18 — Permanent Fix for Firebase Auth "Database is closing/hidden" Error Across ATS & Candidate Sign-In
+- **Root Cause**:
+  - `firebase@12.17.1`'s default `getAuth(app)` initializes `indexedDBLocalPersistence`, which listens to `visibilitychange` / `pagehide` and sets `isHiding = true` while closing IndexedDB whenever focus leaves the page (including during Google OAuth popups). When `signInWithPopup` completes and tries to persist the auth state, `@firebase/auth` throws `Error: Database is closing/hidden`.
+  - Additionally, candidates visiting `smarthireus.com` could open the `SmartHire ATS Portal` login modal instead of going to `/jobs`.
+- **Fix Implemented**:
+  1. Switched `smarthire-react/src/lib/firebase.js` from `getAuth(app)` to `initializeAuth(app, { persistence: [browserLocalPersistence, browserSessionPersistence, inMemoryPersistence], popupRedirectResolver: browserPopupRedirectResolver })`, bypassing IndexedDB completely.
+  2. Added `withAuthPersistenceRetry` and `formatAuthError` in `firebase.js` to gracefully recover from any browser storage transition and eliminate raw SDK error text.
+  3. Upgraded `PublicCareers.jsx` Candidate Sign-In modal with inline error banners and loading states (replacing browser `alert()`).
+  4. Added a direct `"Applying for an open role? Go to Careers Portal →"` link inside `Homepage.jsx`'s `SmartHire ATS Portal` login modal so candidates never get stuck in the recruiter login dialog.
+- **Verification & Deployment**:
+  - `npm run build`: 0 errors, 0 warnings (`index-B1S-tcJu.js`).
+  - Matching engine unit tests: 42/42 passed.
+  - Committed (`4e87276`) and pushed to `origin main`.
+  - Deployed to AWS Lightsail (`34.194.119.199`), pruned old bundles & temp tarballs (55% disk usage, 8.4GB free), PM2 `smarthire-ats` online.
+  - Verified HTTP 200 on `https://smarthireus.com` (`index-B1S-tcJu.js`) and `https://smarthireus.com/jobs`.
+
 ### 2026-11-12 — High-Performance MNC Architecture: Fast 25-Candidate Pagination, Auto-Matching Removal, Firebase Firestore Sync & MongoDB Elimination
 - **Context & User Objectives**:
   - The user requested:
