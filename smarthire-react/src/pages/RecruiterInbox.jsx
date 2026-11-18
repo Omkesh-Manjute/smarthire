@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { saveMessageFirestore, getMessagesFirestore, saveRequisitionCandidates, saveCandidate, getAllCandidates, deduplicateCandidates, deleteCandidateFirestore } from '../lib/atsFirestore'
 import { autoSendJobDescriptionToCandidate } from '../utils/autoSendJdHelper'
 import LinkedInVerificationModal from '../components/LinkedInVerificationModal'
+import CandidateComparisonModal from '../components/CandidateComparisonModal'
 import SmartHireAiAgent, { IconGeminiSparkle } from '../components/SmartHireAiAgent'
 import MonsterSourcingModule, { IconMonster } from '../ats/MonsterSourcingModule'
 import AtsUnifiedSidebar from '../components/AtsUnifiedSidebar'
@@ -2737,6 +2738,32 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
       setSelectedCandidate(updatedCand)
     }
     setLinkedInCandidate(updatedCand)
+  }
+
+  // Side-by-Side Candidate Comparison Modal State
+  const [isComparisonModalOpen, setIsComparisonModalOpen] = useState(false)
+  const [comparisonCandidates, setComparisonCandidates] = useState([])
+  const [comparisonJob, setComparisonJob] = useState(null)
+
+  const handleOpenComparisonModal = (candsToCompare = null, job = null) => {
+    let list = candsToCompare
+    if (!list || !Array.isArray(list) || list.length === 0) {
+      list = filteredCandidates.filter(c => selectedCardIds.has(c.id || c.email))
+    }
+    if (!list || list.length < 2) {
+      alert('Please select at least 2 candidates to compare side-by-side.')
+      return
+    }
+
+    // Resolve target job from parameter, selected requisition, or candidates
+    let resolvedJob = job || selectedRequisitionObj || null
+    if (!resolvedJob && list[0]?.targetReqId && Array.isArray(openJobsList)) {
+      resolvedJob = openJobsList.find(j => String(j.id || '').replace(/^J-/, '') === String(list[0].targetReqId).replace(/^J-/, '')) || null
+    }
+
+    setComparisonJob(resolvedJob)
+    setComparisonCandidates(list.slice(0, 4))
+    setIsComparisonModalOpen(true)
   }
 
   const handleOpenSubmittalPack = (cand) => {
@@ -9283,6 +9310,41 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                         <span>Analytics</span>
                       </button>
                     </div>
+
+                    {/* Compare with Other Requisition Applicants Button */}
+                    {Boolean(activeCandidate?.targetReqId && filteredCandidates.filter(c => c.targetReqId === activeCandidate.targetReqId).length > 1) && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const sameReqCands = filteredCandidates.filter(c => c.targetReqId === activeCandidate.targetReqId)
+                          handleOpenComparisonModal(sameReqCands)
+                        }}
+                        style={{
+                          width: '100%',
+                          backgroundColor: isLight ? '#EFF6FF' : 'rgba(37, 99, 235, 0.15)',
+                          color: '#2563EB',
+                          border: `1px solid ${isLight ? '#BFDBFE' : 'rgba(37, 99, 235, 0.35)'}`,
+                          borderRadius: 8,
+                          padding: '7px 10px',
+                          fontSize: 12,
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 6,
+                          marginTop: 8
+                        }}
+                        title="Compare all candidates applied for this requisition"
+                      >
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="18" y1="20" x2="18" y2="10" />
+                          <line x1="12" y1="20" x2="12" y2="4" />
+                          <line x1="6" y1="20" x2="6" y2="14" />
+                        </svg>
+                        <span>Compare {filteredCandidates.filter(c => c.targetReqId === activeCandidate.targetReqId).length} Applicants for this Req</span>
+                      </button>
+                    )}
                   </div>
 
                   {/* Sourcing & Inbound Sender Info */}
@@ -11472,6 +11534,37 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                       <span style={{ fontSize: 12, fontWeight: 700, color: C.textSecondary }}>
                         {selectedCardIds.size} selected
                       </span>
+
+                      {/* Side-by-Side Compare Button for Selected Candidates */}
+                      {selectedCardIds.size >= 2 && (
+                        <button
+                          type="button"
+                          onClick={() => handleOpenComparisonModal()}
+                          style={{
+                            backgroundColor: '#2563EB',
+                            color: '#FFF',
+                            border: 'none',
+                            borderRadius: 6,
+                            padding: '4px 12px',
+                            fontSize: 11.5,
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 5,
+                            boxShadow: '0 1px 3px rgba(37, 99, 235, 0.25)'
+                          }}
+                          title="Compare selected candidates side-by-side with AI"
+                        >
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="18" y1="20" x2="18" y2="10" />
+                            <line x1="12" y1="20" x2="12" y2="4" />
+                            <line x1="6" y1="20" x2="6" y2="14" />
+                          </svg>
+                          <span>Compare Selected ({selectedCardIds.size})</span>
+                        </button>
+                      )}
+
                       <button
                         type="button"
                         onClick={handleBulkDelete}
@@ -11492,6 +11585,35 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                         <IconTrash /> <span>Delete ({selectedCardIds.size})</span>
                       </button>
                     </div>
+                  )}
+
+                  {/* 1-Click Fast Compare All Filtered/Applied Candidates */}
+                  {filteredCandidates.length >= 2 && selectedCardIds.size === 0 && (
+                    <button
+                      type="button"
+                      onClick={() => handleOpenComparisonModal(filteredCandidates.slice(0, 4))}
+                      style={{
+                        backgroundColor: isLight ? '#EFF6FF' : 'rgba(37, 99, 235, 0.15)',
+                        border: `1px solid ${isLight ? '#BFDBFE' : 'rgba(37, 99, 235, 0.35)'}`,
+                        color: '#2563EB',
+                        borderRadius: 6,
+                        padding: '4px 11px',
+                        fontSize: 11.5,
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 5
+                      }}
+                      title="Compare applicants side-by-side with AI"
+                    >
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="18" y1="20" x2="18" y2="10" />
+                        <line x1="12" y1="20" x2="12" y2="4" />
+                        <line x1="6" y1="20" x2="6" y2="14" />
+                      </svg>
+                      <span>AI Compare Applicants ({Math.min(filteredCandidates.length, 4)})</span>
+                    </button>
                   )}
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, color: C.textSecondary }}>
@@ -15553,6 +15675,28 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
         candidate={linkedInCandidate || activeCandidate}
         onVerificationComplete={handleLinkedInVerificationComplete}
         currentUser={currentUser}
+      />
+
+      {/* ─── SIDE-BY-SIDE AI CANDIDATE COMPARISON MODAL ─── */}
+      <CandidateComparisonModal
+        isOpen={isComparisonModalOpen}
+        onClose={() => setIsComparisonModalOpen(false)}
+        candidates={comparisonCandidates}
+        targetJob={comparisonJob}
+        isLight={isLight}
+        onSelectPrimary={(cand) => {
+          setSelectedCandidate(cand)
+          setIsComparisonModalOpen(false)
+          setInboxSubMode('card')
+          setActiveTobuTab('resume')
+        }}
+        onInviteScreening={(cand) => {
+          setIsComparisonModalOpen(false)
+          handleSendJobDetails(cand)
+        }}
+        onDownloadResume={(cand) => {
+          if (cand) handleDownloadResume(cand)
+        }}
       />
 
       {/* ─── Gemini AI Personal Agent Floating Drawer ─── */}
