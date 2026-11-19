@@ -13787,8 +13787,8 @@ app.get('/api/recruiter/email-streams', (req, res) => {
       }
     }
 
-    const cleanReqId = targetJob ? String(targetJob.id).replace(/^J-/, '') : null;
-    const finalScore = (targetJob && c.matchScore) ? c.matchScore : matchAnalysis.matchScore;
+    const cleanReqId = targetJob ? String(targetJob.id).replace(/^J-/, '') : (c.targetReqId || c.reqId || null);
+    const finalScore = (targetJob && c.matchScore) ? c.matchScore : (c.matchScore || matchAnalysis.matchScore);
 
     const cleanCurrentCo = c.currentCompany && !String(c.currentCompany).includes('undefined')
       ? c.currentCompany
@@ -13847,9 +13847,9 @@ app.get('/api/recruiter/email-streams', (req, res) => {
       isSpamRecovery: sourceCategory === 'email_spam' || !!c.isSpamRecovery,
       matchScore: finalScore,
       targetReqId: cleanReqId,
-      matchedJobTitle: targetJob ? (targetJob.title || targetJob.jobTitle || 'Open Requisition') : 'General Sourcing Pool',
-      matchedJobClient: targetJob ? (targetJob.client || targetJob.customer || 'Direct Client') : 'Talent Pool (No active requisition match)',
-      matchedJobRate: targetJob ? (targetJob.rate || targetJob.payRate || '$75/hr') : '$70/hr',
+      matchedJobTitle: targetJob ? (targetJob.title || targetJob.jobTitle || 'Open Requisition') : (c.matchedJobTitle || c.jobTitle || c.role || 'General Sourcing Pool'),
+      matchedJobClient: targetJob ? (targetJob.client || targetJob.customer || 'Direct Client') : (c.matchedJobClient || c.client || 'Direct Client'),
+      matchedJobRate: targetJob ? (targetJob.rate || targetJob.payRate || '$75/hr') : (c.matchedJobRate || c.rate || '$75/hr'),
       matchingSkills: matchAnalysis.matchingSkills || [],
       missingSkills: matchAnalysis.missingSkills || [],
       matchingRequiredSkills: matchAnalysis.matchingRequiredSkills || matchAnalysis.matchingSkills || [],
