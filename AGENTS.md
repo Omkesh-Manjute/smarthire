@@ -66,6 +66,41 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
     - In resume views, every responsibility, project accomplishment, and contribution line must be formatted with an explicit bullet point (`•`) and proper indentation.
     - The engine must automatically detect responsibilities (lines following `Responsibilities:`, action verbs, or list items) even when converted from plain text or Word documents without literal Unicode bullets.
 
+### 2026-11-20 — High-Concurrency Public Portal Speed Optimization & Lightsail Server Hardening (Jobs Page Sub-Second Overhaul)
+- **Problem & Root Causes Addressed**:
+  - *Symptom*: User reported extreme loading latency when opening `https://smarthireus.com/jobs` ("bhaut jada time lag raha hai open hone mai q dekho https://smarthireus.com/jobs ye page and abhi bhut sare canidate apply karne wale hai so slovw nahi hona cahiye okay fast calna cahiye bro").
+  - *Diagnostics*:
+    1. Baseline `curl https://smarthireus.com/jobs` took **58.14 seconds**!
+    2. Lightsail server RAM (414MB total) was choked with 1.6GB swapped to disk, load average elevated to 5.33, and Node.js process blocked in disk swap I/O.
+    3. `/etc/nginx/sites-enabled/smarthireus.com` was proxying all non-`/assets/` traffic to single-threaded Express (port 8787). Express was streaming 4.2MB video (`career-hero-video.mp4`), 1MB hero images, and doing synchronous `fs.readFileSync(indexPath)` on every page request!
+    4. `GET /api/jobs?openOnly=true&scope=careers` was serializing a massive 4.71MB JSON payload (680 jobs) with 100% duplicated `description`, `rawDescription`, and `fullDescription` fields on every job, repeating regex and sorting loops on every request without caching.
+    5. Background scraper cron had hardcoded discontinued Groq model `llama-3.1-8b-instant`, throwing 400 errors and thrashing CPU in a loop every 6 minutes.
+- **Architectural Fixes Implemented**:
+  1. *Nginx Direct Media & Static Asset Caching*:
+     - Configured `/etc/nginx/sites-available/smarthireus.com` with direct static matching:
+       - `/assets/`: alias `/var/www/html/assets/`, 1-year immutable cache.
+       - `/images/`: alias `/var/www/html/images/`, 30-day cache.
+       - Direct media extension block (`.jpg`, `.jpeg`, `.png`, `.webp`, `.svg`, `.ico`, `.mp4`, `.webm`, `.pdf`, `.txt`, `.xml`, `.zip`): root `/var/www/html`, `expires 7d`, `try_files $uri =404` using Linux zero-copy `sendfile`.
+       - Symlinked `/etc/nginx/sites-enabled/smarthireus.com` and reloaded Nginx.
+  2. *In-Memory Response Caching & Duplicate Pruning in Express*:
+     - Added 60s TTL in-memory cache `jobsResponseCache` in `server/index.js` for `GET /api/jobs`.
+     - Automatically invalidates via `invalidateJobsCache()` whenever jobs are saved or modified.
+     - Stripped redundant duplicate `rawDescription` and `fullDescription` fields from API output (retaining complete `description`), saving 1.6MB+ per request.
+     - Added HTTP client caching headers `Cache-Control: public, max-age=30, stale-while-revalidate=60`.
+     - In-memory caching for `index.html` via `getRawIndexHtml(indexPath)` to eliminate synchronous disk I/O on every route transition.
+  3. *Groq Scraper Model Resolution*:
+     - Updated `jobsinhand-scraper.js` and `playwright-scraper.js` to dynamic fallback `process.env.GROQ_MODEL || 'openai/gpt-oss-120b'` matching active Groq API credentials.
+- **Verification & Deployment Protocol**:
+  - Matching engine unit tests: 42/42 passed.
+  - Production build: `npm run build` in `smarthire-react` passed with 0 errors, 0 warnings.
+  - Git committed (`0bb2868`) and pushed to GitHub `origin main`.
+  - Deployed to AWS Lightsail (`34.194.119.199`), temporary archives deleted immediately, assets pruned (5 newest `index-*.js` retained), disk space verified at 55% (8.4GB free; Rule 5 compliance).
+  - PM2 `smarthire-ats` reloaded and verified online (heap memory dropped from 326MB to 79MB, load average dropped to 0.29).
+  - Live server verification:
+    - `https://smarthireus.com/jobs` loads in **0.72s** (down from **58.14s**).
+    - Local Express response time for jobs API: **0.025s (25 milliseconds)** (down from 58s).
+    - Static 4.2MB video and 1MB images served directly by Nginx with `Accept-Ranges: bytes` and zero Node.js memory consumption.
+
 ### 2026-11-20 — Candidate Categorization Sanitization (App/Mobile Misclassification Fix), AI Comparison Modal Scope Resolution, and Real-Time Visitor Traffic Logging Subsystem
 - **User Inquiries & Root Causes Addressed**:
   1. *Candidate Data Origin & Misclassification into "App" ("kaha ka data a rha hai rwong to nahi app to lunch to nahi kiya maine fir")*:
