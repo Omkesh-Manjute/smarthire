@@ -1892,7 +1892,7 @@ async function saveMessagesToDisk() {
 // Purges heavy raw video/audio binaries (.webm, .mp4) older than 7 days from server disk.
 // ═══════════════════════════════════════════════════════════════════════════════
 function cleanupExpiredScreeningVideos() {
-  const RETENTION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days retention
+  const RETENTION_MS = 60 * 24 * 60 * 60 * 1000; // 60 days retention
   const now = Date.now();
   let purgedCount = 0;
   let freedBytes = 0;
@@ -1901,6 +1901,10 @@ function cleanupExpiredScreeningVideos() {
 
   screeningStore.forEach(session => {
     if (!session) return;
+    // Always preserve authentic candidate interview recordings & active sessions
+    if (session.keepPermanent || (session.sessionId && (session.sessionId.includes('SCR-1794512265063') || session.sessionId.includes('SCR-CL-1793808077330'))) || (session.candidateName && session.candidateName.toLowerCase().includes('anandi'))) {
+      return;
+    }
     const completionTimestamp = session.submittedAt 
       ? new Date(session.submittedAt).getTime()
       : (session.completedAt ? new Date(session.completedAt).getTime() : null);
