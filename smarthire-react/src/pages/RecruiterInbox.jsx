@@ -11249,53 +11249,6 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                         Syncing database...
                       </span>
                     )}
-                    {isSuperAdmin && liveTrafficStats && (
-                      <button
-                        type="button"
-                        onClick={() => setTrafficModalOpen(true)}
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 6,
-                          fontSize: 11.5,
-                          color: '#15803D',
-                          fontWeight: 700,
-                          padding: '3px 9px',
-                          background: isLight ? '#F0FDF4' : 'rgba(21, 128, 61, 0.2)',
-                          border: `1px solid ${isLight ? '#BBF7D0' : 'rgba(34, 197, 94, 0.3)'}`,
-                          borderRadius: 12,
-                          cursor: 'pointer'
-                        }}
-                        title="Live user traffic, active users, and visitor breakdown"
-                      >
-                        <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: '#22C55E' }} />
-                        <span>{liveTrafficStats.uniqueVisitorsToday || 0} Visitors Today ({liveTrafficStats.totalPageviewsToday || 0} Views)</span>
-                      </button>
-                    )}
-
-                    {isSuperAdmin && (
-                      <button
-                        type="button"
-                        onClick={() => setShowBlogModal(true)}
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 5,
-                          fontSize: 11,
-                          fontWeight: 700,
-                          padding: '3px 9px',
-                          background: isLight ? '#EFF6FF' : 'rgba(37, 99, 235, 0.2)',
-                          border: `1px solid ${isLight ? '#BFDBFE' : 'rgba(59, 130, 246, 0.3)'}`,
-                          borderRadius: 12,
-                          cursor: 'pointer',
-                          color: '#2563EB'
-                        }}
-                        title="AI Daily Blog Automation & Instant Publishing"
-                      >
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
-                        <span>Auto Blog</span>
-                      </button>
-                    )}
                   </div>
                 </div>
 

@@ -3,7 +3,7 @@ import cors from 'cors'
 import multer from 'multer'
 import path from 'path'
 import { initializeApp, getApps, getApp } from 'firebase/app'
-import { getFirestore, doc, setDoc } from 'firebase/firestore'
+import { getFirestore, doc, setDoc, getDocs, collection } from 'firebase/firestore'
 import fs from 'fs'
 import { fileURLToPath } from 'url'
 import pdfParse from 'pdf-parse'
@@ -462,6 +462,95 @@ async function saveCandidateToFirestore(cand) {
     await setDoc(doc(firestoreDb, 'atsCandidates', canId), payload, { merge: true });
   } catch (err) {
     console.warn(`[Firestore] Sync skipped for candidate ${canId}:`, err.message);
+  }
+}
+
+async function syncCandidatesFromFirestore() {
+  if (!firestoreDb) return;
+  try {
+    let syncedCount = 0;
+
+    // 1. Fetch from atsApplications (public applications submitted on /jobs e.g. Dayareddy, Faizuddin, Rajiv Kumar)
+    const snapApps = await getDocs(collection(firestoreDb, 'atsApplications'));
+    const firestoreApps = [];
+    snapApps.forEach(docSnap => {
+      if (docSnap.exists()) {
+        const d = docSnap.data();
+        const candId = d.canId || d.candidateId || d.appId || docSnap.id;
+        firestoreApps.push({
+          id: candId,
+          candidate_id: candId,
+          name: d.name || d.candidateName || 'Applicant',
+          email: d.email || d.candidateEmail || '',
+          phone: d.phone || d.candidatePhone || '',
+          role: d.jobTitle || d.role || '.NET Web Developer III',
+          location: d.currentLocation || d.location || 'Remote, US',
+          visaStatus: d.visaStatus || 'US Citizen',
+          source: 'Job Site',
+          sourceCategory: 'careers_portal',
+          appliedFrom: 'Job Site Application',
+          targetReqId: d.jobId || d.targetReqId || '159574',
+          matchedJobTitle: d.jobTitle || 'Applied Position',
+          status: d.status || 'Applied',
+          resumeText: d.resumeText || '',
+          resumeUrl: d.resumeUrl || '',
+          resumeFileUrl: d.resumeUrl || '',
+          expectedRate: d.expectedRate || 'TBD',
+          contractType: d.contractType || 'C2C',
+          relocatePref: d.relocatePref || 'Yes',
+          createdAt: d.createdAt?.toDate ? d.createdAt.toDate().toISOString() : (d.createdAt || d.appliedDate || new Date().toISOString())
+        });
+      }
+    });
+
+    // 2. Fetch from atsCandidates (all candidates stored in Firestore)
+    const snapCandidates = await getDocs(collection(firestoreDb, 'atsCandidates'));
+    const firestoreCands = [];
+    snapCandidates.forEach(docSnap => {
+      if (docSnap.exists()) {
+        firestoreCands.push({ id: docSnap.id, ...docSnap.data() });
+      }
+    });
+
+    const existingEmailMap = new Map();
+    candidatesStore.forEach((c, idx) => {
+      if (c && c.email) existingEmailMap.set(String(c.email).toLowerCase().trim(), idx);
+      if (c && c.id) existingEmailMap.set(String(c.id).toLowerCase().trim(), idx);
+    });
+
+    const allToMerge = [...firestoreApps, ...firestoreCands];
+    for (const cand of allToMerge) {
+      if (!cand) continue;
+      const cleanEmail = String(cand.email || '').toLowerCase().trim();
+      const cleanId = String(cand.id || cand.candidate_id || '').toLowerCase().trim();
+
+      const matchIdx = (cleanEmail && existingEmailMap.has(cleanEmail))
+        ? existingEmailMap.get(cleanEmail)
+        : (cleanId && existingEmailMap.has(cleanId) ? existingEmailMap.get(cleanId) : -1);
+
+      if (matchIdx !== -1) {
+        candidatesStore[matchIdx] = {
+          ...candidatesStore[matchIdx],
+          ...cand,
+          sourceCategory: cand.sourceCategory || candidatesStore[matchIdx].sourceCategory,
+          source: cand.source || candidatesStore[matchIdx].source,
+          appliedFrom: cand.appliedFrom || candidatesStore[matchIdx].appliedFrom
+        };
+      } else {
+        candidatesStore.unshift(cand);
+        syncedCount++;
+        if (cleanEmail) existingEmailMap.set(cleanEmail, 0);
+        if (cleanId) existingEmailMap.set(cleanId, 0);
+      }
+    }
+
+    if (syncedCount > 0 || firestoreApps.length > 0) {
+      candidatesStore = normalizeAndDeduplicateCandidates(candidatesStore);
+      console.log(`[Firestore Sync] Successfully synced ${syncedCount} candidate(s) from Firebase into candidatesStore (Total: ${candidatesStore.length})`);
+      saveCandidatesToDisk();
+    }
+  } catch (err) {
+    console.warn('[Firestore Sync] Warning:', err.message);
   }
 }
 
@@ -1763,10 +1852,15 @@ function recordVisitorHit({ ip, page, referrer, visitorId, userAgent, device, us
 
   saveTrafficToDisk();
 
-  // Instant real-time PM2 console log
-  const icon = isNewVisitor ? '🆕 [New Visitor]' : '👁️ [Page Hit]';
-  const roleTag = userRole && userRole !== 'guest' ? ` [${userRole}]` : '';
-  console.log(`${icon} ${cleanIp}${roleTag} visited "${cleanPage}" (${visitRecord.device}) | Today: ${trafficStore.uniqueVisitors.length} users (${trafficStore.uniqueIps.length} IPs), ${trafficStore.totalPageviews} total views`);
+  // Instant real-time PM2 console log — highlight public job site traffic
+  if (cleanPage.startsWith('/jobs') || cleanPage.startsWith('/careers')) {
+    const jobViews = trafficStore.pages[cleanPage] || trafficStore.pages['/jobs'] || 1;
+    console.log(`[Job Site Visitor] ${cleanIp} visited "${cleanPage}" (${visitRecord.device}) | Job Page Views Today: ${jobViews} | Total Users: ${trafficStore.uniqueVisitors.length}`);
+  } else {
+    const icon = isNewVisitor ? '[New Visitor]' : '[Page Hit]';
+    const roleTag = userRole && userRole !== 'guest' ? ` [${userRole}]` : '';
+    console.log(`${icon} ${cleanIp}${roleTag} visited "${cleanPage}" (${visitRecord.device}) | Today: ${trafficStore.uniqueVisitors.length} users, ${trafficStore.totalPageviews} total views`);
+  }
 }
 
 // Track Beacon Endpoint (called by React frontend on every navigation)
@@ -13506,6 +13600,13 @@ app.get('/api/recruiter/email-streams', (req, res) => {
     if (!c) return false;
 
     // STRICT: Only include candidates that have an actual resume attachment OR are sourced via extension/job sites
+    const isJobSiteCandidate = c.sourceCategory === 'careers_portal' || 
+                               c.sourceCategory === 'job_site' || 
+                               c.appliedFrom === 'Job Site Application' ||
+                               (c.source || '').toLowerCase().includes('job site') || 
+                               (c.source || '').toLowerCase().includes('career') || 
+                               (c.source || '').toLowerCase().includes('/jobs');
+
     const isExtensionSourced = c.sourceCategory === 'monster_plus' || 
                                c.sourceCategory === 'dice' || 
                                (c.source || '').toLowerCase().includes('monster') || 
@@ -13521,7 +13622,8 @@ app.get('/api/recruiter/email-streams', (req, res) => {
       (c.legalDocs?.resume?.storageUrl && c.legalDocs.resume.storageUrl.length > 0) ||
       (c.legalDocs?.resume?.hasFile === true) ||
       (c.documents?.resume?.storageUrl && c.documents.resume.storageUrl.length > 0) ||
-      isExtensionSourced
+      isExtensionSourced ||
+      isJobSiteCandidate
     );
     if (!hasAttachment) return false; // Skip no-attachment candidates entirely
 
@@ -18006,12 +18108,15 @@ app.use((error, _req, res, _next) => {
 // ─── Start server after initializing databases ───────────────────────────────
 async function startServer() {
   await loadCandidatesFromDisk();
+  await syncCandidatesFromFirestore();
   await loadJobsFromDisk();
   await loadReportsFromDisk();
   await loadSocialPostsFromDisk();
   await loadScreeningFromDisk();
   loadBlogsFromDisk();
-  initDailyBlogCron();
+  // Disabled background blog cron per user request to eliminate background server load
+  // (Blog generation can be run manually/locally when needed)
+  // initDailyBlogCron();
 
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`\n🚀 SmartHire API running at http://0.0.0.0:${PORT}`);
