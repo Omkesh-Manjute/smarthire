@@ -4,6 +4,7 @@ import { saveMessageFirestore, getMessagesFirestore, saveRequisitionCandidates, 
 import { autoSendJobDescriptionToCandidate } from '../utils/autoSendJdHelper'
 import LinkedInVerificationModal from '../components/LinkedInVerificationModal'
 import CandidateComparisonModal from '../components/CandidateComparisonModal'
+import BlogAutomationModal from '../components/BlogAutomationModal'
 import SmartHireAiAgent, { IconGeminiSparkle } from '../components/SmartHireAiAgent'
 import MonsterSourcingModule, { IconMonster } from '../ats/MonsterSourcingModule'
 import AtsUnifiedSidebar from '../components/AtsUnifiedSidebar'
@@ -2624,6 +2625,7 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
   // Real-time Traffic Analytics State
   const [liveTrafficStats, setLiveTrafficStats] = useState(null)
   const [trafficModalOpen, setTrafficModalOpen] = useState(false)
+  const [showBlogModal, setShowBlogModal] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -11270,6 +11272,30 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                         <span>{liveTrafficStats.uniqueVisitorsToday || 0} Visitors Today ({liveTrafficStats.totalPageviewsToday || 0} Views)</span>
                       </button>
                     )}
+
+                    {isSuperAdmin && (
+                      <button
+                        type="button"
+                        onClick={() => setShowBlogModal(true)}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 5,
+                          fontSize: 11,
+                          fontWeight: 700,
+                          padding: '3px 9px',
+                          background: isLight ? '#EFF6FF' : 'rgba(37, 99, 235, 0.2)',
+                          border: `1px solid ${isLight ? '#BFDBFE' : 'rgba(59, 130, 246, 0.3)'}`,
+                          borderRadius: 12,
+                          cursor: 'pointer',
+                          color: '#2563EB'
+                        }}
+                        title="AI Daily Blog Automation & Instant Publishing"
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                        <span>Auto Blog</span>
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -15977,6 +16003,12 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
           </div>
         </div>
       )}
+
+      {/* ─── AI BLOG AUTOMATION & PUBLISHING MODAL ─── */}
+      <BlogAutomationModal
+        isOpen={showBlogModal}
+        onClose={() => setShowBlogModal(false)}
+      />
     </div>
   )
 }

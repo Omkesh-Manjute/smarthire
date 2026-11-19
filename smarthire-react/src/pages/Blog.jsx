@@ -187,11 +187,11 @@ export const BLOG_POSTS = [
 ]
 
 /* ─── Single Blog Post View (WordPress Editorial Style) ────────────── */
-function BlogPostContent({ post }) {
+function BlogPostContent({ post, allPosts }) {
   const navigate = useNavigate()
   const siteUrl = 'https://smarthireus.com'
   const postUrl = `${siteUrl}/blog/${post.slug}`
-  const imageUrl = post.image.startsWith('http') ? post.image : `${siteUrl}${post.image}`
+  const imageUrl = (post.image && post.image.startsWith('http')) ? post.image : `${siteUrl}${post.image || '/career-hero-slide2.jpg'}`
 
   // Reading progress tracker (classic WordPress plugin behavior)
   const [scrollProgress, setScrollProgress] = useState(0)
@@ -263,10 +263,11 @@ function BlogPostContent({ post }) {
   })
 
   // Previous and next post calculation
-  const currentIndex = BLOG_POSTS.findIndex(p => p.slug === post.slug)
-  const prevPost = currentIndex < BLOG_POSTS.length - 1 ? BLOG_POSTS[currentIndex + 1] : null
-  const nextPost = currentIndex > 0 ? BLOG_POSTS[currentIndex - 1] : null
-  const relatedPosts = BLOG_POSTS.filter(p => p.slug !== post.slug).slice(0, 3)
+  const postCatalog = (allPosts && allPosts.length > 0) ? allPosts : BLOG_POSTS
+  const currentIndex = postCatalog.findIndex(p => p.slug === post.slug)
+  const prevPost = currentIndex < postCatalog.length - 1 ? postCatalog[currentIndex + 1] : null
+  const nextPost = currentIndex > 0 ? postCatalog[currentIndex - 1] : null
+  const relatedPosts = postCatalog.filter(p => p.slug !== post.slug).slice(0, 3)
   const ArticleComponent = post.component || C2cW2Article
 
   return (
@@ -379,7 +380,15 @@ function BlogPostContent({ post }) {
         </figure>
 
         {/* ─── Modular Article Content ─── */}
-        <ArticleComponent />
+        {post.contentHtml ? (
+          <div
+            className="article-dynamic-html-body"
+            dangerouslySetInnerHTML={{ __html: post.contentHtml }}
+            style={{ fontSize: 16.5, lineHeight: 1.8, color: '#334155' }}
+          />
+        ) : (
+          <ArticleComponent />
+        )}
 
         {/* Article Tags */}
         <div style={{ marginTop: 44, paddingTop: 20, borderTop: '1px solid #E5E7EB' }}>
@@ -516,9 +525,10 @@ function BlogPostContent({ post }) {
 }
 
 /* ─── Blog Catalog / Index View (WordPress Magazine Style) ────────── */
-function BlogIndex() {
+function BlogIndex({ allPosts }) {
   const navigate = useNavigate()
   const siteUrl = 'https://smarthireus.com'
+  const postCatalog = (allPosts && allPosts.length > 0) ? allPosts : BLOG_POSTS
 
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('All')
@@ -543,18 +553,27 @@ function BlogIndex() {
   })
 
   // Categories
-  const categories = ['All', 'IT Career Guide', 'Market Trends', 'Immigration & Compliance', 'Contracting & Rates']
+  const categories = [
+    'All',
+    'AI & Emerging Tech',
+    'Company & Enterprise Staffing',
+    'IT Career Guide',
+    'Market Trends',
+    'Immigration & Compliance',
+    'Contracting & Rates',
+    'Cloud & Data Infrastructure'
+  ]
 
   // Filtered posts
-  const filteredPosts = BLOG_POSTS.filter(post => {
+  const filteredPosts = postCatalog.filter(post => {
     const matchesCat = selectedCategory === 'All' || post.category === selectedCategory
     const q = searchQuery.toLowerCase().trim()
-    const matchesQuery = !q || post.title.toLowerCase().includes(q) || post.excerpt.toLowerCase().includes(q) || (post.tags && post.tags.some(t => t.toLowerCase().includes(q)))
+    const matchesQuery = !q || post.title.toLowerCase().includes(q) || (post.excerpt || '').toLowerCase().includes(q) || (post.tags && post.tags.some(t => t.toLowerCase().includes(q)))
     return matchesCat && matchesQuery
   })
 
   // Lead featured story (newest post)
-  const leadPost = BLOG_POSTS[0]
+  const leadPost = filteredPosts[0] || postCatalog[0]
   const isDefaultView = selectedCategory === 'All' && !searchQuery
 
   return (
@@ -830,14 +849,118 @@ function BlogIndex() {
 /* ─── Main Blog Router & Layout Component ─────────────────────────── */
 export default function Blog() {
   const { slug } = useParams()
+  const [dynamicPosts, setDynamicPosts] = useState([])
+
+  useEffect(() => {
+    fetch('/api/blogs')
+      .then(res => res.json())
+      .then(data => {
+        if (data && Array.isArray(data.blogs) && data.blogs.length > 0) {
+          setDynamicPosts(data.blogs)
+        }
+      })
+      .catch(() => {})
+  }, [])
+
+  const allPosts = React.useMemo(() => {
+    const map = new Map()
+    // Dynamic posts first (newest on top)
+    dynamicPosts.forEach(p => { if (p && p.slug) map.set(p.slug, p) })
+    BLOG_POSTS.forEach(p => { if (p && p.slug && !map.has(p.slug)) map.set(p.slug, p) })
+    return Array.from(map.values())
+  }, [dynamicPosts])
 
   // Match slug or alias
   const post = slug
-    ? BLOG_POSTS.find(p => p.slug === slug || (p.aliases && p.aliases.includes(slug)))
+    ? allPosts.find(p => p.slug === slug || (p.aliases && p.aliases.includes(slug)))
     : null
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#FFFFFF', color: '#111827' }}>
+      <style>{`
+        .article-dynamic-html-body h2 {
+          font-size: 24px;
+          font-weight: 800;
+          color: #0f172a;
+          margin-top: 40px;
+          margin-bottom: 16px;
+          border-bottom: 1px solid #f1f5f9;
+          padding-bottom: 8px;
+          line-height: 1.35;
+        }
+        .article-dynamic-html-body h3 {
+          font-size: 19px;
+          font-weight: 700;
+          color: #1e293b;
+          margin-top: 28px;
+          margin-bottom: 12px;
+        }
+        .article-dynamic-html-body p {
+          font-size: 16.5px;
+          line-height: 1.8;
+          color: #334155;
+          margin-bottom: 20px;
+        }
+        .article-dynamic-html-body ul, .article-dynamic-html-body ol {
+          margin-bottom: 24px;
+          padding-left: 26px;
+        }
+        .article-dynamic-html-body li {
+          font-size: 16px;
+          line-height: 1.7;
+          color: #334155;
+          margin-bottom: 10px;
+        }
+        .article-dynamic-html-body table {
+          width: 100%;
+          border-collapse: collapse;
+          margin: 32px 0;
+          border: 1px solid #cbd5e1;
+          font-size: 14.5px;
+        }
+        .article-dynamic-html-body th {
+          background-color: #f8fafc;
+          color: #1e293b;
+          font-weight: 700;
+          text-align: left;
+          padding: 12px 16px;
+          border: 1px solid #cbd5e1;
+        }
+        .article-dynamic-html-body td {
+          padding: 10px 16px;
+          border: 1px solid #cbd5e1;
+          color: #475569;
+        }
+        .article-dynamic-html-body tr:nth-child(even) td {
+          background-color: #f8fafc;
+        }
+        .article-dynamic-html-body .callout, .article-dynamic-html-body .summary-box {
+          background-color: #f0fdf4;
+          border: 1px solid #bbf7d0;
+          border-radius: 8px;
+          padding: 20px 24px;
+          margin: 28px 0;
+        }
+        .article-dynamic-html-body .cta-box {
+          background-color: #f8fafc;
+          border: 1.5px solid #0D6B5F;
+          border-radius: 8px;
+          padding: 28px;
+          margin: 44px 0 20px;
+          text-align: center;
+        }
+        .article-dynamic-html-body .cta-box a {
+          display: inline-block;
+          background-color: #0D6B5F;
+          color: #ffffff;
+          font-weight: 700;
+          padding: 11px 24px;
+          border-radius: 6px;
+          text-decoration: none;
+          margin-top: 12px;
+        }
+      `}</style>
+
       {/* Top Header Navigation (WordPress Magazine Style) */}
       <header role="banner" style={{ backgroundColor: '#FFFFFF', borderBottom: '1px solid #E5E7EB', position: 'sticky', top: 0, zIndex: 100 }}>
         <div style={{ maxWidth: 1140, margin: '0 auto', padding: '0 24px', height: 58, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -866,7 +989,7 @@ export default function Blog() {
       </header>
 
       <main id="main-content" role="main">
-        {post ? <BlogPostContent post={post} /> : <BlogIndex />}
+        {post ? <BlogPostContent post={post} allPosts={allPosts} /> : <BlogIndex allPosts={allPosts} />}
       </main>
 
       {/* WordPress Publication Footer */}

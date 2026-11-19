@@ -35,6 +35,14 @@ import {
   REAL_MONSTER_CANDIDATE_POOL
 } from './monsterRecruiterEngine.js'
 import SmartHireMatchingEngine from './matching_engine.cjs'
+import {
+  loadBlogsFromDisk,
+  saveBlogsToDisk,
+  getAllBlogs,
+  getBlogBySlug,
+  generateDailyBlog,
+  initDailyBlogCron
+} from './blog-automation/blogService.js'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'smarthire_secure_jwt_secret_key_2026';
 
@@ -17539,6 +17547,18 @@ app.get('/sitemap.xml', (_req, res) => {
     }
   }
 
+  // Dynamically append all published blogs so Google automatically indexes every article
+  try {
+    const allBlogsList = getAllBlogs();
+    if (Array.isArray(allBlogsList) && allBlogsList.length > 0) {
+      for (const b of allBlogsList) {
+        if (b && b.slug) {
+          sitemapXml += `  <url><loc>https://smarthireus.com/blog/${encodeURIComponent(b.slug)}</loc><changefreq>weekly</changefreq><priority>0.88</priority></url>\n`;
+        }
+      }
+    }
+  } catch (_) {}
+
   sitemapXml += `</urlset>`;
   res.send(sitemapXml);
 });
@@ -17660,6 +17680,22 @@ app.use((req, res, next) => {
             }
           };
           html = html.replace('</head>', `<script type="application/ld+json">${JSON.stringify(jobPostingSchema)}</script></head>`);
+        }
+      } else if (cleanPath.startsWith('/blog/')) {
+        const blogSlug = cleanPath.replace(/^\/blog\//, '').replace(/\/+$/, '');
+        const matchedBlog = getBlogBySlug(blogSlug);
+        if (matchedBlog) {
+          const bTitle = `${matchedBlog.metaTitle || matchedBlog.title}`;
+          const bDesc = `${matchedBlog.metaDescription || matchedBlog.excerpt || ''}`;
+          html = html.replace(/<title>.*?<\/title>/i, `<title>${bTitle}</title>`);
+          html = html.replace(/<meta name="description"[^>]*>/i, `<meta name="description" content="${bDesc}" />`);
+          html = html.replace(/<meta property="og:title"[^>]*>/i, `<meta property="og:title" content="${bTitle}" />`);
+          html = html.replace(/<meta property="og:description"[^>]*>/i, `<meta property="og:description" content="${bDesc}" />`);
+          if (matchedBlog.image) {
+            const bImg = matchedBlog.image.startsWith('http') ? matchedBlog.image : `https://smarthireus.com${matchedBlog.image}`;
+            html = html.replace(/<meta property="og:image"[^>]*>/i, `<meta property="og:image" content="${bImg}" />`);
+            html = html.replace(/<meta name="twitter:image"[^>]*>/i, `<meta name="twitter:image" content="${bImg}" />`);
+          }
         }
       } else {
         // Dynamic Title & Description for public indexed routes
@@ -17924,6 +17960,44 @@ app.get('/api/payment/config', (_req, res) => {
   });
 });
 
+// ─── Blog Automation & Publishing API ──────────────────────────────────────────
+app.get('/api/blogs', (_req, res) => {
+  const blogs = getAllBlogs();
+  res.json({ success: true, count: blogs.length, blogs });
+});
+
+app.get('/api/blogs/:slug', (req, res) => {
+  const { slug } = req.params;
+  const blog = getBlogBySlug(slug);
+  if (!blog) {
+    return res.status(404).json({ success: false, message: 'Article not found' });
+  }
+  res.json({ success: true, blog });
+});
+
+app.post('/api/blogs/generate', async (req, res) => {
+  try {
+    const { category, customTopic } = req.body || {};
+    const newBlog = await generateDailyBlog({ category, customTopic });
+    res.json({ success: true, blog: newBlog, message: 'Article successfully generated and published!' });
+  } catch (err) {
+    console.error('Error generating blog via API:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.delete('/api/blogs/:id', (req, res) => {
+  const { id } = req.params;
+  const all = getAllBlogs();
+  const idx = all.findIndex(b => b.id === id || b.slug === id);
+  if (idx !== -1) {
+    all.splice(idx, 1);
+    saveBlogsToDisk();
+    return res.json({ success: true, message: 'Blog deleted successfully' });
+  }
+  res.status(404).json({ success: false, message: 'Blog not found' });
+});
+
 // ─── Error handler ────────────────────────────────────────────────────────────
 app.use((error, _req, res, _next) => {
   res.status(400).json({ success: false, message: error.message || 'Upload failed' })
@@ -17936,6 +18010,8 @@ async function startServer() {
   await loadReportsFromDisk();
   await loadSocialPostsFromDisk();
   await loadScreeningFromDisk();
+  loadBlogsFromDisk();
+  initDailyBlogCron();
 
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`\n🚀 SmartHire API running at http://0.0.0.0:${PORT}`);
