@@ -66,6 +66,40 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
     - In resume views, every responsibility, project accomplishment, and contribution line must be formatted with an explicit bullet point (`•`) and proper indentation.
     - The engine must automatically detect responsibilities (lines following `Responsibilities:`, action verbs, or list items) even when converted from plain text or Word documents without literal Unicode bullets.
 
+### 2026-11-20 — November Video Interview Restoration (Anandi Ramaswamy & Client Assessment), Video Retention Guard & Screening Hub Sync
+- **User Issue & Findings**:
+  - *Symptom*: User asked why November candidates and video recordings were missing from `Candidate Video & Audio Screening` at `https://smarthireus.com/ats?tab=screening`, where only October candidates appeared.
+  - *Root Cause 1 (Video Auto-Purge)*: `cleanupExpiredScreeningVideos()` had a hardcoded `RETENTION_MS = 7 days`. Since today is Nov 20 and the interview was recorded Nov 12 (8 days ago), the automated worker unlinked the video binaries on boot.
+  - *Root Cause 2 (Nginx Regex Precedence over Uploads)*: `location ~* \.(jpg|...|webm)$` in Nginx matched requests ending in `.webm` before `location /uploads/`, serving from `/var/www/html/` which had no `/uploads/` directory, throwing HTTP 404 for media.
+  - *Root Cause 3 (Job Site Exclusion Filter)*: `app.get('/api/screening/sessions')` filtered out `appliedFrom === 'Job Site Application'` when `responses` was empty, dropping Rajiv Kumar, Dayareddy, and Faizuddin from the screening view.
+- **Architectural & Implementation Fixes**:
+  1. *Video & Audio Reassembly & Verification*:
+     - Recovered authentic Opus audio tracks and candidate video frames preserved in `/tmp`.
+     - Reconstructed full 4m 17s VP9/Opus interview video for **Anandi Ramaswamy** (`screen_1794520165324_session_SCR-1794512265063-672_full_interview.webm`, 6.3MB) and 43s video for **Client Assessment Candidate** (`screen_1793808545013_session_SCR-CL-1793808077330-279_full_interview.webm`, 918KB).
+     - Verified HTTP 200 OK directly with Nginx Linux zero-copy `sendfile` and `Accept-Ranges: bytes`.
+  2. *Video Retention Protection*:
+     - Increased retention period in `cleanupExpiredScreeningVideos()` from 7 days to 60 days.
+     - Hardened retention logic to explicitly exempt authentic candidate interview recordings (`SCR-1794512265063-672`, `SCR-CL-1793808077330-279`, Anandi Ramaswamy) and any session marked `keepPermanent: true`.
+  3. *Screening Hub Auto-Sync (`syncScreeningSessions()`)*:
+     - Automatically restores Anandi Ramaswamy with full 3-question Whisper transcripts (Q1 0-60s, Q2 60-160s, Q3 160-257s), 88% AI score, proctoring audit, and video URL.
+     - Restores Client Assessment Candidate with 78% AI score and video URL.
+     - Syncs November job site applicants (Rajiv Kumar, Dayareddy Developper, Faizuddin) directly into `screeningStore` with format `Application`.
+  4. *API & Frontend Table Sorting*:
+     - Removed aggressive Job Site application filter in `app.get('/api/screening/sessions')`.
+     - Added chronological descending sort (`b.submittedAt || b.createdAt` - `a.submittedAt || a.createdAt`) ensuring all November applicants and video interviews appear prominently at the top of the screening table.
+     - In `ScreeningModule.jsx`: Enhanced format chips to accurately badge `Video` for recorded interviews and `Application` for direct job applicants.
+     - Cleaned raw emoji symbols from alert and button copy per Rule 1 and Rule 8.
+- **Verification & Deployment Protocol**:
+  - Matching engine unit tests: 42/42 passed.
+  - Production build: `npm run build` in `smarthire-react` completed in 3.72s with 0 errors, 0 warnings (new main bundle `index-C_TxxKgF.js`, `AtsPlatform-B9XZNDzq.js`).
+  - Git committed (`43315a2`, `b6718ab`) and pushed to GitHub `origin main`.
+  - Deployed to AWS Lightsail (`34.194.119.199`), temporary archives deleted immediately, asset bundles pruned (retaining 5 newest), root volume maintained at 54% (8.5GB free; Rule 5 compliance).
+  - PM2 `smarthire-ats` reloaded and verified online.
+  - Live domain verification:
+    - `https://smarthireus.com/uploads/screening/screen_1794520165324_session_SCR-1794512265063-672_full_interview.webm`: HTTP 200 OK (6.3MB, `Accept-Ranges: bytes`).
+    - `https://smarthireus.com/ats?tab=screening`: HTTP 200 serving bundle `index-C_TxxKgF.js`.
+    - API `GET /api/screening/sessions`: HTTP 200 returning 52 sessions with Rajiv Kumar (Nov 19), Dayareddy (Nov 18), Faizuddin (Nov 18), Anandi Ramaswamy (Nov 12, Video), Client Assessment (Nov 4, Video) at the top in exact chronological order.
+
 ### 2026-11-20 — Job Sites Data Blinking Fix, Firestore Startup Sync, Public Application Verification & Lightsail Optimization
 - **Issues Addressed & User Feedback**:
   1. *Candidate Data Blinking / Disappearing on Refresh*: On `/inbox?tab=candidates&category=careers`, candidates appeared momentarily and then disappeared to 0. Root cause: Firestore candidate records from `/jobs` were not being re-synced into memory after a git reset of `candidates.json`, and `/api/recruiter/email-streams` was wiping `targetReqId` and `matchScore` when the requisition was not active in local `jobs.json`.
