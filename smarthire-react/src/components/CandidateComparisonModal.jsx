@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react'
+import React, { useState, useMemo, useEffect, useRef } from 'react'
 
 /**
  * CandidateComparisonModal.jsx
@@ -88,6 +88,13 @@ export default function CandidateComparisonModal({
 }) {
   const [removedIds, setRemovedIds] = useState(() => new Set())
   const [copiedNotification, setCopiedNotification] = useState(false)
+  const prevIsOpenRef = useRef(isOpen)
+
+  // Guarantee removedIds is reset synchronously whenever modal is opened
+  if (isOpen && !prevIsOpenRef.current && removedIds.size > 0) {
+    setRemovedIds(new Set())
+  }
+  prevIsOpenRef.current = isOpen
 
   // Reset removedIds whenever modal is opened or candidates change
   useEffect(() => {

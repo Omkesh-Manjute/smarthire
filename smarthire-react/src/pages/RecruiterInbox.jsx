@@ -2621,6 +2621,28 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
   const [hoveredSource, setHoveredSource] = useState(null)
   const [hoveredThreadId, setHoveredThreadId] = useState(null)
 
+  // Real-time Traffic Analytics State
+  const [liveTrafficStats, setLiveTrafficStats] = useState(null)
+  const [trafficModalOpen, setTrafficModalOpen] = useState(false)
+
+  useEffect(() => {
+    let active = true
+    const fetchTraffic = async () => {
+      try {
+        const res = await fetch('/api/analytics/traffic')
+        if (res.ok) {
+          const json = await res.json()
+          if (active && json.success) {
+            setLiveTrafficStats(json)
+          }
+        }
+      } catch (_) {}
+    }
+    fetchTraffic()
+    const timer = setInterval(fetchTraffic, 20000)
+    return () => { active = false; clearInterval(timer); }
+  }, [])
+
   // Push to Requisition Modal State
   const [pushToReqModalOpen, setPushToReqModalOpen] = useState(false)
   const [pushTargetCand, setPushTargetCand] = useState(null)
@@ -2787,15 +2809,28 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
         list = (roleScopedCandidates || []).filter(isSelected)
       }
     }
-    if (!list || list.length < 2) {
+    if (!list || !Array.isArray(list) || list.length < 2) {
       alert('Please select at least 2 candidates to compare side-by-side.')
       return
     }
 
-    // Resolve target job from parameter, selected requisition, or candidates
-    let resolvedJob = job || selectedRequisitionObj || null
+    // Resolve target job safely from parameter, streamReqFilter, or candidates' targetReqId
+    let resolvedJob = job || null
+    if (!resolvedJob && streamReqFilter && streamReqFilter !== 'all' && Array.isArray(openJobsList)) {
+      resolvedJob = openJobsList.find(j => String(j.id || '').replace(/^J-/, '') === String(streamReqFilter).replace(/^J-/, '')) || null
+    }
     if (!resolvedJob && list[0]?.targetReqId && Array.isArray(openJobsList)) {
       resolvedJob = openJobsList.find(j => String(j.id || '').replace(/^J-/, '') === String(list[0].targetReqId).replace(/^J-/, '')) || null
+    }
+    if (!resolvedJob && (list[0]?.matchedJobTitle || list[0]?.role)) {
+      resolvedJob = {
+        id: list[0]?.targetReqId || 'DIRECT',
+        reqId: list[0]?.targetReqId || 'DIRECT',
+        title: list[0]?.matchedJobTitle || list[0]?.role || 'Target Position',
+        client: list[0]?.matchedJobClient || list[0]?.client || 'Direct Client',
+        budget: list[0]?.matchedJobRate || '$75/hr',
+        skills: list[0]?.skills || ['.NET', 'C#', 'ASP.NET Core', 'SQL Server']
+      }
     }
 
     setComparisonJob(resolvedJob)
@@ -5008,7 +5043,11 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
     })
   }, [streamCandidates, isSuperAdmin, isManager, currentUser?.name, currentUser?.email, openJobsList, teamUsersList])
 
-  const mobileAppCount = useMemo(() => (roleScopedCandidates || []).filter(c => (c.sourceCategory === 'mobile_app') || (c.source || '').toLowerCase().includes('mobile')).length, [roleScopedCandidates])
+  const mobileAppCount = useMemo(() => (roleScopedCandidates || []).filter(c => {
+    const cat = (c.sourceCategory || '').toLowerCase()
+    const src = (c.source || '').toLowerCase()
+    return cat === 'mobile_app' || src === 'mobile_app' || src.includes('mobile app')
+  }).length, [roleScopedCandidates])
   const extensionSourcedCount = useMemo(() => (roleScopedCandidates || []).filter(c => 
     c.isSourcedFromExtension || 
     c.isExtensionSourced || 
@@ -5038,7 +5077,7 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
       else if (tableCategory === 'app') {
         const cat = (c.sourceCategory || '').toLowerCase()
         const src = (c.source || '').toLowerCase()
-        if (cat !== 'mobile_app' && !src.includes('mobile') && !src.includes('app') && !src.includes('direct')) return false
+        if (cat !== 'mobile_app' && src !== 'mobile_app' && !src.includes('mobile app')) return false
       }
       else if (tableCategory === 'review' && c.status !== 'In Review' && c.status !== 'Review') return false
       else if (tableCategory === 'inbox' && c.sourceCategory !== 'email_inbox' && c.sourceCategory !== 'monster_plus' && c.sourceCategory !== 'dice' && !c.isNew) return false
@@ -11208,6 +11247,29 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                         Syncing database...
                       </span>
                     )}
+                    {isSuperAdmin && liveTrafficStats && (
+                      <button
+                        type="button"
+                        onClick={() => setTrafficModalOpen(true)}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          fontSize: 11.5,
+                          color: '#15803D',
+                          fontWeight: 700,
+                          padding: '3px 9px',
+                          background: isLight ? '#F0FDF4' : 'rgba(21, 128, 61, 0.2)',
+                          border: `1px solid ${isLight ? '#BBF7D0' : 'rgba(34, 197, 94, 0.3)'}`,
+                          borderRadius: 12,
+                          cursor: 'pointer'
+                        }}
+                        title="Live user traffic, active users, and visitor breakdown"
+                      >
+                        <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: '#22C55E' }} />
+                        <span>{liveTrafficStats.uniqueVisitorsToday || 0} Visitors Today ({liveTrafficStats.totalPageviewsToday || 0} Views)</span>
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -11874,7 +11936,9 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                       {filteredCandidates.length === 0 ? (
                         <tr>
                           <td colSpan={11} style={{ padding: 40, textAlign: 'center', color: C.textSecondary, border: `1px solid ${isLight ? '#CBD5E1' : '#334155'}` }}>
-                            No candidates found matching your filters.
+                            {tableCategory === 'app'
+                              ? 'No mobile app applications yet. (Mobile application has not been launched yet).'
+                              : 'No candidates found matching your filters.'}
                           </td>
                         </tr>
                       ) : (
@@ -15745,6 +15809,174 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
           allCandidates: roleScopedCandidates
         }}
       />
+
+      {/* ─── LIVE TRAFFIC & VISITOR ANALYTICS MODAL ─── */}
+      {trafficModalOpen && liveTrafficStats && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.65)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          padding: 16
+        }}>
+          <div style={{
+            width: '100%',
+            maxWidth: 720,
+            maxHeight: '85vh',
+            backgroundColor: isLight ? '#FFFFFF' : '#0F172A',
+            borderRadius: 12,
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            border: `1px solid ${isLight ? '#CBD5E1' : '#334155'}`,
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden'
+          }}>
+            {/* Header */}
+            <div style={{
+              padding: '16px 20px',
+              borderBottom: `1px solid ${isLight ? '#E2E8F0' : '#334155'}`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#22C55E' }} />
+                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: isLight ? '#0F172A' : '#F8FAFC' }}>
+                  Live Visitor & Traffic Analytics
+                </h3>
+                <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 4, backgroundColor: isLight ? '#F1F5F9' : '#1E293B', color: C.textSecondary, fontWeight: 600 }}>
+                  {liveTrafficStats.date || 'Today'}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setTrafficModalOpen(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: C.textSecondary,
+                  padding: 4,
+                  fontSize: 16,
+                  fontWeight: 700
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Content */}
+            <div style={{ padding: 20, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {/* Metric Cards Row */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
+                <div style={{ padding: '12px 14px', borderRadius: 8, backgroundColor: isLight ? '#F0FDF4' : 'rgba(21, 128, 61, 0.15)', border: `1px solid ${isLight ? '#BBF7D0' : 'rgba(34, 197, 94, 0.3)'}` }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: isLight ? '#166534' : '#86EFAC', textTransform: 'uppercase' }}>Unique Visitors</div>
+                  <div style={{ fontSize: 22, fontWeight: 800, color: isLight ? '#14532D' : '#FFFFFF', marginTop: 4 }}>{liveTrafficStats.uniqueVisitorsToday || 0}</div>
+                  <div style={{ fontSize: 10.5, color: C.textSecondary, marginTop: 2 }}>{liveTrafficStats.uniqueIpsToday || 0} Distinct IPs</div>
+                </div>
+
+                <div style={{ padding: '12px 14px', borderRadius: 8, backgroundColor: isLight ? '#EFF6FF' : 'rgba(37, 99, 235, 0.15)', border: `1px solid ${isLight ? '#BFDBFE' : 'rgba(37, 99, 235, 0.3)'}` }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: isLight ? '#1E40AF' : '#93C5FD', textTransform: 'uppercase' }}>Pageviews</div>
+                  <div style={{ fontSize: 22, fontWeight: 800, color: isLight ? '#1E3A8A' : '#FFFFFF', marginTop: 4 }}>{liveTrafficStats.totalPageviewsToday || 0}</div>
+                  <div style={{ fontSize: 10.5, color: C.textSecondary, marginTop: 2 }}>Total Hits Today</div>
+                </div>
+
+                <div style={{ padding: '12px 14px', borderRadius: 8, backgroundColor: isLight ? '#FEF3C7' : 'rgba(217, 119, 6, 0.15)', border: `1px solid ${isLight ? '#FDE68A' : 'rgba(217, 119, 6, 0.3)'}` }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: isLight ? '#92400E' : '#FCD34D', textTransform: 'uppercase' }}>Active Right Now</div>
+                  <div style={{ fontSize: 22, fontWeight: 800, color: isLight ? '#78350F' : '#FFFFFF', marginTop: 4 }}>{liveTrafficStats.activeUsersLast15Min || 0}</div>
+                  <div style={{ fontSize: 10.5, color: C.textSecondary, marginTop: 2 }}>Last 15 minutes</div>
+                </div>
+
+                <div style={{ padding: '12px 14px', borderRadius: 8, backgroundColor: isLight ? '#FDF2F8' : 'rgba(219, 39, 119, 0.15)', border: `1px solid ${isLight ? '#FBCFE8' : 'rgba(219, 39, 119, 0.3)'}` }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: isLight ? '#9D174D' : '#F472B6', textTransform: 'uppercase' }}>Applications</div>
+                  <div style={{ fontSize: 22, fontWeight: 800, color: isLight ? '#831843' : '#FFFFFF', marginTop: 4 }}>{liveTrafficStats.applicationsSubmittedToday || 0}</div>
+                  <div style={{ fontSize: 10.5, color: C.textSecondary, marginTop: 2 }}>Submitted Today</div>
+                </div>
+              </div>
+
+              {/* Page Breakdown */}
+              <div>
+                <div style={{ fontSize: 12.5, fontWeight: 700, color: isLight ? '#0F172A' : '#F8FAFC', marginBottom: 8 }}>
+                  Page Hits Breakdown
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 130, overflowY: 'auto' }}>
+                  {Object.entries(liveTrafficStats.pageBreakdown || {}).length === 0 ? (
+                    <div style={{ fontSize: 11.5, color: C.textSecondary, fontStyle: 'italic' }}>No pages recorded yet today.</div>
+                  ) : (
+                    Object.entries(liveTrafficStats.pageBreakdown || {}).sort((a, b) => b[1] - a[1]).map(([page, hits]) => (
+                      <div key={page} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 10px', backgroundColor: isLight ? '#F8FAFC' : '#1E293B', borderRadius: 6, fontSize: 12 }}>
+                        <span style={{ fontFamily: 'monospace', color: isLight ? '#0F172A' : '#F8FAFC', fontWeight: 600 }}>{page}</span>
+                        <span style={{ fontWeight: 700, color: '#2563EB', padding: '1px 6px', borderRadius: 4, backgroundColor: isLight ? '#EFF6FF' : 'rgba(37, 99, 235, 0.2)' }}>{hits} views</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Recent Real-Time Visitor Logs */}
+              <div>
+                <div style={{ fontSize: 12.5, fontWeight: 700, color: isLight ? '#0F172A' : '#F8FAFC', marginBottom: 8 }}>
+                  Recent Real-Time Visitor Log (Last 15 Hits)
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 180, overflowY: 'auto' }}>
+                  {Array.isArray(liveTrafficStats.recentVisits) && liveTrafficStats.recentVisits.length > 0 ? (
+                    liveTrafficStats.recentVisits.slice(0, 15).map((visit, idx) => (
+                      <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 10px', borderBottom: `1px solid ${isLight ? '#F1F5F9' : '#1E293B'}`, fontSize: 11.5 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ color: C.textSecondary, fontSize: 11 }}>{new Date(visit.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+                          <span style={{ fontWeight: 600, color: isLight ? '#0F172A' : '#F8FAFC' }}>{visit.page}</span>
+                          <span style={{ fontSize: 10, padding: '1px 5px', borderRadius: 3, backgroundColor: isLight ? '#F1F5F9' : '#334155', color: C.textSecondary }}>{visit.device}</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ fontSize: 10.5, fontFamily: 'monospace', color: C.textSecondary }}>{visit.ip}</span>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div style={{ fontSize: 11.5, color: C.textSecondary, fontStyle: 'italic' }}>No visitor log entries recorded yet today.</div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div style={{
+              padding: '12px 20px',
+              borderTop: `1px solid ${isLight ? '#E2E8F0' : '#334155'}`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <span style={{ fontSize: 11, color: C.textSecondary }}>
+                Auto-refreshes every 20 seconds. Also logged continuously to server PM2 output.
+              </span>
+              <button
+                type="button"
+                onClick={() => setTrafficModalOpen(false)}
+                style={{
+                  padding: '6px 14px',
+                  borderRadius: 6,
+                  backgroundColor: isLight ? '#0F172A' : '#F8FAFC',
+                  color: isLight ? '#FFFFFF' : '#0F172A',
+                  border: 'none',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

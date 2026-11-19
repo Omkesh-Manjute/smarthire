@@ -1653,6 +1653,164 @@ app.use((req, _res, next) => {
   }
   next();
 })
+
+// ─── Real-Time Visitor & Traffic Tracking Subsystem ──────────────────────────
+const trafficDataPath = path.resolve(__dirname, 'traffic_analytics.json');
+
+function getTodayKey() {
+  return new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+}
+
+let trafficStore = {
+  date: getTodayKey(),
+  uniqueIps: [],
+  uniqueVisitors: [],
+  totalPageviews: 0,
+  pageBreakdown: {},
+  recentVisits: [],
+  applicationsCount: 0
+};
+
+function loadTrafficFromDisk() {
+  try {
+    if (fs.existsSync(trafficDataPath)) {
+      const raw = fs.readFileSync(trafficDataPath, 'utf8');
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.date === getTodayKey()) {
+        trafficStore = parsed;
+      } else if (parsed) {
+        trafficStore = {
+          date: getTodayKey(),
+          uniqueIps: [],
+          uniqueVisitors: [],
+          totalPageviews: 0,
+          pageBreakdown: {},
+          recentVisits: Array.isArray(parsed.recentVisits) ? parsed.recentVisits.slice(-30) : [],
+          applicationsCount: 0
+        };
+      }
+    }
+  } catch (err) {
+    console.warn('[Traffic] Failed to load traffic data:', err.message);
+  }
+}
+
+function saveTrafficToDisk() {
+  try {
+    fs.writeFileSync(trafficDataPath, JSON.stringify(trafficStore, null, 2), 'utf8');
+  } catch (_) {}
+}
+
+loadTrafficFromDisk();
+
+function recordVisitorHit({ ip, page, referrer, visitorId, userAgent, device, userRole }) {
+  const today = getTodayKey();
+  if (trafficStore.date !== today) {
+    trafficStore = {
+      date: today,
+      uniqueIps: [],
+      uniqueVisitors: [],
+      totalPageviews: 0,
+      pageBreakdown: {},
+      recentVisits: Array.isArray(trafficStore.recentVisits) ? trafficStore.recentVisits.slice(-30) : [],
+      applicationsCount: 0
+    };
+  }
+
+  const cleanIp = String(ip || 'unknown').replace(/^::ffff:/, '').trim();
+  const cleanPage = String(page || '/').slice(0, 120);
+  const isNewIp = !trafficStore.uniqueIps.includes(cleanIp);
+  if (isNewIp && cleanIp !== 'unknown') trafficStore.uniqueIps.push(cleanIp);
+
+  const vId = visitorId || cleanIp;
+  const isNewVisitor = !trafficStore.uniqueVisitors.includes(vId);
+  if (isNewVisitor && vId !== 'unknown') trafficStore.uniqueVisitors.push(vId);
+
+  trafficStore.totalPageviews = (trafficStore.totalPageviews || 0) + 1;
+  trafficStore.pageBreakdown[cleanPage] = (trafficStore.pageBreakdown[cleanPage] || 0) + 1;
+
+  const visitRecord = {
+    timestamp: new Date().toISOString(),
+    ip: cleanIp,
+    page: cleanPage,
+    referrer: String(referrer || 'direct').slice(0, 120),
+    device: device || 'desktop',
+    userRole: userRole || 'guest'
+  };
+
+  if (!Array.isArray(trafficStore.recentVisits)) trafficStore.recentVisits = [];
+  trafficStore.recentVisits.unshift(visitRecord);
+  if (trafficStore.recentVisits.length > 100) {
+    trafficStore.recentVisits = trafficStore.recentVisits.slice(0, 100);
+  }
+
+  saveTrafficToDisk();
+
+  // Instant real-time PM2 console log
+  const icon = isNewVisitor ? '🆕 [New Visitor]' : '👁️ [Page Hit]';
+  const roleTag = userRole && userRole !== 'guest' ? ` [${userRole}]` : '';
+  console.log(`${icon} ${cleanIp}${roleTag} visited "${cleanPage}" (${visitRecord.device}) | Today: ${trafficStore.uniqueVisitors.length} users (${trafficStore.uniqueIps.length} IPs), ${trafficStore.totalPageviews} total views`);
+}
+
+// Track Beacon Endpoint (called by React frontend on every navigation)
+app.post('/api/analytics/track', (req, res) => {
+  try {
+    const rawIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.headers['x-real-ip'] || req.socket.remoteAddress || req.ip;
+    const { page, referrer, visitorId, userAgent, device, userRole } = req.body || {};
+    recordVisitorHit({
+      ip: rawIp,
+      page: page || '/',
+      referrer,
+      visitorId,
+      userAgent: userAgent || req.headers['user-agent'],
+      device,
+      userRole
+    });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(200).json({ success: false });
+  }
+});
+
+// Traffic Stats API (for SuperAdmin ATS dashboard)
+app.get('/api/analytics/traffic', (req, res) => {
+  const now = Date.now();
+  const activeCutoff = new Date(now - 15 * 60 * 1000).toISOString();
+  const activeNow = (trafficStore.recentVisits || []).filter(v => v.timestamp >= activeCutoff);
+  const activeUnique = new Set(activeNow.map(v => v.ip || v.visitorId)).size;
+
+  res.json({
+    success: true,
+    date: trafficStore.date,
+    uniqueVisitorsToday: trafficStore.uniqueVisitors.length,
+    uniqueIpsToday: trafficStore.uniqueIps.length,
+    totalPageviewsToday: trafficStore.totalPageviews,
+    activeUsersLast15Min: activeUnique,
+    applicationsSubmittedToday: trafficStore.applicationsCount || 0,
+    pageBreakdown: trafficStore.pageBreakdown || {},
+    recentVisits: (trafficStore.recentVisits || []).slice(0, 25)
+  });
+});
+
+// Periodic 15-Minute PM2 Traffic Summary
+setInterval(() => {
+  try {
+    const now = Date.now();
+    const activeCutoff = new Date(now - 15 * 60 * 1000).toISOString();
+    const activeNow = (trafficStore.recentVisits || []).filter(v => v.timestamp >= activeCutoff);
+    const activeUnique = new Set(activeNow.map(v => v.ip || v.visitorId)).size;
+
+    console.log(`
+============================================================
+📊 [SmartHire Traffic & User Summary - ${trafficStore.date}]
+👥 Unique Users Today  : ${trafficStore.uniqueVisitors.length} visitors (${trafficStore.uniqueIps.length} distinct IPs)
+📄 Total Pageviews     : ${trafficStore.totalPageviews} views
+🟢 Active Right Now    : ${activeUnique} user(s) in last 15 min
+💼 Careers / Jobs Hits : ${trafficStore.pageBreakdown['/jobs'] || 0} views
+📥 Public Applications : ${trafficStore.applicationsCount || 0} submitted today
+============================================================`);
+  } catch (_) {}
+}, 15 * 60 * 1000);
 app.use('/uploads', express.static(uploadDir))
 if (fs.existsSync(distPath)) {
   app.use(express.static(distPath, {
@@ -7586,6 +7744,12 @@ const handlePublicApplication = async (req, res) => {
       console.warn('Could not sync to candidatesStore:', err.message);
     }
 
+    try {
+      trafficStore.applicationsCount = (trafficStore.applicationsCount || 0) + 1;
+      saveTrafficToDisk();
+      console.log(`🎯 [Application Received] Candidate "${finalCandidateName}" applied for "${job.title}" (Job #${jobId}) | Total applications today: ${trafficStore.applicationsCount}`);
+    } catch (_) {}
+
     res.json({
       success: true,
       sessionId,
@@ -13377,20 +13541,21 @@ app.get('/api/recruiter/email-streams', (req, res) => {
   const scopedCandidates = filteredCandidates.map(c => {
     // Enrich with source category and AI match against active positions
     const src = (c.source || '').toLowerCase();
+    const folder = (c.folder || '').toUpperCase();
     let sourceCategory = 'email_inbox';
-    if (c.sourceCategory === 'monster_plus' || src.includes('monster')) {
+    if (c.isSpamRecovery || src.includes('spam') || src.includes('junk') || folder === 'SPAM') {
+      sourceCategory = 'email_spam';
+    } else if (c.sourceCategory === 'monster_plus' || src.includes('monster')) {
       sourceCategory = 'monster_plus';
     } else if (c.sourceCategory === 'dice' || src.includes('dice')) {
       sourceCategory = 'dice';
-    } else if (c.sourceCategory === 'mobile_app' || src.includes('mobile') || src.includes('app')) {
-      sourceCategory = 'mobile_app';
-    } else if (c.isSpamRecovery || src.includes('spam') || src.includes('junk')) {
-      sourceCategory = 'email_spam';
-    } else if (src.includes('career') || src.includes('job site') || src.includes('indeed') || src.includes('linkedin') || src.includes('/jobs')) {
+    } else if (c.sourceCategory === 'careers_portal' || src.includes('career') || src.includes('job site') || src.includes('indeed') || src.includes('linkedin') || src.includes('/jobs')) {
       sourceCategory = 'careers_portal';
-    } else if (src.includes('vendor') || src.includes('bench') || src.includes('employer')) {
+    } else if (c.sourceCategory === 'vendor_bench' || src.includes('vendor') || src.includes('bench') || src.includes('employer')) {
       sourceCategory = 'vendor_bench';
-    } else if (c.sourceCategory === 'manual_entry' || src.includes('manual') || src.includes('direct') || src.includes('added')) {
+    } else if (c.sourceCategory === 'mobile_app' || src === 'mobile_app' || src.includes('mobile app') || src.includes('mobile_app')) {
+      sourceCategory = 'mobile_app';
+    } else if (c.sourceCategory === 'manual_entry' || src.includes('manual') || src.includes('added')) {
       sourceCategory = 'manual_entry';
     }
 

@@ -122,9 +122,52 @@ function SuperAdminRoute({ children }) {
 
 import ErrorBoundary from './components/ErrorBoundary'
 
+function VisitorTracker() {
+  const location = useLocation()
+
+  React.useEffect(() => {
+    try {
+      let vid = localStorage.getItem('smarthire_visitor_id')
+      if (!vid) {
+        vid = 'v_' + Math.random().toString(36).slice(2, 10) + '_' + Date.now().toString(36)
+        localStorage.setItem('smarthire_visitor_id', vid)
+      }
+
+      const userStr = localStorage.getItem('smarthire_user')
+      let userRole = 'guest'
+      if (userStr) {
+        try {
+          const u = JSON.parse(userStr)
+          userRole = u.role || 'candidate'
+        } catch (_) {}
+      }
+
+      const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768
+      const payload = {
+        page: location.pathname + (location.search || ''),
+        referrer: typeof document !== 'undefined' ? (document.referrer || 'direct') : 'direct',
+        visitorId: vid,
+        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
+        device: isMobile ? 'mobile' : 'desktop',
+        userRole
+      }
+
+      fetch('/api/analytics/track', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        keepalive: true
+      }).catch(() => {})
+    } catch (_) {}
+  }, [location.pathname, location.search])
+
+  return null
+}
+
 function App() {
   return (
     <ErrorBoundary>
+      <VisitorTracker />
       <Suspense fallback={<PageFallback />}>
         <Routes>
           <Route path="/" element={<Homepage />} />
