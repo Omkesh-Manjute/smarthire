@@ -66,6 +66,41 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
     - In resume views, every responsibility, project accomplishment, and contribution line must be formatted with an explicit bullet point (`•`) and proper indentation.
     - The engine must automatically detect responsibilities (lines following `Responsibilities:`, action verbs, or list items) even when converted from plain text or Word documents without literal Unicode bullets.
 
+### 2026-11-20 — Permanent Screening Deletion Registry, Cascade Candidate Deletion, Removal of Synchronous Re-Sync, & Zero-Error Server Hardening
+- **User Issue & Findings**:
+  - *Symptom*: User reported that when deleting a screening session or candidate (e.g. `Omkesh Test Applicant` or others) from `Candidate Video & Audio Screening`, the session reappeared—often duplicated ("double vapas a raha hai")—after refreshing the page. User also noted PM2 error logs (`Error: Groq API Error: Invalid API Key` and IMAP timeout warnings) and demanded all live server errors be eliminated.
+  - *Root Cause 1 (Synchronous Re-Sync on GET)*: `app.get('/api/screening/sessions')` executed `syncScreeningSessions()` on every single incoming GET request.
+  - *Root Cause 2 (No Persistent Screening Deletion Tracking)*: When `DELETE /api/screening/:sessionId` spliced the session from in-memory `screeningStore`, there was no `deleted_screening_sessions.json`. On the next refresh, `syncScreeningSessions()` saw the candidate existed in `candidatesStore` (job portal database) but not in `screeningStore`, so it immediately auto-recreated a new session with a new random sessionId and unshifted it back. If multiple candidate store records matched, it inserted duplicates.
+  - *Root Cause 3 (Uncascaded Deletions)*: Deleting from screening did not cascade to delete from `candidatesStore` or `deleted_candidates.json`, leaving the underlying candidate active in the database.
+  - *Root Cause 4 (ESM Hoisting & Groq Key)*: In `aiArticleGenerator.js`, `const GROQ_API_KEY = process.env.GROQ_API_KEY;` was captured at static import time before `dotenv.config()` ran, resulting in `Authorization: Bearer undefined`.
+  - *Root Cause 5 (IMAP Command Timeout Logged to stderr)*: `UID FETCH` command had a 4000ms timeout on large attachments and logged deferred chunks via `console.warn`, polluting PM2 `smarthire-ats-error.log`.
+- **Architectural & Implementation Fixes**:
+  1. *Persistent Screening Deletion Registry (`deleted_screening_sessions.json`)*:
+     - Implemented `deleted_screening_sessions.json`, `deletedScreeningIds` Set, `loadDeletedScreeningSessions()`, `saveDeletedScreeningSessions()`, `recordScreeningSessionDeleted()`, and `isScreeningSessionDeleted()`.
+     - Tracks session IDs, candidate IDs, normalized candidate emails, and names.
+  2. *Two-Way Cascading Deletion*:
+     - Deleting a screening session via `DELETE /api/screening/:sessionId` now records the session in `deleted_screening_sessions.json`, calls `recordCandidateDeleted()`, and purges the candidate from `candidatesStore` and `candidates.json`.
+     - Deleting a candidate via `DELETE /api/candidates/:id` or `POST /api/candidates/bulk-delete` cascades to `recordScreeningSessionDeleted()` and purges matching sessions from `screeningStore`.
+  3. *Removal of Re-Sync from GET Endpoints*:
+     - Removed `loadScreeningFromDisk()` and `syncScreeningSessions()` from `app.get('/api/screening/sessions')` and `app.get('/api/client/portal-data')`.
+     - Replaced with read-only in-memory filtering: `screeningStore.filter(s => s && !isScreeningSessionDeleted(s))`.
+     - Gated `syncScreeningSessions()` and startup loading so that any candidate in `deletedCandidateIds` or `deletedScreeningIds` is permanently blocked from re-creation. Added in-memory deduplication by `sessionId` and `candidateEmail`.
+  4. *Clean Dynamic Groq Evaluation*:
+     - Added multi-path dynamic `dotenv.config()` in `aiArticleGenerator.js` and dynamic key evaluation inside `generateArticleWithAI()`.
+  5. *Stderr Cleanliness (0 Errors in PM2)*:
+     - Increased IMAP UID FETCH timeout to 10000ms and routed deferred fallback notices to `console.log` rather than `console.warn`.
+     - Routed docx parse notices to `console.log`.
+  6. *Live Cleanup & Verification*:
+     - Purged `omkesh.test.applicant@gmail.com` and `Omkesh Test Applicant` across `candidates.json`, `screening_sessions.json`, and both deleted registries.
+     - Verified end-to-end deletion lifecycle: deleting a session permanently prevents it from ever reappearing on refresh (`isSessionIdRecorded: YES`, `reappearedInGetSessions: NO`).
+     - PM2 `smarthire-ats-error.log` verified 100% clean with 0 errors.
+- **Verification & Deployment Protocol**:
+  - Matching engine unit tests: 42/42 passed.
+  - Production build: `npm run build` in `smarthire-react` passed with 0 errors, 0 warnings.
+  - Git committed (`1d37ce5`) and pushed to GitHub `origin main`.
+  - Deployed to AWS Lightsail (`34.194.119.199`), temporary archives deleted immediately, asset bundles pruned (retaining 5 newest), root volume maintained at 54% (8.5GB free; Rule 5 compliance).
+  - PM2 `smarthire-ats` reloaded and verified online.
+
 ### 2026-11-20 — November Video Interview Restoration (Anandi Ramaswamy & Client Assessment), Video Retention Guard & Screening Hub Sync
 - **User Issue & Findings**:
   - *Symptom*: User asked why November candidates and video recordings were missing from `Candidate Video & Audio Screening` at `https://smarthireus.com/ats?tab=screening`, where only October candidates appeared.
