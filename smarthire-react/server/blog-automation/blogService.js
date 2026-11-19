@@ -26,6 +26,7 @@ export function loadBlogsFromDisk() {
       if (Array.isArray(parsed)) {
         blogsStore = parsed;
         console.log(`[Blog Service] Loaded ${blogsStore.length} blog post(s) from disk.`);
+        syncSitemapXml(blogsStore);
         return blogsStore;
       }
     }
@@ -37,13 +38,55 @@ export function loadBlogsFromDisk() {
 }
 
 /**
- * Save blogs to blogs.json on disk
+ * Save blogs to blogs.json on disk and update sitemaps
  */
 export function saveBlogsToDisk() {
   try {
     fs.writeFileSync(blogsDbPath, JSON.stringify(blogsStore, null, 2), 'utf-8');
+    syncSitemapXml(blogsStore);
   } catch (err) {
-    console.error('⚠️ [Blog Service] Failed to save blogs to disk:', err.message);
+    console.error('Failed to save blogs to disk:', err.message);
+  }
+}
+
+/**
+ * Synchronizes sitemap.xml on disk across public, dist, and live web root
+ */
+export function syncSitemapXml(blogs = blogsStore) {
+  const targetFiles = [
+    path.resolve(__dirname, '../../public/sitemap.xml'),
+    path.resolve(__dirname, '../../dist/sitemap.xml'),
+    '/var/www/html/sitemap.xml'
+  ];
+
+  for (const sitemapPath of targetFiles) {
+    try {
+      if (!fs.existsSync(sitemapPath)) continue;
+      let content = fs.readFileSync(sitemapPath, 'utf-8');
+      let modified = false;
+
+      for (const b of blogs) {
+        if (!b || !b.slug) continue;
+        const postUrl = `https://smarthireus.com/blog/${encodeURIComponent(b.slug)}`;
+        if (!content.includes(postUrl)) {
+          const pubDate = (b.publishedAt ? new Date(b.publishedAt) : new Date()).toISOString().split('T')[0];
+          const newEntry = `
+  <url>
+    <loc>${postUrl}</loc>
+    <lastmod>${pubDate}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.88</priority>
+  </url>
+`;
+          content = content.replace('</urlset>', `${newEntry}\n</urlset>`);
+          modified = true;
+        }
+      }
+
+      if (modified) {
+        fs.writeFileSync(sitemapPath, content, 'utf-8');
+      }
+    } catch (_) {}
   }
 }
 
