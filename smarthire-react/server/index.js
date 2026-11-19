@@ -782,12 +782,37 @@ function recordCandidateDeleted(candOrId, candEmail) {
     if (candOrId.canId) deletedCandidateIds.add(String(candOrId.canId).toLowerCase().trim())
     if (candOrId._id) deletedCandidateIds.add(String(candOrId._id).toLowerCase().trim())
     if (candOrId.email) deletedCandidateIds.add(String(candOrId.email).toLowerCase().trim())
+    if (candOrId.candidateEmail) deletedCandidateIds.add(String(candOrId.candidateEmail).toLowerCase().trim())
+    if (candOrId.name) deletedCandidateIds.add(String(candOrId.name).toLowerCase().trim())
+    if (candOrId.candidateName) deletedCandidateIds.add(String(candOrId.candidateName).toLowerCase().trim())
   }
   if (candEmail) {
     const em = String(candEmail).toLowerCase().trim()
     if (em) deletedCandidateIds.add(em)
   }
   saveDeletedCandidates()
+}
+
+function isCandidateDeleted(cand) {
+  if (!cand) return false;
+  if (typeof cand === 'string') {
+    const s = cand.toLowerCase().trim();
+    return deletedCandidateIds.has(s) || (typeof deletedScreeningIds !== 'undefined' && deletedScreeningIds.has(s));
+  }
+  const id1 = String(cand.id || '').toLowerCase().trim();
+  const id2 = String(cand.candidate_id || '').toLowerCase().trim();
+  const id3 = String(cand.canId || '').toLowerCase().trim();
+  const id4 = String(cand._id || '').toLowerCase().trim();
+  const em = String(cand.email || cand.candidateEmail || '').toLowerCase().trim();
+  const name = String(cand.name || cand.candidateName || '').toLowerCase().trim();
+  return (
+    (id1 && (deletedCandidateIds.has(id1) || (typeof deletedScreeningIds !== 'undefined' && deletedScreeningIds.has(id1)))) ||
+    (id2 && (deletedCandidateIds.has(id2) || (typeof deletedScreeningIds !== 'undefined' && deletedScreeningIds.has(id2)))) ||
+    (id3 && (deletedCandidateIds.has(id3) || (typeof deletedScreeningIds !== 'undefined' && deletedScreeningIds.has(id3)))) ||
+    (id4 && (deletedCandidateIds.has(id4) || (typeof deletedScreeningIds !== 'undefined' && deletedScreeningIds.has(id4)))) ||
+    (em && (deletedCandidateIds.has(em) || (typeof deletedScreeningIds !== 'undefined' && deletedScreeningIds.has(em)))) ||
+    (name && (deletedCandidateIds.has(name) || (typeof deletedScreeningIds !== 'undefined' && deletedScreeningIds.has(name))))
+  );
 }
 
 loadDeletedCandidates()
@@ -1092,7 +1117,7 @@ async function migrateCandidateAuthenticDocuments() {
               touched = true;
             }
           } catch (pErr) {
-            console.warn(`Migration parse notice for ${cand.name}:`, pErr.message);
+            console.log(`ℹ️ [Document parse note] ${cand.name}: ${pErr.message}`);
           }
         }
 
@@ -1522,14 +1547,85 @@ async function saveJobsToDisk() {
 
 // ─── Screening Sessions DB File ──────────────────────────────────────────────
 const screeningDbPath = path.resolve(__dirname, 'screening_sessions.json');
+const deletedScreeningDbPath = path.resolve(__dirname, 'deleted_screening_sessions.json');
 let screeningStore = [];
+let deletedScreeningIds = new Set();
+
+function loadDeletedScreeningSessions() {
+  try {
+    if (fs.existsSync(deletedScreeningDbPath)) {
+      const raw = fs.readFileSync(deletedScreeningDbPath, 'utf-8');
+      const list = JSON.parse(raw);
+      if (Array.isArray(list)) {
+        deletedScreeningIds = new Set(list.map(s => String(s).toLowerCase().trim()).filter(Boolean));
+        console.log(`🗑️  Loaded ${deletedScreeningIds.size} permanently deleted screening session signature(s).`);
+      }
+    }
+  } catch (err) {
+    console.error('⚠️  Failed to load deleted screening sessions list:', err.message);
+  }
+}
+
+function saveDeletedScreeningSessions() {
+  try {
+    fs.writeFileSync(deletedScreeningDbPath, JSON.stringify(Array.from(deletedScreeningIds), null, 2), 'utf-8');
+  } catch (err) {
+    console.error('⚠️  Failed to save deleted screening sessions list:', err.message);
+  }
+}
+
+function recordScreeningSessionDeleted(sessOrId, candEmail, candName) {
+  if (!sessOrId) return;
+  if (typeof sessOrId === 'string') {
+    const s = sessOrId.toLowerCase().trim();
+    if (s) deletedScreeningIds.add(s);
+  } else if (typeof sessOrId === 'object') {
+    if (sessOrId.sessionId) deletedScreeningIds.add(String(sessOrId.sessionId).toLowerCase().trim());
+    if (sessOrId.candidateId) deletedScreeningIds.add(String(sessOrId.candidateId).toLowerCase().trim());
+    if (sessOrId.id) deletedScreeningIds.add(String(sessOrId.id).toLowerCase().trim());
+    if (sessOrId.candidateEmail) deletedScreeningIds.add(String(sessOrId.candidateEmail).toLowerCase().trim());
+    if (sessOrId.email) deletedScreeningIds.add(String(sessOrId.email).toLowerCase().trim());
+    if (sessOrId.candidateName) deletedScreeningIds.add(String(sessOrId.candidateName).toLowerCase().trim());
+    if (sessOrId.name) deletedScreeningIds.add(String(sessOrId.name).toLowerCase().trim());
+  }
+  if (candEmail) {
+    const em = String(candEmail).toLowerCase().trim();
+    if (em) deletedScreeningIds.add(em);
+  }
+  if (candName) {
+    const nm = String(candName).toLowerCase().trim();
+    if (nm) deletedScreeningIds.add(nm);
+  }
+  saveDeletedScreeningSessions();
+}
+
+function isScreeningSessionDeleted(session) {
+  if (!session) return false;
+  if (typeof session === 'string') {
+    const s = session.toLowerCase().trim();
+    return deletedScreeningIds.has(s) || (typeof deletedCandidateIds !== 'undefined' && deletedCandidateIds.has(s));
+  }
+  const sessId = String(session.sessionId || '').toLowerCase().trim();
+  const candId = String(session.candidateId || session.id || '').toLowerCase().trim();
+  const em = String(session.candidateEmail || session.email || '').toLowerCase().trim();
+  const name = String(session.candidateName || session.name || '').toLowerCase().trim();
+  return (
+    (sessId && deletedScreeningIds.has(sessId)) ||
+    (candId && (deletedScreeningIds.has(candId) || (typeof deletedCandidateIds !== 'undefined' && deletedCandidateIds.has(candId)))) ||
+    (em && (deletedScreeningIds.has(em) || (typeof deletedCandidateIds !== 'undefined' && deletedCandidateIds.has(em)))) ||
+    (name && (deletedScreeningIds.has(name) || (typeof deletedCandidateIds !== 'undefined' && deletedCandidateIds.has(name))))
+  );
+}
+
+loadDeletedScreeningSessions();
 
 async function loadScreeningFromDisk() {
   try {
+    loadDeletedScreeningSessions();
     if (isMongoConnected) {
       const doc = await ScreeningDoc.findOne();
       if (doc) {
-        screeningStore = doc.list || [];
+        screeningStore = (doc.list || []).filter(s => s && !isScreeningSessionDeleted(s));
         console.log(`📂 Loaded ${screeningStore.length} screening session(s) from MongoDB Atlas.`);
         syncScreeningSessions();
         return;
@@ -1538,7 +1634,7 @@ async function loadScreeningFromDisk() {
     if (fs.existsSync(screeningDbPath)) {
       const raw = fs.readFileSync(screeningDbPath, 'utf-8');
       const parsed = JSON.parse(raw);
-      screeningStore = Array.isArray(parsed) ? parsed : [];
+      screeningStore = (Array.isArray(parsed) ? parsed : []).filter(s => s && !isScreeningSessionDeleted(s));
       console.log(`📂 Loaded ${screeningStore.length} screening session(s) from disk.`);
     } else {
       screeningStore = [];
@@ -1554,136 +1650,167 @@ async function loadScreeningFromDisk() {
 function syncScreeningSessions() {
   let changed = false;
 
+  // Prune any deleted sessions from in-memory store
+  screeningStore = (screeningStore || []).filter(s => s && !isScreeningSessionDeleted(s));
+
+  // Deduplicate in-memory store by sessionId and candidateEmail
+  const seenSess = new Set();
+  const seenEmail = new Set();
+  screeningStore = screeningStore.filter(s => {
+    if (!s) return false;
+    const sid = String(s.sessionId || '').toLowerCase().trim();
+    const em = String(s.candidateEmail || s.email || '').toLowerCase().trim();
+    if (sid && seenSess.has(sid)) return false;
+    if (em && seenEmail.has(em)) return false;
+    if (sid) seenSess.add(sid);
+    if (em) seenEmail.add(em);
+    return true;
+  });
+
   // 1. Restore Anandi Ramaswamy (Nov 12, 2026 - 4m 17s continuous video interview)
-  const anandiExists = screeningStore.some(s => s.sessionId === 'SCR-1794512265063-672' || (s.candidateName && s.candidateName.toLowerCase().includes('anandi')));
-  if (!anandiExists) {
-    screeningStore.unshift({
-      sessionId: "SCR-1794512265063-672",
-      candidateId: "C-1794512265063",
-      candidateName: "Anandi Ramaswamy",
-      candidateEmail: "anandi.ramaswamy@gmail.com",
-      candidatePhone: "+1 (408) 555-0192",
-      candidateLocation: "San Jose, CA",
-      location: "San Jose, CA",
-      visaStatus: "US Citizen",
-      targetPayRate: "$85/hr",
-      expectedRate: "$85/hr",
-      jobId: "159383",
-      jobTitle: "Enterprise Project Manager - Advanced",
-      jobSkills: ["Scrum", "Agile", "Jira", "Databricks", "Enterprise Data Management", "SDLC", "Stakeholder Management"],
-      jobClient: "State Client",
-      jobLocation: "Remote / US",
-      campaignTitle: "Enterprise Project Manager Screening",
-      status: "submitted",
-      screeningComplete: true,
-      createdAt: "2026-11-12T19:30:00.000Z",
-      submittedAt: "2026-11-12T19:37:45.063Z",
-      aiScore: 88,
-      recommendation: "Strong Match - Recommended",
-      keyTakeaways: "15+ years experience in IT across infrastructure and SDLC projects. Proven Scrum Master leading 3 parallel teams using Databricks and Jira. Demonstrated strong conflict resolution and tooling coordination.",
-      aiSummary: [
-        "Over 15 years of solid IT experience as Technical Project Manager and Scrum Master.",
-        "Led 3 teams handling enterprise data management and BI analytics features on Databricks.",
-        "Strong command of Jira custom workflows, grooming sessions, and team impediment removal."
-      ],
-      masterMediaUrl: "/uploads/screening/screen_1794520165324_session_SCR-1794512265063-672_full_interview.webm",
-      recruiterName: "Omkesh",
-      createdByName: "Omkesh",
-      recruiterEmail: "omkesh@coolsofttech.com",
-      proctoring: {
-        screenShared: true,
-        fullscreenEnforced: true,
-        tabViolationsCount: 0,
-        violationsLog: [],
-        totalDurationSeconds: 257,
-        integrityScore: 100
-      },
-      candidateGeo: {
-        cityState: "San Jose, CA",
-        resolvedAddress: "San Jose, CA, United States",
-        latitude: 37.3382,
-        longitude: -121.8863
-      },
-      responses: [
-        {
-          questionId: "q1",
-          questionText: "Give a 60-90 second introduction of your background, key technical skills, and recent work relevant to this position.",
-          format: "video",
-          mediaUrl: "/uploads/screening/screen_1794520165324_session_SCR-1794512265063-672_full_interview.webm",
-          startTime: 0,
-          endTime: 60,
-          duration: 60,
-          transcript: "Hey, this is Anandi Ramaswamy. I have 15 years of experience in IT industry working in different projects. I started my career as a web designer and developer, then I moved into an Oracle database, so I worked as a technical project manager between infrastructure projects as well as the STLC, the development projects. I've been worked on multiple domains like manufacturing, insurance, banking, healthcare. So I have a variety of domain experience as well as the infrastructure projects, migration projects. So I've been working as is. And then I have experience on both waterfall model project handling as well as the scrum. So in recent days, I worked with the KDP as a data analytics team for enterprise data management using the Databricks team for Asset Scrum Master. And then I've been leading like three teams within that team."
+  const anandiDeleted = isScreeningSessionDeleted({
+    sessionId: "SCR-1794512265063-672",
+    candidateEmail: "anandi.ramaswamy@gmail.com",
+    candidateName: "Anandi Ramaswamy"
+  });
+  if (!anandiDeleted) {
+    const anandiExists = screeningStore.some(s => s && (s.sessionId === 'SCR-1794512265063-672' || (s.candidateName && s.candidateName.toLowerCase().includes('anandi'))));
+    if (!anandiExists) {
+      screeningStore.unshift({
+        sessionId: "SCR-1794512265063-672",
+        candidateId: "C-1794512265063",
+        candidateName: "Anandi Ramaswamy",
+        candidateEmail: "anandi.ramaswamy@gmail.com",
+        candidatePhone: "+1 (408) 555-0192",
+        candidateLocation: "San Jose, CA",
+        location: "San Jose, CA",
+        visaStatus: "US Citizen",
+        targetPayRate: "$85/hr",
+        expectedRate: "$85/hr",
+        jobId: "159383",
+        jobTitle: "Enterprise Project Manager - Advanced",
+        jobSkills: ["Scrum", "Agile", "Jira", "Databricks", "Enterprise Data Management", "SDLC", "Stakeholder Management"],
+        jobClient: "State Client",
+        jobLocation: "Remote / US",
+        campaignTitle: "Enterprise Project Manager Screening",
+        status: "submitted",
+        screeningComplete: true,
+        createdAt: "2026-11-12T19:30:00.000Z",
+        submittedAt: "2026-11-12T19:37:45.063Z",
+        aiScore: 88,
+        recommendation: "Strong Match - Recommended",
+        keyTakeaways: "15+ years experience in IT across infrastructure and SDLC projects. Proven Scrum Master leading 3 parallel teams using Databricks and Jira. Demonstrated strong conflict resolution and tooling coordination.",
+        aiSummary: [
+          "Over 15 years of solid IT experience as Technical Project Manager and Scrum Master.",
+          "Led 3 teams handling enterprise data management and BI analytics features on Databricks.",
+          "Strong command of Jira custom workflows, grooming sessions, and team impediment removal."
+        ],
+        masterMediaUrl: "/uploads/screening/screen_1794520165324_session_SCR-1794512265063-672_full_interview.webm",
+        recruiterName: "Omkesh",
+        createdByName: "Omkesh",
+        recruiterEmail: "omkesh@coolsofttech.com",
+        proctoring: {
+          screenShared: true,
+          fullscreenEnforced: true,
+          tabViolationsCount: 0,
+          violationsLog: [],
+          totalDurationSeconds: 257,
+          integrityScore: 100
         },
-        {
-          questionId: "q2",
-          questionText: "How do you handle coordinating between multiple teams and managing parallel Jira boards?",
-          format: "video",
-          mediaUrl: "/uploads/screening/screen_1794520165324_session_SCR-1794512265063-672_full_interview.webm",
-          startTime: 60,
-          endTime: 160,
-          duration: 100,
-          transcript: "coordinating between stakeholders, POs, project managers, TPMs, as well as the solution architects. One team runs two parallel Jira boards, one for BI analytics feature, So when one team runs two parallel boats, so we have to segregate between the contributing teams. There is a field called contributing teams in JIRA. So using that, we can differentiate between the two teams and then we can use the same JIRA board and try to have the data quality task. We'll have two different stand-ups and try to understand and then with the team, make sure that we are going through each of these items and then even if it is like one PO or two POs, we'll be working along with them to have the backlog refinement meetings, walk through the stories and understand what is needed as part of the story, get an alignment with the team."
+        candidateGeo: {
+          cityState: "San Jose, CA",
+          resolvedAddress: "San Jose, CA, United States",
+          latitude: 37.3382,
+          longitude: -121.8863
         },
-        {
-          questionId: "q3",
-          questionText: "Describe how you resolve technical workflow blockers and custom tooling caveats.",
-          format: "video",
-          mediaUrl: "/uploads/screening/screen_1794520165324_session_SCR-1794512265063-672_full_interview.webm",
-          startTime: 160,
-          endTime: 257,
-          duration: 97,
-          transcript: "So the data load story is blocked because of the custom JIRA flow. So even though it is a custom JIRA workflow, we have to work with the tooling team to make sure how the workflow is working. Since the team knows that there is no blocker and we are progressing with the teams, we will work with the team to make sure they are carrying on with the work until we make sure that it is getting resolved. And then we'll make sure we're adding the comments as part of the story, even if it is in blocked state, and make sure we'll work with the tooling team and then see what is the progress, or we can create a separate story. We can move the story to cancel and we can create a separate story. Having all those information, clone the story and make sure it is moving into the right direction."
-        }
-      ]
-    });
-    changed = true;
+        responses: [
+          {
+            questionId: "q1",
+            questionText: "Give a 60-90 second introduction of your background, key technical skills, and recent work relevant to this position.",
+            format: "video",
+            mediaUrl: "/uploads/screening/screen_1794520165324_session_SCR-1794512265063-672_full_interview.webm",
+            startTime: 0,
+            endTime: 60,
+            duration: 60,
+            transcript: "Hey, this is Anandi Ramaswamy. I have 15 years of experience in IT industry working in different projects. I started my career as a web designer and developer, then I moved into an Oracle database, so I worked as a technical project manager between infrastructure projects as well as the STLC, the development projects. I've been worked on multiple domains like manufacturing, insurance, banking, healthcare. So I have a variety of domain experience as well as the infrastructure projects, migration projects. So I've been working as is. And then I have experience on both waterfall model project handling as well as the scrum. So in recent days, I worked with the KDP as a data analytics team for enterprise data management using the Databricks team for Asset Scrum Master. And then I've been leading like three teams within that team."
+          },
+          {
+            questionId: "q2",
+            questionText: "How do you handle coordinating between multiple teams and managing parallel Jira boards?",
+            format: "video",
+            mediaUrl: "/uploads/screening/screen_1794520165324_session_SCR-1794512265063-672_full_interview.webm",
+            startTime: 60,
+            endTime: 160,
+            duration: 100,
+            transcript: "coordinating between stakeholders, POs, project managers, TPMs, as well as the solution architects. One team runs two parallel Jira boards, one for BI analytics feature, So when one team runs two parallel boats, so we have to segregate between the contributing teams. There is a field called contributing teams in JIRA. So using that, we can differentiate between the two teams and then we can use the same JIRA board and try to have the data quality task. We'll have two different stand-ups and try to understand and then with the team, make sure that we are going through each of these items and then even if it is like one PO or two POs, we'll be working along with them to have the backlog refinement meetings, walk through the stories and understand what is needed as part of the story, get an alignment with the team."
+          },
+          {
+            questionId: "q3",
+            questionText: "Describe how you resolve technical workflow blockers and custom tooling caveats.",
+            format: "video",
+            mediaUrl: "/uploads/screening/screen_1794520165324_session_SCR-1794512265063-672_full_interview.webm",
+            startTime: 160,
+            endTime: 257,
+            duration: 97,
+            transcript: "So the data load story is blocked because of the custom JIRA flow. So even though it is a custom JIRA workflow, we have to work with the tooling team to make sure how the workflow is working. Since the team knows that there is no blocker and we are progressing with the teams, we will work with the team to make sure they are carrying on with the work until we make sure that it is getting resolved. And then we'll make sure we're adding the comments as part of the story, even if it is in blocked state, and make sure we'll work with the tooling team and then see what is the progress, or we can create a separate story. We can move the story to cancel and we can create a separate story. Having all those information, clone the story and make sure it is moving into the right direction."
+          }
+        ]
+      });
+      changed = true;
+    }
   }
 
   // 2. Restore Client Session SCR-CL-1793808077330-279 (Nov 4, 2026 - 43s video)
-  const clientSessionExists = screeningStore.some(s => s.sessionId === 'SCR-CL-1793808077330-279');
-  if (!clientSessionExists) {
-    screeningStore.unshift({
-      sessionId: "SCR-CL-1793808077330-279",
-      candidateId: "C-1793808077",
-      candidateName: "Client Assessment Candidate",
-      candidateEmail: "candidate.client@coolsofttech.com",
-      candidateLocation: "Remote / US",
-      location: "Remote / US",
-      visaStatus: "US Citizen",
-      jobId: "159015",
-      jobTitle: "System Administrator II",
-      jobClient: "State Client",
-      status: "submitted",
-      screeningComplete: true,
-      createdAt: "2026-11-04T15:55:00.000Z",
-      submittedAt: "2026-11-04T16:09:00.000Z",
-      aiScore: 78,
-      recommendation: "Qualified - Recommended for Review",
-      masterMediaUrl: "/uploads/screening/screen_1793808545013_session_SCR-CL-1793808077330-279_full_interview.webm",
-      recruiterName: "Omkesh",
-      createdByName: "Omkesh",
-      recruiterEmail: "omkesh@coolsofttech.com",
-      proctoring: {
-        screenShared: true,
-        fullscreenEnforced: true,
-        tabViolationsCount: 0,
-        integrityScore: 100
-      },
-      responses: [
-        {
-          questionId: "q1",
-          questionText: "Imagine your handling of functional team interfaces and business concepts.",
-          format: "video",
-          mediaUrl: "/uploads/screening/screen_1793808545013_session_SCR-CL-1793808077330-279_full_interview.webm",
-          startTime: 0,
-          endTime: 43,
-          duration: 43,
-          transcript: "Ok, 90 seconds. Imagine your handling of function team interfaces. Business concept has been attributed for your work choice. Confirm your is concentrated..."
-        }
-      ]
-    });
-    changed = true;
+  const clientDeleted = isScreeningSessionDeleted({
+    sessionId: "SCR-CL-1793808077330-279",
+    candidateEmail: "candidate.client@coolsofttech.com",
+    candidateName: "Client Assessment Candidate"
+  });
+  if (!clientDeleted) {
+    const clientSessionExists = screeningStore.some(s => s && s.sessionId === 'SCR-CL-1793808077330-279');
+    if (!clientSessionExists) {
+      screeningStore.unshift({
+        sessionId: "SCR-CL-1793808077330-279",
+        candidateId: "C-1793808077",
+        candidateName: "Client Assessment Candidate",
+        candidateEmail: "candidate.client@coolsofttech.com",
+        candidateLocation: "Remote / US",
+        location: "Remote / US",
+        visaStatus: "US Citizen",
+        jobId: "159015",
+        jobTitle: "System Administrator II",
+        jobClient: "State Client",
+        status: "submitted",
+        screeningComplete: true,
+        createdAt: "2026-11-04T15:55:00.000Z",
+        submittedAt: "2026-11-04T16:09:00.000Z",
+        aiScore: 78,
+        recommendation: "Qualified - Recommended for Review",
+        masterMediaUrl: "/uploads/screening/screen_1793808545013_session_SCR-CL-1793808077330-279_full_interview.webm",
+        recruiterName: "Omkesh",
+        createdByName: "Omkesh",
+        recruiterEmail: "omkesh@coolsofttech.com",
+        proctoring: {
+          screenShared: true,
+          fullscreenEnforced: true,
+          tabViolationsCount: 0,
+          integrityScore: 100
+        },
+        responses: [
+          {
+            questionId: "q1",
+            questionText: "Imagine your handling of functional team interfaces and business concepts.",
+            format: "video",
+            mediaUrl: "/uploads/screening/screen_1793808545013_session_SCR-CL-1793808077330-279_full_interview.webm",
+            startTime: 0,
+            endTime: 43,
+            duration: 43,
+            transcript: "Ok, 90 seconds. Imagine your handling of function team interfaces. Business concept has been attributed for your work choice. Confirm your is concentrated..."
+          }
+        ]
+      });
+      changed = true;
+    }
   }
 
   // 3. Ensure November Job Site Applicants (Rajiv Kumar, Dayareddy Developper, Faizuddin)
@@ -1769,10 +1896,14 @@ function syncScreeningSessions() {
   ];
 
   for (const cand of novJobSiteCandidates) {
-    const email = cand.candidateEmail.toLowerCase().trim();
+    if (isScreeningSessionDeleted(cand)) continue;
+    const email = (cand.candidateEmail || '').toLowerCase().trim();
     const existing = screeningStore.find(s => 
-      (s.candidateEmail && s.candidateEmail.toLowerCase().trim().includes(email)) ||
-      (s.candidateName && s.candidateName.toLowerCase().trim() === cand.candidateName.toLowerCase().trim())
+      s && (
+        (email && s.candidateEmail && s.candidateEmail.toLowerCase().trim() === email) ||
+        (s.candidateName && s.candidateName.toLowerCase().trim() === cand.candidateName.toLowerCase().trim()) ||
+        (s.sessionId && s.sessionId === cand.sessionId)
+      )
     );
     if (!existing) {
       screeningStore.unshift(cand);
@@ -1782,7 +1913,7 @@ function syncScreeningSessions() {
 
   // 4. Sync any additional Job Site candidates from candidatesStore into screeningStore
   const jobSiteCandidates = (candidatesStore || []).filter(c => 
-    c && (
+    c && !isCandidateDeleted(c) && !isScreeningSessionDeleted(c) && (
       c.sourceCategory === 'careers_portal' || 
       c.sourceCategory === 'job_site' || 
       c.appliedFrom === 'Job Site Application' ||
@@ -1791,10 +1922,14 @@ function syncScreeningSessions() {
   );
 
   for (const cand of jobSiteCandidates) {
+    if (isCandidateDeleted(cand) || isScreeningSessionDeleted(cand)) continue;
     const email = String(cand.email || '').toLowerCase().trim();
     const existing = screeningStore.find(s => 
-      (s.candidateEmail && s.candidateEmail.toLowerCase().trim() === email) ||
-      (s.sessionId && cand.screeningSessionId && s.sessionId === cand.screeningSessionId)
+      s && (
+        (email && s.candidateEmail && s.candidateEmail.toLowerCase().trim() === email) ||
+        (s.sessionId && cand.screeningSessionId && s.sessionId === cand.screeningSessionId) ||
+        (cand.name && s.candidateName && s.candidateName.toLowerCase().trim() === cand.name.toLowerCase().trim())
+      )
     );
     if (!existing && cand.name) {
       const sessId = cand.screeningSessionId || `SCR-${new Date(cand.createdAt || Date.now()).getTime()}-${Math.floor(Math.random() * 900 + 100)}`;
@@ -3684,6 +3819,26 @@ app.delete('/api/candidates/:id', authenticateToken, (req, res) => {
   }
   recordCandidateDeleted(removed || targetId);
   saveCandidatesToDisk();
+
+  // Cascade deletion to screeningStore so matching screening session is also permanently removed
+  if (removed) {
+    recordScreeningSessionDeleted(removed);
+    const rId = String(removed.id || removed.candidate_id || '').toLowerCase().trim();
+    const rEm = String(removed.email || '').toLowerCase().trim();
+    const rNm = String(removed.name || '').toLowerCase().trim();
+    screeningStore = (screeningStore || []).filter(s => {
+      if (!s) return false;
+      const sId = String(s.candidateId || s.id || '').toLowerCase().trim();
+      const sEm = String(s.candidateEmail || s.email || '').toLowerCase().trim();
+      const sNm = String(s.candidateName || s.name || '').toLowerCase().trim();
+      if (rId && sId === rId) return false;
+      if (rEm && sEm === rEm) return false;
+      if (rNm && sNm === rNm) return false;
+      return true;
+    });
+    saveScreeningToDisk();
+  }
+
   res.json({ success: true, message: `Candidate ${removed?.name || targetId} removed successfully`, removedId: targetId });
 });
 
@@ -3702,8 +3857,14 @@ app.post('/api/candidates/bulk-delete', authenticateToken, (req, res) => {
     idSet.has(String(c.canId || '').toLowerCase().trim()) ||
     (c.email && idSet.has(String(c.email).toLowerCase().trim()))
   );
-  toDelete.forEach(c => recordCandidateDeleted(c));
-  ids.forEach(id => recordCandidateDeleted(id));
+  toDelete.forEach(c => {
+    recordCandidateDeleted(c);
+    recordScreeningSessionDeleted(c);
+  });
+  ids.forEach(id => {
+    recordCandidateDeleted(id);
+    recordScreeningSessionDeleted(id);
+  });
 
   candidatesStore = candidatesStore.filter(c => 
     !idSet.has(String(c.candidate_id || '').toLowerCase().trim()) && 
@@ -3713,6 +3874,10 @@ app.post('/api/candidates/bulk-delete', authenticateToken, (req, res) => {
   );
   const deletedCount = beforeLen - candidatesStore.length;
   saveCandidatesToDisk();
+
+  screeningStore = (screeningStore || []).filter(s => s && !isScreeningSessionDeleted(s));
+  saveScreeningToDisk();
+
   res.json({ success: true, deletedCount, message: `Successfully deleted ${deletedCount} candidate(s)` });
 });
 
@@ -8191,9 +8356,7 @@ app.get('/api/screening/sessions', authenticateToken, (req, res) => {
   const isManager = userRole === 'manager';
   const isClient = userRole === 'client';
 
-  loadScreeningFromDisk();
-  syncScreeningSessions();
-  let list = [...screeningStore];
+  let list = (screeningStore || []).filter(s => s && !isScreeningSessionDeleted(s));
 
   if (isClient) {
     // Client role: strictly scoped to sessions they created or own
@@ -9167,13 +9330,43 @@ app.post('/api/screening/:sessionId/review', authenticateToken, async (req, res)
 
 // Delete a screening session
 app.delete('/api/screening/:sessionId', (req, res) => {
-  const index = screeningStore.findIndex(s => s.sessionId === req.params.sessionId);
-  if (index === -1) {
-    return res.status(404).json({ success: false, message: 'Screening session not found' });
+  const sessionId = req.params.sessionId;
+  const index = screeningStore.findIndex(s => s && s.sessionId === sessionId);
+  let deletedSession = null;
+  if (index !== -1) {
+    deletedSession = screeningStore.splice(index, 1)[0];
   }
-  screeningStore.splice(index, 1);
+
+  // Permanently record screening session deletion
+  recordScreeningSessionDeleted(deletedSession || sessionId);
+
+  // Cascade deletion to candidatesStore so it never resyncs from candidatesStore
+  if (deletedSession && (deletedSession.candidateId || deletedSession.candidateEmail || deletedSession.candidateName)) {
+    recordCandidateDeleted(deletedSession.candidateId, deletedSession.candidateEmail);
+    if (deletedSession.candidateName) {
+      recordCandidateDeleted(deletedSession.candidateName.toLowerCase().trim());
+    }
+    const cId = String(deletedSession.candidateId || '').toLowerCase().trim();
+    const cEm = String(deletedSession.candidateEmail || '').toLowerCase().trim();
+    const cName = String(deletedSession.candidateName || '').toLowerCase().trim();
+
+    candidatesStore = (candidatesStore || []).filter(c => {
+      if (!c) return false;
+      const cid1 = String(c.id || '').toLowerCase().trim();
+      const cid2 = String(c.candidate_id || '').toLowerCase().trim();
+      const cem = String(c.email || '').toLowerCase().trim();
+      const cnm = String(c.name || '').toLowerCase().trim();
+      if (cId && (cid1 === cId || cid2 === cId)) return false;
+      if (cEm && cem === cEm) return false;
+      if (cName && cnm === cName) return false;
+      return true;
+    });
+    saveCandidatesToDisk();
+  }
+
   saveScreeningToDisk();
-  res.json({ success: true, message: 'Session deleted' });
+  console.log(`🗑️ Permanently deleted screening session ${sessionId} (${deletedSession?.candidateName || deletedSession?.candidateEmail || 'session'}) and cascaded to candidatesStore.`);
+  res.json({ success: true, message: 'Session deleted permanently' });
 });
 
 // Upload resume
@@ -11785,11 +11978,9 @@ app.get('/api/client/portal-data', (req, res) => {
     return res.status(404).json({ success: false, message: 'Client portal not found' });
   }
 
-  loadScreeningFromDisk();
-
   // Multi-tenant isolation: strictly return sessions created by or assigned to this client
   const mySessions = (screeningStore || []).filter(s => {
-    if (!s) return false;
+    if (!s || isScreeningSessionDeleted(s)) return false;
     const cBy = (s.createdByEmail || s.createdBy || s.recruiterEmail || '').toLowerCase().trim();
     const cClient = (s.clientEmail || '').toLowerCase().trim();
     return cBy === email || cClient === email;

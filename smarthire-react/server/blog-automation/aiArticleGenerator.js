@@ -3,9 +3,18 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import https from 'https';
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-const GROQ_API_KEY = process.env.GROQ_API_KEY;
-const GROQ_MODEL = process.env.GROQ_MODEL || 'openai/gpt-oss-120b';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Ensure .env is loaded dynamically from multiple search paths
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+dotenv.config({ path: '/home/ubuntu/smarthire/.env' });
 
 const SYSTEM_PROMPT = `You are the Lead Editorial Director and Chief Research Strategist for SmartHire Publication (smarthireus.com), a premier US IT recruitment, staffing intelligence, and talent platform.
 
@@ -41,6 +50,15 @@ The JSON schema must be:
 
 export async function generateArticleWithAI(topicMeta) {
   const { title, seedAngle, category, tags, suggestedSlug } = topicMeta;
+  const groqApiKey = (process.env.GROQ_API_KEY && process.env.GROQ_API_KEY.trim() && !process.env.GROQ_API_KEY.includes('your_'))
+    ? process.env.GROQ_API_KEY.trim()
+    : '';
+
+  if (!groqApiKey) {
+    throw new Error('Groq API Key is not configured. Please set GROQ_API_KEY in your .env configuration.');
+  }
+
+  const groqModel = process.env.GROQ_MODEL || 'openai/gpt-oss-120b';
 
   const userPrompt = `Write a comprehensive, deep, authoritative editorial article on the following topic:
 
@@ -53,7 +71,7 @@ TARGET AUDIENCE: US IT contractors, enterprise hiring managers, technical recrui
 Provide real salary numbers, C2C hourly rates, practical comparisons, tax math, or enterprise hiring workflows as relevant. Return the response as valid JSON matching the exact specified schema.`;
 
   const requestBody = JSON.stringify({
-    model: GROQ_MODEL,
+    model: groqModel,
     messages: [
       { role: 'system', content: SYSTEM_PROMPT },
       { role: 'user', content: userPrompt }
@@ -71,7 +89,7 @@ Provide real salary numbers, C2C hourly rates, practical comparisons, tax math, 
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${GROQ_API_KEY}`,
+        'Authorization': `Bearer ${groqApiKey}`,
         'Content-Length': Buffer.byteLength(requestBody)
       },
       timeout: 60000

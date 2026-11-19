@@ -475,13 +475,13 @@ export async function scrapeResumesFromIMAP({
           if (uid && hasAttachmentHint && !failedPayloadUids.has(uidKey)) {
             try {
               console.log(`📥 Fetching full RFC822 payload for UID ${uid} (${senderName})...`);
-              const fullRes = await client.sendCommand(`UID FETCH ${uid} (BODY.PEEK[])`, 4000);
+              const fullRes = await client.sendCommand(`UID FETCH ${uid} (BODY.PEEK[])`, 10000);
               if (fullRes && fullRes.length > msgChunk.length) {
                 fullPayload = fullRes;
               }
             } catch (fetchErr) {
               failedPayloadUids.add(uidKey);
-              console.warn(`⚠️ Could not fetch full body for UID ${uid} (cached to prevent repeated timeouts):`, fetchErr.message);
+              console.log(`ℹ️ [IMAP notice] UID ${uid} payload deferred: ${fetchErr.message}`);
             }
           }
 
