@@ -678,7 +678,7 @@ SmartHire Recruitment Team`
         }))
         fetchSessions()
         if (newStatus === 'shortlisted') {
-          alert('✓ Candidate successfully shortlisted for client requisition!')
+          alert('Candidate successfully shortlisted for client requisition!')
         }
       } else {
         alert(data.message || 'Failed to update review')
@@ -1471,9 +1471,10 @@ SmartHire Recruitment Team`
               <tbody>
                 {paginatedSessions.map(session => {
                   const responses = session.responses || []
-                  const hasVideo = responses.some(r => r.format === 'video')
-                  const hasAudio = responses.some(r => r.format === 'audio')
+                  const hasVideo = responses.some(r => r.format === 'video') || Boolean(session.masterMediaUrl || session.videoUrl)
+                  const hasAudio = responses.some(r => r.format === 'audio') || Boolean(session.audioUrl)
                   const hasText = responses.some(r => r.format === 'text')
+                  const isApp = session.format === 'Application' || session.appliedFrom === 'Job Site Application' || Boolean(session.resumePath || session.resumeUrl)
                   const aiScore = session.aiScore || (session.jdMatch?.match_score) || 78
                   const candName = session.candidateName || 'Pending Applicant'
                   const candEmail = session.candidateEmail || (session.status === 'pending' ? 'Screening Link Active' : 'No email yet')
@@ -1536,7 +1537,7 @@ SmartHire Recruitment Team`
                                     gap: '3px'
                                   }}
                                 >
-                                  <span>⚠️ Mismatch: GPS in {locationAudit.actualGpsLocation}</span>
+                                  <span>Mismatch: GPS in {locationAudit.actualGpsLocation}</span>
                                 </span>
                               ) : (
                                 <span
@@ -1554,7 +1555,7 @@ SmartHire Recruitment Team`
                                     gap: '3px'
                                   }}
                                 >
-                                  <span>✓ GPS: {locationAudit.actualGpsLocation}</span>
+                                  <span>GPS: {locationAudit.actualGpsLocation}</span>
                                 </span>
                               )}
                             </div>
@@ -1607,7 +1608,10 @@ SmartHire Recruitment Team`
                           {hasVideo && <span style={styles.formatChipVideo}>Video</span>}
                           {hasAudio && <span style={styles.formatChipAudio}>Audio</span>}
                           {hasText && <span style={styles.formatChipText}>Text</span>}
-                          {!hasVideo && !hasAudio && !hasText && (
+                          {isApp && !hasVideo && !hasAudio && (
+                            <span style={{ fontSize: '11px', color: '#0369a1', background: '#e0f2fe', padding: '2px 8px', borderRadius: '4px', fontWeight: 600 }}>Application</span>
+                          )}
+                          {!hasVideo && !hasAudio && !hasText && !isApp && (
                             <span style={{ fontSize: '11px', color: '#94a3b8' }}>Link Active</span>
                           )}
                         </div>
@@ -3065,7 +3069,7 @@ SmartHire Recruitment Team`
                                     cursor: 'pointer'
                                   }}
                                 >
-                                  {isReEvaluating ? 'Transcribing with AI...' : '⚡ Transcribe Spoken Audio with AI'}
+                                  {isReEvaluating ? 'Transcribing with AI...' : 'Transcribe Spoken Audio with AI'}
                                 </button>
                               </div>
                             )}
