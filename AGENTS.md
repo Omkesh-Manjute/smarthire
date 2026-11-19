@@ -66,6 +66,21 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
     - In resume views, every responsibility, project accomplishment, and contribution line must be formatted with an explicit bullet point (`•`) and proper indentation.
     - The engine must automatically detect responsibilities (lines following `Responsibilities:`, action verbs, or list items) even when converted from plain text or Word documents without literal Unicode bullets.
 
+### 2026-11-20 — Job Sites Data Blinking Fix, Firestore Startup Sync, Public Application Verification & Lightsail Optimization
+- **Issues Addressed & User Feedback**:
+  1. *Candidate Data Blinking / Disappearing on Refresh*: On `/inbox?tab=candidates&category=careers`, candidates appeared momentarily and then disappeared to 0. Root cause: Firestore candidate records from `/jobs` were not being re-synced into memory after a git reset of `candidates.json`, and `/api/recruiter/email-streams` was wiping `targetReqId` and `matchScore` when the requisition was not active in local `jobs.json`.
+  2. *Header Visitor Count & Auto Blog Button Removal*: Removed visitor pill and Auto Blog button from Recruiter Inbox header per user preference. Public visitor traffic to `/jobs` is now logged strictly to server PM2 console logs.
+  3. *Public Candidate Application Flow Verification*: Tested end-to-end application submission on `https://smarthireus.com/jobs` (`POST /api/screening/public-submit`). Confirmed active job vacancies accept candidate applications instantly and save them directly to Firestore and `candidatesStore` under `Job Sites`.
+  4. *AI Video Screening vs Job Sites Clarification*: Confirmed that candidates in `Candidate Video & Audio Screening` are candidates invited to record 1-way video interviews, whereas November applicants applied directly via `/jobs` and belong under `Talent Hub -> Candidates -> Job Sites`.
+  5. *Server Background Blog Cron Deactivation*: Disabled `initDailyBlogCron()` in server startup to eliminate background server load, keeping blog generation runnable locally.
+- **Verification & Deployment Protocol**:
+  - Matching engine unit tests: 42/42 passed.
+  - Production build: `npm run build` in `smarthire-react` completed in 3.19s with 0 errors, 0 warnings (new main bundle `index-B3V6TGR_.js`).
+  - Git committed (`5dd5311`, `a8dd1f8`) and pushed to GitHub `origin main`.
+  - Deployed to AWS Lightsail (`34.194.119.199`), temporary archives deleted immediately, asset bundles pruned (retaining 5 newest `index-*.js`), root volume maintained at 55% (8.5GB free; Rule 5 compliance).
+  - PM2 `smarthire-ats` reloaded and verified online.
+  - Live server verification on `https://smarthireus.com`: HTTP 200 serving bundle `index-B3V6TGR_.js`, `jobSites: 3` verified with Dayareddy, Faizuddin, and Rajiv Kumar permanently visible.
+
 ### 2026-11-20 — Automated AI Daily SEO Blog Generation, Pollinations Hero Image Synthesis & SuperAdmin Automation Hub
 - **User Request & Requirements**:
   - Automatically write and publish high-quality daily SEO articles across diverse pillars (AI & Emerging Tech, Company & Enterprise Staffing, IT Career Guide, Immigration & Visas, Contracting & C2C Rates, Cloud & Data Infrastructure).
