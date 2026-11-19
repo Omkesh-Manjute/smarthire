@@ -66,6 +66,43 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
     - In resume views, every responsibility, project accomplishment, and contribution line must be formatted with an explicit bullet point (`•`) and proper indentation.
     - The engine must automatically detect responsibilities (lines following `Responsibilities:`, action verbs, or list items) even when converted from plain text or Word documents without literal Unicode bullets.
 
+### 2026-11-20 — Automated AI Daily SEO Blog Generation, Pollinations Hero Image Synthesis & SuperAdmin Automation Hub
+- **User Request & Requirements**:
+  - Automatically write and publish high-quality daily SEO articles across diverse pillars (AI & Emerging Tech, Company & Enterprise Staffing, IT Career Guide, Immigration & Visas, Contracting & C2C Rates, Cloud & Data Infrastructure).
+  - Include custom AI-generated 1200x630 hero banner images for every article.
+  - Automatically index into Google sitemap (`sitemap.xml`) and generate static pre-rendered HTML for instant search engine indexing.
+  - Provide SuperAdmin on-demand blog generator modal with category selection and custom topic inputs.
+- **Architecture & Implementation**:
+  1. *Collision-Free Topic Database (`topicDatabase.js`)*:
+     - 6 rich pillars with rotating seed concepts, target SEO keywords, and dynamic slug generation.
+     - Automatically filters out existing slugs and titles in `blogs.json` to guarantee zero duplicate content.
+  2. *Groq 120B Structured Article Generator (`aiArticleGenerator.js`)*:
+     - Uses Groq `openai/gpt-oss-120b` generating 1,500+ word structured HTML articles.
+     - Semantic layout: Executive Takeaways, numbered workflow breakdowns, salary & rate comparison tables, tax calculation math, actionable recruiter/candidate checklists, FAQs, and SmartHire `/jobs` portal CTAs.
+     - Generates SEO meta tags (`metaTitle`, `metaDescription`, OpenGraph, Twitter Cards, JSON-LD Schema).
+  3. *AI Hero Banner Image Synthesis (`aiImageGenerator.js`)*:
+     - Integrates Pollinations AI generating crisp 1200x630 editorial hero banners.
+     - Automatically saves images to `/images/blog/${slug}-hero.jpg` across local `public`, `dist`, and live Nginx `/var/www/html/images/blog/`.
+  4. *Blog Persistence, Static Pre-Rendering & Cron Scheduler (`blogService.js`)*:
+     - Persists articles to `server/blogs.json`.
+     - Generates pre-rendered static HTML in `/blog/${slug}.html` ensuring Googlebot and scrapers receive fully-rendered semantic content with zero client-side JS overhead.
+     - Background cron (`initDailyBlogCron`) checks every hour and triggers automated daily publication if $\ge 23$ hours have elapsed since the last post.
+     - Automatically syncs dynamic URLs to `sitemap.xml` with priority 0.88.
+  5. *Frontend & SuperAdmin UI*:
+     - `Blog.jsx`: Updated to dynamically render rich HTML articles with responsive typography, tables, and callout boxes; updated catalog filters to include AI & Enterprise categories.
+     - `BlogAutomationModal.jsx`: Institutional SuperAdmin control center with category selection, optional custom topic prompt, live progress stages, and published article management.
+     - `RecruiterInbox.jsx`: Added SuperAdmin header action button `Auto Blog` opening the automation modal.
+- **Verification & Deployment Protocol**:
+  - Matching engine unit tests: 42/42 passed.
+  - Production build: `npm run build` in `smarthire-react` completed in 3.19s with 0 errors, 0 warnings.
+  - Git committed (`ab02eaf`, `08bf03e`) and pushed to GitHub `origin main`.
+  - Deployed to AWS Lightsail (`34.194.119.199`), archives deleted immediately, old bundles pruned, root volume maintained at 55% (8.5GB free; Rule 5 compliance).
+  - PM2 `smarthire-ats` restarted and verified online.
+  - Live server verification:
+    - `https://smarthireus.com/api/blogs`: HTTP 200 OK returning published articles.
+    - `https://smarthireus.com/blog/how-enterprise-companies-screen-tech-contractors-with-asynchronous-video-sk`: HTTP 200 OK serving pre-rendered HTML with full SEO meta tags and Pollinations AI hero banner.
+    - `https://smarthireus.com/sitemap.xml`: HTTP 200 OK containing dynamic article URL.
+
 ### 2026-11-20 — High-Concurrency Public Portal Speed Optimization & Lightsail Server Hardening (Jobs Page Sub-Second Overhaul)
 - **Problem & Root Causes Addressed**:
   - *Symptom*: User reported extreme loading latency when opening `https://smarthireus.com/jobs` ("bhaut jada time lag raha hai open hone mai q dekho https://smarthireus.com/jobs ye page and abhi bhut sare canidate apply karne wale hai so slovw nahi hona cahiye okay fast calna cahiye bro").
