@@ -1404,7 +1404,14 @@ async function loadJobsFromDisk() {
   }
 }
 
+// ─── Jobs Response Cache (60s TTL) ──────────────────────────────────────────
+const jobsResponseCache = new Map();
+function invalidateJobsCache() {
+  jobsResponseCache.clear();
+}
+
 async function saveJobsToDisk() {
+  invalidateJobsCache();
   try {
     fs.writeFileSync(jobsDbPath, JSON.stringify(jobsStore, null, 2), 'utf-8');
     if (isMongoConnected) {
@@ -1609,6 +1616,7 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'x-recruiter-email', 'x-recruiter-ref', 'x-recruiter-role', 'x-admin-key']
 }))
+
 app.use((req, res, next) => {
   const proto = req.headers['x-forwarded-proto'];
   if (proto && proto === 'http') {
@@ -1616,6 +1624,7 @@ app.use((req, res, next) => {
   }
   next();
 })
+
 app.use((req, res, next) => {
   const enc = req.headers['accept-encoding'] || '';
   if (!enc.includes('gzip')) return next();
@@ -5276,8 +5285,17 @@ export function isJobExpired(job) {
   return false;
 }
 
-// GET all jobs (auto-checks for expired job deadlines)
+// GET all jobs (auto-checks for expired job deadlines with 60s in-memory response caching)
 app.get('/api/jobs', (_req, res) => {
+  const cacheKey = `${_req.query?.openOnly || ''}_${_req.query?.scope || ''}_${_req.query?.source || ''}_${_req.query?.country || ''}_${Boolean(_req.headers['x-ats-scope'])}`;
+  const now = Date.now();
+  const cached = jobsResponseCache.get(cacheKey);
+  if (cached && (now - cached.time < 60000)) {
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Cache-Control', 'public, max-age=30, stale-while-revalidate=60');
+    return res.send(cached.payload);
+  }
+
   let hasStatusChange = false;
   
   jobsStore.forEach(job => {
@@ -5307,7 +5325,7 @@ app.get('/api/jobs', (_req, res) => {
 
     const dedupeKey = `req_${jobSource}_${cleanI}`;
     if (!uniqueMap.has(dedupeKey)) {
-      uniqueMap.set(dedupeKey, {
+      const cleanJob = {
         ...job,
         id: cleanI,
         reqId: cleanI,
@@ -5316,7 +5334,11 @@ app.get('/api/jobs', (_req, res) => {
         company: jobCompany,
         client: jobClient,
         positionNumber: pNum || ''
-      });
+      };
+      // Eliminate duplicated megabytes of rawDescription & fullDescription
+      delete cleanJob.rawDescription;
+      delete cleanJob.fullDescription;
+      uniqueMap.set(dedupeKey, cleanJob);
     }
   });
 
@@ -5377,7 +5399,7 @@ app.get('/api/jobs', (_req, res) => {
   const indiaCount = poolForCounts.filter(isIndiaJob).length;
   const usaCount = poolForCounts.filter(j => !isIndiaJob(j)).length;
 
-  res.json({
+  const responseData = {
     success: true,
     total: finalJobs.length,
     counts: {
@@ -5388,7 +5410,13 @@ app.get('/api/jobs', (_req, res) => {
       india: indiaCount
     },
     jobs: finalJobs
-  });
+  };
+
+  const jsonStr = JSON.stringify(responseData);
+  jobsResponseCache.set(cacheKey, { time: now, payload: jsonStr });
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Cache-Control', 'public, max-age=30, stale-while-revalidate=60');
+  res.send(jsonStr);
 });
 
 // POST new job
@@ -17524,6 +17552,19 @@ app.get('/robots.txt', (_req, res) => {
   res.type('text/plain').send(`User-agent: *\nAllow: /\nAllow: /jobs\nAllow: /blog\nDisallow: /ats\nDisallow: /dashboard\nDisallow: /screening\nSitemap: https://smarthireus.com/sitemap.xml\n`);
 });
 
+let cachedRawIndexHtml = '';
+let cachedRawIndexMtime = 0;
+function getRawIndexHtml(filePath) {
+  try {
+    const stat = fs.statSync(filePath);
+    if (!cachedRawIndexHtml || stat.mtimeMs > cachedRawIndexMtime) {
+      cachedRawIndexHtml = fs.readFileSync(filePath, 'utf8');
+      cachedRawIndexMtime = stat.mtimeMs;
+    }
+  } catch (_) {}
+  return cachedRawIndexHtml;
+}
+
 app.use((req, res, next) => {
   if ((req.method !== 'GET' && req.method !== 'HEAD') || req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
     return next();
@@ -17567,7 +17608,8 @@ app.use((req, res, next) => {
   const indexPath = path.join(distPath, 'index.html');
   if (fs.existsSync(indexPath)) {
     try {
-      let html = fs.readFileSync(indexPath, 'utf8');
+      let html = getRawIndexHtml(indexPath);
+      if (!html) html = fs.readFileSync(indexPath, 'utf8');
       const canonicalUrl = `https://smarthireus.com${cleanPath || ''}`;
 
       // Inject exact canonical link matching the current route for Googlebot and all crawlers
