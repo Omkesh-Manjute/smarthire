@@ -66,6 +66,30 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
     - In resume views, every responsibility, project accomplishment, and contribution line must be formatted with an explicit bullet point (`•`) and proper indentation.
     - The engine must automatically detect responsibilities (lines following `Responsibilities:`, action verbs, or list items) even when converted from plain text or Word documents without literal Unicode bullets.
 
+### 2026-11-20 — Candidate Categorization Sanitization (App/Mobile Misclassification Fix), AI Comparison Modal Scope Resolution, and Real-Time Visitor Traffic Logging Subsystem
+- **User Inquiries & Root Causes Addressed**:
+  1. *Candidate Data Origin & Misclassification into "App" ("kaha ka data a rha hai rwong to nahi app to lunch to nahi kiya maine fir")*:
+     - *Data Origin*: SmartHire ATS has an automated Yahoo IMAP auto-harvester syncing resumes sent to `omkesh@coolsofttech.com` (Inbox & Spam folders), plus direct submissions made via the Job Sites portal (`/jobs`).
+     - *Root Cause of "App" Tab Pollution*: In `server/index.js` and `RecruiterInbox.jsx`, the classification previously checked `src.includes('app')`. Because the 3-letter substring `'app'` exists in candidate surnames (e.g. Harish Ch**app**idi Senior!), or common words like "Application" and "Applicant", email candidates were mistakenly classified as `sourceCategory = 'mobile_app'`! Additionally, the mobile app check was placed before `email_spam`, diverting spam candidates into the "App" tab.
+     - *Fix*: Removed `src.includes('app')`. Strict classification requires `sourceCategory === 'mobile_app'` or `src.includes('mobile app')`. Handled `spam` and `junk` first. For unlaunched mobile app, `mobileAppCount` accurately computes to 0, and selecting "App" displays a clear empty state: `"No mobile app applications yet. (Mobile application has not been launched yet)."`.
+  2. *AI Candidate Comparison Modal Not Opening on Job Sites (`category=careers`)*:
+     - *Root Cause*: In `RecruiterInbox.jsx`, `handleOpenComparisonModal` evaluated `let resolvedJob = job || selectedRequisitionObj || null;`. `selectedRequisitionObj` was never declared in scope, triggering `Uncaught ReferenceError: selectedRequisitionObj is not defined` whenever clicking `AI Compare Applicants` or `Compare Selected (2)`, immediately crashing execution before opening the modal.
+     - *Fix*: Replaced undeclared variable with safe multi-tier job resolution: `job` argument -> `streamReqFilter` lookup in `openJobsList` -> `list[0]?.targetReqId` lookup in `openJobsList` -> dynamic fallback synthesized job definition. Hardened `CandidateComparisonModal.jsx` with `useRef` to guarantee `removedIds` is never stale on modal transitions.
+  3. *Real-Time Visitor & User Traffic Logging Subsystem ("log mai batana cahiye kitne user a rahe hai ya nahi")*:
+     - *Implementation*:
+       - Added `VisitorTracker` in `App.jsx` sending keepalive POST pings to `/api/analytics/track` on every client route transition (`/jobs`, `/careers`, `/`, `/blog`, `/inbox`).
+       - Server tracks real client IP (`x-forwarded-for`), visitor UUID, page path, referrer, and device, persisting daily metrics to `traffic_analytics.json`.
+       - Continuous live PM2 console output: `🆕 [New Visitor] / 👁️ [Page Hit] <IP> [<role>] visited "<page>" (<device>) | Today: X users (Y IPs), Z total views`.
+       - Automatic 15-minute PM2 Traffic Summary banner in server logs.
+       - SuperAdmin live traffic pill in `RecruiterInbox.jsx` header showing `{X} Visitors Today ({Y} Views)` with an interactive modal displaying unique visitors, total pageviews, active users in the last 15 mins, public applications submitted, page breakdown, and recent hit log.
+- **Verification & Deployment Protocol**:
+  - Matching engine unit tests: 42/42 passed.
+  - Production build: `npm run build` in `smarthire-react` completed in 3.37s with 0 errors, 0 warnings (new main bundle `index-ERkT_zr7.js`, `RecruiterInbox-DCAW13oN.js`).
+  - Git committed (`9f82722`) and pushed to GitHub `origin main`.
+  - Deployed to AWS Lightsail (`34.194.119.199`), temporary archives deleted immediately, asset bundles pruned (retaining 5 newest `index-*.js`), root volume maintained at 55% (8.4GB free; Rule 5 compliance).
+  - PM2 `smarthire-ats` reloaded and verified online.
+  - Live server verification on `https://smarthireus.com`: HTTP 200 serving bundle `index-ERkT_zr7.js`, live `POST /api/analytics/track` verified recording hits and logging to PM2, live `GET /api/analytics/traffic` verified returning metrics, live `mobileAppCount` verified at 0.
+
 ### 2026-11-19 — Candidate Comparison Modal Activation & Outer Branding Sanitization (Coolsoft Removal)
 - **Root Cause & Fix for Candidate Comparison Matrix ("Compare Selected (2) Not Working")**:
   1. *Premature Null Return in `CandidateComparisonModal.jsx`*:
