@@ -66,6 +66,34 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
     - In resume views, every responsibility, project accomplishment, and contribution line must be formatted with an explicit bullet point (`•`) and proper indentation.
     - The engine must automatically detect responsibilities (lines following `Responsibilities:`, action verbs, or list items) even when converted from plain text or Word documents without literal Unicode bullets.
 
+### 2026-11-20 — Unified "IBM Plex Sans" Typography, Structured Job Description Overhaul & AWS Lightsail Live Deployment
+- **User Request & Requirements**:
+  - Apply clean, consistent typographic hierarchy based on `"IBM Plex Sans"` globally across all components, containers, and views.
+  - Standardize job description structure with proper section hierarchy (Overview, Responsibilities, Requirements) and support clean semantic HTML delivery/sharing format.
+  - Visual screenshot verification of all key views before release.
+- **Architectural & Implementation Details**:
+  1. *Global Typography Stack & Metric Fallbacks*:
+     - Root elements (`html`, `:host`, `.font-sans`) configured with `"IBM Plex Sans"` as primary font, `"IBM Plex Sans Fallback"` with `@font-face` metric overrides to eliminate CLS, and system sans-serif fallback stack.
+     - Pruned all competing and legacy font family declarations (`Plus Jakarta Sans`, `Barlow`, `Outfit`, `Inter`, `Arial`) across 25+ component files (0 occurrences of competing fonts remain in `src/`).
+  2. *Typographic Weight & Sizing Hierarchy*:
+     - Standardized page headings to prominent bold 700 (`24px/32px`) (e.g. "Manage Jobs", "Jobs"), section headings to 700 (`18px/26px`), primary action buttons to bold 700/600 (`+ Post Jobs`, `Apply Now`), and form controls/inputs/metadata to regular weight 400.
+  3. *Structured Job Description AST Parser & HTML Generator*:
+     - `parseJobDescriptionToAST` in `formatJobDescription.js`: Parses unstructured descriptions into structured sections while strictly preserving requirement bullet numbers (e.g. "10+ years", "24/7 support").
+     - `formatJobDescriptionHtml`: Generates clean, semantic HTML (`<h3>`, `<p>`, `<ul>`, `<li>`) styled with `"IBM Plex Sans"`.
+     - Multi-MIME clipboard copy utility (`copyJobDescriptionToClipboard`) for 1-click formatted HTML and plain text export.
+     - Integrated rich `<JobDescriptionView>` component into `JobsModule.jsx` modal and email dispatch helper `autoSendJdHelper.js`.
+  4. *Visual Verification*:
+     - Captured and verified 4 high-resolution visual screenshots (`screenshots/01_public_careers.png`, `02_manage_jobs.png`, `03_job_description_modal.png`, `04_recruiter_dashboard.png`).
+- **Dual-Sync Production Deployment & Verification Protocol**:
+  - `npm run build` in `smarthire-react`: 0 errors, 0 warnings (generated `index-bn1XhLfj.js`, `index-HTPME41y.css`).
+  - Unit tests: 42/42 tests passed in `ats_matching_engine.test.js`.
+  - Git committed (`ab197f2`) and pushed to GitHub `origin main`.
+  - Deployed to AWS Lightsail server (`34.194.119.199`), bundle extracted to `/var/www/html/assets/` and `/home/ubuntu/smarthire/dist/assets/`, temporary archives deleted immediately.
+  - Asset pruning: Retained exactly 5 newest `index-*.js` bundles in `/var/www/html/assets/`.
+  - Root volume maintained healthy: 8.5GB free (55% used, safe threshold $\ge 40\%$).
+  - PM2 `smarthire-ats` online (PID 798910, 0% CPU, 76MB RAM, 0 error logs).
+  - Live domain verification: `https://smarthireus.com` and `https://smarthireus.com/jobs` verified HTTP 200 OK serving `index-bn1XhLfj.js` with sub-second response times (<0.85s).
+
 ### 2026-11-20 — Permanent Screening Deletion Registry, Cascade Candidate Deletion, Removal of Synchronous Re-Sync, & Zero-Error Server Hardening
 - **User Issue & Findings**:
   - *Symptom*: User reported that when deleting a screening session or candidate (e.g. `Omkesh Test Applicant` or others) from `Candidate Video & Audio Screening`, the session reappeared—often duplicated ("double vapas a raha hai")—after refreshing the page. User also noted PM2 error logs (`Error: Groq API Error: Invalid API Key` and IMAP timeout warnings) and demanded all live server errors be eliminated.
