@@ -872,7 +872,7 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
                 </div>
               ) : (
                 <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left', background: '#ffffff', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left', background: '#ffffff', fontFamily: 'inherit' }}>
                     <thead>
                       <tr style={{ background: '#F1F5F9', color: '#334155', borderBottom: '1px solid #CBD5E1' }}>
                         <th style={{ padding: '8px 10px', border: '1px solid #CBD5E1', fontWeight: '700', fontSize: '11px', textAlign: 'center', width: '42px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>#</th>
@@ -1575,7 +1575,7 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
         {subTab === 'candidates' && (
           <div style={{ background: '#ffffff', border: '1px solid #CBD5E1', borderRadius: '4px', overflow: 'hidden' }}>
             <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left', background: '#ffffff', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left', background: '#ffffff', fontFamily: 'inherit' }}>
                 <thead>
                   <tr style={{ background: '#F1F5F9', borderBottom: '1px solid #CBD5E1' }}>
                     <th style={{ padding: '8px 10px', fontWeight: '700', fontSize: '11px', color: '#334155', textTransform: 'uppercase', letterSpacing: '0.05em', borderRight: '1px solid #CBD5E1', width: '40px', textAlign: 'center' }}>#</th>
@@ -2518,9 +2518,9 @@ export default function UsersModule({ allCandidates, permissions, setPermissions
           gap: 20px;
         }
         .users-title {
-          font-family: 'Plus Jakarta Sans', sans-serif;
+          font-family: inherit;
           font-size: 24px;
-          font-weight: 800;
+          font-weight: 700;
           margin: 0 0 4px;
           color: var(--ink);
         }

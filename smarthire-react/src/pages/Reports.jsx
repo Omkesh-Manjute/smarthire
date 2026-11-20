@@ -503,7 +503,7 @@ function Reports() {
 
   return (
     <SiteLayout>
-      <div style={{ background: '#f1f5f9', minHeight: '92vh', paddingBottom: '40px', fontFamily: 'Arial, sans-serif' }}>
+      <div style={{ background: '#f1f5f9', minHeight: '92vh', paddingBottom: '40px', fontFamily: 'inherit' }}>
         
         {/* ═══════════ TOP BREADCRUMB ═══════════ */}
         <div style={{ background: '#ffffff', borderBottom: '1px solid #cbd5e1', padding: '6px 18px', fontSize: '11px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -745,12 +745,12 @@ function Reports() {
             {activeSubReport === 'smarthire-careers-summary' && (
               <div style={{ border: '1px solid #000000', padding: '12px', background: '#ffffff' }}>
                 
-                <h2 style={{ margin: '0 0 10px', fontSize: '20px', color: '#000000', fontWeight: 'bold', fontFamily: 'Georgia, serif' }}>
+                <h2 style={{ margin: '0 0 10px', fontSize: '20px', color: '#000000', fontWeight: 700, fontFamily: 'inherit' }}>
                   SmartHire Careers Candidate Summary
                 </h2>
 
                 <div style={{ overflowX: 'auto' }}>
-                  <table className="coolworks-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10.5px', textAlign: 'left', border: '1px solid #708090', fontFamily: 'Arial, Helvetica, sans-serif', background: '#ffffff' }}>
+                  <table className="coolworks-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10.5px', textAlign: 'left', border: '1px solid #708090', background: '#ffffff' }}>
                     <thead>
                       <tr style={{ background: '#708090', color: '#ffffff', borderBottom: '1px solid #4a5568' }}>
                         <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', width: '85px', fontSize: '11px' }}>FNAME</th>
@@ -808,7 +808,7 @@ function Reports() {
                 </div>
 
                 <div style={{ overflowX: 'auto' }}>
-                  <table className="coolworks-table" style={{ width: '100%', maxWidth: '780px', borderCollapse: 'collapse', fontSize: '10.5px', textAlign: 'left', border: '1px solid #708090', fontFamily: 'Arial, Helvetica, sans-serif', background: '#ffffff' }}>
+                  <table className="coolworks-table" style={{ width: '100%', maxWidth: '780px', borderCollapse: 'collapse', fontSize: '10.5px', textAlign: 'left', border: '1px solid #708090', background: '#ffffff' }}>
                     <thead>
                       <tr style={{ background: '#708090', color: '#ffffff', borderBottom: '1px solid #4a5568' }}>
                         <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', width: '110px', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Submission Date ↕</th>
@@ -862,7 +862,7 @@ function Reports() {
                 </h3>
 
                 <div style={{ overflowX: 'auto' }}>
-                  <table className="coolworks-table" style={{ width: '100%', maxWidth: '640px', borderCollapse: 'collapse', fontSize: '10.5px', textAlign: 'left', border: '1px solid #708090', fontFamily: 'Arial, Helvetica, sans-serif', background: '#ffffff' }}>
+                  <table className="coolworks-table" style={{ width: '100%', maxWidth: '640px', borderCollapse: 'collapse', fontSize: '10.5px', textAlign: 'left', border: '1px solid #708090', background: '#ffffff' }}>
                     <thead>
                       <tr style={{ background: '#708090', color: '#ffffff', borderBottom: '1px solid #4a5568' }}>
                         <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', width: '100px', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Assigned Date</th>

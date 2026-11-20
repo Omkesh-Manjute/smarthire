@@ -2,6 +2,8 @@
  * Auto-Send Job Description to Candidate upon Requisition Assignment
  * Dispatches via logged-in recruiter's configured Yahoo/SMTP account
  */
+import { formatJobDescriptionHtml, formatJobDescriptionText } from './formatJobDescription';
+
 // In-memory client deduplication map (prevents any duplicate dispatches within 60s)
 const sentJdDedupMap = new Map();
 
@@ -39,17 +41,13 @@ export async function autoSendJobDescriptionToCandidate({ candidate, job, recrui
   const skillsStr = skillsList.slice(0, 8).join(', ');
 
   // Format JD text snippet (clean line breaks)
-  let jdSnippet = job?.description || job?.fullDescription || job?.jobDescription || candidate?.notes || '';
-  // Clean internal ASCII dividers if present
-  jdSnippet = jdSnippet.replace(/={5,}/g, '').replace(/-{5,}/g, '').trim();
-  if (jdSnippet.length > 2000) {
-    jdSnippet = jdSnippet.slice(0, 1950) + '...\n\n[Full specifications available upon confirmation]';
-  }
+  const rawJdText = job?.description || job?.fullDescription || job?.jobDescription || candidate?.notes || '';
+  const jdSnippet = rawJdText ? formatJobDescriptionText(rawJdText, job) : '';
 
   const subject = `Opportunity: ${jobTitle} - ${clientName} (Req #${cleanReqId})`;
 
   const htmlBody = `
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 680px; margin: 0 auto; line-height: 1.6; color: #1e293b; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 24px;">
+    <div style="font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 680px; margin: 0 auto; line-height: 1.6; color: #1e293b; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 24px;">
       <p style="font-size: 15px; margin-top: 0; color: #0f172a;">
         Hi <strong>${candName}</strong>,
       </p>
@@ -93,13 +91,11 @@ export async function autoSendJobDescriptionToCandidate({ candidate, job, recrui
         </table>
       </div>
 
-      <!-- Job Description Extract -->
-      ${jdSnippet ? `
+      <!-- Job Description Extract (Structured Semantic HTML) -->
+      ${rawJdText ? `
       <div style="margin: 22px 0;">
-        <h4 style="margin: 0 0 8px; font-size: 14px; font-weight: 700; color: #0f172a;">Role Description &amp; Responsibilities:</h4>
-        <div style="background: #fafafa; border: 1px solid #e2e8f0; border-radius: 6px; padding: 16px; font-size: 13px; line-height: 1.6; color: #334155; white-space: pre-line;">
-          ${jdSnippet}
-        </div>
+        <h4 style="margin: 0 0 10px; font-size: 14px; font-weight: 700; color: #0f172a;">Role Description &amp; Responsibilities:</h4>
+        ${formatJobDescriptionHtml(rawJdText, job, { emailSafe: true, includeMetaTable: false })}
       </div>
       ` : ''}
 

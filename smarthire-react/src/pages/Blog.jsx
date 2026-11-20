@@ -290,7 +290,7 @@ function BlogPostContent({ post, allPosts }) {
         }}
       />
 
-      <article style={{ maxWidth: 780, margin: '0 auto', padding: '0 22px 80px', fontFamily: "'Inter', -apple-system, sans-serif" }}>
+      <article style={{ maxWidth: 780, margin: '0 auto', padding: '0 22px 80px', fontFamily: 'inherit' }}>
         {/* WordPress Editorial Breadcrumb */}
         <nav aria-label="Breadcrumb" style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 13, color: '#64748B', padding: '28px 0 16px', flexWrap: 'wrap' }}>
           <Link to="/" style={{ color: '#0D6B5F', textDecoration: 'none', fontWeight: 500 }}>Home</Link>
@@ -314,7 +314,7 @@ function BlogPostContent({ post, allPosts }) {
         </div>
 
         {/* H1 Headline */}
-        <h1 style={{ fontSize: 'clamp(28px, 4.5vw, 42px)', fontWeight: 800, color: '#111827', lineHeight: 1.25, margin: '0 0 20px', letterSpacing: '-0.025em', fontFamily: "Georgia, Cambria, 'Times New Roman', serif" }}>
+        <h1 style={{ fontSize: 'clamp(28px, 4.5vw, 42px)', fontWeight: 700, color: '#111827', lineHeight: 1.25, margin: '0 0 20px', letterSpacing: '-0.025em', fontFamily: 'inherit' }}>
           {post.title}
         </h1>
 
@@ -577,13 +577,13 @@ function BlogIndex({ allPosts }) {
   const isDefaultView = selectedCategory === 'All' && !searchQuery
 
   return (
-    <div style={{ maxWidth: 1140, margin: '0 auto', padding: '0 24px 80px', fontFamily: "'Inter', -apple-system, sans-serif" }}>
+    <div style={{ maxWidth: 1140, margin: '0 auto', padding: '0 24px 80px', fontFamily: 'inherit' }}>
       {/* WordPress Publication Masthead */}
       <header style={{ textAlign: 'center', padding: '52px 0 36px', borderBottom: '1px solid #E5E7EB' }}>
         <div style={{ display: 'inline-block', fontSize: 12, fontWeight: 700, color: '#0D6B5F', backgroundColor: '#E6F4F1', padding: '4px 14px', borderRadius: 4, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 14 }}>
           Editorial Intelligence
         </div>
-        <h1 style={{ fontSize: 'clamp(32px, 5vw, 48px)', fontWeight: 800, color: '#111827', margin: '0 0 14px', letterSpacing: '-0.03em', lineHeight: 1.15, fontFamily: "Georgia, Cambria, serif" }}>
+        <h1 style={{ fontSize: 'clamp(32px, 5vw, 48px)', fontWeight: 700, color: '#111827', margin: '0 0 14px', letterSpacing: '-0.03em', lineHeight: 1.15, fontFamily: 'inherit' }}>
           SmartHire IT Staffing & Career Publication
         </h1>
         <p style={{ fontSize: 17, color: '#4B5563', lineHeight: 1.65, maxWidth: 680, margin: '0 auto', fontWeight: 400 }}>
@@ -707,7 +707,7 @@ function BlogIndex({ allPosts }) {
               <div style={{ fontSize: 12, fontWeight: 700, color: '#0D6B5F', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
                 {leadPost.category} · {leadPost.readTime}
               </div>
-              <h2 style={{ fontSize: 'clamp(22px, 3vw, 30px)', fontWeight: 800, color: '#111827', margin: '0 0 14px', lineHeight: 1.3, letterSpacing: '-0.02em', fontFamily: "Georgia, Cambria, serif" }}>
+              <h2 style={{ fontSize: 'clamp(22px, 3vw, 30px)', fontWeight: 700, color: '#111827', margin: '0 0 14px', lineHeight: 1.3, letterSpacing: '-0.02em', fontFamily: 'inherit' }}>
                 {leadPost.title}
               </h2>
               <p style={{ fontSize: 15.5, color: '#4B5563', lineHeight: 1.65, margin: '0 0 22px' }}>
@@ -804,7 +804,7 @@ function BlogIndex({ allPosts }) {
                       <span>{post.date}</span>
                     </div>
 
-                    <h3 style={{ fontSize: 18, fontWeight: 800, color: '#111827', margin: '0 0 10px', lineHeight: 1.35, letterSpacing: '-0.015em', fontFamily: "Georgia, Cambria, serif" }}>
+                    <h3 style={{ fontSize: 18, fontWeight: 700, color: '#111827', margin: '0 0 10px', lineHeight: 1.35, letterSpacing: '-0.015em', fontFamily: 'inherit' }}>
                       {post.title}
                     </h3>
 
@@ -828,7 +828,7 @@ function BlogIndex({ allPosts }) {
       {/* WordPress Newsletter / Direct Client Staffing Banner */}
       <section style={{ backgroundColor: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 10, padding: '36px 40px', marginTop: 56, display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
-          <h2 style={{ fontSize: 20, fontWeight: 800, color: '#111827', margin: '0 0 6px', fontFamily: "Georgia, Cambria, serif" }}>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: '#111827', margin: '0 0 6px', fontFamily: 'inherit' }}>
             Explore Verified US Direct-Client Requisitions
           </h2>
           <p style={{ color: '#4B5563', margin: 0, fontSize: 14.5, lineHeight: 1.6 }}>

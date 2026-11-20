@@ -130,8 +130,7 @@ function Pricing() {
             <div style={{ textAlign: 'center', marginBottom: '28px' }}>
               <span className="pricing-eyebrow">SIDE-BY-SIDE COMPARISON</span>
               <h2 style={{
-                fontFamily: "'Plus Jakarta Sans', sans-serif",
-                fontSize: '26px', fontWeight: '800', color: 'var(--ink)',
+                fontSize: '26px', fontWeight: '700', color: 'var(--ink)',
                 margin: '10px 0 8px', letterSpacing: '-0.015em'
               }}>
                 How SmartHire Compares to the Market
@@ -421,9 +420,8 @@ function Pricing() {
           margin-bottom: 12px;
         }
         .pricing-title {
-          font-family: 'Plus Jakarta Sans', sans-serif;
           font-size: 36px;
-          font-weight: 800;
+          font-weight: 700;
           letter-spacing: -0.02em;
           color: var(--ink);
           margin: 0 0 14px;
@@ -512,8 +510,7 @@ function Pricing() {
         /* Card Header */
         .plan-card-header { margin-bottom: 22px; }
         .plan-name {
-          font-family: 'Plus Jakarta Sans', sans-serif;
-          font-size: 19px; font-weight: 800; color: var(--ink);
+          font-size: 19px; font-weight: 700; color: var(--ink);
         }
         .plan-desc {
           font-size: 13px; color: var(--ink-soft);
@@ -523,7 +520,7 @@ function Pricing() {
           display: flex; align-items: baseline; color: var(--ink);
         }
         .currency { font-size: 20px; font-weight: 700; margin-right: 2px; }
-        .price-value { font-size: 40px; font-weight: 800; letter-spacing: -0.03em; }
+        .price-value { font-size: 40px; font-weight: 700; letter-spacing: -0.03em; }
         .billing-period { font-size: 13px; color: var(--ink-soft); font-weight: 500; margin-left: 4px; }
         .yearly-disclaimer {
           display: block; font-size: 11px;
@@ -570,8 +567,7 @@ function Pricing() {
         /* USP Grid */
         .usp-container-block { border-top: 1px solid var(--line); padding-top: 72px; margin-top: 20px; }
         .usp-section-title {
-          font-family: 'Plus Jakarta Sans', sans-serif;
-          font-size: 26px; font-weight: 800; color: var(--ink);
+          font-size: 26px; font-weight: 700; color: var(--ink);
           margin: 10px 0 10px; letter-spacing: -0.015em;
         }
         .usp-grid-layout {
@@ -590,8 +586,7 @@ function Pricing() {
         .usp-card-item:hover { box-shadow: 0 6px 20px rgba(0,0,0,0.05); }
         .usp-card-icon { font-size: 22px; margin-bottom: 12px; }
         .usp-card-title {
-          font-family: 'Plus Jakarta Sans', sans-serif;
-          font-size: 14.5px; font-weight: 800; color: var(--ink); margin: 0 0 7px;
+          font-size: 14.5px; font-weight: 700; color: var(--ink); margin: 0 0 7px;
         }
         .usp-card-text { font-size: 12.5px; color: var(--ink-soft); line-height: 1.5; margin: 0; }
       `}</style>

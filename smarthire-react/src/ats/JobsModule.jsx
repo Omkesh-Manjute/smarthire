@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { saveAtsJob } from '../lib/atsFirestore'
 import { pushActivityNotification } from '../components/ActivityNotificationBell'
 import { formatJobDescription, resolveJobLocation, cleanJobTitleWithPositionNumber, resolveReqId } from '../utils/formatJobDescription'
+import JobDescriptionView from '../components/JobDescriptionView'
 
 function JobsModule({
   jobsList = [], allCandidates = [], submissions = [],
@@ -472,11 +473,23 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
     return matchStatus && matchSource && matchSearch
   })
 
-  const inputStyle = { width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 13, background: '#ffffff', color: '#0f172a', boxSizing: 'border-box' }
+  const inputStyle = { width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 13, fontWeight: 400, fontStyle: 'normal', background: '#ffffff', color: '#0f172a', boxSizing: 'border-box' }
   const labelStyle = { fontSize: 11, fontWeight: 700, display: 'block', marginBottom: 4, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em' }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+      {/* ── TOP-LEVEL PAGE HEADING ───────────────────────────────── */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <h1 style={{ margin: 0, fontSize: 24, lineHeight: '32px', fontWeight: 700, color: '#0f172a', fontStyle: 'normal', letterSpacing: '-0.02em' }}>
+            Manage Jobs
+          </h1>
+          <p style={{ margin: '4px 0 0', fontSize: 13, color: '#64748b', fontStyle: 'normal' }}>
+            Overview, post new vacancies, and manage direct client requisitions
+          </p>
+        </div>
+      </div>
 
       {/* Light Theme KPI Row — Showing Total, COOLSOFT & InfoOrigin Breakdown */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 14 }}>
@@ -492,7 +505,7 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
               {kpi.svg}
             </div>
             <div>
-              <div style={{ fontSize: 24, fontWeight: 800, color: '#0f172a', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>{kpi.value}</div>
+              <div style={{ fontSize: 24, fontWeight: 700, color: '#0f172a' }}>{kpi.value}</div>
               <div style={{ fontSize: 11, color: '#64748b', fontWeight: 600 }}>{kpi.label}</div>
             </div>
           </div>
@@ -503,7 +516,7 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
       <div style={{ background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: 14, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: showPostForm ? 16 : 0 }}>
           <div>
-            <h3 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#111827', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <h3 style={{ margin: 0, fontSize: 18, lineHeight: '26px', fontWeight: 700, fontStyle: 'normal', color: '#111827', display: 'flex', alignItems: 'center', gap: 8 }}>
               Post a Job
               {!isSuperAdmin && recruiterInfo?.refCode && (
                 <span style={{ fontSize: 11, background: '#eef2ff', color: '#6366f1', border: '1px solid #c7d2fe', borderRadius: 20, padding: '2px 9px', fontWeight: 700 }}>
@@ -610,7 +623,7 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
       <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 14, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
           <div>
-            <h3 style={{ margin: 0, fontFamily: 'Plus Jakarta Sans', color: '#0f172a', fontSize: 15, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <h3 style={{ margin: 0, color: '#0f172a', fontSize: 18, lineHeight: '26px', fontWeight: 700, fontStyle: 'normal', display: 'flex', alignItems: 'center', gap: 8 }}>
               AI Job Description Parser
             </h3>
             <p style={{ margin: '3px 0 0', fontSize: 12, color: '#64748b' }}>Paste raw JD below — AI extracts title, client, skills, budget, location automatically</p>
@@ -638,7 +651,7 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
       {/* Jobs Header & Controls */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h3 style={{ margin: 0, fontFamily: 'Plus Jakarta Sans', color: '#0f172a', fontSize: 16 }}>Active Job Postings</h3>
+          <h3 style={{ margin: 0, color: '#0f172a', fontSize: 18, lineHeight: '26px', fontWeight: 700, fontStyle: 'normal' }}>Active Job Postings</h3>
           <div style={{ fontSize: 12, color: '#16a34a', marginTop: 2, display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600 }}>
             <span style={{ display: 'inline-block', width: 7, height: 7, borderRadius: '50%', background: '#16a34a' }} />
             Click any job title to expand & read full description below
@@ -734,7 +747,7 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
 
       {/* Active Jobs Table (Zoho CRM Clean Layout) */}
       <div style={{ overflowX: 'auto', border: '1px solid #e2e8f0', borderRadius: '8px', background: '#ffffff', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', background: '#ffffff' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left', fontFamily: 'inherit', background: '#ffffff' }}>
           <thead>
             <tr style={{ background: '#f8fafc', color: '#475569', borderBottom: '1px solid #e2e8f0' }}>
               <th style={{ padding: '10px 14px', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Req#</th>
@@ -776,7 +789,7 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
                     onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f8fafc'}
                     onMouseLeave={e => e.currentTarget.style.backgroundColor = '#ffffff'}
                   >
-                    <td style={{ padding: '10px 14px', color: '#2563eb', fontWeight: '700', whiteSpace: 'nowrap' }}>
+                    <td style={{ padding: '10px 14px', color: '#2563eb', fontWeight: '400', whiteSpace: 'nowrap' }}>
                       <span onClick={() => setJdModalJob(job)} style={{ cursor: 'pointer' }} title="View Requisition">
                         {displayReqId}
                       </span>
@@ -792,7 +805,7 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
                           padding: '2px 7px',
                           borderRadius: '4px',
                           fontSize: '11px',
-                          fontWeight: '700',
+                          fontWeight: '500',
                           background: isInfoOrigin ? '#eef2ff' : '#eff6ff',
                           color: isInfoOrigin ? '#4f46e5' : '#1d4ed8',
                           border: `1px solid ${isInfoOrigin ? '#c7d2fe' : '#bfdbfe'}`
@@ -812,7 +825,7 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
                         padding: '2px 7px',
                         borderRadius: '4px',
                         fontSize: '11px',
-                        fontWeight: '600',
+                        fontWeight: '400',
                         background: workMode === 'Remote' ? '#ecfdf5' : workMode === 'Hybrid' ? '#fef3c7' : '#eff6ff',
                         color: workMode === 'Remote' ? '#047857' : workMode === 'Hybrid' ? '#b45309' : '#1d4ed8',
                         border: `1px solid ${workMode === 'Remote' ? '#a7f3d0' : workMode === 'Hybrid' ? '#fde68a' : '#bfdbfe'}`
@@ -831,7 +844,7 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
                         padding: '2px 8px',
                         borderRadius: '4px',
                         fontSize: '11px',
-                        fontWeight: '700',
+                        fontWeight: '500',
                         background: (job.status || '').toLowerCase() === 'closed' ? '#fee2e2' : '#ecfdf5',
                         color: (job.status || '').toLowerCase() === 'closed' ? '#b91c1c' : '#047857',
                         border: `1px solid ${(job.status || '').toLowerCase() === 'closed' ? '#fca5a5' : '#a7f3d0'}`
@@ -931,7 +944,7 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
                 <span style={{ fontSize: 11, fontWeight: 700, color: '#0a66c2', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                   LinkedIn Post Generator & Formatter
                 </span>
-                <h3 style={{ margin: '4px 0 0', fontSize: 18, fontFamily: 'Plus Jakarta Sans', color: '#0f172a', fontWeight: 800 }}>
+                <h3 style={{ margin: '4px 0 0', fontSize: 18, lineHeight: '26px', color: '#0f172a', fontWeight: 700, fontStyle: 'normal' }}>
                   LinkedIn Hiring Post for "{linkedinModalJob.title}"
                 </h3>
               </div>
@@ -1047,7 +1060,7 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
                   </span>
                   <span style={{ fontSize: 12, color: '#64748b' }}>· Req #{resolveReqId(jdModalJob.reqId || jdModalJob.id, jdModalJob)}</span>
                 </div>
-                <h2 style={{ margin: 0, color: '#0f172a', fontFamily: 'Plus Jakarta Sans, sans-serif', fontSize: 22, fontWeight: 800 }}>{jdModalJob.title}</h2>
+                <h2 style={{ margin: 0, color: '#0f172a', fontSize: 22, fontWeight: 700, fontStyle: 'normal' }}>{jdModalJob.title}</h2>
                 <div style={{ color: '#2563eb', fontSize: 13, marginTop: 4, fontWeight: 700 }}>
                   {resolveJobLocation(jdModalJob)} · {jdModalJob.workMode || jdModalJob.work_mode || 'Onsite'}
                 </div>
@@ -1058,76 +1071,15 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
               </button>
             </div>
 
-            {/* Position Overview Grid (Matching Screenshot 2) */}
-            <div style={{ marginBottom: 22, background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, padding: '16px 18px' }}>
-              <div style={{ fontSize: 12, fontWeight: 800, color: '#1e293b', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Position Overview
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px 16px' }}>
-                {[
-                  { label: 'JOB TYPE', val: jdModalJob.type || jdModalJob.employment_type || 'Contract' },
-                  { label: 'CATEGORY', val: jdModalJob.category || 'IT' },
-                  { label: 'REQ ID', val: resolveReqId(jdModalJob.reqId || jdModalJob.id, jdModalJob) },
-                  { label: 'COUNTRY', val: jdModalJob.country || 'USA' },
-                  { label: 'INTERVIEW TYPE', val: jdModalJob.interviewType || 'Video or In Person' },
-                  { label: 'DURATION', val: jdModalJob.duration || 'Long Term' },
-                  { label: 'WORK PREFERENCE', val: jdModalJob.workMode || jdModalJob.work_mode || 'Onsite' },
-                  { label: 'WORK LOCATION', val: resolveJobLocation(jdModalJob) },
-                ].map(m => (
-                  <div key={m.label}>
-                    <div style={{ fontSize: 10.5, color: '#64748b', fontWeight: 700, letterSpacing: '0.04em' }}>{m.label}</div>
-                    <div style={{ fontSize: 13, color: '#0f172a', fontWeight: 800, marginTop: 2 }}>{m.val}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Skills Layout */}
-            <div style={{ display: 'flex', gap: 20, marginBottom: 20, flexWrap: 'wrap' }}>
-              {/* Required Skills */}
-              {Array.isArray(jdModalJob.skills) && jdModalJob.skills.length > 0 && (
-                <div style={{ flex: '1 1 200px' }}>
-                  <div style={{ fontSize: 11, color: '#64748b', fontWeight: 700, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Required Skills</div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                    {jdModalJob.skills.map(s => (
-                      <span key={s} style={{ padding: '4px 10px', borderRadius: 6, background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', fontSize: 12, fontWeight: 600 }}>{s}</span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Preferred Skills */}
-              {((Array.isArray(jdModalJob.preferredSkills) && jdModalJob.preferredSkills.length > 0) || 
-                (Array.isArray(jdModalJob.preferred_skills) && jdModalJob.preferred_skills.length > 0)) && (
-                <div style={{ flex: '1 1 200px' }}>
-                  <div style={{ fontSize: 11, color: '#64748b', fontWeight: 700, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Preferred Skills</div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                    {(jdModalJob.preferredSkills || jdModalJob.preferred_skills).map(s => (
-                      <span key={s} style={{ padding: '4px 10px', borderRadius: 6, background: '#faf5ff', color: '#7e22ce', border: '1px solid #e9d5ff', fontSize: 12, fontWeight: 600 }}>{s}</span>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Full Formatted JD Text */}
-            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, padding: 20 }}>
-              <div style={{ fontSize: 11, color: '#64748b', fontWeight: 700, marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Full Job Description</div>
-              <div style={{ fontSize: 13.5, color: '#334155', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
-                {getFullDescriptionText(jdModalJob)}
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
-              <button onClick={(e) => { handleOpenEdit(e, jdModalJob); setJdModalJob(null) }}
-                style={{ flex: 1, background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', borderRadius: 8, padding: '10px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-                Edit Job
-              </button>
-              <button onClick={() => { const link = `${window.location.origin}/jobs?jobId=${jdModalJob.id}`; navigator.clipboard.writeText(link) }}
-                style={{ flex: 1, background: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0', borderRadius: 8, padding: '10px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-                Copy Candidate Link
-              </button>
-            </div>
+            {/* Structured Job Description & Actions View (Milestone M1) */}
+            <JobDescriptionView
+              job={jdModalJob}
+              rawDescription={getFullDescriptionText(jdModalJob)}
+              showOverviewGrid={true}
+              showSkillsCloud={true}
+              showActions={true}
+              onEdit={(e) => { handleOpenEdit(e, jdModalJob); setJdModalJob(null); }}
+            />
           </div>
         </div>
       )}
@@ -1139,7 +1091,7 @@ ${cleanTitleTag} ${locTag} ${modeTag} #USStaffing #ContractSoftwareTesting #Agil
           <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 16, width: '100%', maxWidth: 640, maxHeight: '90vh', overflowY: 'auto', padding: 28, boxShadow: '0 20px 50px rgba(0,0,0,0.15)' }}
             onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <h3 style={{ margin: 0, fontSize: 18, fontFamily: 'Plus Jakarta Sans', color: '#0f172a', fontWeight: 800 }}>Edit Job Posting ({editingJob.id})</h3>
+              <h3 style={{ margin: 0, fontSize: 18, lineHeight: '26px', color: '#0f172a', fontWeight: 700, fontStyle: 'normal' }}>Edit Job Posting ({editingJob.id})</h3>
               <button onClick={() => setEditingJob(null)} style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', color: '#475569', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', fontSize: 14, fontWeight: 700 }}>✕</button>
             </div>
             <form onSubmit={handleSaveEdit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>

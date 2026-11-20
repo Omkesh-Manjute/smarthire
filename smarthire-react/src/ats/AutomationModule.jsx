@@ -29,7 +29,7 @@ function IntegrationCard({ icon, name, description, status, statusClass, detail,
             {icon}
           </div>
           <div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>{name}</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a' }}>{name}</div>
             <div style={{ fontSize: 11, color: '#64748b', marginTop: 1 }}>{description}</div>
           </div>
         </div>
@@ -88,7 +88,7 @@ function AutomationModule() {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <h3 style={{ margin: 0, fontFamily: 'Plus Jakarta Sans, sans-serif', color: '#0f172a', fontSize: 16 }}>Automation & Integrations</h3>
+          <h3 style={{ margin: 0, color: '#0f172a', fontSize: 18, lineHeight: '26px', fontWeight: 700, fontStyle: 'normal' }}>Automation & Integrations</h3>
           <p style={{ margin: '4px 0 0', fontSize: 12, color: '#64748b' }}>Monitor background cron jobs, webhooks, and service health in real-time</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -109,7 +109,7 @@ function AutomationModule() {
         ].map(s => (
           <div key={s.label} style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
             <div>
-              <div style={{ fontSize: 22, fontWeight: 800, color: s.color, fontFamily: 'Plus Jakarta Sans, sans-serif' }}>{s.value}</div>
+              <div style={{ fontSize: 22, fontWeight: 700, color: s.color }}>{s.value}</div>
               <div style={{ fontSize: 11, color: '#64748b', fontWeight: 600 }}>{s.label}</div>
             </div>
           </div>

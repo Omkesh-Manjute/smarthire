@@ -47,7 +47,7 @@
   --yellow-400: #facc15;
   --yellow-500: #eab308;
   --yellow-700: #a16207;
-  --smart-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --smart-font: "IBM Plex Sans", "IBM Plex Sans Fallback", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
 
 .smart-ats-app { display: flex; flex-direction: column; flex: 1; min-height: 0; }

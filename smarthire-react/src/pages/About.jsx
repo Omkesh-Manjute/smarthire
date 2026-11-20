@@ -188,7 +188,7 @@ function About() {
         {/* ─── INLINE STYLES (MUI theFront Design System) ─── */}
         <style>{`
           .tf-root {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-family: inherit;
             color: #0f172a;
             background: #ffffff;
             -webkit-font-smoothing: antialiased;
@@ -235,9 +235,9 @@ function About() {
             100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
           }
           .tf-hero-title {
-            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-family: inherit;
             font-size: clamp(34px, 4vw, 52px);
-            font-weight: 800;
+            font-weight: 700;
             line-height: 1.15;
             letter-spacing: -0.03em;
             color: #0f172a;
@@ -396,7 +396,7 @@ function About() {
                 Empirical AI Intelligence
               </div>
               <h2 style={{
-                fontFamily: 'Plus Jakarta Sans, sans-serif',
+                fontFamily: 'inherit',
                 fontSize: '34px',
                 fontWeight: '800',
                 letterSpacing: '-0.02em',
@@ -605,7 +605,7 @@ function About() {
                 Enterprise Security & Trust
               </div>
               <h2 style={{
-                fontFamily: 'Plus Jakarta Sans, sans-serif',
+                fontFamily: 'inherit',
                 fontSize: '32px',
                 fontWeight: '800',
                 letterSpacing: '-0.02em',
@@ -667,7 +667,7 @@ function About() {
                 24/7 ENTERPRISE RECRUITMENT SUPPORT DESK
               </div>
               <h2 style={{
-                fontFamily: 'Plus Jakarta Sans, sans-serif',
+                fontFamily: 'inherit',
                 fontSize: '34px',
                 fontWeight: '800',
                 letterSpacing: '-0.02em',
@@ -757,7 +757,7 @@ function About() {
                 Enterprise Communication Hub
               </div>
               <h2 style={{
-                fontFamily: 'Plus Jakarta Sans, sans-serif',
+                fontFamily: 'inherit',
                 fontSize: '34px',
                 fontWeight: '800',
                 letterSpacing: '-0.02em',

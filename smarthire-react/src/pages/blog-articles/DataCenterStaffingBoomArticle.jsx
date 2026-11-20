@@ -38,7 +38,7 @@ export default function DataCenterStaffingBoomArticle() {
   ]
 
   return (
-    <div style={{ fontSize: 18, lineHeight: 1.85, color: '#1E293B', fontFamily: "Georgia, Cambria, 'Times New Roman', Times, serif" }}>
+    <div style={{ fontSize: 18, lineHeight: 1.85, color: '#1E293B', fontFamily: 'inherit' }}>
       {/* Editorial Lead Paragraph */}
       <p style={{ fontSize: 20, lineHeight: 1.8, color: '#1E293B', margin: '0 0 22px' }}>
         Ask most people which tech jobs are hot in 2026 and they will tell you AI prompt engineers or machine learning researchers. Ask anyone trying to commission or run a data center and you will hear something completely different: <strong>electricians, liquid cooling engineers, and critical facility technicians</strong>. The physical buildout behind AI clusters and hyperscale cloud is so massive that hiring human talent—not capital—has become the single biggest bottleneck.

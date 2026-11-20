@@ -171,7 +171,7 @@ function writePreRenderedHtml(blog) {
   </script>
   <link rel="stylesheet" href="/assets/index.css" />
   <style>
-    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.7; color: #1e293b; background: #ffffff; margin: 0; padding: 0; }
+    body { font-family: "IBM Plex Sans", "IBM Plex Sans Fallback", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; line-height: 1.7; color: #1e293b; background: #ffffff; margin: 0; padding: 0; }
     .blog-container { max-width: 820px; margin: 0 auto; padding: 32px 20px 80px; }
     .hero-img { width: 100%; max-height: 460px; object-fit: cover; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 24px; }
     .badge { display: inline-block; background: #E6F4F1; color: #0D6B5F; font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 4px; text-transform: uppercase; margin-bottom: 12px; }

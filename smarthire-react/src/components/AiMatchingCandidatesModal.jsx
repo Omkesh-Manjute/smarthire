@@ -70,8 +70,7 @@ export default function AiMatchingCandidatesModal({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '16px',
-        fontFamily: 'Arial, Helvetica, sans-serif'
+        padding: '16px'
       }}
       onClick={onClose}
     >

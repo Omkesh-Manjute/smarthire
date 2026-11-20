@@ -32,7 +32,7 @@ function CarouselViewer({ slides }) {
       <div style={{
         position: 'absolute', top: 12, right: 12, background: 'rgba(29, 43, 42, 0.85)',
         color: '#fffdf8', borderRadius: 20, padding: '4px 12px', fontSize: 12, fontWeight: 600,
-        fontFamily: 'Outfit, sans-serif'
+        fontFamily: 'inherit'
       }}>
         {active + 1} / {slides.length}
       </div>
@@ -102,7 +102,7 @@ function PostCard({ title, icon, content, type, assets }) {
           <div style={{ color: 'var(--brand-2)', fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 2 }}>
             {type}
           </div>
-          <h3 style={{ color: 'var(--ink)', fontWeight: 700, fontSize: 18, margin: 0, fontFamily: 'Plus Jakarta Sans, sans-serif' }}>{title}</h3>
+          <h3 style={{ color: 'var(--ink)', fontWeight: 700, fontSize: 18, margin: 0, fontFamily: 'inherit' }}>{title}</h3>
         </div>
       </div>
 
@@ -144,7 +144,7 @@ function PostCard({ title, icon, content, type, assets }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <div style={{
             color: 'var(--ink)', lineHeight: 1.75, fontSize: 14.5, whiteSpace: 'pre-wrap',
-            fontFamily: 'Outfit, system-ui, sans-serif',
+            fontFamily: 'inherit',
           }}>
             {expanded || !needsTruncate ? content : preview + '...'}
           </div>
@@ -255,7 +255,7 @@ function LinkedInPosts() {
           background: toast.type === 'success' ? 'var(--brand)' : 'var(--danger)',
           color: '#fffdf8', padding: '14px 24px', borderRadius: 12, fontWeight: 700, fontSize: 14,
           boxShadow: '0 8px 32px rgba(18, 39, 35, 0.25)', animation: 'slideIn 0.3s ease',
-          maxWidth: 400, border: '1px solid var(--line)', fontFamily: 'Outfit, sans-serif'
+          maxWidth: 400, border: '1px solid var(--line)', fontFamily: 'inherit'
         }}>
           {toast.message}
         </div>
@@ -436,7 +436,7 @@ function LinkedInPosts() {
                   }}>
                     <div style={{ color: stat.color, display: 'flex', alignItems: 'center' }}>{stat.icon}</div>
                     <div>
-                      <div style={{ color: stat.color, fontSize: 22, fontWeight: 800, fontFamily: 'Plus Jakarta Sans, sans-serif' }}>{stat.value}</div>
+                      <div style={{ color: stat.color, fontSize: 22, fontWeight: 800, fontFamily: 'inherit' }}>{stat.value}</div>
                       <div style={{ color: 'var(--ink-soft)', fontSize: 13, fontWeight: 600 }}>{stat.label}</div>
                     </div>
                   </div>
@@ -479,7 +479,7 @@ function LinkedInPosts() {
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
                 </div>
                 <div style={{ flex: 1, minWidth: 260 }}>
-                  <div style={{ color: 'var(--brand)', fontWeight: 800, fontSize: 14, marginBottom: 4, fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+                  <div style={{ color: 'var(--brand)', fontWeight: 800, fontSize: 14, marginBottom: 4, fontFamily: 'inherit' }}>
                     Automated Ingestion Source
                   </div>
                   <div style={{ color: 'var(--ink-soft)', fontSize: 13.5, lineHeight: 1.5 }}>

@@ -72,7 +72,7 @@ function SubmissionModule({ allCandidates, jobsList, submissions, setSubmissions
       {/* Header */}
       <div className="submission-header">
         <div>
-          <h3 style={{ margin: 0, fontFamily: 'Plus Jakarta Sans' }}>Candidate Submissions</h3>
+          <h3 style={{ margin: 0, fontSize: 18, lineHeight: '26px', fontWeight: 700, fontStyle: 'normal' }}>Candidate Submissions</h3>
           <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--ink-soft)' }}>
             Track all candidate submissions to clients. Submit candidates with notes, rate, and vendor info.
           </p>

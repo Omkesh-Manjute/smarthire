@@ -353,7 +353,7 @@ function DashboardModule({
   const totalPages = Math.ceil(safeJobs.length / pageSize) || 1
 
   return (
-    <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '16px 20px', fontFamily: 'Arial, sans-serif' }}>
+    <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '16px 20px', fontFamily: 'inherit' }}>
       
       {/* ─────────────────────────────────────────────────────────────
           VIEW 1: SINGLE REQUISITION DETAIL / EDIT SHEET (IMAGES 1, 3, 4, 5)

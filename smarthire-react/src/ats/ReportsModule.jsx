@@ -28,9 +28,9 @@ function ZohoMetricCard({ label, value, trend = '100%', trendDir = 'up', sub = '
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '6px 0 4px' }}>
         <span style={{
           fontSize: '24px',
-          fontWeight: 800,
+          fontWeight: 700,
           color: '#0f172a',
-          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+          fontFamily: 'inherit'
         }}>
           {value}
         </span>
@@ -397,7 +397,7 @@ function ReportsModule({ allCandidates = [], jobsList = [], submissions = [] }) 
       display: 'flex',
       flexDirection: 'column',
       gap: 16,
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+      fontFamily: 'inherit'
     }}>
       {/* ─── ZOHO CRM ANALYTICS SUBHEADER TOOLBAR ─── */}
       <div style={{

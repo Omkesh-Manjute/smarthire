@@ -119,7 +119,7 @@ function PipelineModule({ allCandidates = [], jobsList = [], updateStatus = () =
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 18, fontFamily: "'Inter', 'Plus Jakarta Sans', sans-serif" }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
 
       {/* ─── PAGE HEADER & CONTROLS ─── */}
       <div style={{

@@ -1681,7 +1681,7 @@ WHERE status = 'scheduled'
         .stat-val {
           font-size: 28px;
           font-weight: 700;
-          font-family: 'Sora', sans-serif;
+          font-family: inherit;
           margin-top: 4px;
         }
         .stat-val.orange {
@@ -2211,7 +2211,7 @@ WHERE status = 'scheduled'
           margin: 0;
           color: #f8fafc;
           font-size: 15px;
-          font-family: 'Sora', sans-serif;
+          font-family: inherit;
           font-weight: 700;
         }
         .cron-live-indicator {
@@ -2478,7 +2478,7 @@ WHERE status = 'scheduled'
           align-items: center;
         }
         .modal-title {
-          font-family: 'Sora', sans-serif;
+          font-family: inherit;
           margin: 0;
           font-size: 18px;
         }
@@ -2519,7 +2519,7 @@ WHERE status = 'scheduled'
         .section-title {
           margin-top: 0;
           margin-bottom: 4px;
-          font-family: 'Sora', sans-serif;
+          font-family: inherit;
           font-size: 18px;
         }
         .section-subtitle {

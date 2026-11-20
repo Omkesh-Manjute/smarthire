@@ -148,7 +148,6 @@ export default function CandidateMessengerWidget({ candidate, role = 'candidate'
       display: 'flex',
       flexDirection: 'column',
       overflow: 'hidden',
-      fontFamily: "'Plus Jakarta Sans', sans-serif",
       transition: 'width 0.3s ease'
     }}>
 
@@ -545,8 +544,7 @@ export default function CandidateMessengerWidget({ candidate, role = 'candidate'
           backgroundColor: '#FFFFFF',
           zIndex: 3500,
           display: 'flex',
-          flexDirection: 'column',
-          fontFamily: "'Plus Jakarta Sans', sans-serif"
+          flexDirection: 'column'
         }}>
           {/* Modal Header */}
           <div style={{

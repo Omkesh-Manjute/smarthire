@@ -2059,7 +2059,7 @@ const styles = {
   pageWrapper: {
     minHeight: '100vh',
     backgroundColor: '#F9FAFB',
-    fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+    fontFamily: 'inherit',
     display: 'flex',
     flexDirection: 'column',
     color: '#0f172a'
@@ -2367,7 +2367,7 @@ const styles = {
     margin: '0 0 8px',
     lineHeight: '1.6',
     letterSpacing: '-0.01em',
-    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
+    fontFamily: 'inherit'
   },
   questionDesc: {
     fontSize: '13px',

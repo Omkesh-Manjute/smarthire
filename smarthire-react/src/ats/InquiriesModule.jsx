@@ -129,7 +129,7 @@ export default function InquiriesModule() {
       border: '1px solid #e2e8f0',
       boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
       overflow: 'hidden',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+      fontFamily: 'inherit'
     }}>
 
       {/* ─── MODULE HEADER ─── */}

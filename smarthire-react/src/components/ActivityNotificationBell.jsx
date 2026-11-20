@@ -765,8 +765,7 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
           display: 'flex',
           alignItems: 'flex-start',
           gap: '10px',
-          animation: 'slideIn 0.3s ease-out',
-          fontFamily: 'Arial, sans-serif'
+          animation: 'slideIn 0.3s ease-out'
         }}>
           <span style={{ fontSize: '18px' }}>
             ●
@@ -826,8 +825,7 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
           boxShadow: '0 15px 35px rgba(0,0,0,0.2)',
           display: 'flex',
           flexDirection: 'column',
-          overflow: 'hidden',
-          fontFamily: 'Arial, sans-serif'
+          overflow: 'hidden'
         }}>
           
           {/* Header */}
@@ -1180,7 +1178,6 @@ export default function ActivityNotificationBell({ theme = 'default', onSelectNo
               boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
               border: '1px solid #cbd5e1',
               overflow: 'hidden',
-              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
               animation: 'slideIn 0.2s ease-out'
             }}
           >

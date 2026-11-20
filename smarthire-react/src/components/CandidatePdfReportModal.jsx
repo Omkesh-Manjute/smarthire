@@ -253,7 +253,7 @@ export default function CandidatePdfReportModal({ candidate, onClose }) {
         .pdf-printable-page {
           padding: 40px;
           background: #fff;
-          font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+          font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
           color: #0F172A;
         }
         .pdf-header {

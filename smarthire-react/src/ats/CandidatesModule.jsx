@@ -985,7 +985,7 @@ function CandidatesModule({
       minHeight: 0,
       flex: 1,
       background: '#f8fafc',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+      fontFamily: 'inherit',
       overflow: 'hidden'
     }}>
       

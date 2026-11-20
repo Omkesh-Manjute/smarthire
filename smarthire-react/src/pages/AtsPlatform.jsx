@@ -822,7 +822,7 @@ export default function AtsPlatform() {
       width: '100vw',
       overflow: 'hidden',
       background: '#f4f5f8',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+      fontFamily: 'inherit'
     }}>
 
       {/* ─── 1. SLACK SIGNATURE AUBERGINE SIDEBAR (#3F0E40) ───────────────── */}

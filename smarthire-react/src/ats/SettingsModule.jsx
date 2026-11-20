@@ -377,7 +377,7 @@ function SettingsModule() {
     <div className="settings-module-layout">
       <div className="settings-header">
         <div>
-          <h3 style={{ margin: 0, fontFamily: 'Plus Jakarta Sans' }}>ATS Settings</h3>
+          <h3 style={{ margin: 0, fontSize: 18, lineHeight: '26px', fontWeight: 700, fontStyle: 'normal' }}>ATS Settings</h3>
           <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--ink-soft)' }}>
             Configure your email settings, sourcing extension, email templates, pipeline stages, and data export.
           </p>
@@ -902,7 +902,7 @@ function SettingsModule() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
               <div style={{ flex: 1, minWidth: 280 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-                  <h4 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#0F172A', fontFamily: 'Plus Jakarta Sans' }}>
+                  <h4 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#0F172A', fontFamily: 'inherit' }}>
                     SmartHire Sourcing Copilot
                   </h4>
                   <span style={{ background: '#EFF6FF', color: '#1D4ED8', border: '1px solid #BFDBFE', fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 4 }}>
@@ -987,7 +987,7 @@ function SettingsModule() {
           <div style={{ background: '#FFFFFF', border: '1px solid #CBD5E1', borderRadius: 12, padding: '24px', marginBottom: 20, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 18 }}>
               <div>
-                <h4 style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 800, color: '#0F172A', fontFamily: 'Plus Jakarta Sans', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <h4 style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 700, color: '#0F172A', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 8 }}>
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2.2">
                     <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
                     <line x1="16" y1="2" x2="16" y2="6" />
@@ -1034,7 +1034,7 @@ function SettingsModule() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 20 }}>
               <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, padding: '12px 14px' }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', marginBottom: 4 }}>Candidates Sourced Today</div>
-                <div style={{ fontSize: 22, fontWeight: 800, color: '#2563EB', fontFamily: 'Plus Jakarta Sans' }}>
+                <div style={{ fontSize: 22, fontWeight: 700, color: '#2563EB', fontFamily: 'inherit' }}>
                   {creditSummary?.candidatesScrapedToday || 0}
                 </div>
                 <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 2 }}>
@@ -1044,7 +1044,7 @@ function SettingsModule() {
 
               <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, padding: '12px 14px' }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', marginBottom: 4 }}>Outreach Emails Sent Today</div>
-                <div style={{ fontSize: 22, fontWeight: 800, color: '#059669', fontFamily: 'Plus Jakarta Sans' }}>
+                <div style={{ fontSize: 22, fontWeight: 700, color: '#059669', fontFamily: 'inherit' }}>
                   {creditSummary?.emailsSentToday || 0}
                 </div>
                 <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 2 }}>
@@ -1054,7 +1054,7 @@ function SettingsModule() {
 
               <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, padding: '12px 14px' }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', marginBottom: 4 }}>Active Team Members Today</div>
-                <div style={{ fontSize: 22, fontWeight: 800, color: '#0F172A', fontFamily: 'Plus Jakarta Sans' }}>
+                <div style={{ fontSize: 22, fontWeight: 700, color: '#0F172A', fontFamily: 'inherit' }}>
                   {creditSummary?.activeToday || 0} <span style={{ fontSize: 14, fontWeight: 600, color: '#64748B' }}>/ {creditSummary?.totalRecruiters || recruiterCreditsList.length || 0}</span>
                 </div>
                 <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 2 }}>
@@ -1248,7 +1248,7 @@ function SettingsModule() {
                 <div style={{ background: '#FFFFFF', borderRadius: 10, width: 420, maxWidth: '100%', padding: '24px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)', border: '1px solid #E2E8F0' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
                     <div>
-                      <h4 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: '#0F172A', fontFamily: 'Plus Jakarta Sans' }}>
+                      <h4 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#0F172A', fontFamily: 'inherit' }}>
                         Set Daily Sourcing Quota
                       </h4>
                       <p style={{ margin: '4px 0 0', fontSize: 12.5, color: '#64748B' }}>

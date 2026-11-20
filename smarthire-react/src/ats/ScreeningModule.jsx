@@ -3221,7 +3221,7 @@ SmartHire Recruitment Team`
 
 const styles = {
   container: {
-    fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+    fontFamily: 'inherit',
     color: '#0f172a'
   },
   topHeaderRow: {
@@ -3234,12 +3234,13 @@ const styles = {
     marginTop: '0px'
   },
   mainTitle: {
-    fontSize: '18px',
+    fontSize: '24px',
+    lineHeight: '32px',
     fontWeight: '700',
+    fontStyle: 'normal',
     color: '#0f172a',
     margin: 0,
-    letterSpacing: '-0.01em',
-    lineHeight: '1.25'
+    letterSpacing: '-0.01em'
   },
   smartHireBadge: {
     fontSize: '10.5px',

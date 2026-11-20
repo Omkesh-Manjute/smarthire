@@ -3387,9 +3387,8 @@ function Homepage() {
 
         /* theFront Headline with Signature Highlight Pill */
         .tf-hero-title {
-          font-family: 'Plus Jakarta Sans', sans-serif;
           font-size: clamp(36px, 4.2vw, 54px);
-          font-weight: 800;
+          font-weight: 700;
           line-height: 1.15;
           letter-spacing: -0.03em;
           color: #0f172a;
@@ -3703,9 +3702,8 @@ function Homepage() {
 
         .tf-kpi-num {
           font-size: 19px;
-          font-weight: 800;
+          font-weight: 700;
           color: #0f172a;
-          font-family: 'Plus Jakarta Sans', sans-serif;
         }
 
         .tf-text-blue {
@@ -4122,9 +4120,8 @@ function Homepage() {
         }
 
         .tf-section-title {
-          font-family: 'Plus Jakarta Sans', sans-serif;
           font-size: clamp(28px, 3.4vw, 40px);
-          font-weight: 800;
+          font-weight: 700;
           letter-spacing: -0.02em;
           color: #0f172a;
           margin: 0 0 16px 0;
@@ -4179,7 +4176,6 @@ function Homepage() {
         .cyan-bg { background: #ecfeff; color: #0891b2; }
 
         .tf-feature-title {
-          font-family: 'Plus Jakarta Sans', sans-serif;
           font-size: 17.5px;
           font-weight: 700;
           color: #0f172a;
@@ -4364,9 +4360,8 @@ function Homepage() {
 
         /* Showcase Right Content */
         .tf-showcase-headline {
-          font-family: 'Plus Jakarta Sans', sans-serif;
           font-size: clamp(30px, 3.6vw, 44px);
-          font-weight: 800;
+          font-weight: 700;
           line-height: 1.2;
           letter-spacing: -0.02em;
           color: #0f172a;
@@ -4397,9 +4392,8 @@ function Homepage() {
         }
 
         .tf-stat-large {
-          font-family: 'Plus Jakarta Sans', sans-serif;
           font-size: clamp(36px, 3.8vw, 46px);
-          font-weight: 800;
+          font-weight: 700;
           color: #0f172a;
           display: block;
           line-height: 1;
@@ -5994,9 +5988,8 @@ function Homepage() {
         }
 
         .tf-plan-title {
-          font-family: 'Plus Jakarta Sans', sans-serif;
           font-size: 20px;
-          font-weight: 800;
+          font-weight: 700;
           color: #0f172a;
           margin: 0 0 8px 0;
         }
@@ -6015,7 +6008,7 @@ function Homepage() {
         }
 
         .tf-plan-price .curr { font-size: 22px; font-weight: 700; margin-right: 2px; }
-        .tf-plan-price .val { font-size: 44px; font-weight: 800; font-family: 'Plus Jakarta Sans', sans-serif; }
+        .tf-plan-price .val { font-size: 44px; font-weight: 700; }
         .tf-plan-price .freq { font-size: 13px; color: #64748b; font-weight: 600; margin-left: 4px; }
 
         .tf-billed-note {
@@ -6120,9 +6113,8 @@ function Homepage() {
         }
 
         .tf-calc-header h3 {
-          font-family: 'Plus Jakarta Sans', sans-serif;
           font-size: 26px;
-          font-weight: 800;
+          font-weight: 700;
           color: #0f172a;
           margin: 0 0 10px 0;
         }
@@ -6214,9 +6206,8 @@ function Homepage() {
         }
 
         .tf-metric-number {
-          font-family: 'Plus Jakarta Sans', sans-serif;
           font-size: 28px;
-          font-weight: 800;
+          font-weight: 700;
           color: #0f172a;
         }
 
@@ -6249,9 +6240,8 @@ function Homepage() {
         }
 
         .tf-annual-val {
-          font-family: 'Plus Jakarta Sans', sans-serif;
           font-size: 32px;
-          font-weight: 800;
+          font-weight: 700;
           color: #1e3a8a;
           margin: 4px 0 6px 0;
         }

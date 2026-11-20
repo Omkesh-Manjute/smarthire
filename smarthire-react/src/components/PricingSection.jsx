@@ -567,9 +567,8 @@ export default function PricingSection({ onAuthClick, isStandalonePage = false, 
         </div>
 
         <h2 style={{
-          fontFamily: "'Plus Jakarta Sans', sans-serif",
           fontSize: '32px',
-          fontWeight: '800',
+          fontWeight: '700',
           letterSpacing: '-0.03em',
           color: '#0f172a',
           margin: '0 0 10px',

@@ -1382,7 +1382,7 @@ export default function PublicCareers() {
                     DIRECT CLIENT
                   </span>
                 </div>
-                <h3 style={{ fontSize: 22, fontWeight: 800, color: theme.textPrimary, margin: '0 0 4px', fontFamily: "'Barlow', sans-serif" }}>
+                <h3 style={{ fontSize: 22, fontWeight: 700, color: theme.textPrimary, margin: '0 0 4px', fontFamily: 'inherit' }}>
                   {cleanJobTitleWithPositionNumber(selectedJob.title)}
                 </h3>
                 <p style={{ fontSize: 13, color: '#00B8D9', margin: 0, fontWeight: 700 }}>
@@ -1477,7 +1477,7 @@ export default function PublicCareers() {
                 <div style={{ width: 64, height: 64, borderRadius: '50%', backgroundColor: '#DCFCE7', color: '#16A34A', fontSize: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
                   ✓
                 </div>
-                <h4 style={{ fontSize: 22, fontWeight: 800, color: theme.textPrimary, margin: '0 0 8px', fontFamily: "'Barlow', sans-serif" }}>
+                <h4 style={{ fontSize: 22, fontWeight: 700, color: theme.textPrimary, margin: '0 0 8px', fontFamily: 'inherit' }}>
                   Application Submitted Successfully!
                 </h4>
                 <p style={{ fontSize: 14, color: theme.textSecondary, maxWidth: 500, margin: '0 auto 24px', lineHeight: 1.6 }}>
@@ -1903,7 +1903,7 @@ export default function PublicCareers() {
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18 }}>
               <div>
-                <h3 style={{ fontSize: 22, fontWeight: 800, color: theme.textPrimary, margin: '0 0 4px', fontFamily: "'Barlow', sans-serif" }}>
+                <h3 style={{ fontSize: 22, fontWeight: 700, color: theme.textPrimary, margin: '0 0 4px', fontFamily: 'inherit' }}>
                   Upload Your CV / Resume
                 </h3>
                 <p style={{ fontSize: 13, color: theme.textSecondary, margin: 0 }}>
@@ -2121,7 +2121,7 @@ export default function PublicCareers() {
               <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 2l-2 2m-1.5 1.5L14 9m0 0l-2-2m2 2l-3 3m-2-2l-2 2m0 0a6 6 0 1 1-8.49 8.49 6 6 0 0 1 8.49-8.49z"/></svg>
             </div>
 
-            <h3 style={{ fontSize: 20, fontWeight: 800, color: theme.textPrimary, margin: '0 0 6px', fontFamily: "'Barlow', sans-serif" }}>
+            <h3 style={{ fontSize: 20, fontWeight: 700, color: theme.textPrimary, margin: '0 0 6px', fontFamily: 'inherit' }}>
               Candidate Sign-In Required
             </h3>
             <p style={{ fontSize: 13.5, color: theme.textSecondary, margin: '0 0 24px', lineHeight: 1.5 }}>

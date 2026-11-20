@@ -155,8 +155,7 @@ export default function SmartHireBotWidget({ jobs = [], onClose }) {
       zIndex: 3000,
       display: 'flex',
       flexDirection: 'column',
-      overflow: 'hidden',
-      fontFamily: "'Plus Jakarta Sans', sans-serif"
+      overflow: 'hidden'
     }}>
 
       {/* Bot Header */}

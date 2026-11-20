@@ -1083,7 +1083,6 @@ const highlightResumeText = (text, matchingSkills = [], searchQuery = '', enable
         borderRadius: '10px',
         border: '1px solid #E2E8F0',
         boxShadow: '0 4px 20px rgba(0, 0, 0, 0.04)',
-        fontFamily: "'Plus Jakarta Sans', Inter, system-ui, sans-serif",
         textAlign: 'center',
         display: 'flex',
         flexDirection: 'column',
@@ -1426,8 +1425,7 @@ const highlightResumeText = (text, matchingSkills = [], searchQuery = '', enable
       borderRadius: '10px',
       border: '1px solid #E2E8F0',
       boxShadow: '0 4px 20px rgba(0, 0, 0, 0.03)',
-      overflow: 'hidden',
-      fontFamily: "'Plus Jakarta Sans', Inter, system-ui, -apple-system, sans-serif"
+      overflow: 'hidden'
     }}>
       {/* Monster Header Box (Matching User Reference Screenshot 2) */}
       <div style={{
@@ -7571,7 +7569,7 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
   }
 
   return (
-    <div style={{ display: 'flex', height: '100vh', width: '100vw', backgroundColor: C.bg, fontFamily: "'Plus Jakarta Sans','Inter',sans-serif", color: C.textPrimary, overflow: 'hidden' }}>
+    <div style={{ display: 'flex', height: '100vh', width: '100vw', backgroundColor: C.bg, color: C.textPrimary, overflow: 'hidden' }}>
       
       {/* ─── Unified Normalized 5-Group ATS Sidebar ─── */}
       <AtsUnifiedSidebar
@@ -8071,7 +8069,7 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                 
                 {/* Greeting */}
                 <div>
-                  <h1 style={{ fontSize: 26, fontWeight: 800, color: C.textPrimary, margin: '0 0 6px', letterSpacing: '-0.02em' }}>
+                  <h1 style={{ fontSize: 24, lineHeight: '32px', fontWeight: 700, fontStyle: 'normal', color: C.textPrimary, margin: '0 0 6px', letterSpacing: '-0.02em' }}>
                     Hi, Welcome back
                   </h1>
                   <p style={{ fontSize: 13.5, color: C.textSecondary, margin: 0 }}>
@@ -12686,7 +12684,7 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
             borderBottom: `1px solid ${C.border}`,
             flexShrink: 0
           }}>
-            <h1 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: C.textPrimary, letterSpacing: '-0.02em' }}>
+            <h1 style={{ margin: 0, fontSize: 24, lineHeight: '32px', fontWeight: 700, fontStyle: 'normal', color: C.textPrimary, letterSpacing: '-0.02em' }}>
               Chats
             </h1>
             <p style={{ margin: '4px 0 0', fontSize: 13, color: C.textSecondary }}>
@@ -13781,8 +13779,7 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                 boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.3)',
                 display: 'flex',
                 flexDirection: 'column',
-                overflow: 'hidden',
-                fontFamily: "'Plus Jakarta Sans', Inter, sans-serif"
+                overflow: 'hidden'
               }} onClick={e => e.stopPropagation()}>
                 {/* Header */}
                 <div style={{
@@ -14036,8 +14033,7 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
               borderLeft: `1px solid ${C.border}`,
               boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.3)',
               display: 'flex',
-              flexDirection: 'column',
-              fontFamily: "'Plus Jakarta Sans', Inter, sans-serif"
+              flexDirection: 'column'
             }} onClick={e => e.stopPropagation()}>
               
               {/* Header */}

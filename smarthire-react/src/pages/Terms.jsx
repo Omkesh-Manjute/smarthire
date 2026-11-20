@@ -86,9 +86,8 @@ function Terms() {
           }
 
           .tf-hero-title {
-            font-family: 'Plus Jakarta Sans', sans-serif;
             font-size: clamp(30px, 3.5vw, 44px);
-            font-weight: 800;
+            font-weight: 700;
             line-height: 1.2;
             letter-spacing: -0.03em;
             color: #0f172a;
@@ -249,9 +248,8 @@ function Terms() {
           }
 
           .tf-section-heading {
-            font-family: 'Plus Jakarta Sans', sans-serif;
             font-size: 22px;
-            font-weight: 800;
+            font-weight: 700;
             color: #0f172a;
             margin: 0 0 16px 0;
             padding-bottom: 10px;

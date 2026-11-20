@@ -1054,7 +1054,7 @@ export default function CandidateDetailViewModal({
         flexDirection: 'column',
         overflow: 'hidden',
         border: '1px solid #7f9db9',
-        fontFamily: 'Arial, Helvetica, sans-serif',
+        fontFamily: 'inherit',
         fontSize: '11px'
       }}>
         
@@ -1091,25 +1091,25 @@ export default function CandidateDetailViewModal({
           <div style={{ display: 'flex', gap: '24px', alignItems: 'center', flexWrap: 'wrap' }}>
             <div>
               <span style={{ color: '#000080', fontWeight: 'bold' }}>Requisition #: </span>
-              <span style={{ fontWeight: 'bold', color: '#0033cc' }}>
+              <span style={{ fontWeight: 500, color: '#0033cc' }}>
                 {reqContext?.id || candidate.jobId || candidate.reqId || 'J-1787683131680-88'}
               </span>
             </div>
             <div>
               <span style={{ color: '#000080', fontWeight: 'bold' }}>Position Title: </span>
-              <span style={{ fontWeight: 'bold', color: '#0f172a' }}>
+              <span style={{ fontWeight: 600, color: '#0f172a' }}>
                 {reqContext?.title || candidate.jobTitle || formData.jobTitle || 'Lead Business Analyst'}
               </span>
             </div>
             <div>
               <span style={{ color: '#000080', fontWeight: 'bold' }}>Customer: </span>
-              <span style={{ fontWeight: 'bold', color: '#000080' }}>
+              <span style={{ fontWeight: 500, color: '#000080' }}>
                 {reqContext?.customer || reqContext?.client || candidate.customer || 'State Of SC'}
               </span>
             </div>
             <div>
               <span style={{ color: '#000080', fontWeight: 'bold' }}>Status: </span>
-              <span style={{ color: '#166534', fontWeight: 'bold' }}>In-Progress</span>
+              <span style={{ color: '#166534', fontWeight: 500 }}>In-Progress</span>
             </div>
             <div>
               <span style={{ color: '#000080', fontWeight: 'bold' }}>Start Date: </span>
@@ -2717,7 +2717,7 @@ export default function CandidateDetailViewModal({
                   transform: `scale(${zoomLevel / 100})`,
                   transformOrigin: 'top center',
                   transition: 'transform 0.15s ease',
-                  fontFamily: 'Arial, Helvetica, sans-serif',
+                  fontFamily: 'inherit',
                   fontSize: '11px',
                   lineHeight: '1.5',
                   color: '#1e293b'
@@ -2741,7 +2741,7 @@ export default function CandidateDetailViewModal({
                             </div>
                           </div>
 
-                          <div style={{ whiteSpace: 'pre-wrap', fontFamily: 'Arial, sans-serif', fontSize: '11px', lineHeight: '1.6', color: '#1e293b' }}>
+                          <div style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit', fontSize: '11px', lineHeight: '1.6', color: '#1e293b' }}>
                             {currentDoc?.resumeText || candidate.resumeText}
                           </div>
                         </div>

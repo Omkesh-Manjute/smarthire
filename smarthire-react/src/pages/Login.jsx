@@ -599,9 +599,8 @@ function Login() {
           margin-bottom: 6px;
         }
         .login-main-title {
-          font-family: 'Plus Jakarta Sans', sans-serif;
           font-size: 32px;
-          font-weight: 800;
+          font-weight: 700;
           margin: 0 0 8px;
           color: var(--ink);
           letter-spacing: -0.02em;
@@ -813,9 +812,8 @@ function Login() {
           box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
         }
         .visual-title {
-          font-family: 'Plus Jakarta Sans', sans-serif;
           font-size: 28px;
-          font-weight: 800;
+          font-weight: 700;
           margin: 0 0 12px;
           line-height: 1.25;
           letter-spacing: -0.01em;

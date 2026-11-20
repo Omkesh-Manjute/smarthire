@@ -192,9 +192,8 @@ function CompanyLogo({ job, size = 42 }) {
       alignItems: 'center',
       justifyContent: 'center',
       fontSize: Math.round(size * 0.38),
-      fontWeight: 800,
+      fontWeight: 700,
       letterSpacing: '-0.02em',
-      fontFamily: "'Plus Jakarta Sans', -apple-system, sans-serif",
       flexShrink: 0,
       boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
     }}>
@@ -1301,7 +1300,7 @@ export default function WellfoundCareersView({
       }}>
         <h3 style={{
           fontSize: 15,
-          fontWeight: 800,
+          fontWeight: 700,
           color: colors.textPrimary,
           margin: '0 0 4px',
           letterSpacing: '-0.01em'
@@ -1398,7 +1397,6 @@ export default function WellfoundCareersView({
 
   return (
     <div style={{
-      fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
       backgroundColor: colors.bg,
       color: colors.textPrimary,
       minHeight: '100vh',
@@ -2033,7 +2031,8 @@ export default function WellfoundCareersView({
             {/* Main Headline */}
             <h1 style={{
               fontSize: 'clamp(32px, 4.5vw, 50px)',
-              fontWeight: 900,
+              fontWeight: 700,
+              fontStyle: 'normal',
               letterSpacing: '-0.035em',
               color: colors.textPrimary,
               margin: '0 0 24px',
@@ -2167,7 +2166,8 @@ export default function WellfoundCareersView({
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <h2 style={{
                   fontSize: 21,
-                  fontWeight: 800,
+                  fontWeight: 700,
+                  fontStyle: 'normal',
                   color: colors.textPrimary,
                   margin: 0,
                   letterSpacing: '-0.02em'
@@ -2461,7 +2461,7 @@ export default function WellfoundCareersView({
                 {activeCategoryFilter !== 'all' || searchQuery || (selectedCountry && selectedCountry !== 'ALL') ? (
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-                      <h2 style={{ fontSize: 20, fontWeight: 800, color: colors.textPrimary, margin: 0, letterSpacing: '-0.02em' }}>
+                      <h2 style={{ fontSize: 20, fontWeight: 700, color: colors.textPrimary, margin: 0, letterSpacing: '-0.02em' }}>
                         {selectedCountry === 'India' && `India Open Positions (${categoryFilteredJobs.length} positions found)`}
                         {selectedCountry === 'USA' && `USA Open Requisitions (${categoryFilteredJobs.length} positions found)`}
                         {selectedCountry === 'ALL' && activeCategoryFilter === 'cloud' && 'Cloud & Infrastructure Jobs'}
@@ -2617,7 +2617,7 @@ export default function WellfoundCareersView({
                     {/* Section 1: Trending Direct Client Jobs */}
                     <div style={{ marginBottom: 38 }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                        <h2 style={{ fontSize: 20, fontWeight: 800, color: colors.textPrimary, margin: 0, letterSpacing: '-0.02em' }}>
+                        <h2 style={{ fontSize: 20, fontWeight: 700, color: colors.textPrimary, margin: 0, letterSpacing: '-0.02em' }}>
                           Trending direct client jobs
                         </h2>
                         <span style={{ fontSize: 13, color: colors.textSecondary }}>
@@ -2637,7 +2637,7 @@ export default function WellfoundCareersView({
                     {/* Section 2: Engineering Jobs */}
                     <div style={{ marginBottom: 38 }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                        <h2 style={{ fontSize: 20, fontWeight: 800, color: colors.textPrimary, margin: 0, letterSpacing: '-0.02em' }}>
+                        <h2 style={{ fontSize: 20, fontWeight: 700, color: colors.textPrimary, margin: 0, letterSpacing: '-0.02em' }}>
                           Engineering jobs
                         </h2>
                         <button
@@ -2668,7 +2668,7 @@ export default function WellfoundCareersView({
                     {/* Section 3: Data & Analytics Jobs */}
                     <div style={{ marginBottom: 38 }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                        <h2 style={{ fontSize: 20, fontWeight: 800, color: colors.textPrimary, margin: 0, letterSpacing: '-0.02em' }}>
+                        <h2 style={{ fontSize: 20, fontWeight: 700, color: colors.textPrimary, margin: 0, letterSpacing: '-0.02em' }}>
                           Data and Analytics jobs
                         </h2>
                         <button
@@ -2699,7 +2699,7 @@ export default function WellfoundCareersView({
                     {/* Section 4: Cloud & Infrastructure Jobs */}
                     <div style={{ marginBottom: 38 }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                        <h2 style={{ fontSize: 20, fontWeight: 800, color: colors.textPrimary, margin: 0, letterSpacing: '-0.02em' }}>
+                        <h2 style={{ fontSize: 20, fontWeight: 700, color: colors.textPrimary, margin: 0, letterSpacing: '-0.02em' }}>
                           Cloud & Infrastructure jobs
                         </h2>
                         <button
@@ -2730,7 +2730,7 @@ export default function WellfoundCareersView({
                     {/* Section 5: Management & Public Sector Jobs */}
                     <div style={{ marginBottom: 38 }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                        <h2 style={{ fontSize: 20, fontWeight: 800, color: colors.textPrimary, margin: 0, letterSpacing: '-0.02em' }}>
+                        <h2 style={{ fontSize: 20, fontWeight: 700, color: colors.textPrimary, margin: 0, letterSpacing: '-0.02em' }}>
                           Management & Public Sector jobs
                         </h2>
                         <button
@@ -3197,7 +3197,7 @@ export default function WellfoundCareersView({
                         borderRadius: 8,
                         padding: '10px 24px',
                         fontSize: 13.5,
-                        fontWeight: 800,
+                        fontWeight: 700,
                         cursor: isSelectedJobExpired ? 'not-allowed' : 'pointer',
                         boxShadow: isSelectedJobExpired ? 'none' : '0 2px 8px rgba(0,0,0,0.1)',
                         opacity: isSelectedJobExpired ? 0.75 : 1,
@@ -3216,7 +3216,7 @@ export default function WellfoundCareersView({
                   <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                     <span style={{
                       fontSize: '11px',
-                      fontWeight: 800,
+                      fontWeight: 500,
                       letterSpacing: '0.08em',
                       textTransform: 'uppercase',
                       color: isLight ? '#1D4ED8' : '#60A5FA',
@@ -3230,7 +3230,7 @@ export default function WellfoundCareersView({
                     {Boolean(selectedJob?.country === 'India' || selectedJob?.countryId === '76415c4c-6968-454c-aabc-36c68a9b1f06' || /(?:pune|delhi|noida|hyderabad|bangalore|bengaluru|mumbai|gondia)\b/i.test(selectedJob?.location || '')) && (
                       <span style={{
                         fontSize: '11px',
-                        fontWeight: 800,
+                        fontWeight: 500,
                         letterSpacing: '0.05em',
                         color: '#92400E',
                         background: '#FEF3C7',
@@ -3261,7 +3261,8 @@ export default function WellfoundCareersView({
 
                   <h1 style={{
                     fontSize: 'clamp(24px, 3vw, 32px)',
-                    fontWeight: 900,
+                    fontWeight: 700,
+                    fontStyle: 'normal',
                     letterSpacing: '-0.03em',
                     color: colors.textPrimary,
                     margin: '0 0 10px',
@@ -3448,10 +3449,10 @@ export default function WellfoundCareersView({
                 </div>
 
                 {/* ── 4. STRUCTURED ABOUT THE JOB SECTIONS (EXACT WELLFOUND LAYOUT) ── */}
-                <div style={{ marginBottom: 36, lineHeight: 1.75, fontSize: 15, fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }}>
+                <div style={{ marginBottom: 36, lineHeight: 1.75, fontSize: 15, fontFamily: 'inherit' }}>
                   {/* About the Role */}
                   <div style={{ marginBottom: 30 }}>
-                    <h3 style={{ fontSize: 19, fontWeight: 800, color: colors.textPrimary, margin: '0 0 14px', letterSpacing: '-0.02em' }}>
+                    <h3 style={{ fontSize: 19, fontWeight: 700, fontStyle: 'normal', color: colors.textPrimary, margin: '0 0 14px', letterSpacing: '-0.02em' }}>
                       About the Role
                     </h3>
                     <p style={{
@@ -3466,7 +3467,7 @@ export default function WellfoundCareersView({
 
                   {/* What You'll Do */}
                   <div style={{ marginBottom: 30 }}>
-                    <h3 style={{ fontSize: 19, fontWeight: 800, color: colors.textPrimary, margin: '0 0 14px', letterSpacing: '-0.02em' }}>
+                    <h3 style={{ fontSize: 19, fontWeight: 700, fontStyle: 'normal', color: colors.textPrimary, margin: '0 0 14px', letterSpacing: '-0.02em' }}>
                       What You'll Do
                     </h3>
                     <ul style={{
@@ -3510,7 +3511,7 @@ export default function WellfoundCareersView({
 
                   {/* Who You Are (All Levels) */}
                   <div style={{ marginBottom: 30 }}>
-                    <h3 style={{ fontSize: 19, fontWeight: 800, color: colors.textPrimary, margin: '0 0 14px', letterSpacing: '-0.02em' }}>
+                    <h3 style={{ fontSize: 19, fontWeight: 700, fontStyle: 'normal', color: colors.textPrimary, margin: '0 0 14px', letterSpacing: '-0.02em' }}>
                       Who You Are (All Levels)
                     </h3>
                     <ul style={{
@@ -3555,7 +3556,7 @@ export default function WellfoundCareersView({
                   {/* Preferred Qualifications (if present) */}
                   {selDetails?.preferredSkills && selDetails.preferredSkills.length > 0 && (
                     <div style={{ marginBottom: 30 }}>
-                      <h3 style={{ fontSize: 19, fontWeight: 800, color: colors.textPrimary, margin: '0 0 14px', letterSpacing: '-0.02em' }}>
+                      <h3 style={{ fontSize: 19, fontWeight: 700, fontStyle: 'normal', color: colors.textPrimary, margin: '0 0 14px', letterSpacing: '-0.02em' }}>
                         Preferred Qualifications
                       </h3>
                       <ul style={{
@@ -3582,7 +3583,7 @@ export default function WellfoundCareersView({
 
                   {/* About the Company */}
                   <div style={{ marginBottom: 30 }}>
-                    <h3 style={{ fontSize: 19, fontWeight: 800, color: colors.textPrimary, margin: '0 0 12px', letterSpacing: '-0.02em' }}>
+                    <h3 style={{ fontSize: 19, fontWeight: 700, fontStyle: 'normal', color: colors.textPrimary, margin: '0 0 12px', letterSpacing: '-0.02em' }}>
                       About the Company
                     </h3>
                     <p style={{
@@ -3598,7 +3599,7 @@ export default function WellfoundCareersView({
                   {/* Project & Engagement Specifications */}
                   {selDetails?.engagementDetails && selDetails.engagementDetails.length > 0 && (
                     <div style={{ marginBottom: 30 }}>
-                      <h3 style={{ fontSize: 19, fontWeight: 800, color: colors.textPrimary, margin: '0 0 14px', letterSpacing: '-0.02em' }}>
+                      <h3 style={{ fontSize: 19, fontWeight: 700, fontStyle: 'normal', color: colors.textPrimary, margin: '0 0 14px', letterSpacing: '-0.02em' }}>
                         Project & Engagement Specifications
                       </h3>
                       <div style={{

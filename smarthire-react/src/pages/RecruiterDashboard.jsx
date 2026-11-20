@@ -1855,7 +1855,7 @@ Apply / Submit Profile: ${applyUrl}
     }
 
     const htmlBody = `
-      <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 1.6; color: #1e293b; max-width: 720px; margin: 0 auto; padding: 20px 24px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px;">
+      <div style="font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; font-size: 14px; line-height: 1.6; color: #1e293b; max-width: 720px; margin: 0 auto; padding: 20px 24px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px;">
         <p style="margin: 0 0 16px 0; font-size: 14px; color: #0f172a;">Hi <strong>${recName}</strong>,</p>
         <p style="margin: 0 0 20px 0; font-size: 14px; color: #334155;">Please find the requirement details below:</p>
 
@@ -3829,7 +3829,7 @@ Email: ${myEmail}
           border-bottom: 1px solid #1e293b;
           color: #ffffff;
           box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
-          font-family: 'Plus Jakarta Sans', sans-serif;
+          font-family: inherit;
         }
 
         .tf-subbar-container {
@@ -3890,7 +3890,7 @@ Email: ${myEmail}
           border-radius: 6px;
           cursor: pointer;
           transition: all 0.15s ease;
-          font-family: 'Plus Jakarta Sans', sans-serif;
+          font-family: inherit;
         }
 
         .tf-subbar-tab:hover {
@@ -3961,7 +3961,7 @@ Email: ${myEmail}
           font-size: 11.5px;
           width: 135px;
           outline: none;
-          font-family: 'Plus Jakarta Sans', sans-serif;
+          font-family: inherit;
         }
 
         .tf-quick-search-input::placeholder {
@@ -3986,7 +3986,7 @@ Email: ${myEmail}
 
         /* Portal Layout & Cards */
         .tf-portal-view-container {
-          font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+          font-family: inherit;
         }
 
         .tf-portal-breadcrumbs {
@@ -4046,8 +4046,10 @@ Email: ${myEmail}
         }
 
         .tf-search-title {
-          font-size: 17px;
-          font-weight: 800;
+          font-size: 24px;
+          line-height: 32px;
+          font-weight: 700;
+          font-style: normal;
           color: #0f172a;
           margin: 0 0 3px 0;
           letter-spacing: -0.02em;
@@ -4166,6 +4168,8 @@ Email: ${myEmail}
           border-radius: 6px;
           background: #ffffff;
           font-size: 12px;
+          font-weight: 400;
+          font-style: normal;
           color: #0f172a;
           outline: none;
           box-sizing: border-box;
@@ -4242,8 +4246,10 @@ Email: ${myEmail}
         }
 
         .tf-table-main-title {
-          font-size: 16px;
-          font-weight: 800;
+          font-size: 18px;
+          line-height: 26px;
+          font-weight: 700;
+          font-style: normal;
           color: #0f172a;
           margin: 0;
           letter-spacing: -0.01em;
@@ -4734,8 +4740,8 @@ Email: ${myEmail}
 
         .tf-report-kpi-val {
           font-size: 26px;
-          font-weight: 800;
-          font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+          font-weight: 700;
+          font-family: inherit;
           line-height: 1.1;
           margin-bottom: 4px;
         }
@@ -4910,7 +4916,7 @@ Email: ${myEmail}
         }
 `}</style>
 
-      <div style={{ background: '#f1f5f9', minHeight: '92vh', paddingBottom: '30px', fontFamily: 'Arial, sans-serif' }}>
+      <div style={{ background: '#f1f5f9', minHeight: '92vh', paddingBottom: '30px', fontFamily: 'inherit' }}>
         
         {/* ═══════════ SMARTWORKS MODERN ENTERPRISE NAVIGATION BAR (MUI THEFRONT STYLE) ═══════════ */}
         <header className="tf-dash-subbar">
@@ -5300,7 +5306,7 @@ Email: ${myEmail}
 
                 {/* Legacy CoolWorks Candidate Grid */}
                 <div style={{ overflowX: 'auto', border: '1px solid #cbd5e1', borderTop: 'none' }}>
-                  <table className="coolworks-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10.5px', textAlign: 'left', background: '#ffffff', fontFamily: 'Arial, Helvetica, sans-serif' }}>
+                  <table className="coolworks-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10.5px', textAlign: 'left', background: '#ffffff', fontFamily: 'inherit' }}>
                     <thead>
                       <tr style={{ background: '#708090', color: '#ffffff', borderBottom: '1px solid #4a5568' }}>
                         <th style={{ background: '#708090', color: '#ffffff', padding: '5px 6px', fontWeight: 'bold', textAlign: 'center', width: '35px', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Scr?</th>
@@ -5507,7 +5513,7 @@ Email: ${myEmail}
                 <div style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', background: '#fafbfd', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <h2 style={{ margin: 0, fontSize: '16px', color: '#0f172a', fontWeight: '800', letterSpacing: '-0.01em', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+                      <h2 style={{ margin: 0, fontSize: '18px', lineHeight: '26px', color: '#0f172a', fontWeight: '700', fontStyle: 'normal', letterSpacing: '-0.01em', fontFamily: 'inherit' }}>
                         {isEmployee ? `My Submission & Activity Report — ${userName}` : `SmartWorks Recruitment & Activity Reports`}
                       </h2>
                       <span className="tf-live-telemetry-badge">
@@ -7119,7 +7125,7 @@ Email: ${myEmail}
                   </div>
 
                   {/* Viewer Content Area */}
-                  <div style={{ flex: 1, padding: '12px 14px', background: '#ffffff', overflowY: 'auto', maxHeight: '480px', fontSize: `${11 * (submissionZoom / 100)}px`, lineHeight: '1.5', fontFamily: 'Arial, sans-serif' }}>
+                  <div style={{ flex: 1, padding: '12px 14px', background: '#ffffff', overflowY: 'auto', maxHeight: '480px', fontSize: `${11 * (submissionZoom / 100)}px`, lineHeight: '1.5', fontFamily: 'inherit' }}>
                     {submissionDocType === 'resume' && (
                       <div>
                         {submissionCandidate.resumeText ? (
@@ -7329,7 +7335,7 @@ Email: ${myEmail}
               VIEW MODE 3: SINGLE REQUISITION DETAIL VIEW
               ───────────────────────────────────────────────────────────── */}
           {viewMode === 'requisition' && selectedReq && (
-            <div style={{ background: '#ffffff', border: '1px solid #7f9db9', borderRadius: 0, padding: '14px 18px', fontFamily: 'Arial, Helvetica, sans-serif' }}>
+            <div style={{ background: '#ffffff', border: '1px solid #7f9db9', borderRadius: 0, padding: '14px 18px', fontFamily: 'inherit' }}>
               <div style={{ fontSize: '11px', color: '#000080', fontWeight: 'bold', marginBottom: '8px' }}>
                 You are here: <span style={{ color: '#0066cc', cursor: 'pointer' }} onClick={() => setViewMode('portal')}>Home</span> &gt; Requisitions &gt; Edit Requisition
               </div>
@@ -7725,7 +7731,7 @@ Email: ${myEmail}
               </div>
 
               {/* Tab Panel Content Box (Crisp Square Style) */}
-              <div style={{ background: '#ffffff', border: '1px solid #7f9db9', borderTop: 'none', borderRadius: 0, padding: '12px 16px', minHeight: '300px', fontFamily: 'Arial, Helvetica, sans-serif' }}>
+              <div style={{ background: '#ffffff', border: '1px solid #7f9db9', borderTop: 'none', borderRadius: 0, padding: '12px 16px', minHeight: '300px', fontFamily: 'inherit' }}>
                 
                 {/* ─── TAB 1: DETAILS ─── */}
                 {activeReqTab === 'details' && (
@@ -8118,7 +8124,7 @@ Email: ${myEmail}
 
                     {/* Recruiters Compact Table (Constrained maxWidth: 920px to prevent horizontal stretching) */}
                     <div style={{ maxWidth: '920px', overflowX: 'auto', border: '1px solid #7f9db9', borderRadius: 0, marginBottom: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                      <table className="coolworks-table" style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: '10.5px', textAlign: 'left', fontFamily: 'Arial, Helvetica, sans-serif', background: '#ffffff' }}>
+                      <table className="coolworks-table" style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: '10.5px', textAlign: 'left', fontFamily: 'inherit', background: '#ffffff' }}>
                         <thead>
                           <tr style={{ background: '#708090', color: '#ffffff', borderBottom: '1px solid #4a5568' }}>
                             <th style={{ background: '#708090', color: '#ffffff', padding: '4px 6px', width: '36px', textAlign: 'center', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>
@@ -8371,7 +8377,7 @@ Email: ${myEmail}
                     </div>
 
                     <div style={{ overflowX: 'auto', marginBottom: '10px', border: '1px solid #7f9db9', borderRadius: 0 }}>
-                      <table className="coolworks-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10.5px', textAlign: 'left', fontFamily: 'Arial, Helvetica, sans-serif', background: '#ffffff' }}>
+                      <table className="coolworks-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10.5px', textAlign: 'left', fontFamily: 'inherit', background: '#ffffff' }}>
                         <thead>
                           <tr style={{ background: '#708090', color: '#ffffff', borderBottom: '1px solid #4a5568' }}>
                             <th style={{ background: '#708090', color: '#ffffff', padding: '4px 6px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Candidate Name</th>
@@ -9347,7 +9353,7 @@ Email: ${myEmail}
 
                 {/* Team Users Table */}
                 <div style={{ overflowX: 'auto', border: '1px solid #cbd5e1', borderRadius: '3px' }}>
-                  <table className="coolworks-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10.5px', textAlign: 'left', background: '#ffffff', fontFamily: 'Arial, Helvetica, sans-serif' }}>
+                  <table className="coolworks-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10.5px', textAlign: 'left', background: '#ffffff', fontFamily: 'inherit' }}>
                     <thead>
                       <tr style={{ background: '#708090', color: '#ffffff', borderBottom: '1px solid #4a5568' }}>
                         <th style={{ background: '#708090', color: '#ffffff', padding: '5px 8px', fontWeight: 'bold', borderRight: '1px solid rgba(255,255,255,0.25)', fontSize: '11px' }}>Member Name</th>
@@ -11019,7 +11025,7 @@ Email: ${myEmail}
                   </div>
 
                   {/* Formatted Resume Body with Smart Regex Highlighting */}
-                  <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '12px', maxHeight: '220px', overflowY: 'auto', fontFamily: 'Arial, sans-serif', fontSize: '11.5px', color: '#334155', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>
+                  <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '12px', maxHeight: '220px', overflowY: 'auto', fontFamily: 'inherit', fontSize: '11.5px', color: '#334155', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>
                     {(() => {
                       const rawResume = aiCandidate.resumeText || aiCandidate.statusComments || `NAME: ${aiCandidate.name}
 ROLE: ${aiCandidate.role || editingFields.title || selectedReq?.title || 'Senior Consultant'}
@@ -12316,7 +12322,7 @@ CORE RESPONSIBILITIES & HIGHLIGHTS:
         )}
 
         {/* ═══════════ SMARTHIRE ENTERPRISE FOOTER ═══════════ */}
-        <footer style={{ background: '#0f172a', borderTop: '1px solid #1e293b', color: '#94a3b8', textAlign: 'center', padding: '12px 16px', marginTop: '32px', fontSize: '11.5px', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+        <footer style={{ background: '#0f172a', borderTop: '1px solid #1e293b', color: '#94a3b8', textAlign: 'center', padding: '12px 16px', marginTop: '32px', fontSize: '11.5px', fontFamily: 'inherit' }}>
           © SmartHire Enterprise ATS | All rights reserved | Release 2.4.0 High-Velocity Staffing Platform
         </footer>
 

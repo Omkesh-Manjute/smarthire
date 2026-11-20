@@ -1947,7 +1947,7 @@ const clientStyles = {
   pageContainer: {
     minHeight: '100vh',
     background: '#f8fafc',
-    fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+    fontFamily: 'inherit',
     color: '#0f172a'
   },
   header: {
