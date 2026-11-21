@@ -66,6 +66,23 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
     - In resume views, every responsibility, project accomplishment, and contribution line must be formatted with an explicit bullet point (`•`) and proper indentation.
     - The engine must automatically detect responsibilities (lines following `Responsibilities:`, action verbs, or list items) even when converted from plain text or Word documents without literal Unicode bullets.
 
+### 2026-11-21 — Multi-Page ATS UI Overhaul (Vendor Hotlists, Company Directory, Candidate DB, Submittal Pack) & AWS Lightsail Live Deployment
+- **User Request & Requirements**:
+  1. *Vendor Hotlists (`/inbox?tab=hotlist`)*: Remove "Bench Ingestion Hub" from topbar; place "Vendor Hotlist" side-by-side with sidebar collapse toggle; remove "+ Add Candidate" from top bar; remove duplicate lower heading "Vendor Hotlists & Bench Ingestion Hub" and "Excel Grid View" badge; preserve "+ Add / Paste Hotlist" and "Export Excel" buttons.
+  2. *Company Directory (`/ats?tab=directory`)*: Remove duplicate heading "Company & Recruiter Directory" and subtitle; shift cards and tables up; apply smooth hover effect (matching Home screen's "Invite your recruiting team" box) to directory metric stat cards.
+  3. *Home Screen (`/ats` Home)*: Fix "My Open Requisitions" KPI card to dynamically count all open requisitions (`status === 'Open' || 'Active' || 'Posted'`); replace static demo rows in "My Open Tasks & Sourcing Queue" with 100% dynamic live requisitions, real due dates, candidate sourcing counts, and priorities.
+  4. *Candidate Database (`/inbox`)*: Remove "Talent Cloud" from topbar; align "Candidates" side-by-side with collapse toggle; remove "+ Add Candidate"; remove subheader "Candidates" / "Find the right talent, faster." and shift filter tabs up; strictly eliminate InfoOrigin ("info region") from AI matching engine and matched requirement column.
+  5. *Submittal Pack & Coversheet Generator (`/submittal-pack`)*: Remove "Client Submissions /" and "Direct Client" badge from topbar; remove "Download .docx", ".doc", and "SmartSign RTR" buttons; ensure candidate selection is empty by default (no auto-selected candidate on load); simplify wording ("Submittal Form", "Position & Candidate Details"); fix live edit-copy-send synchronization; remove all hardcoded "SmartHire" branding from client submittal pack HTML, text, and email dispatchers.
+- **Verification & Deployment Protocol**:
+  - Matching engine unit tests: 42/42 tests passed.
+  - Production build: `npm run build` in `smarthire-react` completed in 3.26s with 0 errors, 0 warnings (new main bundle `index-Bqn1u235.js`).
+  - Git committed (`9338ac9`) and pushed to GitHub `origin main`.
+  - Deployed production bundle to AWS Lightsail server (`34.194.119.199`), extracted to `/var/www/html/` and `/home/ubuntu/smarthire/dist/`, archives cleaned up immediately.
+  - Asset pruning: Exactly 5 newest `index-*.js` bundles retained in `/var/www/html/assets/`.
+  - Root volume maintained healthy: 8.5GB free (55% used; Rule 5 compliance).
+  - PM2 `smarthire-ats` reloaded and verified online (PID 807249).
+  - Live domain verification: `https://smarthireus.com` returning HTTP 200 serving `index-Bqn1u235.js`, all component bundles (`RecruiterInbox-CJbhClDW.js`, `SubmittalPackPage-AzjyB0gK.js`, `AtsPlatform-Btwx6u5g.js`) verified HTTP 200 OK.
+
 ### 2026-11-20 — Unified "IBM Plex Sans" Typography, Structured Job Description Overhaul & AWS Lightsail Live Deployment
 - **User Request & Requirements**:
   - Apply clean, consistent typographic hierarchy based on `"IBM Plex Sans"` globally across all components, containers, and views.
