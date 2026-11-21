@@ -1191,14 +1191,14 @@ export function generateRichEmailHtml({
 <body style="margin: 0; padding: 20px; background-color: #F8FAFC; font-family: Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
   <div style="max-width: 680px; margin: 0 auto; background-color: #FFFFFF; border: 1px solid #CBD5E1; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
     <div style="background-color: #0F172A; padding: 16px 24px; border-bottom: 3px solid #2563EB;">
-      <div style="color: #FFFFFF; font-size: 16px; font-weight: bold; letter-spacing: -0.01em;">SmartHire Technologies</div>
+      <div style="color: #FFFFFF; font-size: 16px; font-weight: bold; letter-spacing: -0.01em;">CANDIDATE SUBMITTAL PRESENTATION</div>
       <div style="color: #94A3B8; font-size: 11px; margin-top: 2px;">Staff Augmentation & Talent Acquisition • Req #${escapeHtml(reqStr)}</div>
     </div>
     <div style="padding: 24px 28px; color: #1E293B;">
       ${formattedBlocks}
     </div>
     <div style="background-color: #F1F5F9; padding: 12px 24px; border-top: 1px solid #E2E8F0; text-align: center; font-size: 11px; color: #64748B;">
-      SmartHire Technologies • https://smarthireus.com
+      Authorized Candidate Submittal Package
     </div>
   </div>
 </body>
@@ -1227,7 +1227,7 @@ export function generateRichEmailHtml({
 <body style="margin: 0; padding: 20px; background-color: #F8FAFC; font-family: Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
   <div style="max-width: 720px; margin: 0 auto; background-color: #FFFFFF; border: 1px solid #CBD5E1; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
     <div style="background-color: #0F172A; padding: 18px 24px; border-bottom: 3px solid #2563EB;">
-      <div style="color: #FFFFFF; font-size: 17px; font-weight: bold;">SmartHire Technologies — CANDIDATE SUBMITTAL PACKAGE</div>
+      <div style="color: #FFFFFF; font-size: 17px; font-weight: bold;">CANDIDATE SUBMITTAL PACKAGE</div>
       <div style="color: #94A3B8; font-size: 12px; margin-top: 3px;">
         Candidate: <span style="background-color: #FFFF00; color: #000000; font-weight: bold; padding: 2px 5px; border-radius: 2px;">${escapeHtml(candName)}</span> • ${escapeHtml(roleStr)} (Req #${escapeHtml(reqStr)})
       </div>
@@ -1302,10 +1302,9 @@ export function generateRichEmailHtml({
       </div>
       ` : ''}
       <div style="margin-top: 24px; padding-top: 14px; border-top: 1px solid #E2E8F0; font-size: 12.5px; color: #475569; line-height: 1.5;">
-        <strong>SmartHire Submissions Team</strong><br/>
+        <strong>${escapeHtml(currentUser?.name || 'Recruitment & Submissions Team')}</strong><br/>
         Email: ${escapeHtml(currentUser?.email || 'submissions@coolsofttech.com')}<br/>
-        Phone: ${escapeHtml(currentUser?.phone || '502-327-9805')}<br/>
-        Web: <a href="https://smarthireus.com" style="color: #2563EB;">https://smarthireus.com</a>
+        Phone: ${escapeHtml(currentUser?.phone || '502-327-9805')}
       </div>
     </div>
   </div>
@@ -1477,24 +1476,24 @@ export default function SubmittalPackPage() {
     }
   }
 
-  // Coversheet Form State
+  // Coversheet Form State (Empty by default per user request)
   const [coversheet, setCoversheet] = useState({
     candidateLegalName: '',
     targetRole: '',
-    clientName: 'Enterprise Client',
+    clientName: '',
     jobId: '',
     currentLocation: '',
-    willingToRelocate: 'Yes (Open to Relocation)',
-    visaStatus: 'US Citizen',
-    visaExpiry: 'Permanent',
-    totalExperience: '8+ Years',
-    relevantExperience: '7+ Years',
-    proposedRate: '$75.00 / hr C2C',
-    highestEducation: 'B.S. in Computer Science',
-    noticePeriod: 'Immediate / 2 Weeks',
-    interviewAvailability: 'Flexible with 24 Hours Notice (Video)',
-    linkedinUrl: 'Verified Profile',
-    references: 'Available upon client request',
+    willingToRelocate: '',
+    visaStatus: '',
+    visaExpiry: '',
+    totalExperience: '',
+    relevantExperience: '',
+    proposedRate: '',
+    highestEducation: '',
+    noticePeriod: '',
+    interviewAvailability: '',
+    linkedinUrl: '',
+    references: '',
     skillsMatrix: []
   })
 
@@ -1621,11 +1620,11 @@ export default function SubmittalPackPage() {
           })
         setJobs(jobList)
 
-        // Pre-select via URL parameters or defaults
+        // Pre-select via URL parameters only; leave empty by default per user specification
         if (urlCandidateId) {
           setSelectedCandidateId(urlCandidateId)
-        } else if (unique.length > 0) {
-          setSelectedCandidateId(unique[0].id || unique[0].candidate_id)
+        } else {
+          setSelectedCandidateId('')
         }
 
         if (urlReqId) {
@@ -1985,7 +1984,7 @@ EDUCATION & CERTIFICATIONS
             </div>
             <div style="text-align: right; font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #334155;">
               <div style="font-weight: bold; color: #000000;">State of Nebraska IT Services</div>
-              <div>Submitted via SmartHire</div>
+              <div>Candidate Submittal Pack</div>
             </div>
           </div>
         </div>
@@ -2020,7 +2019,7 @@ EDUCATION & CERTIFICATIONS
           ${candidateName}
         </p>
         <p style="margin: 2px 0 18px 0; font-family: Verdana, Geneva, sans-serif; font-size: 11.5px; color: #334155;">
-          ${positionTitle} • Req #${vmsNumber} (${clientAgency}) • Represented via SmartHire
+          ${positionTitle} • Req #${vmsNumber} (${clientAgency})
         </p>
 
         <!-- Structured Resume Body (Summary, Skills, Experience with Project Titles & Bullets, Education) -->
@@ -2047,8 +2046,8 @@ EDUCATION & CERTIFICATIONS
               </div>
             </div>
             <div style="text-align: right; font-family: Arial, Helvetica, sans-serif;">
-              <div style="font-size: 13.5px; font-weight: bold; color: #0F172A;">SmartHire</div>
-              <div style="font-size: 11px; color: #64748B;">Florida State Prime Contractor</div>
+              <div style="font-size: 13.5px; font-weight: bold; color: #0F172A;">${currentUser?.company || 'Staffing Partner'}</div>
+              <div style="font-size: 11px; color: #64748B;">Florida State Contractor</div>
               <div style="font-size: 11px; color: #64748B;">Req #${vmsNumber} • Exhibit E</div>
             </div>
           </div>
@@ -2059,7 +2058,7 @@ EDUCATION & CERTIFICATIONS
             <span>•</span>
             <span>Experience: ${coversheet.totalExperience}</span>
             <span>•</span>
-            <span style="color: #059669; font-weight: bold;">Represented exclusively via SmartHire</span>
+            <span style="color: #059669; font-weight: bold;">Direct Candidate Submittal</span>
           </div>
         </div>
 
@@ -2083,8 +2082,8 @@ EDUCATION & CERTIFICATIONS
             </div>
           </div>
           <div style="text-align: right; font-family: Verdana, Geneva, sans-serif;">
-            <div style="font-size: 13.5px; font-weight: bold; color: #0F172A;">${activeTemplateMeta.agencyName}</div>
-            <div style="font-size: 11px; color: #64748B;">SmartHire Authorized Presentation</div>
+            <div style="font-size: 13.5px; font-weight: bold; color: #0F172A;">${currentUser?.company || activeTemplateMeta.agencyName || 'Authorized Vendor'}</div>
+            <div style="font-size: 11px; color: #64748B;">Candidate Submittal Pack</div>
             <div style="font-size: 11px; color: #64748B;">Req #${vmsNumber} • ${clientAgency}</div>
           </div>
         </div>
@@ -2638,9 +2637,9 @@ EDUCATION & CERTIFICATIONS
   // ─── Coversheet Text Generator (Plain-text for ATS / Portals) ──────────────
   const formattedCoversheetText = useMemo(() => {
     return `=====================================================
-CANDIDATE SUBMISSION COVERSHEET — ${coversheet.clientName.toUpperCase()}
+CANDIDATE SUBMISSION COVERSHEET — ${coversheet.clientName ? coversheet.clientName.toUpperCase() : 'CLIENT SUBMISSION'}
 REQUISITION: #${coversheet.jobId} - ${coversheet.targetRole}
-AGENCY: SmartHire Recruiting Partner
+AGENCY: ${currentUser?.company || 'Authorized Staffing Partner'}
 PRESENTATION FORMAT: ${activeTemplateMeta.name}
 =====================================================
 
@@ -2649,14 +2648,14 @@ Target Position:            ${coversheet.targetRole}
 Client Requisition ID:      #${coversheet.jobId} (${coversheet.clientName})
 Current Location:           ${coversheet.currentLocation}
 Relocation Preference:      ${coversheet.willingToRelocate}
-Work Authorization / Visa:  ${coversheet.visaStatus} (Expiry: ${coversheet.visaExpiry})
+Work Authorization / Visa:  ${coversheet.visaStatus} ${coversheet.visaExpiry ? `(Expiry: ${coversheet.visaExpiry})` : ''}
 Total Professional Exp:     ${coversheet.totalExperience}
 Relevant Technology Exp:    ${coversheet.relevantExperience}
 Proposed Billing / Pay Rate: ${coversheet.proposedRate} (${employmentType})
 Highest Education / Degree: ${coversheet.highestEducation}
 Availability / Notice:      ${coversheet.noticePeriod}
 Interview Availability:     ${coversheet.interviewAvailability}
-Representation Status:      Exclusive via SmartHire
+Representation Status:      Exclusive Candidate Representation
 
 ${activeTemplateMeta.hasCaiBox ? `-----------------------------------------------------
 MSP / CAI CONTRACT MANAGER DETAILS:
@@ -2709,7 +2708,7 @@ ${coversheet.references}
     if (activePreviewTab === 'rtr') {
       handleCopyRtr()
     } else if (activePreviewTab === 'all') {
-      const resumeHtml = resumeEditorRef.current ? resumeEditorRef.current.innerText : ''
+      const resumeHtml = resumeEditorRef.current?.innerText?.trim() || resumeText || ''
       const details = getCleanRtrEmailDetails({
         selectedTemplate,
         candidateName: coversheet.candidateLegalName,
@@ -2726,7 +2725,7 @@ ${coversheet.references}
       navigator.clipboard.writeText(combined)
       showToast('Complete Submittal Pack copied!')
     } else {
-      const resumeTextRaw = resumeEditorRef.current ? resumeEditorRef.current.innerText : ''
+      const resumeTextRaw = resumeEditorRef.current?.innerText?.trim() || resumeText || ''
       navigator.clipboard.writeText(`${formattedCoversheetText}\n\n${resumeTextRaw}`)
       showToast('Resume & Coversheet copied!')
     }
@@ -2742,8 +2741,8 @@ ${coversheet.references}
     setEmailPreviewTab('edit')
     const cand = candidates.find(c => c.id === selectedCandidateId)
     setEmailTo(cand?.recruiterEmail || 'account-manager@coolsofttech.com')
-    setEmailSubject(`Candidate Submittal: ${coversheet.candidateLegalName} — ${positionTitle} (Req #${vmsNumber} - ${clientAgency})`)
-    setEmailBody(`Hi Team,\n\nPlease find attached the submittal package and presentation coversheet for ${coversheet.candidateLegalName} for the ${positionTitle} opening with ${clientAgency}.\n\nCandidate is confirmed at ${coversheet.proposedRate} (${employmentType}) with ${coversheet.visaStatus} work authorization and is available on ${coversheet.noticePeriod}.\n\nBest regards,\nSmartHire Submissions Team`)
+    setEmailSubject(`Candidate Submittal: ${coversheet.candidateLegalName || 'Candidate'} — ${positionTitle} (Req #${vmsNumber} - ${clientAgency})`)
+    setEmailBody(`Hi Team,\n\nPlease find attached the submittal package and presentation coversheet for ${coversheet.candidateLegalName || 'the candidate'} for the ${positionTitle} opening with ${clientAgency}.\n\nCandidate is confirmed at ${coversheet.proposedRate} (${employmentType}) with ${coversheet.visaStatus} work authorization and is available on ${coversheet.noticePeriod}.\n\nBest regards,\n${currentUser?.name || 'Recruiting Team'}\n${currentUser?.email || ''}`)
     setShowEmailModal(true)
   }
 
@@ -2861,8 +2860,8 @@ ${coversheet.references}
       if (emailModalMode === 'rtr') {
         payloadMessage = emailBody
       } else {
-        const rtrText = rtrEditorRef.current ? rtrEditorRef.current.innerText : ''
-        const resumeTextCurrent = resumeEditorRef.current ? resumeEditorRef.current.innerText : ''
+        const rtrText = rtrEditorRef.current?.innerText?.trim() || ''
+        const resumeTextCurrent = resumeEditorRef.current?.innerText?.trim() || resumeText || ''
         payloadMessage = `${emailBody}\n\n${formattedCoversheetText}\n\n=====================================================\nSUBMITTAL RESUME\n=====================================================\n${resumeTextCurrent}\n\n=====================================================\nE-RTR ACKNOWLEDGEMENT\n=====================================================\n${rtrText}`
       }
 
@@ -2931,16 +2930,9 @@ ${coversheet.references}
             </button>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-              <span style={{ fontSize: '13px', color: '#64748B', fontWeight: '500' }}>
-                Client Submissions
-              </span>
-              <span style={{ fontSize: '12px', color: '#CBD5E1' }}>/</span>
-              <h2 style={{ fontSize: '14.5px', fontWeight: '800', color: '#0F172A', margin: 0, letterSpacing: '-0.01em' }}>
+              <h2 style={{ fontSize: '15px', fontWeight: '800', color: '#0F172A', margin: 0, letterSpacing: '-0.01em' }}>
                 Submittal Pack & Coversheet Generator
               </h2>
-              <span style={styles.badgeEnterprise}>
-                {activeTemplateMeta.badge}
-              </span>
             </div>
           </div>
 
@@ -2950,63 +2942,6 @@ ${coversheet.references}
                 <IconCheck /> <span>{copyToastText}</span>
               </div>
             )}
-
-            {/* 1. Formatted Word (.docx) Download */}
-            <button
-              type="button"
-              disabled={isExportingDocx}
-              onClick={() => handleDownloadResumeWord('docx')}
-              style={{
-                ...styles.actionBtnSecondary,
-                borderColor: '#93C5FD',
-                color: '#1D4ED8',
-                backgroundColor: '#EFF6FF',
-                fontWeight: '700',
-                padding: '7px 13px',
-                borderRadius: 6,
-                boxShadow: '0 1px 2px rgba(37, 99, 235, 0.08)'
-              }}
-              title="Download client-ready formatted document in genuine Microsoft Word (.docx) format"
-            >
-              <IconDownload /> <span>{isExportingDocx ? 'Generating...' : 'Download .docx'}</span>
-            </button>
-
-            {/* 2. Legacy Word (.doc) Download */}
-            <button
-              type="button"
-              disabled={isExportingDocx}
-              onClick={() => handleDownloadResumeWord('doc')}
-              style={{
-                ...styles.actionBtnSecondary,
-                borderColor: '#CBD5E1',
-                padding: '7px 11px',
-                borderRadius: 6
-              }}
-              title="Download formatted document in legacy Word / RTF (.doc) format"
-            >
-              <IconDownload /> <span>.doc</span>
-            </button>
-
-            {/* 3. SmartSign RTR Digital Signature Workflow */}
-            <button
-              type="button"
-              onClick={() => {
-                navigate(`/sign-rtr?template=${selectedTemplate}&name=${encodeURIComponent(coversheet.candidateLegalName || '')}&job=${encodeURIComponent(positionTitle || '')}&req=${encodeURIComponent(vmsNumber || '')}&rate=${encodeURIComponent(cleanRateNumber || '')}`)
-              }}
-              style={{
-                ...styles.actionBtnSecondary,
-                color: '#4F46E5',
-                borderColor: '#C7D2FE',
-                backgroundColor: '#EEF2FF',
-                fontWeight: '700',
-                padding: '7px 13px',
-                borderRadius: 6,
-                boxShadow: '0 1px 2px rgba(79, 70, 229, 0.08)'
-              }}
-              title="Open Digital Signature Portal (SmartSign RTR)"
-            >
-              <IconSignature /> <span>SmartSign RTR</span>
-            </button>
 
             {/* Notification Bell */}
             <button
@@ -3344,11 +3279,11 @@ ${coversheet.references}
                   Client Submission Coversheet
                 </h3>
                 <div style={{ fontSize: '11px', color: '#64748B', marginTop: 2 }}>
-                  Dynamic Position Parameters & Live Form
+                  Position & Candidate Details
                 </div>
               </div>
               <span style={{ fontSize: '11px', fontWeight: '700', color: '#2563EB', background: '#EFF6FF', padding: '3px 8px', borderRadius: 6, border: '1px solid #BFDBFE' }}>
-                Editable Live
+                Submittal Form
               </span>
             </div>
 
@@ -3356,15 +3291,17 @@ ${coversheet.references}
             <div style={styles.uploadCard}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
                 <div style={{ fontSize: '12px', fontWeight: '800', color: '#0F172A', display: 'flex', alignItems: 'center', gap: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                  <IconUser /> <span>Candidate Profile & Packaging</span>
+                  <IconUser /> <span>Candidate Profile</span>
                 </div>
-                <span style={{ fontSize: '10px', fontWeight: '700', color: '#0369A1', background: '#F0F9FF', padding: '2px 8px', borderRadius: 4, border: '1px solid #BAE6FD' }}>
-                  Active Profile
-                </span>
+                {currentSelectedCandidate && (
+                  <span style={{ fontSize: '10px', fontWeight: '700', color: '#0369A1', background: '#F0F9FF', padding: '2px 8px', borderRadius: 4, border: '1px solid #BAE6FD' }}>
+                    Selected Profile
+                  </span>
+                )}
               </div>
 
               {/* Candidate Info Card */}
-              {currentSelectedCandidate && (
+              {currentSelectedCandidate ? (
                 <div style={{
                   padding: '10px 12px',
                   background: '#F8FAFC',
@@ -3386,7 +3323,7 @@ ${coversheet.references}
                       color: currentSelectedCandidate.isVendorHotlist ? '#92400E' : (currentSelectedCandidate.isUploaded ? '#065F46' : '#1D4ED8'),
                       border: `1px solid ${currentSelectedCandidate.isVendorHotlist ? '#FDE68A' : (currentSelectedCandidate.isUploaded ? '#A7F3D0' : '#BFDBFE')}`
                     }}>
-                      {currentSelectedCandidate.isVendorHotlist ? `Bench: ${currentSelectedCandidate.vendorCompany || 'Vendor'}` : (currentSelectedCandidate.isUploaded ? 'Uploaded Resume' : 'ATS Pool')}
+                      {currentSelectedCandidate.isVendorHotlist ? `Bench: ${currentSelectedCandidate.vendorCompany || 'Vendor'}` : (currentSelectedCandidate.isUploaded ? 'Uploaded Resume' : 'Candidate Pool')}
                     </span>
                   </div>
                   <div style={{ fontSize: '11px', color: '#64748B', marginTop: 4, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
@@ -3394,6 +3331,20 @@ ${coversheet.references}
                     <span><b>Role:</b> {currentSelectedCandidate.role || positionTitle || 'Consultant'}</span>
                     {currentSelectedCandidate.visaStatus && <span><b>Visa:</b> {currentSelectedCandidate.visaStatus}</span>}
                   </div>
+                </div>
+              ) : (
+                <div style={{
+                  padding: '14px 12px',
+                  background: '#F8FAFC',
+                  border: '1px dashed #CBD5E1',
+                  borderRadius: 8,
+                  marginBottom: 10,
+                  textAlign: 'center',
+                  color: '#64748B',
+                  fontSize: '12px',
+                  lineHeight: 1.5
+                }}>
+                  No candidate selected. Choose a candidate from the dropdown or upload/paste a resume below.
                 </div>
               )}
 

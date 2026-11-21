@@ -594,17 +594,8 @@ Looking forward to your prompt response.`;
         </div>
       )}
 
-      {/* Header & Title */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
-        <div>
-          <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#0F172A', margin: 0 }}>
-            Company & Recruiter Directory
-          </h1>
-          <p style={{ fontSize: '13px', color: '#64748B', marginTop: '4px', marginBottom: 0 }}>
-            Unique corporate companies, staffing vendors, and recruiters grouped from {accountEmail}
-          </p>
-        </div>
-
+      {/* Top Sync & Status Bar (Content shifted up per user request) */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '16px' }}>
         {/* Sync Button */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           {updatedAt && (
@@ -634,9 +625,31 @@ Looking forward to your prompt response.`;
         </div>
       </div>
 
-      {/* Metric Stat Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}>
-        <div style={{ backgroundColor: '#FFFFFF', padding: '16px 20px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+      {/* Metric Stat Cards with Smooth Hover Effect matching Home screen */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '20px' }}>
+        <div
+          style={{
+            backgroundColor: '#FFFFFF',
+            padding: '16px 20px',
+            borderRadius: '10px',
+            border: '1px solid #E2E8F0',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+            transition: 'all 0.15s ease',
+            cursor: 'default'
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.background = '#EFF6FF'
+            e.currentTarget.style.borderColor = '#BFDBFE'
+            e.currentTarget.style.transform = 'translateY(-2px)'
+            e.currentTarget.style.boxShadow = '0 6px 16px -2px rgba(37,99,235,0.08)'
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.background = '#FFFFFF'
+            e.currentTarget.style.borderColor = '#E2E8F0'
+            e.currentTarget.style.transform = 'translateY(0)'
+            e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.02)'
+          }}
+        >
           <div style={{ fontSize: '12px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
             Unique Companies & Vendors
           </div>
@@ -648,7 +661,29 @@ Looking forward to your prompt response.`;
           </div>
         </div>
 
-        <div style={{ backgroundColor: '#FFFFFF', padding: '16px 20px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+        <div
+          style={{
+            backgroundColor: '#FFFFFF',
+            padding: '16px 20px',
+            borderRadius: '10px',
+            border: '1px solid #E2E8F0',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+            transition: 'all 0.15s ease',
+            cursor: 'default'
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.background = '#EFF6FF'
+            e.currentTarget.style.borderColor = '#BFDBFE'
+            e.currentTarget.style.transform = 'translateY(-2px)'
+            e.currentTarget.style.boxShadow = '0 6px 16px -2px rgba(37,99,235,0.08)'
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.background = '#FFFFFF'
+            e.currentTarget.style.borderColor = '#E2E8F0'
+            e.currentTarget.style.transform = 'translateY(0)'
+            e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.02)'
+          }}
+        >
           <div style={{ fontSize: '12px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
             Corporate Recruiters & Contacts
           </div>
@@ -660,7 +695,29 @@ Looking forward to your prompt response.`;
           </div>
         </div>
 
-        <div style={{ backgroundColor: '#FFFFFF', padding: '16px 20px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+        <div
+          style={{
+            backgroundColor: '#FFFFFF',
+            padding: '16px 20px',
+            borderRadius: '10px',
+            border: '1px solid #E2E8F0',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+            transition: 'all 0.15s ease',
+            cursor: 'default'
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.background = '#EFF6FF'
+            e.currentTarget.style.borderColor = '#BFDBFE'
+            e.currentTarget.style.transform = 'translateY(-2px)'
+            e.currentTarget.style.boxShadow = '0 6px 16px -2px rgba(37,99,235,0.08)'
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.background = '#FFFFFF'
+            e.currentTarget.style.borderColor = '#E2E8F0'
+            e.currentTarget.style.transform = 'translateY(0)'
+            e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.02)'
+          }}
+        >
           <div style={{ fontSize: '12px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
             Multi-Recruiter Companies
           </div>

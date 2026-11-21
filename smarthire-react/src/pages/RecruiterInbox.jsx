@@ -4607,7 +4607,13 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
               j.countryId === '76415c4c-6968-454c-aabc-36c68a9b1f06' ||
               /(?:pune|delhi|noida|hyderabad|bangalore|bengaluru|mumbai|gondia)\b/i.test(j.location || '')
             )
-            return !isIndia
+            const isInfoOriginJob = j && (
+              (j.source || '').toLowerCase().includes('infoorigin') ||
+              (j.client || '').toLowerCase().includes('infoorigin') ||
+              (j.company || '').toLowerCase().includes('infoorigin') ||
+              (j.id && String(j.id).length === 4)
+            )
+            return !isIndia && !isInfoOriginJob
           })
           setOpenJobsList(prev => {
             const merged = [...prev.filter(isJobActiveAndOpen)]
@@ -6395,23 +6401,8 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
             </div>
           )}
 
-          {/* Top Page Header & Ingestion Actions */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ width: 4, height: 24, backgroundColor: '#0D9488', borderRadius: 2 }} />
-                <h1 style={{ fontSize: 22, fontWeight: 900, color: C.textPrimary, margin: 0, letterSpacing: '-0.02em' }}>
-                  Vendor Hotlists &amp; Bench Ingestion Hub
-                </h1>
-                <span style={{ fontSize: 11, fontWeight: 800, backgroundColor: '#CCFBF1', color: '#0F766E', padding: '2px 8px', borderRadius: 6, border: '1px solid #99F6E4' }}>
-                  Excel Grid View
-                </span>
-              </div>
-              <p style={{ fontSize: 13, color: C.textSecondary, margin: '4px 0 0' }}>
-                Structured candidate bench lists auto-parsed from vendor emails, C2C rate cards, and direct partner submissions.
-              </p>
-            </div>
-
+          {/* Ingestion Actions (Add/Paste Hotlist, Export Excel, Refresh) */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', flexWrap: 'wrap', gap: 10 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <button
                 type="button"
@@ -7638,8 +7629,8 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
           flexShrink: 0,
           zIndex: 10
         }}>
-          {/* Left: Sidebar toggle */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          {/* Left: Sidebar toggle & Title Side-by-Side */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <button
               type="button"
               onClick={handleToggleSidebar}
@@ -7661,15 +7652,23 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                 <line x1="3" y1="18" x2="21" y2="18"></line>
               </svg>
             </button>
-          </div>
 
-          {/* Breadcrumb Navigation (replacing duplicate top search bar) */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, color: C.textSecondary }}>
-            <span>{inboxViewMode === 'chat' ? 'Workspace' : (inboxViewMode === 'hotlists' ? 'Vendor Hotlists' : (inboxViewMode === 'monster' ? 'Universal Search' : 'Candidates'))}</span>
-            <span style={{ color: '#CBD5E1' }}>/</span>
-            <span style={{ color: C.textPrimary, fontWeight: 700 }}>
-              {inboxViewMode === 'chat' ? 'Chats' : (inboxViewMode === 'hotlists' ? 'Bench Ingestion Hub' : (inboxViewMode === 'monster' ? 'Universal Search • Cross-Channel Talent Database' : (filterSource === 'mobile' ? 'Mobile App Submissions' : filterSource === 'careers' ? 'Job Sites Portal' : 'Talent Cloud')))}
-            </span>
+            {/* Breadcrumb Navigation / Title Side-by-Side with Collapse Button */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 700, color: C.textPrimary }}>
+              {inboxViewMode === 'hotlists' ? (
+                <span style={{ color: C.textPrimary, fontWeight: 800, fontSize: 16 }}>Vendor Hotlist</span>
+              ) : (inboxViewMode !== 'chat' && inboxViewMode !== 'monster') ? (
+                <span style={{ color: C.textPrimary, fontWeight: 800, fontSize: 16 }}>Candidates</span>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, color: C.textSecondary }}>
+                  <span>{inboxViewMode === 'chat' ? 'Workspace' : 'Universal Search'}</span>
+                  <span style={{ color: '#CBD5E1' }}>/</span>
+                  <span style={{ color: C.textPrimary, fontWeight: 700 }}>
+                    {inboxViewMode === 'chat' ? 'Chats' : 'Cross-Channel Talent Database'}
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Right Action Cluster matching screenshot */}
@@ -7683,29 +7682,6 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
               <span style={{ fontSize: 12, fontWeight: 800, color: '#15803d', background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '5px 12px', borderRadius: 8 }}>
                 {assignedToast}
               </span>
-            )}
-
-            {inboxViewMode !== 'chat' && (
-              <button
-                type="button"
-                onClick={() => setAddCandidateModalOpen(true)}
-                style={{
-                  background: '#2563EB',
-                  color: '#FFFFFF',
-                  border: 'none',
-                  borderRadius: 8,
-                  padding: '8px 16px',
-                  fontSize: 13,
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  boxShadow: '0 2px 6px rgba(37,99,235,0.25)'
-                }}
-              >
-                <span style={{ fontSize: 16, lineHeight: 1 }}>+</span> <span>Add Candidate</span>
-              </button>
             )}
 
             {/* Dynamic Notification Bell */}
@@ -11223,32 +11199,22 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                   background: ${isLight ? '#64748B' : '#64748B'};
                 }
               `}</style>
-              {/* 1. Header Section: Title & Subtitle + 5 Metric Cards */}
+              {/* 1. Header Section: Metric Filter Tabs (Clean Top Row) */}
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 flexWrap: 'wrap',
-                gap: 16,
-                marginBottom: 20,
+                gap: 12,
+                marginBottom: 14,
                 flexShrink: 0
               }}>
-                <div>
-                  <h1 style={{ margin: 0, fontSize: 28, fontWeight: 800, color: C.textPrimary, letterSpacing: '-0.5px' }}>
-                    Candidates
-                  </h1>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
-                    <p style={{ margin: 0, fontSize: 13.5, color: C.textSecondary, fontWeight: 500 }}>
-                      Find the right talent, faster.
-                    </p>
-                    {loadingStream && (
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11.5, color: '#2563EB', fontWeight: 600, padding: '2px 8px', background: isLight ? '#EFF6FF' : 'rgba(37,99,235,0.15)', borderRadius: 12 }}>
-                        <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: '#2563EB' }} />
-                        Syncing database...
-                      </span>
-                    )}
-                  </div>
-                </div>
+                {loadingStream ? (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#2563EB', fontWeight: 600, padding: '4px 10px', background: isLight ? '#EFF6FF' : 'rgba(37,99,235,0.15)', borderRadius: 8 }}>
+                    <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: '#2563EB' }} />
+                    Syncing database...
+                  </span>
+                ) : <div />}
 
                 {/* Metric KPI Cards — Linear & Slack Segmented Tab Feel */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', backgroundColor: isLight ? '#F1F5F9' : '#1E293B', padding: 4, borderRadius: 10 }}>
@@ -12088,6 +12054,10 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                                       let bestScore = 0;
                                       for (const job of openJobsList) {
                                         if (!isJobActiveAndOpen(job)) continue;
+                                        const jSrc = String(job.client || job.source || job.company || '').toLowerCase();
+                                        if (jSrc.includes('infoorigin') || jSrc.includes('info origin') || jSrc.includes('staffingorigin') || (job.id && String(job.id).length === 4)) {
+                                          continue; // Strictly NEVER match against InfoOrigin
+                                        }
                                         const jobStr = (job.title + ' ' + (job.skills || []).join(' ') + ' ' + (job.description || '')).toLowerCase();
                                         let score = 0;
                                         if (candRole && candRole.length > 2 && jobStr.includes(candRole)) score += 40;
@@ -12106,10 +12076,12 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                                     }
 
                                     const clientStr = String(matchedJob?.client || c.matchedJobClient || c.jobSource || '').toLowerCase();
-                                    const isInfoOrigin = clientStr.includes('infoorigin') || clientStr.includes('info origin') || (matchedJob?.id && String(matchedJob.id).length === 4);
+                                    const isInfoOrigin = clientStr.includes('infoorigin') || clientStr.includes('info origin') || clientStr.includes('staffingorigin') || (matchedJob?.id && String(matchedJob.id).length === 4);
 
-                                    if (hideInfoOriginMatches && isInfoOrigin) {
+                                    // Strictly eliminate InfoOrigin matching as requested by user
+                                    if (isInfoOrigin) {
                                       hasActiveMatch = false;
+                                      matchedJob = null;
                                     }
 
                                     const isTalentPool = !hasActiveMatch;
@@ -12121,11 +12093,11 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                                           <span style={{
                                             fontSize: 10,
                                             fontWeight: 800,
-                                            background: isTalentPool ? '#F1F5F9' : (isInfoOrigin ? '#EDE9FE' : '#DBEAFE'),
-                                            color: isTalentPool ? '#475569' : (isInfoOrigin ? '#6D28D9' : '#1D4ED8'),
+                                            background: isTalentPool ? '#F1F5F9' : '#DBEAFE',
+                                            color: isTalentPool ? '#475569' : '#1D4ED8',
                                             padding: '1px 6px',
                                             borderRadius: 4,
-                                            border: isTalentPool ? '1px solid #E2E8F0' : (isInfoOrigin ? '1px solid #DDD6FE' : '1px solid #BFDBFE'),
+                                            border: isTalentPool ? '1px solid #E2E8F0' : '1px solid #BFDBFE',
                                             letterSpacing: '0.3px',
                                             flexShrink: 0
                                           }}>
@@ -12133,14 +12105,14 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                                           </span>
                                           <span style={{
                                             fontSize: 11,
-                                            color: isInfoOrigin && !isTalentPool ? '#6D28D9' : '#475569',
+                                            color: '#475569',
                                             fontWeight: 700,
                                             whiteSpace: 'nowrap',
                                             overflow: 'hidden',
                                             textOverflow: 'ellipsis',
                                             minWidth: 0
                                           }}>
-                                            {!isTalentPool ? (isInfoOrigin ? 'InfoOrigin' : safeString(matchedJob?.client || c.matchedJobClient || 'Direct Client')) : 'General Talent Pool'}
+                                            {!isTalentPool ? safeString(matchedJob?.client || c.matchedJobClient || 'Direct Client') : 'General Talent Pool'}
                                           </span>
                                         </div>
                                         <div style={{

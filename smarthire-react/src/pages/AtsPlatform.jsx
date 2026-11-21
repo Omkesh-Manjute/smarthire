@@ -748,7 +748,11 @@ export default function AtsPlatform() {
     ).length
     const nCands = safeCandidates.filter(c => c && c.status === 'New').length
     const pRtr = safeCandidates.filter(c => c && c.status === 'RTR Requested').length
-    const aJobs = safeJobs.filter(j => j && (j.status === 'Active' || j.status === 'Posted')).length
+    const aJobs = safeJobs.filter(j => {
+      if (!j) return false
+      const st = String(j.status || 'open').toLowerCase().trim()
+      return st === 'open' || st === 'active' || st === 'posted' || st === 'in progress'
+    }).length
     const iCount = safeCandidates.filter(c => c && c.status === 'Interview Scheduled').length
     return {
       liveCandidates: live,
@@ -1056,7 +1060,7 @@ export default function AtsPlatform() {
                 marginBottom: '24px'
               }}>
                 {[
-                  { title: 'My Open Requisitions', value: activeJobs, change: '+4 this week', color: '#2563eb', action: () => navigate('/dashboard') },
+                  { title: 'My Open Requisitions', value: activeJobs, change: 'Active client requirements', color: '#2563eb', action: () => navigate('/dashboard') },
                   { title: 'Total Talent Pool', value: safeCandidates.length, change: 'Across all sources', color: '#0f172a', action: () => navigate('/inbox') },
                   { title: 'Interviews Scheduled', value: interviewsCount, change: 'Active pipeline', color: '#10b981', action: () => setActiveTab('submissions') },
                   { title: 'Submissions & RTR', value: qualified, change: 'Manager ready', color: '#f59e0b', action: () => setActiveTab('submissions') },
@@ -1197,32 +1201,59 @@ export default function AtsPlatform() {
                       </tr>
                     </thead>
                     <tbody>
-                      {safeJobs.slice(0, 5).map((job, jIdx) => (
-                        <tr
-                          key={job.id || jIdx}
-                          style={{ borderBottom: '1px solid #f1f5f9', cursor: 'pointer' }}
-                          onClick={() => { setSelectedJob(job.id); navigate(`/inbox?reqId=${job.reqId || job.id}`) }}
-                          onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
-                          onMouseLeave={e => e.currentTarget.style.background = '#ffffff'}
-                        >
-                          <td style={{ padding: '9px 14px', fontWeight: '600', color: '#2563eb' }}>
-                            Req# {job.reqId || String(job.id).replace('J-', '')} - {job.title?.slice(0, 24)}...
-                          </td>
-                          <td style={{ padding: '9px 14px', color: '#64748b' }}>
-                            {job.deadline || 'Closing Soon'}
-                          </td>
-                          <td style={{ padding: '9px 14px' }}>
-                            <span style={{ fontSize: '11px', padding: '2px 6px', borderRadius: '4px', background: '#eff6ff', color: '#1d4ed8', fontWeight: '700' }}>
-                              In Progress
-                            </span>
-                          </td>
-                          <td style={{ padding: '9px 14px' }}>
-                            <span style={{ fontSize: '11px', color: jIdx === 0 ? '#dc2626' : '#d97706', fontWeight: '700' }}>
-                              {jIdx === 0 ? 'Highest' : 'Normal'}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
+                      {(() => {
+                        const openReqs = safeJobs.filter(j => {
+                          if (!j) return false
+                          const st = String(j.status || 'open').toLowerCase().trim()
+                          return st === 'open' || st === 'active' || st === 'posted' || st === 'in progress'
+                        }).slice(0, 5)
+
+                        if (openReqs.length === 0) {
+                          return (
+                            <tr>
+                              <td colSpan={4} style={{ padding: '24px', textAlign: 'center', color: '#64748b' }}>
+                                No open requisitions at this time.
+                              </td>
+                            </tr>
+                          )
+                        }
+
+                        return openReqs.map((job, jIdx) => {
+                          const reqNum = job.reqId || String(job.id || '').replace(/^J-/, '')
+                          const candCount = safeCandidates.filter(c => c && (String(c.job_id || '') === String(job.id || '') || String(c.targetReqId || '') === String(reqNum))).length
+                          const statusLabel = candCount > 0 ? `${candCount} Sourced` : 'Active Sourcing'
+                          const statusBg = candCount > 0 ? '#eff6ff' : '#f0fdf4'
+                          const statusColor = candCount > 0 ? '#1d4ed8' : '#15803d'
+                          const isHighPriority = jIdx === 0 || (job.rate && parseInt(String(job.rate).replace(/\D+/g, ''), 10) >= 80)
+
+                          return (
+                            <tr
+                              key={job.id || jIdx}
+                              style={{ borderBottom: '1px solid #f1f5f9', cursor: 'pointer' }}
+                              onClick={() => { setSelectedJob(job.id); navigate(`/inbox?reqId=${reqNum}`) }}
+                              onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
+                              onMouseLeave={e => e.currentTarget.style.background = '#ffffff'}
+                            >
+                              <td style={{ padding: '9px 14px', fontWeight: '600', color: '#2563eb' }} title={job.title}>
+                                Req #{reqNum} — {job.title ? (job.title.length > 36 ? job.title.slice(0, 36) + '...' : job.title) : 'Active Requirement'}
+                              </td>
+                              <td style={{ padding: '9px 14px', color: '#64748b' }}>
+                                {job.deadline || job.postDate || 'Active'}
+                              </td>
+                              <td style={{ padding: '9px 14px' }}>
+                                <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '4px', background: statusBg, color: statusColor, fontWeight: '700' }}>
+                                  {statusLabel}
+                                </span>
+                              </td>
+                              <td style={{ padding: '9px 14px' }}>
+                                <span style={{ fontSize: '11px', color: isHighPriority ? '#dc2626' : '#d97706', fontWeight: '700' }}>
+                                  {isHighPriority ? 'High' : 'Normal'}
+                                </span>
+                              </td>
+                            </tr>
+                          )
+                        })
+                      })()}
                     </tbody>
                   </table>
                   <div 
