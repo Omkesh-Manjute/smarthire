@@ -489,7 +489,12 @@ async function syncCandidatesFromFirestore() {
           source: 'Job Site',
           sourceCategory: 'careers_portal',
           appliedFrom: 'Job Site Application',
-          targetReqId: d.jobId || d.targetReqId || '159574',
+          targetReqId: ((id) => {
+            const sId = String(id || '').trim();
+            if (sId === '158893') return '159586';
+            if (sId === '158619') return '159623';
+            return sId || '159574';
+          })(d.jobId || d.targetReqId),
           matchedJobTitle: d.jobTitle || 'Applied Position',
           status: d.status || 'Applied',
           resumeText: d.resumeText || '',

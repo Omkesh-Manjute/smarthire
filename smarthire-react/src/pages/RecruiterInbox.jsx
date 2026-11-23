@@ -12081,6 +12081,18 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                                     let matchedJob = c.targetReqId 
                                       ? openJobsList.find(j => String(j.id || '').replace(/^J-/, '') === String(c.targetReqId).replace(/^J-/, ''))
                                       : null;
+
+                                    // Auto-upgrade legacy 158 placeholder IDs to authentic 159 active series
+                                    if (matchedJob && String(matchedJob.id || '').startsWith('158')) {
+                                      const active159 = openJobsList.find(j => 
+                                        String(j.id || '').startsWith('159') && 
+                                        ((j.applyUrl && matchedJob.applyUrl && j.applyUrl === matchedJob.applyUrl) ||
+                                         (j.title && matchedJob.title && j.title.trim().toLowerCase() === matchedJob.title.trim().toLowerCase()))
+                                      );
+                                      if (active159) {
+                                        matchedJob = active159;
+                                      }
+                                    }
                                     let isJobActive = matchedJob ? isJobActiveAndOpen(matchedJob) : false;
                                     let hasActiveMatch = Boolean(c.targetReqId && matchedJob && isJobActive);
 
@@ -12175,6 +12187,18 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                                     let matchedJob = c.targetReqId 
                                       ? openJobsList.find(j => String(j.id || '').replace(/^J-/, '') === String(c.targetReqId).replace(/^J-/, ''))
                                       : null;
+
+                                    // Auto-upgrade legacy 158 placeholder IDs to authentic 159 active series
+                                    if (matchedJob && String(matchedJob.id || '').startsWith('158')) {
+                                      const active159 = openJobsList.find(j => 
+                                        String(j.id || '').startsWith('159') && 
+                                        ((j.applyUrl && matchedJob.applyUrl && j.applyUrl === matchedJob.applyUrl) ||
+                                         (j.title && matchedJob.title && j.title.trim().toLowerCase() === matchedJob.title.trim().toLowerCase()))
+                                      );
+                                      if (active159) {
+                                        matchedJob = active159;
+                                      }
+                                    }
                                     let isJobActive = matchedJob ? isJobActiveAndOpen(matchedJob) : false;
                                     let hasActiveMatch = Boolean(c.targetReqId && matchedJob && isJobActive);
 
