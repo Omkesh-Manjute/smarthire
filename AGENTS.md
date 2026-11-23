@@ -66,6 +66,30 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
     - In resume views, every responsibility, project accomplishment, and contribution line must be formatted with an explicit bullet point (`•`) and proper indentation.
     - The engine must automatically detect responsibilities (lines following `Responsibilities:`, action verbs, or list items) even when converted from plain text or Word documents without literal Unicode bullets.
 
+### 2026-11-24 — UI Polish: Streamline Sidebar & Quick Portals, Portal Sync to Header, Clean Recruiter Column, Top Action Bar & Dynamic KPIs on Vendor Hotlists
+- **User Request & Requirements**:
+  1. *Company Directory (`/ats?tab=contacts`)*:
+     - In the Recruiter column, do not repeat the word "Recruiters" / "Recruiter" in every row. Display only the number and the small toggle arrow (e.g. `2 ▼` or `1`).
+     - Move the "Last Synced: ..." text and "Sync with Email" button directly into the top header row via portal to adjust and save vertical space, shifting the metric stat cards up.
+  2. *Sidebar & Quick Portals Navigation (`AtsUnifiedSidebar.jsx`)*:
+     - Restore uniform Slack aubergine background (`#350d36`) throughout the entire sidebar including brand header and container, matching the bottom tool dock.
+     - Simplify Quick Portal names: rename "Requisitions Portal ↗" to "Requisitions Desk ↗", and "Public Careers (/jobs) ↗" to "Jobs ↗".
+     - Remove duplicate "Requisitions & Jobs" link from Talent Hub items since it is already accessible via Quick Portals.
+  3. *Universal Search Header (`/inbox?tab=monster`)*:
+     - Simplify the top header breadcrumb to strictly display "Universal Search" (removing `/ Cross-Channel Talent Database`).
+  4. *Vendor Hotlists (`/inbox?tab=hotlist`)*:
+     - Relocate "+ Add / Paste Hotlist", "Export Excel", and a compact icon refresh button `↻` directly into the top header bar.
+     - Remove the extra button row from the body container.
+     - Ensure all 4 KPI cards (Total Bench Candidates, Active Sponsoring Vendors, Direct Contact Parsed, Immediate C2C Availability) and their subtitles are 100% dynamic, computed directly from real scoped vendor bench data with zero hardcoded sample names.
+- **Verification & Deployment Protocol**:
+  - Matching engine unit tests: 42/42 tests passed.
+  - Production build: `npm run build` in `smarthire-react` completed in 4.22s with 0 errors, 0 warnings (new main bundle `index-DrsWX6jK.js`).
+  - Git committed (`795d225`) and pushed to GitHub `origin main`.
+  - Deployed production bundle to AWS Lightsail server (`34.194.119.199`), extracted to `/var/www/html/` and pruned old bundles (retaining 5 newest `index-*.js`), temporary archives cleaned up immediately.
+  - Root volume maintained healthy: 8.4GB free (55% used; Rule 5 compliance).
+  - PM2 `smarthire-ats` reloaded and verified online.
+  - Live domain verification: `https://smarthireus.com` returning HTTP 200 serving `index-DrsWX6jK.js`, all component chunks verified HTTP 200 OK.
+
 ### 2026-11-21 — Multi-Page ATS UI Overhaul (Vendor Hotlists, Company Directory, Candidate DB, Submittal Pack) & AWS Lightsail Live Deployment
 - **User Request & Requirements**:
   1. *Vendor Hotlists (`/inbox?tab=hotlist`)*: Remove "Bench Ingestion Hub" from topbar; place "Vendor Hotlist" side-by-side with sidebar collapse toggle; remove "+ Add Candidate" from top bar; remove duplicate lower heading "Vendor Hotlists & Bench Ingestion Hub" and "Excel Grid View" badge; preserve "+ Add / Paste Hotlist" and "Export Excel" buttons.
