@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { formatJobDescription } from '../utils/formatJobDescription';
 
 export default function EmailContactsDirectory() {
@@ -9,6 +10,12 @@ export default function EmailContactsDirectory() {
   const [accountEmail, setAccountEmail] = useState('omkesh@coolsofttech.com');
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [topbarActionsEl, setTopbarActionsEl] = useState(null);
+
+  useEffect(() => {
+    const el = document.getElementById('ats-topbar-actions');
+    if (el) setTopbarActionsEl(el);
+  }, []);
 
   // Search & Selection
   const [searchQuery, setSearchQuery] = useState('');
@@ -594,36 +601,44 @@ Looking forward to your prompt response.`;
         </div>
       )}
 
-      {/* Top Sync & Status Bar (Content shifted up per user request) */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '16px' }}>
-        {/* Sync Button */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          {updatedAt && (
-            <span style={{ fontSize: '12px', color: '#64748B' }}>
-              Last Synced: {new Date(updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-            </span>
-          )}
-          <button
-            onClick={handleSyncEmails}
-            disabled={isSyncing}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: '#FFFFFF',
-              border: '1px solid #CBD5E1',
-              borderRadius: '6px',
-              fontSize: '13px',
-              fontWeight: 600,
-              color: '#334155',
-              cursor: isSyncing ? 'not-allowed' : 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px'
-            }}
-          >
-            {isSyncing ? 'Syncing...' : 'Sync with Email'}
-          </button>
-        </div>
-      </div>
+      {/* Top Sync & Status in Top Navbar via Portal */}
+      {topbarActionsEl ? (
+        createPortal(
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {updatedAt && (
+              <span style={{ fontSize: '12px', color: '#64748B', whiteSpace: 'nowrap' }}>
+                Last Synced: {new Date(updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            )}
+            <button
+              onClick={handleSyncEmails}
+              disabled={isSyncing}
+              style={{
+                padding: '6px 14px',
+                backgroundColor: '#FFFFFF',
+                border: '1px solid #CBD5E1',
+                borderRadius: '6px',
+                fontSize: '12.5px',
+                fontWeight: 600,
+                color: '#334155',
+                cursor: isSyncing ? 'not-allowed' : 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: isSyncing ? 'spin 1s linear infinite' : 'none' }}>
+                <polyline points="23 4 23 10 17 10" />
+                <polyline points="1 20 1 14 7 14" />
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+              </svg>
+              <span>{isSyncing ? 'Syncing...' : 'Sync with Email'}</span>
+            </button>
+          </div>,
+          topbarActionsEl
+        )
+      ) : null}
 
       {/* Metric Stat Cards with Smooth Hover Effect matching Home screen */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '20px' }}>
@@ -955,9 +970,9 @@ Looking forward to your prompt response.`;
                           {hasMultiple ? (
                             <button
                               onClick={() => handleToggleExpand(c.id)}
-                              title="Click to view all recruiters in this company"
+                              title={`Click to view all ${c.recruiters.length} recruiters in this company`}
                               style={{
-                                padding: '3px 10px',
+                                padding: '2px 8px',
                                 backgroundColor: isExpanded ? '#0284C7' : '#E0F2FE',
                                 color: isExpanded ? '#FFFFFF' : '#0369A1',
                                 border: '1px solid #BAE6FD',
@@ -967,11 +982,11 @@ Looking forward to your prompt response.`;
                                 cursor: 'pointer',
                                 display: 'inline-flex',
                                 alignItems: 'center',
-                                gap: '4px'
+                                gap: '3px'
                               }}
                             >
-                              <span>{c.recruiters.length} Recruiters</span>
-                              <span style={{ fontSize: '10px' }}>{isExpanded ? '▲' : '▼'}</span>
+                              <span>{c.recruiters.length}</span>
+                              <span style={{ fontSize: '9px' }}>{isExpanded ? '▲' : '▼'}</span>
                             </button>
                           ) : (
                             <span style={{
@@ -982,7 +997,7 @@ Looking forward to your prompt response.`;
                               fontSize: '11px',
                               fontWeight: 600
                             }}>
-                              1 Recruiter
+                              1
                             </span>
                           )}
                         </td>

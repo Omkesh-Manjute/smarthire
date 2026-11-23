@@ -6310,6 +6310,63 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
     }
   }
 
+  const handleExportHotlistsCsv = useCallback(() => {
+    const rawList = Array.isArray(scopedVendorHotlists) ? scopedVendorHotlists : [];
+    const listToExport = rawList.filter(item => {
+      if (vendorSearch.trim()) {
+        const q = vendorSearch.toLowerCase()
+        const text = [
+          item.candidateName,
+          item.role,
+          (item.skills || []).join(' '),
+          item.vendorCompany,
+          item.vendorName,
+          item.vendorEmail,
+          item.candidateEmail,
+          item.candidatePhone,
+          item.location,
+          item.visa
+        ].filter(Boolean).join(' ').toLowerCase()
+        if (!text.includes(q)) return false
+      }
+      if (vendorFilterCompany !== 'all' && (item.vendorCompany || item.vendorName) !== vendorFilterCompany) {
+        return false
+      }
+      if (vendorFilterVisa !== 'all') {
+        const v = (item.visa || '').toLowerCase()
+        if (vendorFilterVisa === 'citizen' && !v.includes('citizen')) return false
+        if (vendorFilterVisa === 'gc' && !v.includes('green') && !v.includes('permanent') && !v.includes('gc')) return false
+        if (vendorFilterVisa === 'h1b' && !v.includes('h-1b') && !v.includes('h1b')) return false
+      }
+      return true
+    });
+
+    const headers = ['Sl. No', 'Candidate Name', 'Skill / Role', 'Total Exp', 'Location', 'Relocation', 'Visa Status', 'Vendor / Agency', 'Vendor Email', 'Candidate Email', 'Candidate Phone', 'Rate', 'Status'];
+    const rows = listToExport.map((item, idx) => [
+      idx + 1,
+      `"${(item.candidateName || '').replace(/"/g, '""')}"`,
+      `"${(item.role || '').replace(/"/g, '""')}"`,
+      `"${(item.experience || '').replace(/"/g, '""')}"`,
+      `"${(item.location || '').replace(/"/g, '""')}"`,
+      `"${(item.relocation || '').replace(/"/g, '""')}"`,
+      `"${(item.visa || '').replace(/"/g, '""')}"`,
+      `"${(item.vendorCompany || item.vendorName || '').replace(/"/g, '""')}"`,
+      `"${(item.vendorEmail || '').replace(/"/g, '""')}"`,
+      `"${(item.candidateEmail || '').replace(/"/g, '""')}"`,
+      `"${(item.candidatePhone || '').replace(/"/g, '""')}"`,
+      `"${(item.rate || '').replace(/"/g, '""')}"`,
+      `"${(item.status || 'Available').replace(/"/g, '""')}"`
+    ]);
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `SmartHire_Vendor_Hotlist_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }, [scopedVendorHotlists, vendorSearch, vendorFilterCompany, vendorFilterVisa]);
+
   const renderVendorHotlistsView = () => {
     const rawList = Array.isArray(scopedVendorHotlists) ? scopedVendorHotlists : []
     
@@ -6348,38 +6405,15 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
 
     const totalBench = rawList.length
     const totalVendors = uniqueVendors.length
-    const directContactCount = rawList.filter(v => v.candidateEmail || v.candidatePhone).length
-    const c2cCount = rawList.filter(v => (v.status || '').toLowerCase().includes('avail') || (v.rate || '').includes('C2C')).length
+    const directContactCount = rawList.filter(v => (v.candidateEmail && v.candidateEmail !== v.vendorEmail) || (v.candidatePhone && v.candidatePhone !== v.vendorPhone)).length
+    const c2cCount = rawList.filter(v => {
+      const st = (v.status || '').toLowerCase()
+      const rt = (v.rate || '').toLowerCase()
+      return st.includes('avail') || st.includes('immediate') || rt.includes('c2c') || rt.includes('/hr')
+    }).length
 
     const pagedItems = filteredList.slice((vendorTablePage - 1) * vendorTablePageSize, vendorTablePage * vendorTablePageSize)
     const totalPages = Math.ceil(filteredList.length / vendorTablePageSize) || 1
-
-    const handleExportHotlistsCsv = () => {
-      const headers = ['Sl. No', 'Candidate Name', 'Skill / Role', 'Total Exp', 'Location', 'Relocation', 'Visa Status', 'Vendor / Agency', 'Vendor Email', 'Candidate Email', 'Candidate Phone', 'Rate', 'Status'];
-      const rows = filteredList.map((item, idx) => [
-        idx + 1,
-        `"${(item.candidateName || '').replace(/"/g, '""')}"`,
-        `"${(item.role || '').replace(/"/g, '""')}"`,
-        `"${(item.experience || '').replace(/"/g, '""')}"`,
-        `"${(item.location || '').replace(/"/g, '""')}"`,
-        `"${(item.relocation || '').replace(/"/g, '""')}"`,
-        `"${(item.visa || '').replace(/"/g, '""')}"`,
-        `"${(item.vendorCompany || item.vendorName || '').replace(/"/g, '""')}"`,
-        `"${(item.vendorEmail || '').replace(/"/g, '""')}"`,
-        `"${(item.candidateEmail || '').replace(/"/g, '""')}"`,
-        `"${(item.candidatePhone || '').replace(/"/g, '""')}"`,
-        `"${(item.rate || '').replace(/"/g, '""')}"`,
-        `"${(item.status || 'Available').replace(/"/g, '""')}"`
-      ]);
-      const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-      const encodedUri = encodeURI(csvContent);
-      const link = document.createElement('a');
-      link.setAttribute('href', encodedUri);
-      link.setAttribute('download', `SmartHire_Vendor_Hotlist_${new Date().toISOString().slice(0, 10)}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    };
 
     return (
       <div style={{ flex: 1, overflowY: 'auto', padding: '24px 32px', boxSizing: 'border-box', backgroundColor: isLight ? '#F8FAFC' : '#0B0F19' }}>
@@ -6401,81 +6435,7 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
             </div>
           )}
 
-          {/* Ingestion Actions (Add/Paste Hotlist, Export Excel, Refresh) */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', flexWrap: 'wrap', gap: 10 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <button
-                type="button"
-                onClick={() => setAddHotlistModalOpen(true)}
-                style={{
-                  backgroundColor: '#0D9488',
-                  color: '#FFFFFF',
-                  border: 'none',
-                  borderRadius: 8,
-                  padding: '9px 16px',
-                  fontSize: 13,
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  boxShadow: '0 2px 6px rgba(13,148,136,0.25)'
-                }}
-              >
-                <span>+ Add / Paste Hotlist</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleExportHotlistsCsv}
-                style={{
-                  backgroundColor: '#059669',
-                  color: '#FFFFFF',
-                  border: 'none',
-                  borderRadius: 8,
-                  padding: '9px 14px',
-                  fontSize: 13,
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  boxShadow: '0 2px 6px rgba(5,150,105,0.2)'
-                }}
-                title="Download vendor hotlist as Excel / CSV file"
-              >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                  <polyline points="7 10 12 15 17 10"></polyline>
-                  <line x1="12" y1="15" x2="12" y2="3"></line>
-                </svg>
-                <span>Export Excel</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => fetchVendorHotlists()}
-                disabled={vendorHotlistsLoading}
-                style={{
-                  backgroundColor: isLight ? '#FFFFFF' : C.surface,
-                  border: `1px solid ${C.border}`,
-                  color: C.textPrimary,
-                  borderRadius: 8,
-                  padding: '9px 14px',
-                  fontSize: 13,
-                  fontWeight: 600,
-                  cursor: vendorHotlistsLoading ? 'wait' : 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 6
-                }}
-              >
-                <span>{vendorHotlistsLoading ? 'Syncing...' : 'Refresh'}</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Metrics Ribbon (4 Cards) */}
+          {/* Metrics Ribbon (4 Cards - 100% Dynamic & Real-time) */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
             <div style={{ backgroundColor: isLight ? '#FFFFFF' : C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: '16px 20px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
               <div style={{ fontSize: 12, color: C.textSecondary, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
@@ -6496,8 +6456,8 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
               <div style={{ fontSize: 24, fontWeight: 900, color: '#2563EB', marginTop: 4 }}>
                 {totalVendors}
               </div>
-              <div style={{ fontSize: 11.5, color: C.textSecondary, marginTop: 2 }}>
-                V-Soft, TekStaff, Apex Bench &amp; More
+              <div style={{ fontSize: 11.5, color: C.textSecondary, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={uniqueVendors.join(', ')}>
+                {uniqueVendors.length > 0 ? (uniqueVendors.slice(0, 3).join(', ') + (uniqueVendors.length > 3 ? ' & More' : '')) : 'No Active Vendors'}
               </div>
             </div>
 
@@ -6509,7 +6469,7 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                 {directContactCount}
               </div>
               <div style={{ fontSize: 11.5, color: '#059669', marginTop: 2, fontWeight: 600 }}>
-                Candidate Direct Email &amp; Phone
+                {totalBench > 0 ? `${Math.round((directContactCount / totalBench) * 100)}% Verified Direct Contacts` : 'Direct Email & Phone'}
               </div>
             </div>
 
@@ -6521,7 +6481,7 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                 {c2cCount}
               </div>
               <div style={{ fontSize: 11.5, color: C.textSecondary, marginTop: 2 }}>
-                Ready for Client Submissions
+                {c2cCount} Ready for Client Submissions
               </div>
             </div>
           </div>
@@ -7659,13 +7619,13 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                 <span style={{ color: C.textPrimary, fontWeight: 800, fontSize: 16 }}>Vendor Hotlist</span>
               ) : (inboxViewMode !== 'chat' && inboxViewMode !== 'monster') ? (
                 <span style={{ color: C.textPrimary, fontWeight: 800, fontSize: 16 }}>Candidates</span>
+              ) : inboxViewMode === 'monster' ? (
+                <span style={{ color: C.textPrimary, fontWeight: 800, fontSize: 16 }}>Universal Search</span>
               ) : (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, color: C.textSecondary }}>
-                  <span>{inboxViewMode === 'chat' ? 'Workspace' : 'Universal Search'}</span>
+                  <span>Workspace</span>
                   <span style={{ color: '#CBD5E1' }}>/</span>
-                  <span style={{ color: C.textPrimary, fontWeight: 700 }}>
-                    {inboxViewMode === 'chat' ? 'Chats' : 'Cross-Channel Talent Database'}
-                  </span>
+                  <span style={{ color: C.textPrimary, fontWeight: 700 }}>Chats</span>
                 </div>
               )}
             </div>
@@ -7673,6 +7633,84 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
 
           {/* Right Action Cluster matching screenshot */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            {/* Vendor Hotlist Top Header Action Buttons */}
+            {inboxViewMode === 'hotlists' && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <button
+                  type="button"
+                  onClick={() => setAddHotlistModalOpen(true)}
+                  style={{
+                    backgroundColor: '#0D9488',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    borderRadius: 7,
+                    padding: '7px 14px',
+                    fontSize: 12.5,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    boxShadow: '0 2px 6px rgba(13,148,136,0.22)',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  <span>+ Add / Paste Hotlist</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleExportHotlistsCsv}
+                  style={{
+                    backgroundColor: '#059669',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    borderRadius: 7,
+                    padding: '7px 13px',
+                    fontSize: 12.5,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    boxShadow: '0 2px 6px rgba(5,150,105,0.18)',
+                    whiteSpace: 'nowrap'
+                  }}
+                  title="Download vendor hotlist as Excel / CSV file"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                  </svg>
+                  <span>Export Excel</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => fetchVendorHotlists()}
+                  disabled={vendorHotlistsLoading}
+                  style={{
+                    backgroundColor: isLight ? '#FFFFFF' : C.surface,
+                    border: `1px solid ${C.border}`,
+                    color: C.textPrimary,
+                    borderRadius: 7,
+                    padding: '7px 9px',
+                    cursor: vendorHotlistsLoading ? 'wait' : 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                  title="Refresh Vendor Hotlists"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: vendorHotlistsLoading ? 'spin 1s linear infinite' : 'none' }}>
+                    <polyline points="23 4 23 10 17 10" />
+                    <polyline points="1 20 1 14 7 14" />
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+                  </svg>
+                </button>
+              </div>
+            )}
             {shareToast && (
               <span style={{ fontSize: 12, fontWeight: 800, color: '#1D4ED8', background: '#EFF6FF', border: '1px solid #BFDBFE', padding: '5px 12px', borderRadius: 8 }}>
                 {shareToast}

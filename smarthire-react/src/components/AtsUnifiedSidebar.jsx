@@ -166,7 +166,6 @@ export default function AtsUnifiedSidebar({
       label: 'Talent Hub',
       icon: 'candidates',
       items: [
-        { id: 'jobs', label: 'Requisitions & Jobs', path: '/dashboard' },
         { id: 'candidates', label: 'Candidate Database', path: '/inbox?tab=candidates', count: customCounts.candidates },
         { id: 'submittal', label: 'Submittal Pack', path: '/submittal-pack' },
         { id: 'rtr', label: 'SmartSign RTR', path: '/sign-rtr' },
@@ -286,7 +285,7 @@ export default function AtsUnifiedSidebar({
     <aside style={{
       width: sidebarCollapsed ? '64px' : '240px',
       minWidth: sidebarCollapsed ? '64px' : '240px',
-      background: '#1F0F24',
+      background: '#350d36',
       display: 'flex',
       flexDirection: 'column',
       height: '100vh',
@@ -307,7 +306,7 @@ export default function AtsUnifiedSidebar({
         justifyContent: 'space-between',
         padding: sidebarCollapsed ? '0 16px' : '0 18px',
         borderBottom: '1px solid rgba(255,255,255,0.08)',
-        background: '#170B1B'
+        background: '#350d36'
       }}>
         {!sidebarCollapsed && (
           <div
@@ -586,7 +585,7 @@ export default function AtsUnifiedSidebar({
           onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.85)' }}
         >
           <span style={{ display: 'inline-flex', alignItems: 'center' }}>{renderAtsIcon('building', 14, 'rgba(255,255,255,0.8)')}</span>
-          {!sidebarCollapsed && <span>Requisitions Portal ↗</span>}
+          {!sidebarCollapsed && <span>Requisitions Desk ↗</span>}
         </div>
 
         <div
@@ -609,7 +608,7 @@ export default function AtsUnifiedSidebar({
           onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.85)' }}
         >
           <span style={{ display: 'inline-flex', alignItems: 'center' }}>{renderAtsIcon('globe', 14, 'rgba(255,255,255,0.8)')}</span>
-          {!sidebarCollapsed && <span>Public Careers (/jobs) ↗</span>}
+          {!sidebarCollapsed && <span>Jobs ↗</span>}
         </div>
       </div>
 

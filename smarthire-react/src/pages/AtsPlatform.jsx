@@ -872,6 +872,9 @@ export default function AtsPlatform() {
 
           {/* Right Utility Cluster: Notifications & User Avatar */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            {/* Custom Topbar Actions for Active Sub-views (e.g. Email Directory Sync) */}
+            <div id="ats-topbar-actions" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}></div>
+
             {/* Live Activity & Push Notification Bell with Sound */}
             <ActivityNotificationBell
               theme="default"
