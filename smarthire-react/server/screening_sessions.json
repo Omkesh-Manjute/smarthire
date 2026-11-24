@@ -1,5 +1,177 @@
 [
   {
+    "sessionId": "SCR-1795532852576-288",
+    "campaignTitle": ".NET Web Developer III Screening Campaign",
+    "jobId": "159574",
+    "jobTitle": ".NET Web Developer III",
+    "jobSkills": [
+      ".NET",
+      "C#",
+      "ASP.NET Core",
+      "Blazor"
+    ],
+    "jobPreferredSkills": [
+      "Git/Azure DevOps",
+      "SQL Server"
+    ],
+    "jobExperience": "Any",
+    "jobLocation": "Madison, WI",
+    "jobClient": "Wisconsin Elections Commission",
+    "targetPayRate": null,
+    "maxPayRate": null,
+    "questions": [
+      {
+        "id": "q1",
+        "text": "In 60\u201390 seconds, give us a concise self\u2011introduction that highlights your .NET, C#, ASP.NET Core, and Blazor experience, especially any work on public\u2011sector or election\u2011related web applications.",
+        "description": "Look for depth of relevant experience, clarity of communication, and alignment with the WEC mission.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 120
+      },
+      {
+        "id": "q2",
+        "text": "Describe how you would architect a Blazor Server (or WebAssembly) front\u2011end for the WisVote system that must support thousands of concurrent election officials while meeting WCAG\u202f2.1 AA standards. Include state\u2011management strategy, data\u2011fetching approach, and scalability considerations (e.g., SignalR, caching, load balancing).",
+        "description": "Assess architectural thinking, performance\u2011tuning awareness, accessibility knowledge, and familiarity with Azure/Azure DevOps pipelines.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 180
+      },
+      {
+        "id": "q4",
+        "text": "Confirm your current Wisconsin residency, work\u2011authorization status, availability to start on 12/21/2026, preferred work model (hybrid/onsite), and your rate expectations for this contract.",
+        "description": "Ensure compliance with residency requirement, timeline, and compensation alignment.",
+        "allowedFormats": [
+          "text"
+        ],
+        "maxDuration": 120
+      }
+    ],
+    "allowedFormats": [
+      "video",
+      "audio",
+      "text"
+    ],
+    "maxDuration": 120,
+    "responses": [],
+    "candidateName": "Shanmukh Kumar Bellam",
+    "candidateEmail": "bellamshanmukhkumar@gmail.com",
+    "candidatePhone": null,
+    "candidateLocation": "Madison, WI",
+    "candidateLinkedin": null,
+    "expectedRate": null,
+    "aiScore": null,
+    "aiSummary": null,
+    "recommendation": null,
+    "keyTakeaways": null,
+    "recruiterRating": null,
+    "recruiterNotes": "",
+    "status": "pending",
+    "createdAt": "2026-11-24T15:07:32.576Z",
+    "createdBy": "kamlesh@coolsofttech.com",
+    "createdByEmail": "kamlesh@coolsofttech.com",
+    "createdByName": "kamlesh Bansod",
+    "createdByRef": "kamlesh-bansod",
+    "recruiterEmail": "kamlesh@coolsofttech.com",
+    "recruiterName": "kamlesh Bansod",
+    "submittedBy": "kamlesh@coolsofttech.com",
+    "recruiterId": "rec-4998",
+    "screeningComplete": false,
+    "submittedAt": null,
+    "expiresAt": "2026-12-01T15:07:32.576Z"
+  },
+  {
+    "sessionId": "SCR-1795544544111-83",
+    "campaignTitle": ".NET Web Developer III Screening Campaign",
+    "jobId": "159574",
+    "jobTitle": ".NET Web Developer III",
+    "jobSkills": [
+      ".NET",
+      "C#",
+      "ASP.NET Core",
+      "Blazor"
+    ],
+    "jobPreferredSkills": [
+      "Git/Azure DevOps",
+      "SQL Server"
+    ],
+    "jobExperience": "Any",
+    "jobLocation": "Madison, WI",
+    "jobClient": "Wisconsin Elections Commission",
+    "targetPayRate": null,
+    "maxPayRate": null,
+    "questions": [
+      {
+        "id": "q1",
+        "text": "In 60\u201390 seconds, give us a concise self\u2011introduction that highlights your .NET, C#, ASP.NET Core, and Blazor experience, especially any work on public\u2011sector or election\u2011related web applications.",
+        "description": "Look for depth of relevant experience, clarity of communication, and alignment with the WEC mission.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 120
+      },
+      {
+        "id": "q2",
+        "text": "Describe how you would architect a Blazor Server (or WebAssembly) front\u2011end for the WisVote system that must support thousands of concurrent election officials while meeting WCAG\u202f2.1 AA standards. Include state\u2011management strategy, data\u2011fetching approach, and scalability considerations (e.g., SignalR, caching, load balancing).",
+        "description": "Assess architectural thinking, performance\u2011tuning awareness, accessibility knowledge, and familiarity with Azure/Azure DevOps pipelines.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 180
+      },
+      {
+        "id": "q4",
+        "text": "Confirm your current Wisconsin residency, work\u2011authorization status, availability to start on 12/21/2026, preferred work model (hybrid/onsite), and your rate expectations for this contract.",
+        "description": "Ensure compliance with residency requirement, timeline, and compensation alignment.",
+        "allowedFormats": [
+          "text"
+        ],
+        "maxDuration": 120
+      }
+    ],
+    "allowedFormats": [
+      "video",
+      "audio",
+      "text"
+    ],
+    "maxDuration": 120,
+    "responses": [],
+    "candidateName": "Srikanth Kamepalli",
+    "candidateEmail": "srikanth.k1407@gmail.com",
+    "candidatePhone": null,
+    "candidateLocation": null,
+    "candidateLinkedin": null,
+    "expectedRate": null,
+    "aiScore": null,
+    "aiSummary": null,
+    "recommendation": null,
+    "keyTakeaways": null,
+    "recruiterRating": null,
+    "recruiterNotes": "",
+    "status": "pending",
+    "createdAt": "2026-11-24T18:22:24.112Z",
+    "createdBy": "omkesh@coolsofttech.com",
+    "createdByEmail": "omkesh@coolsofttech.com",
+    "createdByName": "kamlesh Bansod",
+    "createdByRef": "omkesh",
+    "recruiterEmail": "kamlesh@coolsofttech.com",
+    "recruiterName": "kamlesh Bansod",
+    "submittedBy": "omkesh@coolsofttech.com",
+    "recruiterId": "mPc2x6PTSPNKkJDLsRQFFio8A4G2",
+    "screeningComplete": false,
+    "submittedAt": null,
+    "expiresAt": "2026-12-01T18:29:59.999Z"
+  },
+  {
     "sessionId": "SCR-1794512265063-672",
     "candidateId": "C-1794512265063",
     "candidateName": "Anandi Ramaswamy",
@@ -90,254 +262,6 @@
     "videoPurgedAt": "2026-11-19T21:24:23.759Z"
   },
   {
-    "sessionId": "SCR-CL-1793808077330-279",
-    "candidateId": "C-1793808077",
-    "candidateName": "Client Assessment Candidate",
-    "candidateEmail": "candidate.client@coolsofttech.com",
-    "candidateLocation": "Remote / US",
-    "location": "Remote / US",
-    "visaStatus": "US Citizen",
-    "jobId": "159015",
-    "jobTitle": "System Administrator II",
-    "jobClient": "State Client",
-    "status": "submitted",
-    "screeningComplete": true,
-    "createdAt": "2026-11-04T15:55:00.000Z",
-    "submittedAt": "2026-11-04T16:09:00.000Z",
-    "aiScore": 78,
-    "recommendation": "Qualified - Recommended for Review",
-    "masterMediaUrl": "/uploads/screening/screen_1793808545013_session_SCR-CL-1793808077330-279_full_interview.webm",
-    "recruiterName": "Omkesh",
-    "createdByName": "Omkesh",
-    "recruiterEmail": "omkesh@coolsofttech.com",
-    "proctoring": {
-      "screenShared": true,
-      "fullscreenEnforced": true,
-      "tabViolationsCount": 0,
-      "integrityScore": 100
-    },
-    "responses": [
-      {
-        "questionId": "q1",
-        "questionText": "Imagine your handling of functional team interfaces and business concepts.",
-        "format": "video",
-        "mediaUrl": "/uploads/screening/screen_1793808545013_session_SCR-CL-1793808077330-279_full_interview.webm",
-        "startTime": 0,
-        "endTime": 43,
-        "duration": 43,
-        "transcript": "Ok, 90 seconds. Imagine your handling of function team interfaces. Business concept has been attributed for your work choice. Confirm your is concentrated..."
-      }
-    ],
-    "videoPurged": true,
-    "videoPurgedAt": "2026-11-19T21:24:23.756Z"
-  },
-  {
-    "sessionId": "SCR-1792675234246-991",
-    "campaignTitle": "Jr. AI Engineer Screening Campaign",
-    "jobId": "7634",
-    "jobTitle": "Jr. AI Engineer",
-    "jobSkills": [
-      "Java",
-      "Python",
-      "JavaScript",
-      "AWS",
-      "Azure",
-      "GCP",
-      "CI/CD",
-      "Agile"
-    ],
-    "jobPreferredSkills": [],
-    "jobExperience": "5+ years",
-    "jobLocation": "USA",
-    "jobClient": "InfoOrigin",
-    "targetPayRate": null,
-    "maxPayRate": null,
-    "questions": [
-      {
-        "id": "q1",
-        "text": "Give a 60-90 second introduction of your background, key technical skills, and recent projects relevant to Jr. AI Engineer.",
-        "description": "Summarize your core languages, frameworks, and client impact.",
-        "allowedFormats": [
-          "video",
-          "audio",
-          "text"
-        ],
-        "maxDuration": 120
-      },
-      {
-        "id": "q2",
-        "text": "Explain a RAG solution you built end-to-end. Which embedding model, vector database, and retrieval approach did you use?",
-        "description": "Explain the architecture, your specific contribution, and the final impact.",
-        "allowedFormats": [
-          "video",
-          "audio",
-          "text"
-        ],
-        "maxDuration": 120
-      },
-      {
-        "id": "q3",
-        "text": "Describe the most complex AI/LLM application you deployed. What was your role, architecture, and business impact?",
-        "description": "Confirm your current location, remote/relocation flexibility, and visa authorization.",
-        "allowedFormats": [
-          "video",
-          "audio",
-          "text"
-        ],
-        "maxDuration": 90
-      },
-      {
-        "id": "q4",
-        "text": "Have you built AI Agents using LangGraph, CrewAI, Semantic Kernel, or similar frameworks? Explain the workflow and decision-making process.",
-        "description": "Provide brief context for candidate.",
-        "allowedFormats": [
-          "video",
-          "audio",
-          "text"
-        ],
-        "maxDuration": 120
-      },
-      {
-        "id": "q5",
-        "text": "What is prompt injection? How would you secure an LLM application against prompt injection, data leakage, and unauthorized access?",
-        "description": "Provide brief context for candidate.",
-        "allowedFormats": [
-          "video",
-          "audio",
-          "text"
-        ],
-        "maxDuration": 120
-      },
-      {
-        "id": "q6",
-        "text": "How have you integrated APIs, CI/CD pipelines, and security controls into a production AI application? Which tools did you use?",
-        "description": "Provide brief context for candidate.",
-        "allowedFormats": [
-          "video",
-          "audio",
-          "text"
-        ],
-        "maxDuration": 120
-      }
-    ],
-    "allowedFormats": [
-      "video",
-      "audio",
-      "text"
-    ],
-    "maxDuration": 120,
-    "responses": [
-      {
-        "questionId": "q1",
-        "questionText": "Give a 60-90 second introduction of your background, key technical skills, and recent projects relevant to Jr. AI Engineer.",
-        "format": "video",
-        "mediaUrl": "/uploads/screening/screen_1792759149872_session_SCR-1792675234246-991_full_interview.webm",
-        "startTime": 0,
-        "endTime": 98,
-        "duration": 98,
-        "transcript": "so I have about like an Idiots of experience now and working it is a students of the software engineering including 3 years working with tension and my Foundation is basically applications album integration and also"
-      },
-      {
-        "questionId": "q2",
-        "questionText": "Explain a RAG solution you built end-to-end. Which embedding model, vector database, and retrieval approach did you use?",
-        "format": "video",
-        "mediaUrl": "/uploads/screening/screen_1792759149872_session_SCR-1792675234246-991_full_interview.webm",
-        "startTime": 98,
-        "endTime": 223,
-        "duration": 125,
-        "transcript": "Okay, for a RAP solution. So, for this example, I would quote from my previous experience at development 21. I basically worked there on a production platform that basically helped the enterprise users to get an answer that was grounded in their organization's information. My contribution to that project was basically it covered the retrieval pipelines, the LLM integrations, the Python APIs, and also the development support. So the architecture, it had two main stages. The first one was the ingestion and the question answering file. During the ingestion, we prepared the documents and divided them into some searchable chunks and generated the embeddings using some embedded models, and then stored the vectors in the pine cone alongside the document metadata. At the curate time, we basically embedded the user's questions and retrieved the relevant chunks through the vector similarity search And I basically used like I developed the reusable fast API services around those capabilities and worked on the authentication and authorization and also the security reviews part And the main value of this project was basically making an enterprise information easier to retrieve and use through a conversational interface. And my focus was ensuring that the retrieval product relevant context and that application could be maintained and supported in the production."
-      },
-      {
-        "questionId": "q3",
-        "questionText": "Describe the most complex AI/LLM application you deployed. What was your role, architecture, and business impact?",
-        "format": "video",
-        "mediaUrl": "/uploads/screening/screen_1792759149872_session_SCR-1792675234246-991_full_interview.webm",
-        "startTime": 223,
-        "endTime": 353,
-        "duration": 130,
-        "transcript": "so I have about like an Idiots of experience now and working it is a students of the software engineering including 3 years working with tension and my Foundation is basically applications album integration and also so I like contributed to the security and"
-      },
-      {
-        "questionId": "q4",
-        "questionText": "Have you built AI Agents using LangGraph, CrewAI, Semantic Kernel, or similar frameworks? Explain the workflow and decision-making process.",
-        "format": "video",
-        "mediaUrl": "/uploads/screening/screen_1792759149872_session_SCR-1792675234246-991_full_interview.webm",
-        "startTime": 353,
-        "endTime": 452,
-        "duration": 99,
-        "transcript": "and the secure operation and also the mental ability. Yeah for like the I have built AI using the line chain crew AI etc Like I have built agent workflows using you know the line graph and the line chain at my previous role and i basically integrated them with azure open ai and my strongest hands-on experience is like with all those frameworks like to explain like for the workflow right uh an enterprise assistant can first like evaluate a request and then determine like whether it needs a document retrieval or an approach api tool and each step is like represented as a node which shared the state carrying the conversation, then the retrieval context, and also the tool results. And the decision making, it basically combines the model judgment with some exploited set application rules. And the model can propose a tool call, but the application validates the arguments and also checks the user's permission before executing it. So I would also put a limit on the retrieves and the tool calls so that the workflow cannot like loop in definitely so my like i would select my contribution it basically uh included the registration then the workflows the python and the past api integrations and the security controls too."
-      },
-      {
-        "questionId": "q5",
-        "questionText": "What is prompt injection? How would you secure an LLM application against prompt injection, data leakage, and unauthorized access?",
-        "format": "video",
-        "mediaUrl": "/uploads/screening/screen_1792759149872_session_SCR-1792675234246-991_full_interview.webm",
-        "startTime": 452,
-        "endTime": 592,
-        "duration": 140,
-        "transcript": "so I have about like an Idiots of experience now and working it is a students of the software engineering including 3 years working with tension and my Foundation is basically applications album integration and also I would like validate authentication tokens and enforce organisation authentication"
-      },
-      {
-        "questionId": "q6",
-        "questionText": "How have you integrated APIs, CI/CD pipelines, and security controls into a production AI application? Which tools did you use?",
-        "format": "video",
-        "mediaUrl": "/uploads/screening/screen_1792759149872_session_SCR-1792675234246-991_full_interview.webm",
-        "startTime": 592,
-        "endTime": 763,
-        "duration": 171,
-        "transcript": "so I have about like an Idiots of experience now and working it is a students of the software engineering including 3 years working with tension and my Foundation is basically applications album integration and also I would like validate authentication tokens and enforce organisation"
-      }
-    ],
-    "candidateName": "Maham Alf",
-    "candidateEmail": "mahamalf17@gmail.com",
-    "candidatePhone": "",
-    "candidateLocation": "New City, NY",
-    "candidateLinkedin": "",
-    "expectedRate": "",
-    "aiScore": 62,
-    "aiSummary": [
-      "Mentioned RAG pipeline using Pinecone, FastAPI, Python and Azure OpenAI, but lacks concrete details on embedding models, CI/CD, and broader cloud stack.",
-      "Communication is fragmented with repetitive filler, unclear phrasing, and limited professional tone, making the technical narrative hard to follow.",
-      "Claims ~3 years of software engineering experience, but provides vague descriptions of roles and no evidence of Java, AWS/GCP, or Agile practice; availability and rate unknown."
-    ],
-    "recommendation": "Follow-up Needed",
-    "keyTakeaways": "The candidate shows some exposure to RAG and AI agent frameworks but demonstrates weak articulation and insufficient depth in core required technologies for a Jr. AI Engineer role.",
-    "recruiterRating": null,
-    "recruiterNotes": "",
-    "status": "submitted",
-    "createdAt": "2026-10-22T13:20:34.247Z",
-    "createdBy": "rohit.nagwani@infoorigin.com",
-    "createdByEmail": "rohit.nagwani@infoorigin.com",
-    "createdByName": "Rohit nagwani",
-    "createdByRef": "rohit-nagwani",
-    "recruiterEmail": "rohit.nagwani@infoorigin.com",
-    "recruiterName": "Rohit nagwani",
-    "submittedBy": "rohit.nagwani@infoorigin.com",
-    "recruiterId": "WLifhIKQjiZoe655ga8Q3xqeJAT2",
-    "screeningComplete": true,
-    "submittedAt": "2026-10-23T12:39:29.919Z",
-    "expiresAt": "2026-10-29T18:29:59.999Z",
-    "isStarted": true,
-    "startedAt": "2026-10-23T12:25:29.616Z",
-    "visaStatus": "US Citizen",
-    "masterMediaUrl": "/uploads/screening/screen_1792759149872_session_SCR-1792675234246-991_full_interview.webm",
-    "candidateGeo": null,
-    "gpsLocation": null,
-    "proctoring": {
-      "screenShared": true,
-      "fullscreenEnforced": true,
-      "tabViolationsCount": 0,
-      "violationsLog": [],
-      "totalDurationSeconds": 763,
-      "integrityScore": 100
-    },
-    "completionEmailSent": true,
-    "completionEmailSentAt": "2026-10-23T12:39:45.092Z",
-    "completionEmailRecipient": "rohit.nagwani@infoorigin.com",
-    "videoPurged": true,
-    "videoPurgedAt": "2026-11-19T21:24:23.759Z"
-  },
-  {
     "sessionId": "SCR-1792614523356-846",
     "campaignTitle": "DCY - Program Manager 4 / PM4 Screening Campaign",
     "jobId": "159383",
@@ -360,8 +284,8 @@
     "questions": [
       {
         "id": "q1",
-        "text": "In 60‑90 seconds, introduce yourself and highlight the most relevant Salesforce program‑management experience you have, especially any work in government or child‑services environments.",
-        "description": "Assess domain alignment, communication clarity, and relevance to DCY’s Salesforce initiative.",
+        "text": "In 60\u201190 seconds, introduce yourself and highlight the most relevant Salesforce program\u2011management experience you have, especially any work in government or child\u2011services environments.",
+        "description": "Assess domain alignment, communication clarity, and relevance to DCY\u2019s Salesforce initiative.",
         "allowedFormats": [
           "video",
           "audio",
@@ -371,7 +295,7 @@
       },
       {
         "id": "q2",
-        "text": "DCY expects to store and process over 1 million child‑case records in Salesforce. Describe how you would design the data model and implement performance‑tuning techniques (e.g., skinny tables, selective indexing, batch Apex) to ensure sub‑2‑second query response times at peak load.",
+        "text": "DCY expects to store and process over 1\u202fmillion child\u2011case records in Salesforce. Describe how you would design the data model and implement performance\u2011tuning techniques (e.g., skinny tables, selective indexing, batch Apex) to ensure sub\u20112\u2011second query response times at peak load.",
         "description": "Evaluate technical depth in Salesforce architecture, scalability thinking, and concrete optimization tactics.",
         "allowedFormats": [
           "video",
@@ -382,8 +306,8 @@
       },
       {
         "id": "q3",
-        "text": "Outline a change‑management and stakeholder‑engagement plan for rolling out a new Salesforce case‑management module across three county child‑welfare offices, each with its own leadership, legacy systems, and resistance points. Include communication cadence, training strategy, and metrics to gauge adoption.",
-        "description": "Look for structured program‑management, stakeholder mapping, risk mitigation, and measurable success criteria.",
+        "text": "Outline a change\u2011management and stakeholder\u2011engagement plan for rolling out a new Salesforce case\u2011management module across three county child\u2011welfare offices, each with its own leadership, legacy systems, and resistance points. Include communication cadence, training strategy, and metrics to gauge adoption.",
+        "description": "Look for structured program\u2011management, stakeholder mapping, risk mitigation, and measurable success criteria.",
         "allowedFormats": [
           "video",
           "audio",
@@ -393,7 +317,7 @@
       },
       {
         "id": "q4",
-        "text": "Confirm your work‑authorization status, remote‑work preferences, earliest start date.",
+        "text": "Confirm your work\u2011authorization status, remote\u2011work preferences, earliest start date.",
         "description": "Capture logistical fit, availability, and compensation expectations.",
         "allowedFormats": [
           "video",
@@ -412,7 +336,7 @@
     "responses": [
       {
         "questionId": "q1",
-        "questionText": "In 60‑90 seconds, introduce yourself and highlight the most relevant Salesforce program‑management experience you have, especially any work in government or child‑services environments.",
+        "questionText": "In 60\u201190 seconds, introduce yourself and highlight the most relevant Salesforce program\u2011management experience you have, especially any work in government or child\u2011services environments.",
         "format": "video",
         "mediaUrl": "/uploads/screening/screen_1792617401808_session_SCR-1792614523356-846_full_interview.webm",
         "startTime": 0,
@@ -422,7 +346,7 @@
       },
       {
         "questionId": "q2",
-        "questionText": "DCY expects to store and process over 1 million child‑case records in Salesforce. Describe how you would design the data model and implement performance‑tuning techniques (e.g., skinny tables, selective indexing, batch Apex) to ensure sub‑2‑second query response times at peak load.",
+        "questionText": "DCY expects to store and process over 1\u202fmillion child\u2011case records in Salesforce. Describe how you would design the data model and implement performance\u2011tuning techniques (e.g., skinny tables, selective indexing, batch Apex) to ensure sub\u20112\u2011second query response times at peak load.",
         "format": "video",
         "mediaUrl": "/uploads/screening/screen_1792617401808_session_SCR-1792614523356-846_full_interview.webm",
         "startTime": 100,
@@ -432,7 +356,7 @@
       },
       {
         "questionId": "q3",
-        "questionText": "Outline a change‑management and stakeholder‑engagement plan for rolling out a new Salesforce case‑management module across three county child‑welfare offices, each with its own leadership, legacy systems, and resistance points. Include communication cadence, training strategy, and metrics to gauge adoption.",
+        "questionText": "Outline a change\u2011management and stakeholder\u2011engagement plan for rolling out a new Salesforce case\u2011management module across three county child\u2011welfare offices, each with its own leadership, legacy systems, and resistance points. Include communication cadence, training strategy, and metrics to gauge adoption.",
         "format": "video",
         "mediaUrl": "/uploads/screening/screen_1792617401808_session_SCR-1792614523356-846_full_interview.webm",
         "startTime": 249,
@@ -442,7 +366,7 @@
       },
       {
         "questionId": "q4",
-        "questionText": "Confirm your work‑authorization status, remote‑work preferences, earliest start date.",
+        "questionText": "Confirm your work\u2011authorization status, remote\u2011work preferences, earliest start date.",
         "format": "video",
         "mediaUrl": "/uploads/screening/screen_1792617401808_session_SCR-1792614523356-846_full_interview.webm",
         "startTime": 477,
@@ -459,12 +383,12 @@
     "expectedRate": "",
     "aiScore": 62,
     "aiSummary": [
-      "Technical relevance: mentions generic concepts like indexing and batch processing but provides no concrete architecture, skinny tables, or selective indexing details for handling 1 million records.",
+      "Technical relevance: mentions generic concepts like indexing and batch processing but provides no concrete architecture, skinny tables, or selective indexing details for handling 1\u202fmillion records.",
       "Communication clarity: responses are repetitive, unfocused, and contain many filler phrases, making it difficult to assess competence.",
-      "Experience fit: claims 5 years of Salesforce program‑management and agile distributed teams but lacks specific government or child‑services examples; H‑1B status, immediate start, flexible remote preference."
+      "Experience fit: claims 5\u202fyears of Salesforce program\u2011management and agile distributed teams but lacks specific government or child\u2011services examples; H\u20111B status, immediate start, flexible remote preference."
     ],
     "recommendation": "Follow-up Needed",
-    "keyTakeaways": "Candidate shows surface‑level Salesforce program‑management exposure but fails to demonstrate the technical depth or clear communication needed for this role; further probing is required to verify fit.",
+    "keyTakeaways": "Candidate shows surface\u2011level Salesforce program\u2011management exposure but fails to demonstrate the technical depth or clear communication needed for this role; further probing is required to verify fit.",
     "recruiterRating": null,
     "recruiterNotes": "",
     "status": "submitted",
@@ -681,9 +605,9 @@
     "expectedRate": "",
     "aiScore": 64,
     "aiSummary": [
-      "Mentions production‑grade tools such as FastAPI, Azure AI Search, OpenAI embeddings, and Neo4j, but provides vague, repetitive descriptions without concrete architecture, CI/CD toolchains, or multi‑cloud experience.",
+      "Mentions production\u2011grade tools such as FastAPI, Azure AI Search, OpenAI embeddings, and Neo4j, but provides vague, repetitive descriptions without concrete architecture, CI/CD toolchains, or multi\u2011cloud experience.",
       "Communication is fragmented and repetitive; the candidate repeats the same paragraph across questions, making it difficult to gauge depth or confidence.",
-      "Claims 8 years of backend and ML experience and outlines work on RAG pipelines in healthcare, yet lacks clear metrics, ownership details, or evidence of hands‑on CI/CD and security implementation."
+      "Claims 8 years of backend and ML experience and outlines work on RAG pipelines in healthcare, yet lacks clear metrics, ownership details, or evidence of hands\u2011on CI/CD and security implementation."
     ],
     "recommendation": "Follow-up Needed",
     "keyTakeaways": "The candidate shows a background in Python and AI/ML with exposure to Azure services, but the answers are incoherent and lack concrete technical depth; a deeper interview is required to verify fit for the Jr. AI Engineer role.",
@@ -903,12 +827,12 @@
     "expectedRate": "",
     "aiScore": 62,
     "aiSummary": [
-      "Mentions Python and multi‑agent workflows at Bank of America but provides no concrete production architecture, specific models, vector database, or CI/CD tools.",
+      "Mentions Python and multi\u2011agent workflows at Bank of America but provides no concrete production architecture, specific models, vector database, or CI/CD tools.",
       "Communication is disorganized, repetitive, and contains many filler phrases, making it hard to gauge confidence or clarity.",
-      "Experience appears limited to internal prototypes; lacks clear evidence of end‑to‑end AI deployment, cloud platform usage, or rate/availability details."
+      "Experience appears limited to internal prototypes; lacks clear evidence of end\u2011to\u2011end AI deployment, cloud platform usage, or rate/availability details."
     ],
     "recommendation": "Follow-up Needed",
-    "keyTakeaways": "Candidate shows some exposure to Python and agent‑based projects but fails to demonstrate concrete AI engineering skills or clear communication, warranting a deeper interview before proceeding.",
+    "keyTakeaways": "Candidate shows some exposure to Python and agent\u2011based projects but fails to demonstrate concrete AI engineering skills or clear communication, warranting a deeper interview before proceeding.",
     "recruiterRating": null,
     "recruiterNotes": "",
     "status": "submitted",
@@ -1233,12 +1157,12 @@
     "expectedRate": "",
     "aiScore": 62,
     "aiSummary": [
-      "Mentions experience with state health departments and Power BI but provides no concrete SQL, EHR, or data‑exchange architecture details expected for an HMS Analyst role",
+      "Mentions experience with state health departments and Power\u202fBI but provides no concrete SQL, EHR, or data\u2011exchange architecture details expected for an HMS Analyst role",
       "Communication is unstructured, repetitive, and lacks professional polish, making it hard to assess competence",
-      "Experience is broadly relevant but vague; availability is immediate on an H‑4 EAD, compensation not specified, so fit and rate alignment are unclear"
+      "Experience is broadly relevant but vague; availability is immediate on an H\u20114 EAD, compensation not specified, so fit and rate alignment are unclear"
     ],
     "recommendation": "Follow-up Needed",
-    "keyTakeaways": "Candidate has generic BA experience and Power BI exposure but does not demonstrate the technical depth in SQL/EHR/BI required for the HMS Analyst position; further probing is needed.",
+    "keyTakeaways": "Candidate has generic BA experience and Power\u202fBI exposure but does not demonstrate the technical depth in SQL/EHR/BI required for the HMS Analyst position; further probing is needed.",
     "recruiterRating": null,
     "recruiterNotes": "",
     "status": "submitted",
@@ -1306,8 +1230,8 @@
     "questions": [
       {
         "id": "q2",
-        "text": "A production .NET Web API that calls a set of heavy stored procedures is experiencing >5‑second response times during peak load. Describe, step‑by‑step, how you would investigate and remediate the performance issue on both the .NET side and the MS SQL side.",
-        "description": "Assess candidate’s debugging workflow, use of profiling tools (e.g., dotTrace, SQL Profiler), indexing strategies, async patterns, and ability to propose concrete optimizations.",
+        "text": "A production .NET Web API that calls a set of heavy stored procedures is experiencing >5\u2011second response times during peak load. Describe, step\u2011by\u2011step, how you would investigate and remediate the performance issue on both the .NET side and the MS\u202fSQL side.",
+        "description": "Assess candidate\u2019s debugging workflow, use of profiling tools (e.g., dotTrace, SQL Profiler), indexing strategies, async patterns, and ability to propose concrete optimizations.",
         "allowedFormats": [
           "video",
           "audio",
@@ -1317,8 +1241,8 @@
       },
       {
         "id": "q3",
-        "text": "Design an Angular module for a real‑time map dashboard that must render thousands of sensor markers and update them every few seconds. Explain how you would structure components, manage state, and optimise change detection to keep the UI responsive.",
-        "description": "Evaluate knowledge of Angular architecture (lazy loading, OnPush change detection, RxJS), performance‑tuning techniques, and ability to think about scalability in the front‑end.",
+        "text": "Design an Angular module for a real\u2011time map dashboard that must render thousands of sensor markers and update them every few seconds. Explain how you would structure components, manage state, and optimise change detection to keep the UI responsive.",
+        "description": "Evaluate knowledge of Angular architecture (lazy loading, OnPush change detection, RxJS), performance\u2011tuning techniques, and ability to think about scalability in the front\u2011end.",
         "allowedFormats": [
           "video",
           "audio",
@@ -1328,7 +1252,7 @@
       },
       {
         "id": "q4",
-        "text": "Confirm your ability to work on‑site Wednesdays and Thursdays in Lansing, Michigan, your earliest start date, work‑authorization status, and ready to attend inperson interview..",
+        "text": "Confirm your ability to work on\u2011site Wednesdays and Thursdays in Lansing, Michigan, your earliest start date, work\u2011authorization status, and ready to attend inperson interview..",
         "description": "Validate logistical fit, location requirement, legal eligibility, and compensation expectations.",
         "allowedFormats": [
           "video",
@@ -1347,7 +1271,7 @@
     "responses": [
       {
         "questionId": "q2",
-        "questionText": "A production .NET Web API that calls a set of heavy stored procedures is experiencing >5‑second response times during peak load. Describe, step‑by‑step, how you would investigate and remediate the performance issue on both the .NET side and the MS SQL side.",
+        "questionText": "A production .NET Web API that calls a set of heavy stored procedures is experiencing >5\u2011second response times during peak load. Describe, step\u2011by\u2011step, how you would investigate and remediate the performance issue on both the .NET side and the MS\u202fSQL side.",
         "format": "video",
         "mediaUrl": "/uploads/screening/screen_1792094099506_session_SCR-1792091269835-548_full_interview.webm",
         "startTime": 0,
@@ -1357,7 +1281,7 @@
       },
       {
         "questionId": "q3",
-        "questionText": "Design an Angular module for a real‑time map dashboard that must render thousands of sensor markers and update them every few seconds. Explain how you would structure components, manage state, and optimise change detection to keep the UI responsive.",
+        "questionText": "Design an Angular module for a real\u2011time map dashboard that must render thousands of sensor markers and update them every few seconds. Explain how you would structure components, manage state, and optimise change detection to keep the UI responsive.",
         "format": "video",
         "mediaUrl": "/uploads/screening/screen_1792094099506_session_SCR-1792091269835-548_full_interview.webm",
         "startTime": 393,
@@ -1367,7 +1291,7 @@
       },
       {
         "questionId": "q4",
-        "questionText": "Confirm your ability to work on‑site Wednesdays and Thursdays in Lansing, Michigan, your earliest start date, work‑authorization status, and ready to attend inperson interview..",
+        "questionText": "Confirm your ability to work on\u2011site Wednesdays and Thursdays in Lansing, Michigan, your earliest start date, work\u2011authorization status, and ready to attend inperson interview..",
         "format": "video",
         "mediaUrl": "/uploads/screening/screen_1792094099506_session_SCR-1792091269835-548_full_interview.webm",
         "startTime": 760,
@@ -1386,10 +1310,10 @@
     "aiSummary": [
       "Demonstrates basic awareness of performance investigation steps (tracing, query store, indexing) but lacks concrete tooling, metrics, and detailed remediation strategies for .NET and SQL Server.",
       "Communication is fragmented with many filler words, repetition, and unclear structure, reducing professional credibility.",
-      "Has required work‑authorization and on‑site availability, but technical depth and articulation suggest a need for further evaluation before proceeding."
+      "Has required work\u2011authorization and on\u2011site availability, but technical depth and articulation suggest a need for further evaluation before proceeding."
     ],
     "recommendation": "Follow-up Needed",
-    "keyTakeaways": "The candidate shows a general understanding of performance tuning and Angular architecture but provides vague, repetitive explanations; a follow‑up interview is needed to assess true expertise.",
+    "keyTakeaways": "The candidate shows a general understanding of performance tuning and Angular architecture but provides vague, repetitive explanations; a follow\u2011up interview is needed to assess true expertise.",
     "recruiterRating": null,
     "recruiterNotes": "",
     "status": "submitted",
@@ -1457,7 +1381,7 @@
     "questions": [
       {
         "id": "q1",
-        "text": "In 60‑90 seconds, introduce yourself by highlighting your most recent .NET, MS SQL Server, and Angular projects, the business impact you delivered, and why you’re a strong fit for a Programmer Analyst role at a state natural resources agency.",
+        "text": "In 60\u201190 seconds, introduce yourself by highlighting your most recent .NET, MS\u202fSQL Server, and Angular projects, the business impact you delivered, and why you\u2019re a strong fit for a Programmer Analyst role at a state natural resources agency.",
         "description": "Look for clear articulation of domain relevance, stakeholder interaction, and measurable outcomes.",
         "allowedFormats": [
           "video",
@@ -1468,7 +1392,7 @@
       },
       {
         "id": "q2",
-        "text": "Describe a production incident where a .NET API experienced severe latency due to database calls. Walk through your step‑by‑step debugging process, the tools you used (e.g., PerfView, SQL Profiler), the root cause you uncovered, and how you refactored the code/queries to improve response time by at least 30%. Include any monitoring changes you implemented.",
+        "text": "Describe a production incident where a .NET API experienced severe latency due to database calls. Walk through your step\u2011by\u2011step debugging process, the tools you used (e.g., PerfView, SQL Profiler), the root cause you uncovered, and how you refactored the code/queries to improve response time by at least 30%. Include any monitoring changes you implemented.",
         "description": "Assess ability to diagnose performance bottlenecks across the stack and implement lasting fixes.",
         "allowedFormats": [
           "video",
@@ -1479,8 +1403,8 @@
       },
       {
         "id": "q3",
-        "text": "You need to redesign an existing Angular 14 application that now serves 10,000 concurrent users for real‑time environmental data dashboards. Explain the architectural choices you would make to ensure scalability, low latency, and maintainability (e.g., lazy loading, state management, WebSocket integration, server‑side rendering). Provide a brief code snippet or pseudo‑code illustrating one key optimization.",
-        "description": "Evaluate depth of front‑end architecture knowledge and practical performance‑tuning tactics.",
+        "text": "You need to redesign an existing Angular 14 application that now serves 10,000 concurrent users for real\u2011time environmental data dashboards. Explain the architectural choices you would make to ensure scalability, low latency, and maintainability (e.g., lazy loading, state management, WebSocket integration, server\u2011side rendering). Provide a brief code snippet or pseudo\u2011code illustrating one key optimization.",
+        "description": "Evaluate depth of front\u2011end architecture knowledge and practical performance\u2011tuning tactics.",
         "allowedFormats": [
           "video",
           "audio",
@@ -1490,7 +1414,7 @@
       },
       {
         "id": "q4",
-        "text": "Confirm your ability to start on 11/11/2026, work on‑site Wednesdays and Thursdays in Lansing, MI, your current work‑authorization status, and ready to attend inperson interview.",
+        "text": "Confirm your ability to start on 11/11/2026, work on\u2011site Wednesdays and Thursdays in Lansing, MI, your current work\u2011authorization status, and ready to attend inperson interview.",
         "description": "Capture logistical fit, compliance, and compensation expectations.",
         "allowedFormats": [
           "video",
@@ -1509,17 +1433,17 @@
     "responses": [
       {
         "questionId": "q1",
-        "questionText": "In 60‑90 seconds, introduce yourself by highlighting your most recent .NET, MS SQL Server, and Angular projects, the business impact you delivered, and why you’re a strong fit for a Programmer Analyst role at a state natural resources agency.",
+        "questionText": "In 60\u201190 seconds, introduce yourself by highlighting your most recent .NET, MS\u202fSQL Server, and Angular projects, the business impact you delivered, and why you\u2019re a strong fit for a Programmer Analyst role at a state natural resources agency.",
         "format": "video",
         "mediaUrl": "/uploads/screening/screen_1792088173670_session_SCR-1792078293817-794_full_interview.webm",
         "startTime": 0,
         "endTime": 24,
         "duration": 24,
-        "transcript": "Субтитры создавал DimaTorzok"
+        "transcript": "\u0421\u0443\u0431\u0442\u0438\u0442\u0440\u044b \u0441\u043e\u0437\u0434\u0430\u0432\u0430\u043b DimaTorzok"
       },
       {
         "questionId": "q2",
-        "questionText": "Describe a production incident where a .NET API experienced severe latency due to database calls. Walk through your step‑by‑step debugging process, the tools you used (e.g., PerfView, SQL Profiler), the root cause you uncovered, and how you refactored the code/queries to improve response time by at least 30%. Include any monitoring changes you implemented.",
+        "questionText": "Describe a production incident where a .NET API experienced severe latency due to database calls. Walk through your step\u2011by\u2011step debugging process, the tools you used (e.g., PerfView, SQL Profiler), the root cause you uncovered, and how you refactored the code/queries to improve response time by at least 30%. Include any monitoring changes you implemented.",
         "format": "video",
         "mediaUrl": "/uploads/screening/screen_1792088173670_session_SCR-1792078293817-794_full_interview.webm",
         "startTime": 24,
@@ -1529,7 +1453,7 @@
       },
       {
         "questionId": "q3",
-        "questionText": "You need to redesign an existing Angular 14 application that now serves 10,000 concurrent users for real‑time environmental data dashboards. Explain the architectural choices you would make to ensure scalability, low latency, and maintainability (e.g., lazy loading, state management, WebSocket integration, server‑side rendering). Provide a brief code snippet or pseudo‑code illustrating one key optimization.",
+        "questionText": "You need to redesign an existing Angular 14 application that now serves 10,000 concurrent users for real\u2011time environmental data dashboards. Explain the architectural choices you would make to ensure scalability, low latency, and maintainability (e.g., lazy loading, state management, WebSocket integration, server\u2011side rendering). Provide a brief code snippet or pseudo\u2011code illustrating one key optimization.",
         "format": "video",
         "mediaUrl": "/uploads/screening/screen_1792088173670_session_SCR-1792078293817-794_full_interview.webm",
         "startTime": 214,
@@ -1539,7 +1463,7 @@
       },
       {
         "questionId": "q4",
-        "questionText": "Confirm your ability to start on 11/11/2026, work on‑site Wednesdays and Thursdays in Lansing, MI, your current work‑authorization status, and ready to attend inperson interview.",
+        "questionText": "Confirm your ability to start on 11/11/2026, work on\u2011site Wednesdays and Thursdays in Lansing, MI, your current work\u2011authorization status, and ready to attend inperson interview.",
         "format": "video",
         "mediaUrl": "/uploads/screening/screen_1792088173670_session_SCR-1792078293817-794_full_interview.webm",
         "startTime": 345,
@@ -1558,7 +1482,7 @@
     "aiSummary": [
       "Technical relevance: candidate mentions generic .NET API latency and Angular modularity but provides no concrete architectures, tools (e.g., PerfView, SQL Profiler, Entity Framework details) or code artifacts that demonstrate deep experience with the required stack.",
       "Communication: the transcript is incoherent, repetitive, and lacks a clear structure or professional tone, making it difficult to assess the candidate's knowledge or reasoning process.",
-      "Experience & Fit: there is no verifiable description of specific projects, business impact, or confirmation of start date and on‑site availability beyond a vague statement; overall fit appears uncertain."
+      "Experience & Fit: there is no verifiable description of specific projects, business impact, or confirmation of start date and on\u2011site availability beyond a vague statement; overall fit appears uncertain."
     ],
     "recommendation": "Follow-up Needed",
     "keyTakeaways": "The candidate struggles to articulate concrete .NET, SQL Server, and Angular experience and provides unclear answers, suggesting a need for further evaluation before proceeding.",
@@ -1728,7 +1652,7 @@
     "aiSummary": [
       "Mentions ~10 years in IT and GIS with vague reference to ArcGIS but lacks concrete production experience with ArcGIS Online, Pro, Python, or SQL.",
       "Communication is disjointed, repetitive, and lacks professional polish, making it hard to gauge confidence and clarity.",
-      "Claims H‑1B work authorization and immediate availability, but provides no specific compensation expectations or detailed project outcomes."
+      "Claims H\u20111B work authorization and immediate availability, but provides no specific compensation expectations or detailed project outcomes."
     ],
     "recommendation": "Follow-up Needed",
     "keyTakeaways": "Candidate has general GIS experience but fails to demonstrate the specific technical depth required; further interview needed to verify skills and clarify expectations.",
@@ -1904,8 +1828,8 @@
     "aiScore": 68,
     "aiSummary": [
       "Mentions relevant .NET stack (ASP.NET Core, C#), Azure services, Docker/Kubernetes, and REST API design, indicating baseline technical fit for the role",
-      "Communication is disorganized, repetitive, and lacks concrete details or clear articulation of architecture and problem‑solving steps",
-      "8‑10 years experience claimed, H‑1B visa, available to start late October, but unclear project depth and rates suggest need for further clarification"
+      "Communication is disorganized, repetitive, and lacks concrete details or clear articulation of architecture and problem\u2011solving steps",
+      "8\u201110 years experience claimed, H\u20111B visa, available to start late October, but unclear project depth and rates suggest need for further clarification"
     ],
     "recommendation": "Follow-up Needed",
     "keyTakeaways": "Candidate completed all screening questions satisfactorily.",
@@ -2059,7 +1983,7 @@
     "aiSummary": [
       "Technical relevance: mentions M365 AI admin, copilot governance, and Azure integration but provides no concrete Power Apps, Power Automate, or Power Pages architectures or production implementations.",
       "Communication: response is repetitive, disjointed, and filled with filler words, lacking clear structure and professional articulation.",
-      "Experience & fit: limited evidence of deep Power Platform architect experience; availability in 3‑4 weeks and desired rate $60‑70k, but overall suitability is uncertain."
+      "Experience & fit: limited evidence of deep Power Platform architect experience; availability in 3\u20114 weeks and desired rate $60\u201170k, but overall suitability is uncertain."
     ],
     "recommendation": "Follow-up Needed",
     "keyTakeaways": "Candidate shows some exposure to Microsoft ecosystem tools but lacks demonstrable Power Platform architect expertise and clear communication; further evaluation needed before proceeding.",
@@ -2254,12 +2178,12 @@
     "expectedRate": "",
     "aiScore": 85,
     "aiSummary": [
-      "Demonstrates 15+ years of hands‑on experience with C#, ASP.NET Core, .NET Framework, SQL Server, Angular/React, and cloud/native tooling (AWS, Docker, Kubernetes, CI/CD) – a solid technical fit for the .NET developer role.",
-      "Communicates with a conversational style; while the transcript contains filler and some grammatical slips, the core ideas are articulated clearly and the candidate explains architecture decisions and problem‑solving steps confidently.",
-      "Based in Jackson, MS, holds a green card, and can start within a week; the depth of enterprise banking experience and immediate availability align well with the position’s needs."
+      "Demonstrates 15+ years of hands\u2011on experience with C#, ASP.NET Core, .NET Framework, SQL Server, Angular/React, and cloud/native tooling (AWS, Docker, Kubernetes, CI/CD) \u2013 a solid technical fit for the .NET developer role.",
+      "Communicates with a conversational style; while the transcript contains filler and some grammatical slips, the core ideas are articulated clearly and the candidate explains architecture decisions and problem\u2011solving steps confidently.",
+      "Based in Jackson, MS, holds a green card, and can start within a week; the depth of enterprise banking experience and immediate availability align well with the position\u2019s needs."
     ],
     "recommendation": "Strong Match",
-    "keyTakeaways": "Seasoned .NET professional with extensive full‑stack and cloud experience, local to Jackson and ready to join immediately – a strong candidate for the role.",
+    "keyTakeaways": "Seasoned .NET professional with extensive full\u2011stack and cloud experience, local to Jackson and ready to join immediately \u2013 a strong candidate for the role.",
     "recruiterRating": null,
     "recruiterNotes": "",
     "status": "submitted",
@@ -2387,7 +2311,7 @@
     "aiSummary": [
       "No technical relevance or evidence of IT troubleshooting skills was presented; candidate only answered administrative questions",
       "Communication was clear, concise, and professional, though extremely limited in scope",
-      "Candidate is located in Madison and is willing to attend an in‑person interview, but lacks demonstrated experience for a Help Desk I role"
+      "Candidate is located in Madison and is willing to attend an in\u2011person interview, but lacks demonstrated experience for a Help Desk I role"
     ],
     "recommendation": "Follow-up Needed",
     "keyTakeaways": "Candidate confirms Madison location and interview availability, but provides no insight into relevant technical or customer service experience; further assessment needed to gauge fit.",
@@ -2724,7 +2648,7 @@
         "startTime": 0,
         "endTime": 79,
         "duration": 79,
-        "transcript": "Продолжение следует... Hi my hi my okay my address is a tree lane Madison Wisconsin and zip code is a 53717 describe a recent challenging project or technical problem you have solved from ASP.net migration was"
+        "transcript": "\u041f\u0440\u043e\u0434\u043e\u043b\u0436\u0435\u043d\u0438\u0435 \u0441\u043b\u0435\u0434\u0443\u0435\u0442... Hi my hi my okay my address is a tree lane Madison Wisconsin and zip code is a 53717 describe a recent challenging project or technical problem you have solved from ASP.net migration was"
       },
       {
         "questionId": "q2",
@@ -2765,12 +2689,12 @@
     "expectedRate": "",
     "aiScore": 78,
     "aiSummary": [
-      "Candidate references real‑world .NET Core migration, Entity Framework Core, API layering, and front‑end integration with React/TypeScript, aligning with the required tech stack.",
+      "Candidate references real\u2011world .NET Core migration, Entity Framework Core, API layering, and front\u2011end integration with React/TypeScript, aligning with the required tech stack.",
       "Communication is informal and occasionally rambling, but the core points are conveyed; a more structured delivery would improve confidence.",
-      "10 years total .NET experience (8 years hands‑on), green‑card work authorization, 2‑week notice, and a $60‑$65 C2C rate fit the senior developer profile for Madison."
+      "10 years total .NET experience (8 years hands\u2011on), green\u2011card work authorization, 2\u2011week notice, and a $60\u2011$65 C2C rate fit the senior developer profile for Madison."
     ],
     "recommendation": "Recommended",
-    "keyTakeaways": "Manisha has solid, relevant .NET experience and appropriate compensation expectations, but her interview articulation could be tighter; she is a good fit pending a technical deep‑dive.",
+    "keyTakeaways": "Manisha has solid, relevant .NET experience and appropriate compensation expectations, but her interview articulation could be tighter; she is a good fit pending a technical deep\u2011dive.",
     "recruiterRating": 0,
     "recruiterNotes": "",
     "status": "shortlisted",
@@ -2923,10 +2847,10 @@
     "aiSummary": [
       "Mentions real .NET stack (ASP.NET, Entity Framework, SQL Server) and concrete actions (indexing, stored procedure optimization, monitoring) which aligns with the role, though details are vague.",
       "Communication is fragmented with filler words, repeated content, and incomplete address info, reducing clarity and professionalism.",
-      "Has US work authorization, can start in two weeks, and requests $60/hr; experience level appears mid‑range rather than senior, suggesting further evaluation is needed."
+      "Has US work authorization, can start in two weeks, and requests $60/hr; experience level appears mid\u2011range rather than senior, suggesting further evaluation is needed."
     ],
     "recommendation": "Follow-up Needed",
-    "keyTakeaways": "Candidate shows basic .NET performance‑tuning experience but lacks clear articulation and depth expected for a senior .NET Web Developer IV role; recommend a follow‑up interview to probe technical depth and communication skills.",
+    "keyTakeaways": "Candidate shows basic .NET performance\u2011tuning experience but lacks clear articulation and depth expected for a senior .NET Web Developer IV role; recommend a follow\u2011up interview to probe technical depth and communication skills.",
     "recruiterRating": null,
     "recruiterNotes": "",
     "status": "submitted",
@@ -3097,7 +3021,7 @@
     "aiSummary": [
       "Mentions 9 years of .NET/Core/C# experience but provides no concrete project architecture, tools, or frameworks relevant to a senior .NET Web Developer role",
       "Communication is repetitive, lacks structure, and fails to articulate specific technical details, reducing confidence in articulation",
-      "Experience claim is vague with no demonstrable work samples, and while green‑card status is clear, availability and rate expectations are not addressed"
+      "Experience claim is vague with no demonstrable work samples, and while green\u2011card status is clear, availability and rate expectations are not addressed"
     ],
     "recommendation": "Follow-up Needed",
     "keyTakeaways": "Candidate asserts nine years of .NET experience but offers no concrete project details or technical depth; communication is unfocused, so a further interview is needed to verify skills and fit.",
@@ -3170,7 +3094,7 @@
     "questions": [
       {
         "id": "q1",
-        "text": "In 60‑90 seconds, introduce yourself highlighting your most recent .NET Web development project, the primary technologies (e.g., .NET Framework, ASP.NET MVC, C#, SQL Server, Bootstrap, JavaScript) you used, and the business impact you delivered.",
+        "text": "In 60\u201190 seconds, introduce yourself highlighting your most recent .NET Web development project, the primary technologies (e.g., .NET Framework, ASP.NET MVC, C#, SQL Server, Bootstrap, JavaScript) you used, and the business impact you delivered.",
         "description": "Look for clear articulation of relevant experience, depth of .NET stack, and measurable outcomes.",
         "allowedFormats": [
           "video",
@@ -3182,7 +3106,7 @@
       {
         "id": "q2",
         "text": "Describe a production issue where an ASP.NET MVC application experienced severe response latency. Walk through how you diagnosed the bottleneck (e.g., profiling, SQL query analysis, thread contention) and the steps you took to resolve it, including any code or configuration changes.",
-        "description": "Assess problem‑solving methodology, familiarity with performance tools, and ability to tune both .NET code and SQL Server.",
+        "description": "Assess problem\u2011solving methodology, familiarity with performance tools, and ability to tune both .NET code and SQL Server.",
         "allowedFormats": [
           "video",
           "audio",
@@ -3192,8 +3116,8 @@
       },
       {
         "id": "q3",
-        "text": "Design a scalable data access layer for a high‑traffic web portal that must support both Entity Framework and raw ADO.NET queries against SQL Server. Explain your architectural choices, how you manage connection lifetimes, transaction handling, and how you would implement caching to reduce database load.",
-        "description": "Evaluates architectural thinking, mastery of C# data‑access patterns, and performance‑optimizing techniques.",
+        "text": "Design a scalable data access layer for a high\u2011traffic web portal that must support both Entity Framework and raw ADO.NET queries against SQL Server. Explain your architectural choices, how you manage connection lifetimes, transaction handling, and how you would implement caching to reduce database load.",
+        "description": "Evaluates architectural thinking, mastery of C# data\u2011access patterns, and performance\u2011optimizing techniques.",
         "allowedFormats": [
           "video",
           "audio",
@@ -3220,13 +3144,13 @@
     "responses": [
       {
         "questionId": "q1",
-        "questionText": "In 60‑90 seconds, introduce yourself highlighting your most recent .NET Web development project, the primary technologies (e.g., .NET Framework, ASP.NET MVC, C#, SQL Server, Bootstrap, JavaScript) you used, and the business impact you delivered.",
+        "questionText": "In 60\u201190 seconds, introduce yourself highlighting your most recent .NET Web development project, the primary technologies (e.g., .NET Framework, ASP.NET MVC, C#, SQL Server, Bootstrap, JavaScript) you used, and the business impact you delivered.",
         "format": "video",
         "mediaUrl": "/uploads/screening/screen_1791210645059_session_SCR-1791210554475-708_full_interview.webm",
         "startTime": 0,
         "endTime": 14,
         "duration": 14,
-        "transcript": "रिकॉर्डिंग चालो यह कोस्चन आ गया पड़ेगा हो और जो भी है यहां टांस्किप्ट आ जाए गए देखो पुरा आ गया मेरा नाम होमकेस है यह यह कंप्लिट हो गया एक कोस्चन से उटू नेक्स पर क्लिक करेगा हो"
+        "transcript": "\u0930\u093f\u0915\u0949\u0930\u094d\u0921\u093f\u0902\u0917 \u091a\u093e\u0932\u094b \u092f\u0939 \u0915\u094b\u0938\u094d\u091a\u0928 \u0906 \u0917\u092f\u093e \u092a\u0921\u093c\u0947\u0917\u093e \u0939\u094b \u0914\u0930 \u091c\u094b \u092d\u0940 \u0939\u0948 \u092f\u0939\u093e\u0902 \u091f\u093e\u0902\u0938\u094d\u0915\u093f\u092a\u094d\u091f \u0906 \u091c\u093e\u090f \u0917\u090f \u0926\u0947\u0916\u094b \u092a\u0941\u0930\u093e \u0906 \u0917\u092f\u093e \u092e\u0947\u0930\u093e \u0928\u093e\u092e \u0939\u094b\u092e\u0915\u0947\u0938 \u0939\u0948 \u092f\u0939 \u092f\u0939 \u0915\u0902\u092a\u094d\u0932\u093f\u091f \u0939\u094b \u0917\u092f\u093e \u090f\u0915 \u0915\u094b\u0938\u094d\u091a\u0928 \u0938\u0947 \u0909\u091f\u0942 \u0928\u0947\u0915\u094d\u0938 \u092a\u0930 \u0915\u094d\u0932\u093f\u0915 \u0915\u0930\u0947\u0917\u093e \u0939\u094b"
       },
       {
         "questionId": "q2",
@@ -3236,17 +3160,17 @@
         "startTime": 14,
         "endTime": 18,
         "duration": 4,
-        "transcript": "पुरा आ गया मेरा नाम होमकेस है यह यह कंप्लिट हो गया एक कोस्चन से उटू नेक्स पर क्लिक करेगा हो और यह दूसरा कोच्चन आगया इसने पिर रिगेक करती है और पैनल पिर"
+        "transcript": "\u092a\u0941\u0930\u093e \u0906 \u0917\u092f\u093e \u092e\u0947\u0930\u093e \u0928\u093e\u092e \u0939\u094b\u092e\u0915\u0947\u0938 \u0939\u0948 \u092f\u0939 \u092f\u0939 \u0915\u0902\u092a\u094d\u0932\u093f\u091f \u0939\u094b \u0917\u092f\u093e \u090f\u0915 \u0915\u094b\u0938\u094d\u091a\u0928 \u0938\u0947 \u0909\u091f\u0942 \u0928\u0947\u0915\u094d\u0938 \u092a\u0930 \u0915\u094d\u0932\u093f\u0915 \u0915\u0930\u0947\u0917\u093e \u0939\u094b \u0914\u0930 \u092f\u0939 \u0926\u0942\u0938\u0930\u093e \u0915\u094b\u091a\u094d\u091a\u0928 \u0906\u0917\u092f\u093e \u0907\u0938\u0928\u0947 \u092a\u093f\u0930 \u0930\u093f\u0917\u0947\u0915 \u0915\u0930\u0924\u0940 \u0939\u0948 \u0914\u0930 \u092a\u0948\u0928\u0932 \u092a\u093f\u0930"
       },
       {
         "questionId": "q3",
-        "questionText": "Design a scalable data access layer for a high‑traffic web portal that must support both Entity Framework and raw ADO.NET queries against SQL Server. Explain your architectural choices, how you manage connection lifetimes, transaction handling, and how you would implement caching to reduce database load.",
+        "questionText": "Design a scalable data access layer for a high\u2011traffic web portal that must support both Entity Framework and raw ADO.NET queries against SQL Server. Explain your architectural choices, how you manage connection lifetimes, transaction handling, and how you would implement caching to reduce database load.",
         "format": "video",
         "mediaUrl": "/uploads/screening/screen_1791210645059_session_SCR-1791210554475-708_full_interview.webm",
         "startTime": 18,
         "endTime": 22,
         "duration": 4,
-        "transcript": "और यह दूसरा कोच्चन आगया इसने पिर रिगेक करती है और पैनल पिर"
+        "transcript": "\u0914\u0930 \u092f\u0939 \u0926\u0942\u0938\u0930\u093e \u0915\u094b\u091a\u094d\u091a\u0928 \u0906\u0917\u092f\u093e \u0907\u0938\u0928\u0947 \u092a\u093f\u0930 \u0930\u093f\u0917\u0947\u0915 \u0915\u0930\u0924\u0940 \u0939\u0948 \u0914\u0930 \u092a\u0948\u0928\u0932 \u092a\u093f\u0930"
       },
       {
         "questionId": "q4",
@@ -3256,7 +3180,7 @@
         "startTime": 22,
         "endTime": 26,
         "duration": 4,
-        "transcript": "और यह दूसरा कोच्चन आगया इसने पिर रिगेक करती है और पैनल पिर"
+        "transcript": "\u0914\u0930 \u092f\u0939 \u0926\u0942\u0938\u0930\u093e \u0915\u094b\u091a\u094d\u091a\u0928 \u0906\u0917\u092f\u093e \u0907\u0938\u0928\u0947 \u092a\u093f\u0930 \u0930\u093f\u0917\u0947\u0915 \u0915\u0930\u0924\u0940 \u0939\u0948 \u0914\u0930 \u092a\u0948\u0928\u0932 \u092a\u093f\u0930"
       }
     ],
     "candidateName": "Omkesh Manjute",
@@ -3268,7 +3192,7 @@
     "aiScore": 58,
     "aiSummary": [
       "The transcript contains no recognizable .NET, ASP.NET, C#, or SQL Server terminology or architecture details, indicating no technical relevance to the role.",
-      "Communication is incoherent, non‑English, and does not follow a professional structure, making it impossible to assess articulation or confidence.",
+      "Communication is incoherent, non\u2011English, and does not follow a professional structure, making it impossible to assess articulation or confidence.",
       "There is no evidence of practical experience, work authorization details, start date, or rate expectations; the candidate did not address the required information."
     ],
     "recommendation": "Follow-up Needed",
@@ -3465,10 +3389,10 @@
     "aiSummary": [
       "Demonstrates solid production experience with Scala, Spark, CDP 7.x, Hive, HDFS, and YARN, matching core technical requirements for the Application Data Developer role.",
       "Communication is understandable but contains filler words and lacks a tight structure, making the narrative less concise and professional than ideal.",
-      "Nine years of data engineering experience across finance and healthcare shows strong domain fit, yet the candidate omitted a detailed challenging‑project example and specific Drools experience, requiring further clarification."
+      "Nine years of data engineering experience across finance and healthcare shows strong domain fit, yet the candidate omitted a detailed challenging\u2011project example and specific Drools experience, requiring further clarification."
     ],
     "recommendation": "Follow-up Needed",
-    "keyTakeaways": "Candidate has relevant technical background and domain experience, but gaps in detailed problem‑solving examples and Drools knowledge suggest a follow‑up interview to validate fit.",
+    "keyTakeaways": "Candidate has relevant technical background and domain experience, but gaps in detailed problem\u2011solving examples and Drools knowledge suggest a follow\u2011up interview to validate fit.",
     "recruiterRating": null,
     "recruiterNotes": "",
     "status": "submitted",
@@ -3630,5 +3554,2033 @@
     "videoPurgedAt": "2026-11-19T21:24:23.760Z",
     "recruiterName": "Omkesh",
     "createdByName": "Omkesh"
+  },
+  {
+    "sessionId": "SCR-1791924387957-49",
+    "candidateId": "C-5549",
+    "jobId": "159348",
+    "jobTitle": "Enterprise Program Manager - Project Lead",
+    "jobSkills": [
+      "Cybersecurity",
+      "IT Operations",
+      "Vendor Management",
+      "Intune"
+    ],
+    "jobLocation": "Columbia, SC",
+    "jobClient": "STO",
+    "campaignTitle": "Enterprise Program Manager - Project Lead Screening",
+    "questions": [
+      {
+        "id": "q1",
+        "text": "Give a 60-90 second introduction of your background, key technical skills, and recent work relevant to Enterprise Program Manager - Project Lead.",
+        "description": "Summarize your core strengths, programming languages/frameworks, and recent client projects.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 120
+      },
+      {
+        "id": "q2",
+        "text": "Describe a recent challenging project or technical problem you solved in your field.",
+        "description": "Explain the architecture, your contribution, and the final impact.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 120
+      },
+      {
+        "id": "q3",
+        "text": "What is your current work authorization, earliest availability or notice period, and desired hourly rate / compensation?",
+        "description": "Confirm your current location, relocation/remote preference, and visa status.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 90
+      }
+    ],
+    "allowedFormats": [
+      "video",
+      "audio",
+      "text"
+    ],
+    "maxDuration": 120,
+    "responses": [],
+    "createdAt": "2026-10-18T12:29:15.550Z",
+    "status": "pending",
+    "screeningComplete": false,
+    "submittedAt": null
+  },
+  {
+    "sessionId": "SCR-1792079755086-906",
+    "campaignTitle": "Programmer Analyst 5 Screening Campaign",
+    "jobId": "159332",
+    "jobTitle": "Programmer Analyst 5",
+    "jobSkills": [
+      ".NET",
+      "MS SQL Server",
+      "Angular"
+    ],
+    "jobPreferredSkills": [],
+    "jobExperience": "4-7 years",
+    "jobLocation": "Lansing, MI",
+    "jobClient": "Department of Natural Resources",
+    "targetPayRate": null,
+    "maxPayRate": null,
+    "questions": [
+      {
+        "id": "q1",
+        "text": "Please introduce yourself by showing your Michigan DL copy. ",
+        "description": "Summarize your core languages, frameworks, and client impact.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 120
+      },
+      {
+        "id": "q2",
+        "text": "Describe a recent challenging project or technical problem you solved involving .NET, MS SQL Server, Angular.",
+        "description": "Explain the architecture, your specific contribution, and the final impact.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 120
+      },
+      {
+        "id": "q3",
+        "text": "What is your current work authorization, earliest availability or notice period, and desired hourly rate / compensation?",
+        "description": "Confirm your current location, remote/relocation flexibility, and visa authorization.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 90
+      },
+      {
+        "id": "q4",
+        "text": "Give a 60-90 second introduction of your background, key technical skills, and recent projects relevant to Programmer Analyst 5. as (.NET, MS SQL Server and ANGULAR.)",
+        "description": "Provide brief context for candidate.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 120
+      }
+    ],
+    "allowedFormats": [
+      "video",
+      "audio",
+      "text"
+    ],
+    "maxDuration": 120,
+    "responses": [],
+    "candidateName": "Jerome Stepp",
+    "candidateEmail": "exosocial@gmail.com",
+    "candidatePhone": null,
+    "candidateLocation": null,
+    "candidateLinkedin": null,
+    "expectedRate": null,
+    "aiScore": null,
+    "aiSummary": null,
+    "recommendation": null,
+    "keyTakeaways": null,
+    "recruiterRating": null,
+    "recruiterNotes": "",
+    "status": "pending",
+    "createdAt": "2026-10-15T15:55:55.086Z",
+    "createdBy": "kamal@coolsofttech.com",
+    "createdByEmail": "kamal@coolsofttech.com",
+    "createdByName": "Sukamal Chatterjee",
+    "createdByRef": "sukamal-chatterjee",
+    "recruiterEmail": "kamal@coolsofttech.com",
+    "recruiterName": "Sukamal Chatterjee",
+    "submittedBy": "kamal@coolsofttech.com",
+    "recruiterId": "e1UJ2t0P5Qa9WJhluKoSDnTvYpJ3",
+    "screeningComplete": false,
+    "submittedAt": null,
+    "expiresAt": "2026-10-22T18:29:59.999Z"
+  },
+  {
+    "sessionId": "SCR-1792077907467-476",
+    "campaignTitle": "Programmer Analyst 5 Screening Campaign",
+    "jobId": "159332",
+    "jobTitle": "Programmer Analyst 5",
+    "jobSkills": [
+      ".NET",
+      "MS SQL Server",
+      "Angular"
+    ],
+    "jobPreferredSkills": [],
+    "jobExperience": "4-7 years",
+    "jobLocation": "Lansing, MI",
+    "jobClient": "Department of Natural Resources",
+    "targetPayRate": null,
+    "maxPayRate": null,
+    "questions": [
+      {
+        "id": "q1",
+        "text": "In 60\u201190 seconds, introduce yourself by highlighting your most recent .NET, MS\u202fSQL Server, and Angular projects, the business impact you delivered, and why you\u2019re a strong fit for a Programmer Analyst role at a state natural resources agency.",
+        "description": "Look for clear articulation of domain relevance, stakeholder interaction, and measurable outcomes.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 120
+      },
+      {
+        "id": "q2",
+        "text": "Describe a production incident where a .NET API experienced severe latency due to database calls. Walk through your step\u2011by\u2011step debugging process, the tools you used (e.g., PerfView, SQL Profiler), the root cause you uncovered, and how you refactored the code/queries to improve response time by at least 30%. Include any monitoring changes you implemented.",
+        "description": "Assess ability to diagnose performance bottlenecks across the stack and implement lasting fixes.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 300
+      },
+      {
+        "id": "q3",
+        "text": "You need to redesign an existing Angular 14 application that now serves 10,000 concurrent users for real\u2011time environmental data dashboards. Explain the architectural choices you would make to ensure scalability, low latency, and maintainability (e.g., lazy loading, state management, WebSocket integration, server\u2011side rendering). Provide a brief code snippet or pseudo\u2011code illustrating one key optimization.",
+        "description": "Evaluate depth of front\u2011end architecture knowledge and practical performance\u2011tuning tactics.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 300
+      },
+      {
+        "id": "q4",
+        "text": "Confirm your ability to start on 11/11/2026, work on\u2011site Wednesdays and Thursdays in Lansing, MI, your current work\u2011authorization status, and ready to attend inperon interview.",
+        "description": "Capture logistical fit, compliance, and compensation expectations.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 120
+      }
+    ],
+    "allowedFormats": [
+      "video",
+      "audio",
+      "text"
+    ],
+    "maxDuration": 120,
+    "responses": [],
+    "candidateName": "Swetha Dantica",
+    "candidateEmail": "swethad0080@gmail.com",
+    "candidatePhone": null,
+    "candidateLocation": null,
+    "candidateLinkedin": null,
+    "expectedRate": null,
+    "aiScore": null,
+    "aiSummary": null,
+    "recommendation": null,
+    "keyTakeaways": null,
+    "recruiterRating": null,
+    "recruiterNotes": "",
+    "status": "pending",
+    "createdAt": "2026-10-15T15:25:07.467Z",
+    "createdBy": "omkesh@coolsofttech.com",
+    "createdByEmail": "omkesh@coolsofttech.com",
+    "createdByName": "Omkesh",
+    "createdByRef": "omkesh",
+    "recruiterEmail": "omkesh@coolsofttech.com",
+    "recruiterName": "Omkesh",
+    "submittedBy": "omkesh@coolsofttech.com",
+    "recruiterId": "mPc2x6PTSPNKkJDLsRQFFio8A4G2",
+    "screeningComplete": false,
+    "submittedAt": null,
+    "expiresAt": "2026-10-20T18:29:59.999Z"
+  },
+  {
+    "sessionId": "SCR-1792077802014-529",
+    "campaignTitle": "Desktop Support IV Screening Campaign",
+    "jobId": "159286",
+    "jobTitle": "Desktop Support IV",
+    "jobSkills": [
+      "Computer Hardware",
+      "Audio/Visual Equipment",
+      "Networking",
+      "Technical Troubleshooting"
+    ],
+    "jobPreferredSkills": [
+      "Windows Server",
+      "Active Directory",
+      "Remote Desktop Services"
+    ],
+    "jobExperience": "Any",
+    "jobLocation": "Madison, WI",
+    "jobClient": "Supreme Court",
+    "targetPayRate": null,
+    "maxPayRate": null,
+    "questions": [
+      {
+        "id": "q1",
+        "text": "In 60\u201190 seconds, give a concise self\u2011introduction that highlights your experience with computer hardware, audio/visual equipment, and networking\u2014especially in high\u2011security or judicial environments. Mention any troubleshooting frameworks or certifications you rely on.",
+        "description": "Look for clear alignment with the core domains, depth of relevant experience, and evidence of structured problem\u2011solving approach.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 120
+      },
+      {
+        "id": "q2",
+        "text": "A court clerk reports that a network\u2011connected multi\u2011function printer on the 3rd floor intermittently fails to print, scan, or fax, while other printers on the same subnet work fine. Describe, step\u2011by\u2011step, how you would diagnose and resolve the issue, covering hardware, driver, network, and security considerations.",
+        "description": "Assess candidate\u2019s systematic troubleshooting, ability to isolate hardware vs. network problems, and familiarity with printer security policies common in government settings.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 180
+      },
+      {
+        "id": "q3",
+        "text": "During a high\u2011profile trial, the courtroom\u2019s AV system shows a 2\u2011second video lag and audio drop\u2011outs when the remote testimony feed is streamed over the court\u2019s LAN. Outline a troubleshooting and performance\u2011tuning plan that addresses bandwidth, equipment configuration, and any required scaling or redundancy measures.",
+        "description": "Evaluate depth of AV knowledge, networking bandwidth analysis, and ability to propose scalable, production\u2011grade solutions under pressure.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 240
+      },
+      {
+        "id": "q4",
+        "text": "Confirm your current Wisconsin residency, willingness to travel 25\u201150% across the state, work\u2011authorization status, expected hourly rate, and earliest possible start date for the 11/9/2026 assignment.",
+        "description": "Ensures logistical fit, compliance with residency requirement, and rate expectations before moving forward.",
+        "allowedFormats": [
+          "text"
+        ],
+        "maxDuration": 60
+      }
+    ],
+    "allowedFormats": [
+      "video",
+      "audio",
+      "text"
+    ],
+    "maxDuration": 120,
+    "responses": [],
+    "candidateName": "Ramakrishna Tanneru",
+    "candidateEmail": "tanneruramakrishna26@gmail.com",
+    "candidatePhone": null,
+    "candidateLocation": null,
+    "candidateLinkedin": null,
+    "expectedRate": null,
+    "aiScore": null,
+    "aiSummary": null,
+    "recommendation": null,
+    "keyTakeaways": null,
+    "recruiterRating": null,
+    "recruiterNotes": "",
+    "status": "pending",
+    "createdAt": "2026-10-15T15:23:22.015Z",
+    "createdBy": "pankajm@coolsofttech.com",
+    "createdByEmail": "pankajm@coolsofttech.com",
+    "createdByName": "Pankaj",
+    "createdByRef": "pankaj",
+    "recruiterEmail": "pankajm@coolsofttech.com",
+    "recruiterName": "Pankaj",
+    "submittedBy": "pankajm@coolsofttech.com",
+    "recruiterId": "6bWHLLhCu8RhcoN64LI4WLlC7lz1",
+    "screeningComplete": false,
+    "submittedAt": null,
+    "expiresAt": "2026-10-22T18:29:59.999Z"
+  },
+  {
+    "sessionId": "SCR-1791994439336-471",
+    "campaignTitle": "Business Analyst 5 Screening Campaign",
+    "jobId": "159288",
+    "jobTitle": "Business Analyst 5",
+    "jobSkills": [
+      "Process Modeling",
+      "Agile",
+      "Business Analysis",
+      "Requirements Elicitation"
+    ],
+    "jobPreferredSkills": [
+      "Statement of Work",
+      "Regulatory Compliance"
+    ],
+    "jobExperience": "7+ years",
+    "jobLocation": "Lansing, MI",
+    "jobClient": "EGLE",
+    "targetPayRate": null,
+    "maxPayRate": null,
+    "questions": [
+      {
+        "id": "q1",
+        "text": "How many years of experience do you have in Business Analysis, Requirements Engineering, and QA documentation?",
+        "description": "Summarize your core languages, frameworks, and client impact.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 120
+      },
+      {
+        "id": "q2",
+        "text": "Do you have hands-on experience with Azure DevOps, Agile/Scrum, user stories, and acceptance criteria?",
+        "description": "Explain the architecture, your specific contribution, and the final impact.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 120
+      },
+      {
+        "id": "q3",
+        "text": "What is your current work authorization, earliest availability or notice period, and Are your ready to attend inperson interview?",
+        "description": "Confirm your current location, remote/relocation flexibility, and visa authorization.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 90
+      },
+      {
+        "id": "q4",
+        "text": "Do you have experience with HR workflow automation or state government projects?",
+        "description": "Provide brief context for candidate.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 120
+      }
+    ],
+    "allowedFormats": [
+      "video",
+      "audio",
+      "text"
+    ],
+    "maxDuration": 120,
+    "responses": [],
+    "candidateName": null,
+    "candidateEmail": null,
+    "candidatePhone": null,
+    "candidateLocation": null,
+    "candidateLinkedin": null,
+    "expectedRate": null,
+    "aiScore": null,
+    "aiSummary": null,
+    "recommendation": null,
+    "keyTakeaways": null,
+    "recruiterRating": null,
+    "recruiterNotes": "",
+    "status": "pending",
+    "createdAt": "2026-10-14T16:13:59.337Z",
+    "createdBy": "omkesh@coolsofttech.com",
+    "createdByEmail": "omkesh@coolsofttech.com",
+    "createdByName": "Omkesh",
+    "createdByRef": "omkesh",
+    "recruiterEmail": "omkesh@coolsofttech.com",
+    "recruiterName": "Omkesh",
+    "submittedBy": "omkesh@coolsofttech.com",
+    "recruiterId": "mPc2x6PTSPNKkJDLsRQFFio8A4G2",
+    "screeningComplete": false,
+    "submittedAt": null,
+    "expiresAt": "2026-10-21T18:29:59.999Z"
+  },
+  {
+    "sessionId": "SCR-1791994161731-432",
+    "campaignTitle": "DRC-Programmer 3(PR3) Screening Campaign",
+    "jobId": "159275",
+    "jobTitle": "DRC-Programmer 3(PR3)",
+    "jobSkills": [
+      "Azure",
+      "C#",
+      ".NET",
+      "SQL Server"
+    ],
+    "jobPreferredSkills": [
+      "Git",
+      "MS Visio"
+    ],
+    "jobExperience": "6+ years",
+    "jobLocation": "Columbus, OH",
+    "jobClient": "DRC",
+    "targetPayRate": null,
+    "maxPayRate": null,
+    "questions": [
+      {
+        "id": "q1",
+        "text": "Please identify yourself by showing a copy of your driving license.",
+        "description": "Summarize your core languages, frameworks, and client impact.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 120
+      },
+      {
+        "id": "q3",
+        "text": "What is your current work authorization, earliest availability or notice period, ",
+        "description": "Confirm your current location, remote/relocation flexibility, and visa authorization.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 90
+      }
+    ],
+    "allowedFormats": [
+      "video",
+      "audio",
+      "text"
+    ],
+    "maxDuration": 120,
+    "responses": [],
+    "candidateName": "Sai Charan Reddy Pathireddy",
+    "candidateEmail": "saic77484@gmail.com",
+    "candidatePhone": null,
+    "candidateLocation": null,
+    "candidateLinkedin": null,
+    "expectedRate": null,
+    "aiScore": null,
+    "aiSummary": null,
+    "recommendation": null,
+    "keyTakeaways": null,
+    "recruiterRating": null,
+    "recruiterNotes": "",
+    "status": "pending",
+    "createdAt": "2026-10-14T16:09:21.732Z",
+    "createdBy": "kamal@coolsofttech.com",
+    "createdByEmail": "kamal@coolsofttech.com",
+    "createdByName": "Sukamal Chatterjee",
+    "createdByRef": "sukamal-chatterjee",
+    "recruiterEmail": "kamal@coolsofttech.com",
+    "recruiterName": "Sukamal Chatterjee",
+    "submittedBy": "kamal@coolsofttech.com",
+    "recruiterId": "e1UJ2t0P5Qa9WJhluKoSDnTvYpJ3",
+    "screeningComplete": false,
+    "submittedAt": null,
+    "expiresAt": "2026-10-21T18:29:59.999Z"
+  },
+  {
+    "sessionId": "SCR-1791922534118-120",
+    "campaignTitle": "Desktop Support IV Screening Campaign",
+    "jobId": "159286",
+    "jobTitle": "Desktop Support IV",
+    "jobSkills": [
+      "Computer Hardware",
+      "Audio/Visual Equipment",
+      "Networking",
+      "Technical Troubleshooting"
+    ],
+    "jobPreferredSkills": [
+      "Windows Server",
+      "Active Directory",
+      "Remote Desktop Services"
+    ],
+    "jobExperience": "Any",
+    "jobLocation": "Madison, WI",
+    "jobClient": "Supreme Court",
+    "targetPayRate": null,
+    "maxPayRate": null,
+    "questions": [
+      {
+        "id": "q1",
+        "text": "In 60-90 seconds,  hold your DL copy and introduce yourself.",
+        "description": "Assess domain alignment, communication clarity, and relevance to the Supreme Court setting.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 120
+      },
+      {
+        "id": "q2",
+        "text": "A judge\u2019s courtroom AV system intermittently loses video feed during proceedings. Describe step\u2011by\u2011step how you would diagnose, isolate, and resolve the issue, including the tools, logs, and tests you would employ.",
+        "description": "Evaluate troubleshooting methodology, AV expertise, and ability to maintain uptime in critical live environments.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 120
+      },
+      {
+        "id": "q3",
+        "text": "Multiple courtrooms report slow network performance when accessing case\u2011management files over a 1\u202fGbps LAN. Explain how you would profile the network, identify bottlenecks, and implement a scalable, security\u2011compliant solution.",
+        "description": "Assess networking knowledge, performance tuning skills, and awareness of security requirements in a judicial context.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 120
+      },
+      {
+        "id": "q4",
+        "text": "Confirm your current Wisconsin residency, willingness to travel 25\u201150% statewide, any work\u2011authorization constraints, and your expected hourly rate for this contract.",
+        "description": "Verify logistical fit, travel readiness, work eligibility, and compensation expectations.",
+        "allowedFormats": [
+          "text"
+        ],
+        "maxDuration": 60
+      }
+    ],
+    "allowedFormats": [
+      "video",
+      "audio",
+      "text"
+    ],
+    "maxDuration": 120,
+    "responses": [],
+    "candidateName": "Kunal",
+    "candidateEmail": "kunalstudy10@gmail.com",
+    "candidatePhone": null,
+    "candidateLocation": null,
+    "candidateLinkedin": null,
+    "expectedRate": null,
+    "aiScore": null,
+    "aiSummary": null,
+    "recommendation": null,
+    "keyTakeaways": null,
+    "recruiterRating": null,
+    "recruiterNotes": "",
+    "status": "in_progress",
+    "createdAt": "2026-10-13T20:15:34.119Z",
+    "createdBy": "pankajm@coolsofttech.com",
+    "createdByEmail": "pankajm@coolsofttech.com",
+    "createdByName": "Pankaj",
+    "createdByRef": "pankaj",
+    "recruiterEmail": "pankajm@coolsofttech.com",
+    "recruiterName": "Pankaj",
+    "submittedBy": "pankajm@coolsofttech.com",
+    "recruiterId": "6bWHLLhCu8RhcoN64LI4WLlC7lz1",
+    "screeningComplete": false,
+    "submittedAt": null,
+    "expiresAt": "2026-10-21T18:29:59.999Z",
+    "isStarted": true,
+    "startedAt": "2026-10-13T20:39:00.787Z"
+  },
+  {
+    "sessionId": "SCR-1791841654009-858",
+    "campaignTitle": "Microsoft .NET Developer Screening Campaign",
+    "jobId": "159287",
+    "jobTitle": "Microsoft .NET Developer",
+    "jobSkills": [
+      "ASP.NET",
+      "JavaScript",
+      "JSON",
+      "CSS"
+    ],
+    "jobPreferredSkills": [
+      "Payment Applications",
+      "Crystal Reports Designer",
+      "ADA Title II Compliance"
+    ],
+    "jobExperience": "3+ years",
+    "jobLocation": "Jackson, MS",
+    "jobClient": "ITS",
+    "targetPayRate": null,
+    "maxPayRate": null,
+    "questions": [
+      {
+        "id": "q2",
+        "text": "An ASP.NET Core Web API is returning large JSON payloads that are causing response times of 5\u20118 seconds under load. Explain step\u2011by\u2011step how you would profile, diagnose, and improve the performance, covering serialization settings, streaming, compression, caching, and any relevant middleware.",
+        "description": "Evaluates deep technical problem\u2011solving, performance tuning, and production debugging skills.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 120
+      },
+      {
+        "id": "q3",
+        "text": "Design a client\u2011side component that consumes a RESTful JSON endpoint, renders data in a dynamic table, and updates in real time using vanilla JavaScript and CSS. Discuss how you would minimise reflows, handle large data sets efficiently, and ensure the UI remains responsive under high concurrency.",
+        "description": "Tests architectural thinking, JavaScript/CSS optimization, and ability to build scalable front\u2011end solutions.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 120
+      },
+      {
+        "id": "q4",
+        "text": "Please confirm your earliest start date, Comfortable  to work 100\u202f% onsite and inperson interview.",
+        "description": "Collects logistical details needed for next\u2011step scheduling.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 120
+      }
+    ],
+    "allowedFormats": [
+      "video",
+      "audio",
+      "text"
+    ],
+    "maxDuration": 120,
+    "responses": [],
+    "candidateName": "Rajesh Kumar",
+    "candidateEmail": "mrajeshkr1992@gmail.com",
+    "candidatePhone": null,
+    "candidateLocation": null,
+    "candidateLinkedin": null,
+    "expectedRate": null,
+    "aiScore": null,
+    "aiSummary": null,
+    "recommendation": null,
+    "keyTakeaways": null,
+    "recruiterRating": null,
+    "recruiterNotes": "",
+    "status": "pending",
+    "createdAt": "2026-10-12T21:47:34.010Z",
+    "createdBy": "omkesh@coolsofttech.com",
+    "createdByEmail": "omkesh@coolsofttech.com",
+    "createdByName": "Omkesh",
+    "createdByRef": "omkesh",
+    "recruiterEmail": "omkesh@coolsofttech.com",
+    "recruiterName": "Omkesh",
+    "submittedBy": "omkesh@coolsofttech.com",
+    "recruiterId": "mPc2x6PTSPNKkJDLsRQFFio8A4G2",
+    "screeningComplete": false,
+    "submittedAt": null
+  },
+  {
+    "sessionId": "SCR-1791840612221-755",
+    "campaignTitle": "Microsoft .NET Developer Screening Campaign",
+    "jobId": "159287",
+    "jobTitle": "Microsoft .NET Developer",
+    "jobSkills": [
+      "ASP.NET",
+      "JavaScript",
+      "JSON",
+      "CSS"
+    ],
+    "jobPreferredSkills": [
+      "Payment Applications",
+      "Crystal Reports Designer",
+      "ADA Title II Compliance"
+    ],
+    "jobExperience": "3+ years",
+    "jobLocation": "Jackson, MS",
+    "jobClient": "ITS",
+    "targetPayRate": null,
+    "maxPayRate": null,
+    "questions": [
+      {
+        "id": "q1",
+        "text": "In 60\u201190 seconds, introduce yourself highlighting your experience with ASP.NET, JavaScript, JSON, and CSS, and explain why you\u2019re a strong fit for an intermediate .NET role at ITS.",
+        "description": "Look for concise narrative, clear years of experience, and relevance to full\u2011stack .NET work.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 120
+      },
+      {
+        "id": "q2",
+        "text": "Design an ASP.NET Core Web API endpoint that receives a large JSON payload, validates it, and returns a filtered result set. Explain how you would handle model binding, validation, streaming large payloads, and what you\u2019d do to keep response latency under 200\u202fms.",
+        "description": "Assess knowledge of ASP.NET Core pipeline, JSON handling, performance\u2011aware design (e.g., streaming, async, pagination).",
+        "allowedFormats": [
+          "text"
+        ],
+        "maxDuration": 300
+      },
+      {
+        "id": "q3",
+        "text": "A production web page built with your ASP.NET MVC app is experiencing intermittent UI freezes after a recent CSS/JS update. Walk through your debugging process, tools you\u2019d use, and how you\u2019d isolate and fix the root cause while ensuring the fix doesn\u2019t regress performance.",
+        "description": "Evaluate debugging workflow (browser dev tools, performance profiling, logging), understanding of CSS/JS impact on rendering, and regression\u2011safe deployment practices.",
+        "allowedFormats": [
+          "text"
+        ],
+        "maxDuration": 300
+      },
+      {
+        "id": "q4",
+        "text": "Please confirm your earliest start date, Comfortable to work 100% onsite and inperson interview,  your work\u2011authorization status for the U.S.",
+        "description": "Capture logistical fit, compliance, and compensation expectations.",
+        "allowedFormats": [
+          "text"
+        ],
+        "maxDuration": 180
+      }
+    ],
+    "allowedFormats": [
+      "video",
+      "audio",
+      "text"
+    ],
+    "maxDuration": 120,
+    "responses": [],
+    "candidateName": "UDHISE TEJA RAKESH",
+    "candidateEmail": "rakeshteja30@gmail.com",
+    "candidatePhone": null,
+    "candidateLocation": null,
+    "candidateLinkedin": null,
+    "expectedRate": null,
+    "aiScore": null,
+    "aiSummary": null,
+    "recommendation": null,
+    "keyTakeaways": null,
+    "recruiterRating": null,
+    "recruiterNotes": "",
+    "status": "in_progress",
+    "createdAt": "2026-10-12T21:30:12.221Z",
+    "createdBy": "omkesh@coolsofttech.com",
+    "createdByEmail": "omkesh@coolsofttech.com",
+    "createdByName": "Omkesh",
+    "createdByRef": "omkesh",
+    "recruiterEmail": "omkesh@coolsofttech.com",
+    "recruiterName": "Omkesh",
+    "submittedBy": "omkesh@coolsofttech.com",
+    "recruiterId": "mPc2x6PTSPNKkJDLsRQFFio8A4G2",
+    "screeningComplete": false,
+    "submittedAt": null,
+    "isStarted": true,
+    "startedAt": "2026-10-13T19:57:50.988Z"
+  },
+  {
+    "sessionId": "SCR-1791828699970-467",
+    "campaignTitle": "IT - DFI - AST - BITS - Security Analyst II Screening Campaign",
+    "jobId": "159306",
+    "jobTitle": "IT - DFI - AST - BITS - Security Analyst II",
+    "jobSkills": [
+      "CrowdStrike",
+      "Tenable",
+      "IT Security"
+    ],
+    "jobPreferredSkills": [
+      "CISSP"
+    ],
+    "jobExperience": "4-7 years",
+    "jobLocation": "Madison, WI",
+    "jobClient": "Wisconsin Department of Financial Institutions (DFI)",
+    "targetPayRate": null,
+    "maxPayRate": null,
+    "questions": [
+      {
+        "id": "q1",
+        "text": "In 60\u201190 seconds, introduce yourself and explain how your experience with CrowdStrike endpoint protection and Tenable vulnerability management directly supports the security needs of a state financial regulator.",
+        "description": "Assess relevance, years of experience, and ability to articulate domain fit quickly.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 120
+      },
+      {
+        "id": "q2",
+        "text": "A critical Windows server in production triggered a CrowdStrike sensor alert for a suspected fileless malware attack. Walk through the steps you would take to verify the alert, isolate the host, collect forensic data, and remediate while minimizing impact to a live financial services environment.",
+        "description": "Look for systematic troubleshooting, containment, forensic collection, and communication steps; evaluate depth of CrowdStrike knowledge and production\u2011grade mindset.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 300
+      },
+      {
+        "id": "q3",
+        "text": "You must design a quarterly Tenable.io scan strategy for 1,200 on\u2011premise and cloud assets that includes web applications, databases, and privileged workstations, while staying under a 48\u2011hour total scan window and meeting PCI\u2011DSS requirements. Detail the architecture, scan scheduling, credential management, and how you would triage and report high\u2011severity findings.",
+        "description": "Evaluate candidate\u2019s ability to architect scalable vulnerability scanning, handle credentialed scans, prioritize remediation, and align with regulatory frameworks.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 300
+      },
+      {
+        "id": "q4",
+        "text": "Confirm your current WI residency, earliest possible start date, willingness to work onsite in Madison (or remote up to three days/week after trial), work authorization status, and your rate expectations for this contract.",
+        "description": "Validate location, availability, authorization, and compensation expectations.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 60
+      }
+    ],
+    "allowedFormats": [
+      "video",
+      "audio",
+      "text"
+    ],
+    "maxDuration": 120,
+    "responses": [],
+    "candidateName": "Amar Koduri",
+    "candidateEmail": "amar.coreit@gmail.com",
+    "candidatePhone": null,
+    "candidateLocation": null,
+    "candidateLinkedin": null,
+    "expectedRate": null,
+    "aiScore": null,
+    "aiSummary": null,
+    "recommendation": null,
+    "keyTakeaways": null,
+    "recruiterRating": null,
+    "recruiterNotes": "",
+    "status": "pending",
+    "createdAt": "2026-10-12T18:11:39.970Z",
+    "createdBy": "kamlesh@coolsofttech.com",
+    "createdByEmail": "kamlesh@coolsofttech.com",
+    "createdByName": "kamlesh Bansod",
+    "createdByRef": "kamlesh-bansod",
+    "recruiterEmail": "kamlesh@coolsofttech.com",
+    "recruiterName": "kamlesh Bansod",
+    "submittedBy": "kamlesh@coolsofttech.com",
+    "recruiterId": "rEkRvetkRSfo1TS1SWZufhs2NHS2",
+    "screeningComplete": false,
+    "submittedAt": null
+  },
+  {
+    "sessionId": "SCR-1791819624410-477",
+    "campaignTitle": "Microsoft .NET Developer Screening Campaign",
+    "jobId": "159287",
+    "jobTitle": "Microsoft .NET Developer",
+    "jobSkills": [
+      "ASP.NET",
+      "JavaScript",
+      "JSON",
+      "CSS"
+    ],
+    "jobPreferredSkills": [
+      "Payment Applications",
+      "Crystal Reports Designer",
+      "ADA Title II Compliance"
+    ],
+    "jobExperience": "3+ years",
+    "jobLocation": "Jackson, MS",
+    "jobClient": "ITS",
+    "targetPayRate": null,
+    "maxPayRate": null,
+    "questions": [
+      {
+        "id": "q1",
+        "text": "Please introduce yourself by showing your DL card.",
+        "description": "Summarize your core languages, frameworks, and client impact.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 120
+      },
+      {
+        "id": "q3",
+        "text": "What is your current work authorization, earliest availability or notice period.",
+        "description": "Confirm your current location, remote/relocation flexibility, and visa authorization.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 90
+      },
+      {
+        "id": "q4",
+        "text": "What is your current location.",
+        "description": "Provide brief context for candidate.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 120
+      },
+      {
+        "id": "q5",
+        "text": "What is your experience in Architecture, Design & .NET Core / Framework.",
+        "description": "Provide brief context for candidate.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 120
+      },
+      {
+        "id": "q5",
+        "text": "Describe a recent challenging project or technical problem you solved involving ASP.NET, JavaScript, JSON.",
+        "description": "Provide brief context for candidate.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 120
+      }
+    ],
+    "allowedFormats": [
+      "video",
+      "audio",
+      "text"
+    ],
+    "maxDuration": 120,
+    "responses": [],
+    "candidateName": "Pranathi Reddy Mamidi",
+    "candidateEmail": "pranu6998@gmail.com",
+    "candidatePhone": null,
+    "candidateLocation": null,
+    "candidateLinkedin": null,
+    "expectedRate": null,
+    "aiScore": null,
+    "aiSummary": null,
+    "recommendation": null,
+    "keyTakeaways": null,
+    "recruiterRating": null,
+    "recruiterNotes": "",
+    "status": "pending",
+    "createdAt": "2026-10-12T15:40:24.411Z",
+    "createdBy": "kamal@coolsofttech.com",
+    "createdByEmail": "kamal@coolsofttech.com",
+    "createdByName": "Sukamal Chatterjee",
+    "createdByRef": "sukamal-chatterjee",
+    "recruiterEmail": "kamal@coolsofttech.com",
+    "recruiterName": "Sukamal Chatterjee",
+    "submittedBy": "kamal@coolsofttech.com",
+    "recruiterId": "e1UJ2t0P5Qa9WJhluKoSDnTvYpJ3",
+    "screeningComplete": false,
+    "submittedAt": null
+  },
+  {
+    "sessionId": "SCR-1791387947146-413",
+    "campaignTitle": "Senior MS SQL Database Administrator Screening Campaign",
+    "jobId": "159252",
+    "jobTitle": "Senior MS SQL Database Administrator",
+    "jobSkills": [
+      "SQL Server",
+      "Azure",
+      "T-SQL",
+      "SSIS"
+    ],
+    "jobPreferredSkills": [
+      "Snowflake",
+      "Databricks",
+      "SSAS"
+    ],
+    "jobExperience": "6+ years",
+    "jobLocation": "Mechanicsville, VA",
+    "jobClient": "VDOT",
+    "targetPayRate": null,
+    "maxPayRate": null,
+    "questions": [
+      {
+        "id": "q1",
+        "text": "Give a 60-90 second introduction of your background, key technical skills, and recent projects relevant to Senior MS SQL Database Administrator.",
+        "description": "Summarize your core languages, frameworks, and client impact.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 120
+      },
+      {
+        "id": "q2",
+        "text": "Why you are good fit for this position.",
+        "description": "Explain the architecture, your specific contribution, and the final impact.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 120
+      },
+      {
+        "id": "q3",
+        "text": "What is your current work authorization, earliest availability or notice period, and desired hourly rate / compensation?",
+        "description": "Confirm your current location, remote/relocation flexibility, and visa authorization.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 90
+      },
+      {
+        "id": "q4",
+        "text": "Hold your ID & capture the picture.",
+        "description": "Provide brief context for candidate.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 120
+      }
+    ],
+    "allowedFormats": [
+      "video",
+      "audio",
+      "text"
+    ],
+    "maxDuration": 120,
+    "responses": [],
+    "candidateName": null,
+    "candidateEmail": null,
+    "candidatePhone": null,
+    "candidateLocation": null,
+    "candidateLinkedin": null,
+    "expectedRate": null,
+    "aiScore": null,
+    "aiSummary": null,
+    "recommendation": null,
+    "keyTakeaways": null,
+    "recruiterRating": null,
+    "recruiterNotes": "",
+    "status": "pending",
+    "createdAt": "2026-10-07T15:45:47.146Z",
+    "createdBy": "nishant@coolsofttech.com",
+    "createdByEmail": "nishant@coolsofttech.com",
+    "createdByName": "Nishant Kathane",
+    "createdByRef": "nishant-kathane",
+    "recruiterEmail": "nishant@coolsofttech.com",
+    "recruiterName": "Nishant Kathane",
+    "submittedBy": "nishant@coolsofttech.com",
+    "recruiterId": "WmfdPLAx9rQaSp6I6XdaRD0kUyj2",
+    "screeningComplete": false,
+    "submittedAt": null
+  },
+  {
+    "sessionId": "SCR-1791322905793-705",
+    "campaignTitle": " Senior COBOL Developer ",
+    "jobId": "159260",
+    "jobTitle": "Azure Cloud Engineer",
+    "jobSkills": [
+      "Azure",
+      "PowerShell",
+      "Python",
+      "Windows"
+    ],
+    "jobPreferredSkills": [
+      "Azure Certification",
+      "Rubrik",
+      "Secret Server"
+    ],
+    "jobExperience": "3+ years",
+    "jobLocation": "Mechanicsville, VA",
+    "jobClient": "VDOT",
+    "targetPayRate": null,
+    "maxPayRate": null,
+    "questions": [
+      {
+        "id": "q2",
+        "text": "What is your current work authorization, earliest availability or notice period, and  comfortable with onsite work?",
+        "description": "Explain the architecture, your specific contribution, and the final impact.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 120
+      },
+      {
+        "id": "q3",
+        "text": "How many years of hands-on Visual COBOL/Micro Focus COBOL experience do you have, specifically Visual COBOL V9?",
+        "description": "Confirm your current location, remote/relocation flexibility, and visa authorization.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 90
+      },
+      {
+        "id": "q3",
+        "text": "How many years of COBOL development experience do you have in a Windows-based client-server environment?",
+        "description": "Provide brief context for candidate.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 120
+      },
+      {
+        "id": "q4",
+        "text": "How many years of hands-on Oracle SQL experience do you have? Have you worked with Oracle 19c+?",
+        "description": "Provide brief context for candidate.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 120
+      }
+    ],
+    "allowedFormats": [
+      "video",
+      "audio",
+      "text"
+    ],
+    "maxDuration": 120,
+    "responses": [],
+    "candidateName": null,
+    "candidateEmail": null,
+    "candidatePhone": null,
+    "candidateLocation": null,
+    "candidateLinkedin": null,
+    "expectedRate": null,
+    "aiScore": null,
+    "aiSummary": null,
+    "recommendation": null,
+    "keyTakeaways": null,
+    "recruiterRating": null,
+    "recruiterNotes": "",
+    "status": "pending",
+    "createdAt": "2026-10-06T21:41:45.793Z",
+    "createdBy": "omkesh@coolsofttech.com",
+    "createdByEmail": "omkesh@coolsofttech.com",
+    "createdByName": "Omkesh",
+    "createdByRef": "omkesh",
+    "recruiterEmail": "omkesh@coolsofttech.com",
+    "recruiterName": "Omkesh",
+    "submittedBy": "omkesh@coolsofttech.com",
+    "recruiterId": "admin-1",
+    "screeningComplete": false,
+    "submittedAt": null
+  },
+  {
+    "sessionId": "SCR-1791300804988-543",
+    "campaignTitle": "Data Analyst 3 Screening Campaign",
+    "jobId": "159251",
+    "jobTitle": "Data Analyst 3",
+    "jobSkills": [
+      "Power BI",
+      "DAX",
+      "Excel",
+      "Azure"
+    ],
+    "jobPreferredSkills": [
+      "FinOps",
+      "Azure Reserved Instances",
+      "JIT capacity planning"
+    ],
+    "jobExperience": "Any",
+    "jobLocation": "Mechanicsville, VA",
+    "jobClient": "VDOT",
+    "targetPayRate": null,
+    "maxPayRate": null,
+    "questions": [
+      {
+        "id": "q1",
+        "text": " What is your current Location?  Are you available for F2F interview ?",
+        "description": "Summarize your core languages, frameworks, and client impact.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 120
+      },
+      {
+        "id": "q2",
+        "text": "Describe a recent challenging project or technical problem you solved involving Power BI, DAX, Excel.",
+        "description": "Explain the architecture, your specific contribution, and the final impact.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 120
+      },
+      {
+        "id": "q3",
+        "text": "What is your current work authorization, earliest availability or notice period, and desired hourly rate / compensation?",
+        "description": "Confirm your current location, remote/relocation flexibility, and visa authorization.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 90
+      },
+      {
+        "id": "q5",
+        "text": "Please describ your  experience in Cloud Financial Management & FinOps.",
+        "description": "Provide brief context for candidate.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 120
+      }
+    ],
+    "allowedFormats": [
+      "video",
+      "audio",
+      "text"
+    ],
+    "maxDuration": 120,
+    "responses": [],
+    "candidateName": null,
+    "candidateEmail": null,
+    "candidatePhone": null,
+    "candidateLocation": null,
+    "candidateLinkedin": null,
+    "expectedRate": null,
+    "aiScore": null,
+    "aiSummary": null,
+    "recommendation": null,
+    "keyTakeaways": null,
+    "recruiterRating": null,
+    "recruiterNotes": "",
+    "status": "pending",
+    "createdAt": "2026-10-06T15:33:24.988Z",
+    "createdBy": "kamal@coolsofttech.com",
+    "createdByEmail": "kamal@coolsofttech.com",
+    "createdByName": "Sukamal Chatterjee",
+    "createdByRef": "sukamal-chatterjee",
+    "recruiterEmail": "kamal@coolsofttech.com",
+    "recruiterName": "Sukamal Chatterjee",
+    "submittedBy": "omkesh@coolsofttech.com",
+    "recruiterId": "admin-1",
+    "screeningComplete": false,
+    "submittedAt": null
+  },
+  {
+    "sessionId": "SCR-1791298224853-562",
+    "campaignTitle": "Business Analyst 4 Screening Campaign",
+    "jobId": "159211",
+    "jobTitle": "Business Analyst 4",
+    "jobSkills": [
+      "API",
+      "Agile",
+      "Azure DevOps",
+      "SQL"
+    ],
+    "jobPreferredSkills": [
+      "Microservices",
+      "Tolling"
+    ],
+    "jobExperience": "7+ years",
+    "jobLocation": "Mechanicsville, VA",
+    "jobClient": "VDOT",
+    "targetPayRate": null,
+    "maxPayRate": null,
+    "questions": [
+      {
+        "id": "q1",
+        "text": "What is your current location",
+        "description": "Summarize your core languages, frameworks, and client impact.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 120
+      },
+      {
+        "id": "q3",
+        "text": "What is your current work authorization, earliest availability or notice period, and desired hourly rate / compensation?",
+        "description": "Confirm your current location, remote/relocation flexibility, and visa authorization.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 90
+      }
+    ],
+    "allowedFormats": [
+      "video",
+      "audio",
+      "text"
+    ],
+    "maxDuration": 120,
+    "responses": [],
+    "candidateName": null,
+    "candidateEmail": null,
+    "candidatePhone": null,
+    "candidateLocation": null,
+    "candidateLinkedin": null,
+    "expectedRate": null,
+    "aiScore": null,
+    "aiSummary": null,
+    "recommendation": null,
+    "keyTakeaways": null,
+    "recruiterRating": null,
+    "recruiterNotes": "",
+    "status": "pending",
+    "createdAt": "2026-10-06T14:50:24.853Z",
+    "createdBy": "ajay@coolsofttech.com",
+    "createdByEmail": "ajay@coolsofttech.com",
+    "createdByName": "Ajay Arya",
+    "createdByRef": "ajay-arya",
+    "recruiterEmail": "ajay@coolsofttech.com",
+    "recruiterName": "Ajay Arya",
+    "submittedBy": "omkesh@coolsofttech.com",
+    "recruiterId": "admin-1",
+    "screeningComplete": false,
+    "submittedAt": null
+  },
+  {
+    "sessionId": "SCR-1791215710613-853",
+    "campaignTitle": "Systems Architect III - - Rebid Screening Campaign",
+    "jobId": "159247",
+    "jobTitle": "Systems Architect III - - Rebid",
+    "jobSkills": [
+      "MS Windows",
+      "Oracle",
+      "PLSQL",
+      "Advanced Revelation"
+    ],
+    "jobPreferredSkills": [
+      "Accounting",
+      "ERP",
+      "Networking"
+    ],
+    "jobExperience": "10+ years",
+    "jobLocation": "Madison, WI",
+    "jobClient": "WisDOT",
+    "targetPayRate": null,
+    "maxPayRate": null,
+    "questions": [
+      {
+        "id": "q1",
+        "text": "Give a 60-90 second introduction of your background, key technical skills, and recent projects relevant to Systems Architect III - - Rebid.",
+        "description": "Summarize your core languages, frameworks, and client impact.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 120
+      },
+      {
+        "id": "q2",
+        "text": "Describe a recent challenging project or technical problem you solved involving MS Windows, Oracle, PLSQL.",
+        "description": "Explain the architecture, your specific contribution, and the final impact.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 120
+      },
+      {
+        "id": "q3",
+        "text": "What is your current work authorization, earliest availability or notice period, and desired hourly rate / compensation?",
+        "description": "Confirm your current location, remote/relocation flexibility, and visa authorization.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 90
+      }
+    ],
+    "allowedFormats": [
+      "video",
+      "audio",
+      "text"
+    ],
+    "maxDuration": 120,
+    "responses": [],
+    "candidateName": null,
+    "candidateEmail": null,
+    "candidatePhone": null,
+    "candidateLocation": null,
+    "candidateLinkedin": null,
+    "expectedRate": null,
+    "aiScore": null,
+    "aiSummary": null,
+    "recommendation": null,
+    "keyTakeaways": null,
+    "recruiterRating": null,
+    "recruiterNotes": "",
+    "status": "pending",
+    "createdAt": "2026-10-05T15:55:10.613Z",
+    "createdBy": "omkesh@coolsofttech.com",
+    "recruiterEmail": "rohit.nagwani@infoorigin.com",
+    "submittedBy": "omkesh@coolsofttech.com",
+    "recruiterId": "admin-1",
+    "screeningComplete": false,
+    "submittedAt": null,
+    "recruiterName": "Rohit Nagwani",
+    "createdByName": "Rohit Nagwani",
+    "createdByEmail": "rohit.nagwani@infoorigin.com"
+  },
+  {
+    "sessionId": "SCR-1791215275811-60",
+    "campaignTitle": "Certified Microsoft .NET Web Developer IV Screening Campaign",
+    "jobId": "159245",
+    "jobTitle": "Certified Microsoft .NET Web Developer IV",
+    "jobSkills": [
+      ".NET",
+      "ASP.NET",
+      "C#",
+      "SQL Server"
+    ],
+    "jobPreferredSkills": [
+      "Kendo UI",
+      "Power BI"
+    ],
+    "jobExperience": "5-8+ years",
+    "jobLocation": "Madison, WI",
+    "jobClient": "DOA",
+    "targetPayRate": null,
+    "maxPayRate": null,
+    "questions": [
+      {
+        "id": "q1",
+        "text": "In 60\u201190 seconds, introduce yourself focusing on your .NET/Web development experience, specifically highlighting your work with .NET Framework, ASP.NET MVC, C#, and SQL Server projects that are production\u2011grade.",
+        "description": "Look for clear articulation of years, relevant domains, and depth of .NET stack exposure.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 120
+      },
+      {
+        "id": "q2",
+        "text": "Describe a recent production bug you encountered in an ASP.NET MVC application that caused a memory leak. Walk through how you diagnosed the issue, the tools you used (e.g., PerfView, dotMemory), and the code changes you implemented to resolve it.",
+        "description": "Assess debugging methodology, tooling familiarity, and understanding of managed memory.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 180
+      },
+      {
+        "id": "q3",
+        "text": "Design a high\u2011throughput reporting feature using SSRS and SQL Server that must serve 10,000 concurrent users. Explain your architectural choices for data access (e.g., Entity Framework vs. Dapper), caching strategy, and how you would tune SQL queries and indexes for performance.",
+        "description": "Evaluate architectural thinking, scaling mindset, and performance\u2011tuning expertise.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 240
+      },
+      {
+        "id": "q4",
+        "text": "Confirm your current work authorization status for Wisconsin, your preferred work arrangement (remote, hybrid, onsite), earliest start date, and your compensation rate expectations for this contract.",
+        "description": "Capture logistical fit and compensation expectations.",
+        "allowedFormats": [
+          "text"
+        ],
+        "maxDuration": 60
+      },
+      {
+        "id": "q5",
+        "text": "New Question 5",
+        "description": "Provide brief context for candidate.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 120
+      },
+      {
+        "id": "q6",
+        "text": "New Question 6",
+        "description": "Provide brief context for candidate.",
+        "allowedFormats": [
+          "video",
+          "audio",
+          "text"
+        ],
+        "maxDuration": 120
+      }
+    ],
+    "allowedFormats": [
+      "video",
+      "audio",
+      "text"
+    ],
+    "maxDuration": 120,
+    "responses": [],
+    "candidateName": null,
+    "candidateEmail": null,
+    "candidatePhone": null,
+    "candidateLocation": null,
+    "candidateLinkedin": null,
+    "expectedRate": null,
+    "aiScore": null,
+    "aiSummary": null,
+    "recommendation": null,
+    "keyTakeaways": null,
+    "recruiterRating": null,
+    "recruiterNotes": "",
+    "status": "pending",
+    "createdAt": "2026-10-05T15:47:55.812Z",
+    "createdBy": "omkesh@coolsofttech.com",
+    "recruiterEmail": "rohit.nagwani@infoorigin.com",
+    "submittedBy": "omkesh@coolsofttech.com",
+    "recruiterId": "admin-1",
+    "screeningComplete": false,
+    "submittedAt": null,
+    "recruiterName": "Rohit Nagwani",
+    "createdByName": "Rohit Nagwani",
+    "createdByEmail": "rohit.nagwani@infoorigin.com"
+  },
+  {
+    "sessionId": "SCR-1783370355580-389",
+    "jobId": "J-1783347101114",
+    "jobTitle": "Sr. Project Manager",
+    "jobSkills": [
+      "Project Management",
+      "Vendor Management",
+      "Budgeting"
+    ],
+    "jobExperience": "7+ years",
+    "jobLocation": "Hybrid (Richmond, VA)",
+    "jobClient": "DBHDS",
+    "candidateName": null,
+    "candidateEmail": null,
+    "status": "pending",
+    "createdAt": "2026-07-06T20:39:15.583Z",
+    "resumePath": null,
+    "resumeText": null,
+    "extractedProfile": null,
+    "jdMatch": null,
+    "chatHistory": [],
+    "screeningComplete": false,
+    "verificationConfirmed": false,
+    "consentGiven": false,
+    "submittedAt": null,
+    "recruiterName": "Omkesh",
+    "createdByName": "Omkesh"
+  },
+  {
+    "sessionId": "SCR-1782842752517-638",
+    "jobId": "J-1782743015315",
+    "jobTitle": "AI Engineer",
+    "jobSkills": [
+      "Agile (Scrum)",
+      "Restful API Design",
+      "Python"
+    ],
+    "jobExperience": "Any",
+    "jobLocation": "Louisville, KY",
+    "jobClient": "General Client",
+    "candidateName": "Asifa Cheema",
+    "candidateEmail": "Cheemaasifa0781@gmail.com",
+    "status": "rejected",
+    "createdAt": "2026-06-30T18:05:52.517Z",
+    "resumePath": "/uploads/1782842792459_Asifa_cheema.docx",
+    "resumeText": "ASIFA CHEEMA\n\nSenior Healthcare Business Analyst \n\nDallas, TX | Cheemaasifa0781@gmail.com | (469) 850-0168 \n\n Career Summary\n\n\n\n\n\nSenior Healthcare Business Analyst with 8+ years of progressive experience across provider health systems, Medicaid managed care, and payer operations in the Texas and Michigan healthcare markets, with deep expertise in claims adjudication, member enrollment, benefits configuration, denial management, and prior authorization workflows.\n\nLed requirements workshops, authored BRDs/FRDs, facilitated JAD sessions, and served as the primary liaison between business stakeholders and IT development teams for claims system implementations on Facets, Epic, and state Medicaid platforms across Medicaid, Medicare, and commercial product lines.\n\nHands-on experience with EDI transaction processing and configuration (837P/I, 835, 834, 270/271, 276/277), CARC/RARC denial analytics, HIPAA 5010 compliance, and HL7 interface support for claims, enrollment, and eligibility operations.\n\nStrong technical foundation in SQL-based claims data analysis, process modeling (BPMN, UML), UAT coordination, and stakeholder management using JIRA, Azure DevOps, MS Visio, and Confluence within Agile/Scrum and Waterfall delivery models.\n\nCertified Scrum Master (CSM) with demonstrated ability to manage sprint backlogs, facilitate Agile ceremonies, and drive cross-functional alignment across claims operations, clinical informatics, provider relations, and compliance teams.\n\ntechnical SKILLS \n\n\n\nHealthcare Domain\n\nClaims Adjudication, Member Enrollment, Benefits Configuration, Provider Data Management, Prior Authorization, COB, Utilization Management, Denial Management, Medical Coding (ICD-10, CPT, HCPCS), Grievance & Appeals\n\nEDI Transactions\n\n837P/I, 835, 834, 270/271, 276/277, 278, ANSI X12, HIPAA 5010, HL7/FHIR Interfaces, CARC/RARC Analysis\n\nRegulatory / Compliance\n\nHIPAA, CMS Guidelines, ACA, Texas HHSC Medicaid, Medicare (Parts A, B, C, D), NCQA, HEDIS, PHI/PII Data Governance\n\nBA Methodology\n\nRequirements Elicitation, BRD/FRD, User Stories, Gap Analysis, BPMN/UML Process Modeling, RTM, UAT Planning & Execution, JAD Sessions, SWOT Analysis, Root-Cause Analysis\n\nHealthcare Systems\n\nFacets, Epic (Resolute/Clarity), MMIS, Change Healthcare, Availity, HL7 Interface Engine\n\nData & Reporting\n\nSQL Server, Oracle, Advanced Excel (Pivot Tables, VLOOKUP, Power Pivot), Power BI (Basic), SSRS\n\nTools & Platforms\n\nJIRA, Confluence, MS Visio, SharePoint, Azure DevOps, HP ALM, ServiceNow, MS Project, Rational Rose, ClearQuest\n\nMethodologies\n\nAgile/Scrum (CSM Certified), Waterfall, RUP, SAFe, SDLC, ITIL, Change Management, Release Management\n\nEXPERIENCE \n\n\n\n\n\nSenior Healthcare Business Analyst / Project Lead                                               \t        September 2023 - Present\n\nBlue Cross Blue Shield of Michigan | Remote\n\nLeading the legacy-to-modern platform assessment and claims system modernization initiative at BCBSM, Michigan's largest health insurer serving 4.4 million members. Conducting discovery workshops across 10+ business areas to document current-state processes, legacy system dependencies, and future-state requirements for the enterprise claims and enrollment platform replacement program. Reported to the VP of Enterprise Systems Transformation.\n\n\n\nLed discovery workshops across 10+ business areas (Sales, Provider Management, Claims Enrollment, Claims Processing, Profitability & Cost Management, Senior Health Services, Marketing) to capture current-state processes, system dependencies, and high-level requirements for the legacy platform replacement initiative.\n\nDocumented 50+ business process flows using MS Visio covering end-to-end workflows for claims intake, adjudication, enrollment processing, provider credentialing, and benefits configuration, mapping each workflow to underlying legacy system components.\n\nAuthored the pre-BRD assessment document consolidating findings from all discovery workshops, presenting current-state pain points, future-state recommendations, and estimated budget/FTE requirements for the data management and reporting modernization.\n\nManaged the RAID log tracking 80+ items across workstreams and facilitated weekly status reviews with the architecture team and project management office.\n\nWorked with the architecture team to evaluate future-state platform options, mapping current Facets claims processing and enrollment capabilities against modern platform alternatives and documenting functional gap assessments.\n\nCoordinated with the QA billing team to validate claims processing accuracy during parallel testing, developing comparison test scenarios for 5 major claim types (professional, institutional, dental, pharmacy, behavioural health).\n\n\n\nHealthcare Business Analyst\t                                                                                                      July 2021 - August 2023\n\nTexas Health Resources | Arlington, TX | Hybrid\n\nSupported the prior authorization and patient access optimization initiative at Texas Health Resources, the largest health system in North Texas with 29 hospitals and 350+ access points serving 7 million+ residents across the DFW metroplex. Worked with patient access, utilization management, revenue cycle, and IT teams to streamline the prior authorization submission workflow, improve real-time eligibility verification, and reduce authorization-related claim denials. Reported to the Senior Manager of Patient Access Systems.\n\n\n\nGathered and documented business requirements for the prior authorization workflow redesign, facilitating 15+ JAD sessions with utilization management nurses, patient access coordinators, revenue cycle analysts, and payer contracting teams to define system requirements for automated auth submission, status tracking, and determination routing.\n\nDefined 278 prior authorization transaction processing requirements for real-time auth submission to 8 major Texas payers, documenting submission rules, clinical data attachment requirements, and response handling logic for inpatient admissions, outpatient surgical procedures, and advanced imaging services.\n\nAnalyzed authorization-related claim denial data across commercial and Medicare Advantage product lines, identifying that 35% of preventable denials were caused by missing or expired authorizations, incorrect procedure-to-auth matching, and retroactive auth gaps, and recommended workflow changes that reduced auth-related denials by 24%.\n\nDefined 270/271 real-time eligibility verification requirements for the patient scheduling and registration workflow, establishing automated benefits check, prior auth status validation, and out-of-network flagging rules to reduce eligibility-related registration errors by 20%.\n\nMapped As-Is and To-Be BPMN process flows for the authorization lifecycle from initial clinical review request through payer determination, documenting 8 manual handoff points between clinical, UM, patient access, and billing teams targeted for automation.\n\nBuilt SQL queries against the Epic Clarity database to track authorization turnaround times, approval/denial rates by payer and procedure type, and aged pending authorization volumes, delivering weekly status dashboards in Power BI for UM leadership.\n\nCoordinated UAT across 3 phased releases covering auth workflow automation, eligibility verification enhancements, and payer response integration, developing 140+ test scenarios and managing 30 defects through resolution in JIRA.\n\n\n\nHealthcare Business Analyst\t                                                                                                      March 2019 - June 2021\n\nUT Southwestern Medical Center | Dallas, TX\n\nSupported the claims billing and revenue cycle operations team at UT Southwestern Medical Center, a $4.5B academic medical center in Dallas. Worked with revenue cycle, coding, enrollment, and compliance teams on Facets claims configuration, EDI transaction processing, and Medicare/Medicaid compliance reporting. Reported to the Director of Revenue Cycle Systems.\n\n\n\nAnalyzed claims billing and enrollment data using SQL queries against Oracle and SQL Server source systems to identify processing errors, enrollment discrepancies, and billing exceptions across Medicare (Parts A, B, C, D), Medicaid, and commercial payer product lines.\n\nWorked with Facets application groups (Claims Processing, Benefits Configuration, Provider, Subscriber/Member, Utilization Management) to document business rules for claims adjudication, eligibility verification, and annual benefits plan loading.\n\nPerformed daily validation of batch enrollment, billing, and 834/837 EDI transaction files, identifying and documenting errors in coordination with internal enrollment teams and external payer trading partners to maintain 99%+ file acceptance rates.\n\nAssisted in the development and support of HL7 interfaces for clinical applications, working with data analysts and HIM teams to create data mapping documents and maintain interface specifications across 3 major integration projects.\n\nDefined reporting specifications for Medicare Advantage federal regulatory submissions, coordinating with compliance and actuarial teams to validate data accuracy before quarterly CMS submissions.\n\nCoordinated UAT for 4 quarterly system releases covering claims configuration updates and enrollment processing enhancements, managing 100+ test scenarios and 22 defects through resolution in JIRA with full RTM traceability.\n\n\n\nAssociate Healthcare Business Analyst\t                                                                    August 2016 - February 2019\n\nParkland Health & Hospital System | Dallas, TX\n\nSupported the claims processing and enrollment operations team at Parkland Health, Dallas County's public safety-net hospital system serving 1 million+ patient visits annually. Worked on 837 claims processing, 834 enrollment transactions, and benefits configuration validation for Medicaid, CHIP, and uncompensa",
+    "extractedProfile": {
+      "name": "Asifa Cheema",
+      "email": "Cheemaasifa0781@gmail.com",
+      "phone": "(469) 850-0168",
+      "skills": [
+        "Claims Adjudication",
+        "Member Enrollment",
+        "Benefits Configuration",
+        "Provider Data Management",
+        "Prior Authorization",
+        "COB",
+        "Utilization Management",
+        "Denial Management",
+        "Medical Coding (ICD-10, CPT, HCPCS)",
+        "Grievance & Appeals",
+        "EDI Transactions",
+        "HIPAA 5010",
+        "HL7/FHIR Interfaces",
+        "CARC/RARC Analysis",
+        "SQL Server",
+        "Oracle",
+        "Advanced Excel",
+        "Power BI",
+        "JIRA",
+        "Confluence",
+        "MS Visio",
+        "SharePoint",
+        "Azure DevOps",
+        "HP ALM",
+        "ServiceNow",
+        "MS Project",
+        "Rational Rose",
+        "ClearQuest",
+        "Agile/Scrum",
+        "Waterfall",
+        "RUP",
+        "SAFe",
+        "SDLC",
+        "ITIL",
+        "Change Management",
+        "Release Management"
+      ],
+      "experience_years": 8,
+      "location": "Dallas, TX",
+      "education": "Unknown",
+      "current_title": "Senior Healthcare Business Analyst",
+      "visa_status": "Not specified"
+    },
+    "jdMatch": {
+      "match_score": 20,
+      "matching_skills": [
+        "Agile/Scrum"
+      ],
+      "missing_skills": [
+        "Restful API Design",
+        "Python"
+      ],
+      "risk_factors": [
+        "Location mismatch",
+        "Lack of relevant technical skills"
+      ],
+      "candidate_summary": "Asifa Cheema is a Senior Healthcare Business Analyst with 8 years of experience, skilled in business analysis and IT service management, but lacks the required technical skills for an AI Engineer role. She is currently located in Dallas, TX, which does not match the job location. Her experience is rooted in healthcare business analysis rather than AI engineering.",
+      "recommended_questions": [
+        "Can you explain your understanding of Agile/Scrum methodology and how you've applied it in previous roles?",
+        "How do you think your current salary expectations align with the market rate for an AI Engineer in Louisville, KY?",
+        "What is your current work authorization status, and are you willing to relocate to Louisville, KY?",
+        "What are your availability and notice period to join a new organization?",
+        "How would you approach learning the required technical skills for this role, such as Restful API Design and Python, given your current skill set?"
+      ]
+    },
+    "chatHistory": [
+      {
+        "role": "assistant",
+        "content": "Hi Asifa Cheema, thank you for uploading your resume. I've analyzed your profile against our requirements for the AI Engineer position.\n\nCurrently, there is a mismatch in required key skills or experience. We will not be proceeding with the next steps of the screening at this time. However, we'll keep your resume in our database for future matches. Thank you again and wish you all the best in your search!"
+      }
+    ],
+    "screeningComplete": false,
+    "verificationConfirmed": false,
+    "consentGiven": false,
+    "submittedAt": null,
+    "recruiterName": "Omkesh",
+    "createdByName": "Omkesh"
+  },
+  {
+    "sessionId": "SCR-1782842422961-173",
+    "jobId": "J-1782485558421",
+    "jobTitle": "IT Project Manager",
+    "jobSkills": [
+      "Leadership",
+      "Negotiation",
+      "Time Management",
+      "Facilitation",
+      "Organizational Skills"
+    ],
+    "jobExperience": "7+ years",
+    "jobLocation": "Raleigh, NC",
+    "jobClient": "NCDHHS-PMO",
+    "candidateName": "SANGEETHA KANAMARLAPUDI",
+    "candidateEmail": "sangeethakanamarlapudi@gmail.com",
+    "status": "submitted",
+    "createdAt": "2026-06-30T18:00:22.961Z",
+    "resumePath": "/uploads/1782842449288_Sangeetha_Program_Manager_n.pdf",
+    "resumeText": "\n\n \nSANGEETHA KANAMARLAPUDI \n737-757-6305 | sangeethakanamarlapudi@gmail.com \nLinkedIn: linkedin.com/in/sangeetha-kanamarlapudi\nPROFESSIONAL SUMMARY \nSenior Network & Data Platform Program Manager with 18+ years of experience leading large-scale network \nobservability, telemetry analytics, and AI-driven operational intelligence programs across enterprise environments. \nProven expertise delivering real-time monitoring platforms, streaming data ecosystems, and production-grade \nalerting frameworks for wired and wireless infrastructures. \nStrong background in network instrumentation, event-driven architectures, incident response leadership, and \nreliability engineering. Experienced in translating telemetry data into actionable dashboards, intelligent alerting \nstrategies, and measurable improvements in uptime, MTTR, and operational efficiency. \n \nCORE TECHNICAL EXPERTISE \nNetwork & Telemetry Systems \n\u25cf Network telemetry architecture and instrumentation \n\u25cf SNMP-based monitoring and device event collection \n\u25cf Network/Element Management system integrations \n\u25cf Layer 2 / Layer 3 switching, routing, VLANs, RF optimization \n\u25cf Infrastructure health metrics and operational analytics \nStreaming & Data Platforms \n\u25cf Real-time streaming ingestion (Apache Kafka ecosystem) \n\u25cf Event-driven data pipelines \n\u25cf Time-series data platforms and performance metrics \n\u25cf SQL-based analytics and data validation \n\u25cf Snowflake, DB2 modernization programs \nObservability & Monitoring \n\u25cf Splunk and ELK-based log analytics and search optimization \n\u25cf Dashboard development and executive reporting \n\u25cf Alert correlation logic and noise reduction \n\u25cf Incident triage and production troubleshooting \n\u25cf Root Cause Analysis (RCA) and runbook improvements \nAI / Automation \n\u25cf Anomaly detection models for infrastructure monitoring \n\u25cf Predictive diagnostics and performance baselining \n\u25cf ML lifecycle governance and KPI tracking \n\u25cf Python-based automation and scripting \n\u25cf Auto-remediation workflows \n \nPROFESSIONAL EXPERIENCE \nVENTURA FOODS | Irvine, CA | Senior Program Manager \u2013 Data, Network & AI Platforms August 2024 \u2013 Present \n\n\u25cf Led $3.5M enterprise modernization initiative migrating legacy DB2 systems to Snowflake while enabling \nreal-time operational analytics. \n\u25cf Established telemetry-driven monitoring framework connecting infrastructure data, business metrics, and \nexecutive dashboards. \n\u25cf Designed data validation and quality controls for high-volume streaming ingestion pipelines. \n\u25cf Built executive observability dashboards integrating performance KPIs, infrastructure metrics, and risk \nindicators. \n\u25cf Partnered with operations teams to streamline production troubleshooting workflows, improving incident \nresponse coordination. \n\u25cf Delivered 25% improvement in data accuracy and reduced duplicate system overhead. \n\u25cf Led enterprise wired and wireless network modernization initiatives including switching upgrades, AP \ndeployments, and infrastructure optimization. \n\u25cf Facilitated outage triage coordination during network disruptions, driving faster resolution and structured \npost-incident analysis. \n \nINTEL CORPORATION | Engineering Program Manager \u2013 Predictive Telemetry & AI Analytics   Oct 2021 \u2013 July 2024 \n\u25cf Directed large-scale device health telemetry platform supporting real-time ingestion and analytics across \ndistributed ChromeOS devices. \n\u25cf Partnered with engineering to implement streaming pipelines and operational dashboards enabling \nproactive failure detection. \n\u25cf Reduced manual device triage time by 30% through predictive diagnostics and anomaly detection models. \n\u25cf Improved device reliability metrics by 15% through telemetry-based monitoring strategies. \n\u25cf Led cross-functional coordination between engineering, SRE, and operations during production incident \nresolution. \n\u25cf Established model governance including drift monitoring, validation reviews, and measurable reliability \nKPIs. \n\u25cf Connected telemetry outputs to executive-level reporting to quantify operational savings ($800K \nannually). \n \nCISCO SYSTEMS | Technical Program Manager \u2013 Self-Optimizing Network (SON) Platform     May 2019 \u2013 Sept 2021 \nLed development of a Self-Optimizing Network (SON) web application focused on RF performance optimization, \nautomated configuration tuning, and enterprise network health monitoring. \n\u25cf Directed end-to-end delivery of RF optimization software improving signal quality, coverage efficiency, and \nthroughput performance across enterprise deployments. \n\u25cf Led architectural transformation of legacy monolithic application into a scalable microservices-based \nplatform, improving deployment agility and service resilience. \n\u25cf Coordinated backend service decomposition, API gateway implementation, containerization strategy, and \nCI/CD enablement. \n\u25cf Enabled real-time telemetry ingestion from network devices to support performance baselining and \nautomated optimization logic. \n\u25cf Partnered with engineering teams to implement event-driven communication between services for \nscalable alert processing. \n \n\n\u25cf Established observability standards including centralized logging, health checks, service monitoring, and \nperformance dashboards. \n\u25cf Collaborated with operations teams to improve incident diagnostics through improved service visibility \nand telemetry instrumentation. \n\u25cf Improved system scalability and reduced production defects through modular service isolation and \nautomated regression validation. \n\u25cf Supported RF planning, VLAN segmentation, and wireless performance optimization across enterprise \ncustomers. \n \nPOLYCOM (HP) |  Technical Program Manager \u2013VoIP & Embedded Communication Systems Nov 2016 \u2013 April 2019 \nLed development and integration of VoIP software platforms for enterprise IP phones and conferencing devices, \nsupporting real-time voice communication and unified collaboration systems. \n\u25cf Managed end-to-end delivery of VoIP software stack integration including SIP signaling, RTP media \nhandling, codec management, and call control workflows. \n\u25cf Coordinated firmware, hardware, and software teams to enable seamless integration across IP desk \nphones and conferencing endpoints. \n\u25cf Directed cross-functional integration of Polycom VoxBox voice collaboration platform, ensuring \ninteroperability with enterprise VoIP infrastructure. \n\u25cf Led system-level validation of call setup, session management, and voice quality metrics (latency, jitter, \npacket loss). \n\u25cf Partnered with QA and network engineering teams to troubleshoot production VoIP issues impacting call \nstability and device registration. \n\u25cf Oversaw REST/SOAP API integrations enabling device provisioning, remote configuration, and monitoring. \n\u25cf Improved validation efficiency by 25% through automation frameworks for regression testing of VoIP call \nflows and firmware releases. \n\u25cf Ensured interoperability with enterprise call managers and unified communications platforms. \n\u25cf Facilitated root cause analysis of signaling failures, codec mismatches, and network performance-related \ncall drops. \n\u25cf Drove release governance for VoIP firmware updates, ensuring high availability and minimal production \ndisruption. \n \nCISCO SYSTEMS | Project Lead \u2013  RMS Web Application (4G/5G Call Processing) Aug 2013 \u2013 Nov 2016 \nManaged development of RMS (Resource Management System) web application supporting 4G and 5G mobile \ndevice call processing workflows and telecom infrastructure operations. \n\u25cf Led cross-functional teams delivering web-based system handling high-volume mobile call session \nprocessing and device state management. \n\u25cf Coordinated integration with telecom network components supporting LTE and early 5G infrastructure \nenvironments. \n\u25cf Supported real-time event handling and session lifecycle management across distributed services. \n\u25cf Partnered with engineering teams to ensure performance optimization for high-throughput mobile traffic \nscenarios. \n \n\u25cf Facilitated production issue triage impacting mobile device call handling and service reliability. \n\n\u25cf Drove improvements in system performance, reducing latency in call state transitions and resource \nallocation. \n\u25cf Oversaw API integrations and backend services enabling device monitoring and configuration \nmanagement. \n\u25cf Supported root cause analysis of network performance and signaling issues across telecom environments. \n\u25cf Ensured reliability of critical telecom workflows through structured testing, release governance, and \noperational readiness reviews. \n \nTE CONNECTIVITY (Tyco Electronics) | Software Engineer \u2013 EMS/NMS Web Applications & Network Device \nManagement                                                                                                                                                                2007 \u2013 2013 \nLed development of Element Management Systems (EMS) and Network Management Systems (NMS) for managing \nSNMP-enabled telecom and broadband devices including WiMAX, DSL, and SONET infrastructure components. \n\u25cf Designed and developed web-based EMS/NMS applications supporting remote monitoring, configuration, \nand fault management of network devices. \n\u25cf Implemented SNMP-based device communication (traps, polling, MIB management) for real-time device \ntelemetry and event handling. \n\u25cf Built performance and fault management modules tracking alarms, threshold breaches, and device health \nindicators. \n\u25cf Supported management of WiMAX base stations, DSL aggregation devices, and SONET transport systems. \n\u25cf Developed backend services for device discovery, topology mapping, and network inventory management. \n\u25cf Enabled trap processing and alarm correlation workflows to reduce duplicate alerts and improve \noperational visibility. \n\u25cf Partnered with field engineering teams to troubleshoot connectivity, provisioning, and protocol-level \nissues. \n\u25cf Supported configuration management workflows for firmware upgrades, remote provisioning, and device \nparameter updates. \n\u25cf Led root cause analysis for performance degradation across broadband and transport network ",
+    "extractedProfile": {
+      "name": "SANGEETHA KANAMARLAPUDI",
+      "email": "sangeethakanamarlapudi@gmail.com",
+      "phone": "737-757-6305",
+      "skills": [
+        "Network Telemetry",
+        "Stream Data Ecosystems",
+        "AI-driven Operational Intelligence",
+        "Real-time Monitoring",
+        "Streaming Data",
+        "Time-series Data",
+        "SQL-based Analytics",
+        "Splunk",
+        "ELK",
+        "Apache Kafka",
+        "Snowflake",
+        "DB2",
+        "Python",
+        "Automation",
+        "Machine Learning"
+      ],
+      "experience_years": 18,
+      "location": "Irvine, CA",
+      "education": "Unknown",
+      "current_title": "Senior Program Manager \u2013 Data, Network & AI Platforms",
+      "visa_status": "Not specified",
+      "dl_number": "DL-31437914"
+    },
+    "jdMatch": {
+      "match_score": 60,
+      "matching_skills": [],
+      "missing_skills": [
+        "Leadership",
+        "Negotiation",
+        "Time Management",
+        "Facilitation",
+        "Organizational Skills"
+      ],
+      "risk_factors": [
+        "Location mismatch: candidate is in Irvine, CA, job is in Raleigh, NC",
+        "No direct match of candidate's technical skills to job requirements"
+      ],
+      "candidate_summary": "SANGEETHA KANAMARLAPUDI is a seasoned professional with 18 years of experience, currently holding the title of Senior Program Manager \u2013 Data, Network & AI Platforms. Her background is in technical areas such as Network Telemetry, AI-driven Operational Intelligence, and SQL-based Analytics. However, her skills and experience may not directly align with the IT Project Manager role.",
+      "recommended_questions": [
+        "Can you provide examples of your experience in leadership and team management?",
+        "How do you handle project timelines and negotiate with stakeholders?",
+        "Are you willing to relocate to Raleigh, NC for this position?",
+        "What is your current salary expectation, and how does it align with our budget for this role?",
+        "Can you walk us through your process for facilitating meetings and ensuring organizational skills are applied in project management?"
+      ]
+    },
+    "chatHistory": [
+      {
+        "role": "assistant",
+        "content": "Hi SANGEETHA KANAMARLAPUDI! Before we begin our brief screening interview for the IT Project Manager position, please specify your role. Are you the Candidate applying directly, or are you an Employer/Vendor submitting a candidate on their behalf?"
+      },
+      {
+        "role": "user",
+        "content": "Candidate"
+      },
+      {
+        "role": "assistant",
+        "content": "Thank you for confirming you are the candidate. I noticed that your resume doesn't explicitly mention experience with: Leadership, Negotiation, Time Management, Facilitation, Organizational Skills. Do you have hands-on experience with these? Please briefly elaborate."
+      },
+      {
+        "role": "user",
+        "content": "yes i have 20 years expriance"
+      },
+      {
+        "role": "assistant",
+        "content": "That's great to hear that you have relevant experience. Now, let's discuss the logistics: what is your target hourly rate, either as a W2 or C2C, for this IT Project Manager role, and could you also please clarify your current visa status or work authorization in the US?"
+      },
+      {
+        "role": "user",
+        "content": "$60/hr on C2C"
+      },
+      {
+        "role": "assistant",
+        "content": "I've taken note of your target hourly rate of $60/hr on a C2C basis. To move forward with the verification process, could you please provide your LinkedIn profile URL, Driver's License number, and Passport number? This information will help us verify your profile. You will be required to upload relevant documents in the next steps."
+      },
+      {
+        "role": "user",
+        "content": "https://www.linkedin.com/in/likithanalla"
+      },
+      {
+        "role": "assistant",
+        "content": "Thank you! You will receive the Right to Represent (RTR) on your email (sangeethakanamarlapudi@gmail.com) shortly to confirm and finalize your application. Please verify your details in the next step."
+      }
+    ],
+    "screeningComplete": true,
+    "verificationConfirmed": true,
+    "consentGiven": true,
+    "submittedAt": "2026-06-30T18:04:50.870Z",
+    "userRole": "candidate",
+    "uploadedDocuments": {
+      "dl": {
+        "docType": "Driver's License",
+        "fileName": "LCN.pdf",
+        "status": "VALIDATED",
+        "verdict": "LEGITIMATE",
+        "confidence": 96,
+        "details": {
+          "state": "CA",
+          "number": "DL-31437914",
+          "expirationDate": "2030-06-30",
+          "nameMatches": true
+        },
+        "checks": [
+          {
+            "name": "Document Format Check",
+            "status": "PASS"
+          },
+          {
+            "name": "Expiration Date Check",
+            "status": "PASS"
+          },
+          {
+            "name": "Face Match Alignment",
+            "status": "PASS"
+          },
+          {
+            "name": "Digital Editing Check",
+            "status": "PASS"
+          }
+        ]
+      },
+      "visa": {
+        "docType": "Visa Copy / Work Authorization",
+        "fileName": "GC.pdf",
+        "status": "VALIDATED",
+        "verdict": "LEGITIMATE",
+        "confidence": 98,
+        "details": {
+          "visaType": "Not specified",
+          "number": "V-55344712",
+          "expirationDate": "2028-09-15",
+          "petitioner": "NCDHHS-PMO"
+        },
+        "checks": [
+          {
+            "name": "Visa Format Validation",
+            "status": "PASS"
+          },
+          {
+            "name": "Expiration Check",
+            "status": "PASS"
+          },
+          {
+            "name": "Petitioner Company Match",
+            "status": "PASS"
+          },
+          {
+            "name": "Anti-Tampering Scan",
+            "status": "PASS"
+          }
+        ]
+      }
+    },
+    "recruiterName": "Omkesh",
+    "createdByName": "Omkesh",
+    "videoPurged": true,
+    "videoPurgedAt": "2026-11-24T18:35:47.647Z"
+  },
+  {
+    "sessionId": "SCR-1782836283774-419",
+    "jobId": "J-1782827947762",
+    "jobTitle": "Project Manager",
+    "jobSkills": [
+      "Agile methodologies",
+      "Scrum",
+      "Azure DevOps",
+      "Microsoft Office",
+      "SharePoint",
+      "Teams"
+    ],
+    "jobExperience": "2-5 years",
+    "jobLocation": "Mechanicsville, VA",
+    "jobClient": "VDOT",
+    "candidateName": "Zaman Adwani",
+    "candidateEmail": "zaman.adwani@gmail.com",
+    "status": "submitted",
+    "createdAt": "2026-06-30T16:18:03.774Z",
+    "resumePath": "/uploads/1782836305061_ZAMAN_ADWANI_PROJECT__MANAGER__Resume.docx",
+    "resumeText": "\n\n\n\nZaman Adwani\n\nE-Mail: zaman.adwani@gmail.com Cell: 281-801-0073\n\n\n\nPROFESSIONAL SUMMARY:\n\nTwenty\u2013two plus (22+) years of experience, in which Fourteen plus (14+) years\u2019 of experience in Strategic Leadership, Enterprise Portfolio Management, Program and Project Management, Lead Center of Excellence Teams, Integrate PMI Standards to PMO Offices,  Enterprise Change Management, Training, Product Management, Agile Frameworks (Scrum & Kanban) & Agile Transformation, SAFe Agile Coaching, SDLC Methodologies, and Eight plus (8+) years\u2019 of strategic analysis, lead change initiatives for Agile transformation & center of excellence teams, implement Governance Framework for cross\u2013functional team, Business Analysis and Process Mapping, Enterprise Risk Management, Quality Management, Operation Management, Business Management (Marketing, B2B/B2C/C2C), Business Intelligence, Market Research. Lead Cross\u2013Functional teams to deliver high\u2013value solutions to clients within different domains such as: Banking, Financial Services, Engineering, Retail Energy/Utilities, Healthcare, Government, Manufacturing, Supply Chain, Retail.\n\nStrong leadership and data-driven decision-making capabilities within fast-paced environment to take decisive action, particularly in uncertain or ambiguous situations with tight deadlines, shifting priorities, change requirements, change market needs, change stakeholders, and align change efforts with overall organizational strategy and objectives, and provide insightful analysis of the impact of change on business outcomes.\n\nThorough understanding of change management methodologies, tools and best practices, lead Enterprise Change initiatives and influence cross-functional teams.\n\nExceptional communication and interpersonal skills, thorough problem solving and conflict resolution skills, collaborate effectively with diverse teams and build strong working relationships.\n\ncapable to collaborate with both technical & non-technical stakeholders to translate business requirements into actionable product features that add benefits & incremental delivery for business & customer goals, align company\u2019s vision with market needs.\n\n\n\nCERTIFICATIONS:\n\nCERTIFICATE NAME\n\nACRONYM\n\nYEAR\n\n\n\nCERTIFICATE NAME\n\nACRONYM\n\nYEAR\n\nCertified Scrum Professional Product Owner\n\nCSP \u2013 PO\n\n2025\n\nPMO Certified Practitioner\n\nPMO CP\n\n2022\n\nProject Management Professional\n\nPMP\n\n2024\n\n\n\nSix Sigma Yellow Belt\n\n6 Sigma\n\n2024\n\nScaled Agile Foundation SAFe \u2013 Training\n\nSAFe\n\n2024\n\n\n\nRisk Management Professional\u2013Training\n\nRMP\n\n2023\n\nPortfolio Programme Project Offices\n\nP3O\n\n2024\n\nITIL V4 Foundation \u2013 Training\n\nITIL\n\n2024\n\nCertified Scrum Master\n\nCSM\n\n2021\n\n\n\n\n\n\n\nTECHNICAL SKILLS:\n\nCATEGORY\n\nDESCRIPTION\n\nTechnical Tools\n\nAgile Methodology, JIRA, Confluence, SharePoint, Azure Dev Ops (ADO)\n\nAnalytical Skills\n\nRisk Management, Cost-Benefit Analysis, GAP/Impact/SWOT/Strategy Analysis, CAATS ACL Data Analytics,\n\nReporting Tools\n\nMS Project, Gantt Chart, Smartsheet, Planview, PowerBI, Kanban Board, Workfront, Leankit, MS Visio, Trello,\n\nACADEMIC QUALIFICATIONS:\n\nDEGREE\n\nEMPHASIS\n\nINSTITUTE NAME\n\nYEAR COMPLETED\n\nExecutive Master of Business Administration (MBA)\n\nProject Management\n\nUniversity of Strathclyde, UK\n\n2018\n\nBachelor of Computer Science (BSc)\n\nInformation Systems\n\nBaghdad University, Iraq\n\n2001\n\n\n\nPROFESSIONAL EXPERIENCE:\n\nCLIENT: KEURIG DRPEPPER \u2013 KDP\t(TX, USA \u2013 onsite, full time)\tJAN 2023 \u2013 RECENT TEAM LEAD SR. PROJECT MANAGER FOR CENTER OF EXCELLENCE TEAM \u2013 CoE | PRODUCT OWNER\n\nRESPONSIBILITIES:\n\nEnsure integration of Enterprise Portfolio Office visions and goals with PMO office efforts, while leading Agile Center of Excellence team, with Six portfolio towers, throughout delivering timely, thorough support, strategic leadership, effective communication, resources management, training and guidance.\n\n\n\nAct as subject matter expert SME to lead PMO effort for Agile Transformation for CoE team, coach and guide team members from different levels through change & transition, deliver timely & thorough support, leadership, effective & collaborative communication (using Integrated Business Planning (IBP) approach) to analyze business/processes, develop artifacts, manage resource and time estimation, provide insights and guidance for all stakeholders to develop clear understanding on current state, challenges, risks & constraints, & how business as usual will be maintained & how desired state will be reached, to ensure technical excellence.\n\nReview change requests for consistency and details, meet with change owners to understand their objectives, and pain points and validate the need of change.\n\nSet governance framework, collaborate with cross-functional teams to enhance compliance processes and ensure alignment with organizational goals.\n\nManage projects from end-to-end to, ensuring successful delivery within scope, time, and budget. Facilitate regular status meetings, provide updates on milestones, risks, and issues.\n\nProduct Owner: Define product vision & strategy, liaise between stakeholders & development team, ensure clear communication of requirements. Conduct market research & competitive analysis, identify customer needs & industry trends.\n\nContribute to the development of the product roadmap, ensuring alignment with business goals, customer needs, and market opportunities. Use insights from competitor analysis to help prioritize features, improvements, and enhancements. Gather and translate customer needs and business requirements into clear product features, user stories, and acceptance criteria, while ensuring that the solutions align seamlessly with our service offering to deliver value to our clients.\n\nChampion data-driven decision-making to inform product decisions, prioritize features, and measure impact of changes and document and track present demos and showcasing product updates to stakeholders using Jira.\n\nCommunicate product strategy, priorities, and progress effectively to internal stakeholders, ensuring alignment across the business. Advocate for customer needs and ensure that product decisions reflect market demands.\n\nParticipate in Agile ceremonies, include sprint planning, daily stand-ups, and sprint retrospectives, develop test cases and oversee user acceptance testing (UAT) to ensure the product meets quality standards.\n\n\n\nCLIENT: FIRST MERCHANTS BANK\t(Indianapolis, USA \u2013 remote, full time)\tOCT 2021 \u2013 JAN 2023\n\nENTERPRISE PORTFOLIO MANAGER | PROJECT MANAGER\n\nRESPONSIBILITIES:\n\nLead Enterprise Application Portfolio Management (EAPM) program to summarize and rationalize applications inventory of 400+ applications, develop investment roadmap, rationalize applications, use one platform to store all applications, included shadow IT, then categorize applications using T-Shirt sizing data analysis approach, then rationalize applications based on return on investment ration ROI.\n\nIntegration EAPM vision and goals with PMO office throughout overseeing enterprise risk management, identify critical paths, major milestones, centralize projects approval, standardize artifacts for PMO, improve project planning for (scoping, estimation of budget and schedule, resources management).\n\nSet governance structure within organization, create cross functional modular with effective and collaborative communication, gather data & feedback, set benchmarks & KPIs, monitor performance and team\u2019s progress, train teams for best practices and technical excellence, resolve conflicts and remove impediments.\n\nImplement Governance Risk and Compliance GRC on enterprise level (for IT and Business) ensuring deliverables are comply with FMB change management standards.\n\nDevelop comprehensive OCM plans and materials that align with the project's objectives and ensure successful adoption of changes. Integrates OCM principles seamlessly into project activities, working collaboratively with cross-functional team members to drive cohesive and effective change management strategies.\n\nExecutes comprehensive change management strategies that align with organizational goals and support the successful adoption of new initiates, processes and technologies.\n\nPlan and coordinate deliverables and dependencies across six business unites to drive on-time budgeting and approvals for new initiatives and projects to improve the overall process and implemented rollout plans.\n\nProduct Manager for eKYC solution, work with Scrum team to develop, integrate and lead implement of the solution with CORE bank, develop and articulate product vision and strategy for the product, ensuring alignment with the evolving needs of banking customers.\n\nContribute to the development of the product roadmap, ensuring alignment with business goals, customer needs, and market opportunities. Use insights from competitor analysis to help prioritize features, improvements, and enhancements. Gather and translate customer needs and business requirements into clear\n\n\n\nproduct features, user stories, and acceptance criteria, while ensuring that the solutions align seamlessly with our service offering to deliver value to our clients.\n\nMonitor and assess the performance of products post-launch, using data-driven metrics and KPIs to evaluate success and identify areas for improvement. Provide regular updates to senior leadership on product performance, roadmap progress, and competitive landscape.\n\nCommunicate product strategy, priorities, and progress effectively to internal stakeholders, ensuring alignment across the business. Advocate for customer needs and ensure that product decisions reflect market demands.\n\nParticipate in Agile ceremonies, include sprint planning, daily stand-ups, and sprint retrospectives, develop test cases and oversee user acceptance testing (UAT) to ensure the product meets quality standards.\n\nInteract with internal & external users to understand business needs, analyze product functions & processes built around it, implement GAP analysis, use prototypes to identify pain points & best pr",
+    "extractedProfile": {
+      "name": "Zaman Adwani",
+      "email": "zaman.adwani@gmail.com",
+      "phone": "281-801-0073",
+      "skills": [
+        "Agile Methodology",
+        "JIRA",
+        "Confluence",
+        "SharePoint",
+        "Azure Dev Ops (ADO)",
+        "Risk Management",
+        "Cost-Benefit Analysis",
+        "GAP/Impact/SWOT/Strategy Analysis",
+        "CAATS ACL Data Analytics",
+        "MS Project",
+        "Gantt Chart",
+        "Smartsheet",
+        "Planview",
+        "PowerBI",
+        "Kanban Board",
+        "Workfront",
+        "Leankit",
+        "MS Visio",
+        "Trello"
+      ],
+      "experience_years": 22,
+      "location": "TX, USA",
+      "education": "Executive Master of Business Administration (MBA), University of Strathclyde, UK",
+      "current_title": "TEAM LEAD SR. PROJECT MANAGER FOR CENTER OF EXCELLENCE TEAM \u2013 CoE | PRODUCT OWNER",
+      "visa_status": "Not specified"
+    },
+    "jdMatch": {
+      "match_score": 60,
+      "matching_skills": [
+        "Agile Methodology",
+        "Azure Dev Ops (ADO)",
+        "SharePoint"
+      ],
+      "missing_skills": [
+        "Scrum",
+        "Microsoft Office",
+        "Teams"
+      ],
+      "risk_factors": [
+        "Too high experience (22 years, required 2-5 years)",
+        "Location mismatch (TX, USA vs Mechanicsville, VA)"
+      ],
+      "candidate_summary": "Highly experienced project manager with 22 years of experience, holding an Executive Master of Business Administration (MBA) degree and skilled in agile methodologies, Azure DevOps, and SharePoint. Currently working as a Team Lead Sr. Project Manager for Center of Excellence Team. Strong background in project management tools and technologies.",
+      "recommended_questions": [
+        "Can you explain how you would adapt to working with a team in Mechanicsville, VA, given your current location in TX, USA?",
+        "How do you think your extensive experience will help or hinder your ability to work within our organization, given the 2-5 year experience requirement for this role?",
+        "Are you willing to obtain the necessary work authorization to work in the US, if not already authorized?",
+        "What is your expected salary range for this position, and how does it align with our budget?",
+        "Can you provide an example of a time when you implemented agile methodologies in a project, and how you measured its success?"
+      ]
+    },
+    "chatHistory": [
+      {
+        "role": "assistant",
+        "content": "Hi Zaman Adwani! Before we begin our brief screening interview for the Project Manager position, please specify your role. Are you the Candidate applying directly, or are you an Employer/Vendor submitting a candidate on their behalf?"
+      },
+      {
+        "role": "user",
+        "content": "Candidate"
+      },
+      {
+        "role": "assistant",
+        "content": "Thank you for confirming you are the candidate. I noticed that your resume doesn't explicitly mention experience with: Scrum, Microsoft Office, Teams. Do you have hands-on experience with these? Please briefly elaborate."
+      },
+      {
+        "role": "user",
+        "content": "20 years have"
+      },
+      {
+        "role": "assistant",
+        "content": "I've taken note of your experience with the missing skills. Now, moving on to the next topic, could you please share your target hourly rate for this role, whether it's on a W2 or C2C basis, and also confirm your current visa status or work authorization in the US?"
+      },
+      {
+        "role": "user",
+        "content": "$50/hr on C2C"
+      },
+      {
+        "role": "assistant",
+        "content": "I've made a note of your target hourly rate of $50/hr on a C2C basis. To verify your profile, could you please provide your LinkedIn profile URL, Driver's License number, and Passport number? You will be required to upload relevant documents in the next steps for further verification."
+      },
+      {
+        "role": "user",
+        "content": "yes will be"
+      },
+      {
+        "role": "assistant",
+        "content": "Thank you! You will receive the Right to Represent (RTR) on your email (zaman.adwani@gmail.com) shortly to confirm and finalize your application. Please verify your details in the next step."
+      }
+    ],
+    "screeningComplete": true,
+    "verificationConfirmed": true,
+    "consentGiven": true,
+    "submittedAt": "2026-06-30T16:20:20.191Z",
+    "userRole": "candidate",
+    "recruiterName": "Omkesh",
+    "createdByName": "Omkesh",
+    "videoPurged": true,
+    "videoPurgedAt": "2026-11-24T18:35:47.649Z"
   }
 ]

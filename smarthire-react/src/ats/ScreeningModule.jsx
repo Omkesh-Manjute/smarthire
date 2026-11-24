@@ -115,8 +115,12 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [], cur
   // Helper to dynamically resolve recruiter name who generated the screening link
   const getRecruiterName = (session) => {
     if (!session) return 'Omkesh'
-    if (session.recruiterName && session.recruiterName.trim()) return session.recruiterName.trim()
-    if (session.createdByName && session.createdByName.trim()) return session.createdByName.trim()
+    if (session.recruiterName && session.recruiterName.trim() && session.recruiterName.trim().toLowerCase() !== 'omkesh') {
+      return session.recruiterName.trim()
+    }
+    if (session.createdByName && session.createdByName.trim() && session.createdByName.trim().toLowerCase() !== 'omkesh') {
+      return session.createdByName.trim()
+    }
 
     if (session.jobId && Array.isArray(jobsList)) {
       const job = jobsList.find(j => j.id === session.jobId || j.jobId === session.jobId)
@@ -124,6 +128,9 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [], cur
       if (Array.isArray(job?.assignedRecruiters) && job.assignedRecruiters.length > 0) return job.assignedRecruiters[0]
       if (job?.assignedRecruiter) return job.assignedRecruiter
     }
+
+    if (session.recruiterName && session.recruiterName.trim()) return session.recruiterName.trim()
+    if (session.createdByName && session.createdByName.trim()) return session.createdByName.trim()
 
     const email = session.recruiterEmail || session.createdByEmail || (typeof session.createdBy === 'string' && session.createdBy.includes('@') ? session.createdBy : '')
     if (email) {
@@ -1187,9 +1194,26 @@ SmartHire Recruitment Team`
 
     // Recruiter filter
     if (filterRecruiter !== 'all') {
-      const rec = (getRecruiterName(s) || '').toLowerCase().trim()
       const target = filterRecruiter.toLowerCase().trim()
-      if (rec !== target && !rec.includes(target) && !target.includes(rec)) return false
+      const rec = (getRecruiterName(s) || '').toLowerCase().trim()
+      const rawRec = (s.recruiterName || '').toLowerCase().trim()
+      const createdBy = (s.createdByName || '').toLowerCase().trim()
+      const email = (s.recruiterEmail || s.createdByEmail || '').toLowerCase().trim()
+
+      const job = (s.jobId && Array.isArray(jobsList)) ? jobsList.find(j => j.id === s.jobId || j.jobId === s.jobId) : null
+      const jobRec = (job?.recruiterName || '').toLowerCase().trim()
+      const jobAssigned = Array.isArray(job?.assignedRecruiters) ? job.assignedRecruiters.map(r => String(r).toLowerCase().trim()) : []
+
+      const targetFirst = target.split(' ')[0]
+      const matches =
+        rec === target || rec.includes(target) || target.includes(rec) ||
+        rawRec === target || rawRec.includes(target) || target.includes(rawRec) ||
+        createdBy === target || createdBy.includes(target) || target.includes(createdBy) ||
+        (targetFirst.length >= 3 && (rec.includes(targetFirst) || rawRec.includes(targetFirst) || createdBy.includes(targetFirst) || email.includes(targetFirst))) ||
+        jobRec.includes(target) || target.includes(jobRec) ||
+        jobAssigned.some(ar => ar.includes(target) || target.includes(ar))
+
+      if (!matches) return false
     }
 
     // Status filter
