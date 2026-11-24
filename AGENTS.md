@@ -66,6 +66,34 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
     - In resume views, every responsibility, project accomplishment, and contribution line must be formatted with an explicit bullet point (`•`) and proper indentation.
     - The engine must automatically detect responsibilities (lines following `Responsibilities:`, action verbs, or list items) even when converted from plain text or Word documents without literal Unicode bullets.
 
+### 2026-11-25 — Kamlesh Bansod Screening Session Recovery (Shanmukh Kumar Bellam) & Recruiter Filter Overhaul
+- **User Issue & Findings**:
+  - User reported: *"bhai ye kamlesh ka abhi aaj ka ak candiate ko bheja tha vo dikh nahi raha hai dekho adn fix karo and 13 kw bbad mai to bhjehonege na fix it"*.
+  - When filtering by `Recruiter: Kamlesh Bansod` on `https://smarthireus.com/ats?tab=screening`, only 1 candidate was showing (`Amar Koduri`, created Oct 12 on Req #159306).
+  - Kamlesh's screening invitation dispatched today (Nov 24 at 15:08 UTC) to `Shanmukh Kumar Bellam` (`bellamshanmukhkumar@gmail.com`) with link `SCR-1795532852576-288` for `.NET Web Developer III` (Req #159574) was missing from the dashboard.
+- **Root Cause**:
+  1. During the demo candidates cleanup in the earlier turn, restoring from an older backup snapshot had wiped out today's newly created screening invite recorded in `messages.json`.
+  2. `filterRecruiter` in `ScreeningModule.jsx` relied strictly on exact string matching against `s.recruiterName` or `s.createdByName`, without resolving the requisition's assigned recruiters, causing candidates assigned to Kamlesh's requisitions to disappear when created under default recruiter context.
+- **Fix & Architectural Enhancements**:
+  1. *Session Restoration & Persistence*:
+     - Recovered and persisted `SCR-1795532852576-288` (`Shanmukh Kumar Bellam`, `.NET Web Developer III`, Req #159574) with `recruiterName: "kamlesh Bansod"` and `recruiterEmail: "kamlesh@coolsofttech.com"`.
+     - Linked Req #159574 (`.NET Web Developer III` - Wisconsin Elections Commission) to Kamlesh Bansod in `jobs.json`.
+     - Linked `Srikanth Kamepalli` (`SCR-1795544544111-83`) to Kamlesh Bansod so all `.NET Web Developer III` candidates are grouped together.
+  2. *Resilient Recruiter Filtering (`ScreeningModule.jsx`)*:
+     - Updated `getRecruiterName` to check `job?.recruiterName` and `job?.assignedRecruiters` when `session.recruiterName` defaults to `'Omkesh'`.
+     - Upgraded `filterRecruiter` to match across `recruiterName`, `createdByName`, `recruiterEmail`, and job requisition assigned recruiters so all candidates for Kamlesh's roles appear seamlessly.
+- **Verification & Deployment Protocol**:
+  - Local production build: `npm run build` in `smarthire-react` completed in 9.60s with 0 errors, 0 warnings (new bundle `index-D_Irhp0u.js`).
+  - Git committed (`efbd778`) and pushed to GitHub `origin main`.
+  - Deployed production bundle to AWS Lightsail (`34.194.119.199`), extracted to `/var/www/html/` and `/home/ubuntu/smarthire/dist/`, archives cleaned up immediately (Rule 5 compliance).
+  - Pruned asset bundles: Retained exactly 5 newest `index-*.js` bundles in `/var/www/html/assets/`.
+  - Root volume maintained healthy: 8.1GB free (56% used; Rule 5 compliance).
+  - PM2 `smarthire-ats` reloaded and verified online.
+  - Live domain verification:
+    - `https://smarthireus.com`: HTTP 200 serving `index-D_Irhp0u.js`.
+    - `https://smarthireus.com/screening/SCR-1795532852576-288`: HTTP 200 live and serving Shanmukh Kumar Bellam's interview portal.
+    - Verified `Recruiter: Kamlesh Bansod` returns all 3 candidates: `Shanmukh Kumar Bellam`, `Srikanth Kamepalli`, and `Amar Koduri`.
+
 ### 2026-11-25 — Hotfix: Screening Module Variable Initialization Order (TDZ Error Fix)
 - **User Issue**:
   - Clicking on Screening rendered an error boundary card: `"Temporary View Rendering Notice: Cannot access 'Q' before initialization"`.
