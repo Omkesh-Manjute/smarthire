@@ -470,18 +470,21 @@ async function syncCandidatesFromFirestore() {
   try {
     let syncedCount = 0;
 
-    // 1. Fetch from atsApplications (public applications submitted on /jobs e.g. Dayareddy, Faizuddin, Rajiv Kumar)
+    // 1. Fetch from atsApplications (public applications submitted on /jobs e.g. Dayareddy, Faizuddin, Rajiv Kumar, Sai Bharat, etc.)
     const snapApps = await getDocs(collection(firestoreDb, 'atsApplications'));
     const firestoreApps = [];
     snapApps.forEach(docSnap => {
       if (docSnap.exists()) {
         const d = docSnap.data();
         const candId = d.canId || d.candidateId || d.appId || docSnap.id;
+        const cleanEm = String(d.email || d.candidateEmail || '').trim().toLowerCase().replace(/\.(com|net|org|edu|gov|io|co|us|in|ai|dev|tech|info).*$/i, '.$1');
+        if (!cleanEm && !d.name && !d.candidateName) return;
+
         firestoreApps.push({
           id: candId,
           candidate_id: candId,
           name: d.name || d.candidateName || 'Applicant',
-          email: d.email || d.candidateEmail || '',
+          email: cleanEm,
           phone: d.phone || d.candidatePhone || '',
           role: d.jobTitle || d.role || '.NET Web Developer III',
           location: d.currentLocation || d.location || 'Remote, US',
@@ -517,37 +520,78 @@ async function syncCandidatesFromFirestore() {
       }
     });
 
+    // Build email map for fast matching
     const existingEmailMap = new Map();
     candidatesStore.forEach((c, idx) => {
-      if (c && c.email) existingEmailMap.set(String(c.email).toLowerCase().trim(), idx);
-      if (c && c.id) existingEmailMap.set(String(c.id).toLowerCase().trim(), idx);
+      const em = String(c?.email || '').trim().toLowerCase();
+      if (em) existingEmailMap.set(em, idx);
+      const cid = String(c?.id || c?.candidate_id || '').trim().toLowerCase();
+      if (cid) existingEmailMap.set(cid, idx);
     });
 
-    const allToMerge = [...firestoreApps, ...firestoreCands];
-    for (const cand of allToMerge) {
-      if (!cand) continue;
-      const cleanEmail = String(cand.email || '').toLowerCase().trim();
-      const cleanId = String(cand.id || cand.candidate_id || '').toLowerCase().trim();
+    // Process atsApplications FIRST with high priority
+    for (const appCand of firestoreApps) {
+      if (!appCand || isCandidateDeleted(appCand)) continue;
+      const cleanEm = String(appCand.email || '').trim().toLowerCase();
+      const cleanId = String(appCand.id || appCand.candidate_id || '').trim().toLowerCase();
 
-      const matchIdx = (cleanEmail && existingEmailMap.has(cleanEmail))
-        ? existingEmailMap.get(cleanEmail)
+      const matchIdx = (cleanEm && existingEmailMap.has(cleanEm))
+        ? existingEmailMap.get(cleanEm)
         : (cleanId && existingEmailMap.has(cleanId) ? existingEmailMap.get(cleanId) : -1);
 
       if (matchIdx !== -1) {
         candidatesStore[matchIdx] = {
           ...candidatesStore[matchIdx],
+          ...appCand,
+          source: 'Job Site',
+          sourceCategory: 'careers_portal',
+          appliedFrom: 'Job Site Application'
+        };
+      } else {
+        candidatesStore.unshift(appCand);
+        syncedCount++;
+        if (cleanEm) existingEmailMap.set(cleanEm, 0);
+        if (cleanId) existingEmailMap.set(cleanId, 0);
+      }
+    }
+
+    // Process other Firestore candidates (do NOT overwrite careers_portal if already set)
+    for (const cand of firestoreCands) {
+      if (!cand || isCandidateDeleted(cand)) continue;
+      const cleanEm = String(cand.email || '').trim().toLowerCase();
+      const cleanId = String(cand.id || cand.candidate_id || '').trim().toLowerCase();
+
+      const matchIdx = (cleanEm && existingEmailMap.has(cleanEm))
+        ? existingEmailMap.get(cleanEm)
+        : (cleanId && existingEmailMap.has(cleanId) ? existingEmailMap.get(cleanId) : -1);
+
+      if (matchIdx !== -1) {
+        const existing = candidatesStore[matchIdx];
+        candidatesStore[matchIdx] = {
+          ...existing,
           ...cand,
-          sourceCategory: cand.sourceCategory || candidatesStore[matchIdx].sourceCategory,
-          source: cand.source || candidatesStore[matchIdx].source,
-          appliedFrom: cand.appliedFrom || candidatesStore[matchIdx].appliedFrom
+          sourceCategory: existing.sourceCategory === 'careers_portal' ? 'careers_portal' : (cand.sourceCategory || existing.sourceCategory),
+          source: existing.sourceCategory === 'careers_portal' ? 'Job Site' : (cand.source || existing.source),
+          appliedFrom: existing.sourceCategory === 'careers_portal' ? 'Job Site Application' : (cand.appliedFrom || existing.appliedFrom)
         };
       } else {
         candidatesStore.unshift(cand);
         syncedCount++;
-        if (cleanEmail) existingEmailMap.set(cleanEmail, 0);
-        if (cleanId) existingEmailMap.set(cleanId, 0);
       }
     }
+
+    // Sanitize email spam candidates: ensure they do NOT have appliedFrom: 'Job Site Application'
+    const appEmailSet = new Set(firestoreApps.map(a => String(a.email || '').toLowerCase().trim()));
+    candidatesStore.forEach(c => {
+      if (!c) return;
+      const em = String(c.email || '').toLowerCase().trim();
+      if (!appEmailSet.has(em)) {
+        if (c.sourceCategory === 'email_spam' || c.sourceCategory === 'email_inbox') {
+          delete c.appliedFrom;
+          if (c.source === 'Job Site') c.source = c.sourceCategory === 'email_spam' ? 'Spam Harvest' : 'Email Parser';
+        }
+      }
+    });
 
     if (syncedCount > 0 || firestoreApps.length > 0) {
       candidatesStore = normalizeAndDeduplicateCandidates(candidatesStore);
@@ -558,6 +602,11 @@ async function syncCandidatesFromFirestore() {
     console.warn('[Firestore Sync] Warning:', err.message);
   }
 }
+
+// Background periodic sync for newly submitted applications on /jobs (every 3 minutes)
+setInterval(() => {
+  syncCandidatesFromFirestore().catch(e => console.warn('[Periodic Sync] Notice:', e.message));
+}, 3 * 60 * 1000);
 
 // MongoDB removed — using Firebase Firestore and fast disk caching
 const isMongoConnected = false;
@@ -1818,156 +1867,16 @@ function syncScreeningSessions() {
     }
   }
 
-  // 3. Ensure November Job Site Applicants (Rajiv Kumar, Dayareddy Developper, Faizuddin)
-  const novJobSiteCandidates = [
-    {
-      sessionId: 'SCR-1795121654325-101',
-      candidateId: 'C-1795121654',
-      candidateName: 'Rajiv Kumar',
-      candidateEmail: 'rajiv.njit@gmail.com',
-      candidatePhone: '+1 (201) 555-0184',
-      candidateLocation: 'New Jersey, NJ',
-      location: 'New Jersey, NJ',
-      visaStatus: 'US Citizen',
-      targetPayRate: '$85/hr',
-      jobId: '159586',
-      jobTitle: '3280 IT Infrastructure Specialist / Lead',
-      jobClient: 'State Client',
-      status: 'submitted',
-      screeningComplete: true,
-      createdAt: '2026-11-19T18:14:14.325Z',
-      submittedAt: '2026-11-19T18:14:14.325Z',
-      aiScore: 82,
-      recommendation: 'Strong Match',
-      recruiterName: 'Omkesh',
-      createdByName: 'Omkesh',
-      recruiterEmail: 'omkesh@coolsofttech.com',
-      format: 'Application',
-      screeningInvited: true,
-      responses: []
-    },
-    {
-      sessionId: 'SCR-1795042340476-102',
-      candidateId: 'C-1795042340',
-      candidateName: 'Dayareddy Developper',
-      candidateEmail: 'aiautomationwork3@gmail.com',
-      candidatePhone: '+1 (512) 555-0199',
-      candidateLocation: 'Austin, TX',
-      location: 'Austin, TX',
-      visaStatus: 'US Citizen',
-      targetPayRate: '$75/hr',
-      jobId: '159574',
-      jobTitle: 'Wisconsin Electric Power Company .NET Web Developer III',
-      jobClient: 'Wisconsin Electric Power Company',
-      status: 'submitted',
-      screeningComplete: true,
-      createdAt: '2026-11-18T20:12:20.476Z',
-      submittedAt: '2026-11-18T20:12:20.476Z',
-      aiScore: 98,
-      recommendation: 'Top Fit - Recommended',
-      recruiterName: 'Omkesh',
-      createdByName: 'Omkesh',
-      recruiterEmail: 'omkesh@coolsofttech.com',
-      format: 'Application',
-      screeningInvited: true,
-      responses: []
-    },
-    {
-      sessionId: 'SCR-1795021476608-103',
-      candidateId: 'C-1795021476',
-      candidateName: 'Faizuddin',
-      candidateEmail: 'mohammedfaizuddin17@gmail.com',
-      candidatePhone: '+1 (312) 555-0143',
-      candidateLocation: 'Architects, QA',
-      location: 'Architects, QA',
-      visaStatus: 'US Citizen',
-      targetPayRate: '$75/hr',
-      jobId: '159574',
-      jobTitle: 'Wisconsin Electric Power Company .NET Web Developer III',
-      jobClient: 'Wisconsin Electric Power Company',
-      status: 'submitted',
-      screeningComplete: true,
-      createdAt: '2026-11-18T14:24:36.608Z',
-      submittedAt: '2026-11-18T14:24:36.608Z',
-      aiScore: 98,
-      recommendation: 'Top Fit - Recommended',
-      recruiterName: 'Omkesh',
-      createdByName: 'Omkesh',
-      recruiterEmail: 'omkesh@coolsofttech.com',
-      format: 'Application',
-      screeningInvited: true,
-      responses: []
-    }
-  ];
-
-  for (const cand of novJobSiteCandidates) {
-    if (isScreeningSessionDeleted(cand)) continue;
-    const email = (cand.candidateEmail || '').toLowerCase().trim();
-    const existing = screeningStore.find(s => 
-      s && (
-        (email && s.candidateEmail && s.candidateEmail.toLowerCase().trim() === email) ||
-        (s.candidateName && s.candidateName.toLowerCase().trim() === cand.candidateName.toLowerCase().trim()) ||
-        (s.sessionId && s.sessionId === cand.sessionId)
-      )
-    );
-    if (!existing) {
-      screeningStore.unshift(cand);
-      changed = true;
-    }
-  }
-
-  // 4. Sync any additional Job Site candidates from candidatesStore into screeningStore
-  const jobSiteCandidates = (candidatesStore || []).filter(c => 
-    c && !isCandidateDeleted(c) && !isScreeningSessionDeleted(c) && (
-      c.sourceCategory === 'careers_portal' || 
-      c.sourceCategory === 'job_site' || 
-      c.appliedFrom === 'Job Site Application' ||
-      (c.source || '').toLowerCase().includes('job site')
-    )
-  );
-
-  for (const cand of jobSiteCandidates) {
-    if (isCandidateDeleted(cand) || isScreeningSessionDeleted(cand)) continue;
-    const email = String(cand.email || '').toLowerCase().trim();
-    const existing = screeningStore.find(s => 
-      s && (
-        (email && s.candidateEmail && s.candidateEmail.toLowerCase().trim() === email) ||
-        (s.sessionId && cand.screeningSessionId && s.sessionId === cand.screeningSessionId) ||
-        (cand.name && s.candidateName && s.candidateName.toLowerCase().trim() === cand.name.toLowerCase().trim())
-      )
-    );
-    if (!existing && cand.name) {
-      const sessId = cand.screeningSessionId || `SCR-${new Date(cand.createdAt || Date.now()).getTime()}-${Math.floor(Math.random() * 900 + 100)}`;
-      screeningStore.unshift({
-        sessionId: sessId,
-        candidateId: cand.id || cand.candidate_id || `C-${Date.now()}`,
-        candidateName: cand.name,
-        candidateEmail: cand.email,
-        candidatePhone: cand.phone || '',
-        candidateLocation: cand.location || 'Remote / US',
-        location: cand.location || 'Remote / US',
-        visaStatus: cand.visaStatus || 'US Citizen',
-        targetPayRate: cand.expectedRate || cand.target_rate || '$75/hr',
-        jobId: cand.targetReqId || cand.reqId || '159574',
-        jobTitle: cand.matchedJobTitle || cand.role || 'Applied Position',
-        jobClient: cand.matchedJobClient || 'State Client',
-        jobLocation: cand.location || 'Remote / US',
-        status: 'submitted',
-        screeningComplete: true,
-        screeningInvited: true,
-        createdAt: cand.createdAt || new Date().toISOString(),
-        submittedAt: cand.createdAt || new Date().toISOString(),
-        aiScore: cand.matchScore || 78,
-        recommendation: (cand.matchScore || 78) >= 75 ? 'Strong Match' : 'Qualified',
-        recruiterName: cand.recruiter || 'Omkesh',
-        createdByName: cand.recruiter || 'Omkesh',
-        recruiterEmail: cand.recruiterEmail || 'omkesh@coolsofttech.com',
-        resumePath: cand.resumeFileUrl || cand.resumeUrl || (cand.legalDocs?.resume?.storageUrl) || '',
-        format: 'Application',
-        responses: []
-      });
-      changed = true;
-    }
+  // Strictly filter out any session that does NOT have genuine recorded video/audio media AND does NOT have an active recruiter invite
+  const beforeCount = screeningStore.length;
+  screeningStore = screeningStore.filter(s => {
+    if (!s || isScreeningSessionDeleted(s)) return false;
+    const hasMedia = !!(s.masterMediaUrl || (s.responses && s.responses.some(r => r.mediaUrl)));
+    const hasInvite = !!(s.inviteToken || s.screeningInvitedByRecruiter);
+    return hasMedia || hasInvite;
+  });
+  if (screeningStore.length !== beforeCount) {
+    changed = true;
   }
 
   if (changed) {
@@ -8361,7 +8270,12 @@ app.get('/api/screening/sessions', authenticateToken, (req, res) => {
   const isManager = userRole === 'manager';
   const isClient = userRole === 'client';
 
-  let list = (screeningStore || []).filter(s => s && !isScreeningSessionDeleted(s));
+  let list = (screeningStore || []).filter(s => {
+    if (!s || isScreeningSessionDeleted(s)) return false;
+    const hasMedia = !!(s.masterMediaUrl || s.videoUrl || (Array.isArray(s.responses) && s.responses.some(r => r.mediaUrl)));
+    const hasInvite = !!(s.inviteToken || s.screeningInvitedByRecruiter);
+    return hasMedia || hasInvite;
+  });
 
   if (isClient) {
     // Client role: strictly scoped to sessions they created or own
