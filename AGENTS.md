@@ -66,6 +66,81 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
     - In resume views, every responsibility, project accomplishment, and contribution line must be formatted with an explicit bullet point (`•`) and proper indentation.
     - The engine must automatically detect responsibilities (lines following `Responsibilities:`, action verbs, or list items) even when converted from plain text or Word documents without literal Unicode bullets.
 
+### 2026-11-24 — Google Search Console Performance Overhaul, High-Impression Query Capture, 301 Cannibalization Fix & Production Deployment
+- **User Request & Goal**:
+  - User requested: *"https___smarthireus.com_-Performance-on-Search-2026-11-24 ye file dekho google console ki and uske accrding improve karna hai search mai ana cahiye and kay keyword nahi hai sab dekho find karo bro"*.
+  - Analyzed the official 3-month Google Search Console export (`/Users/omkeshmanjute/Downloads/https___smarthireus.com_-Performance-on-Search-2026-11-24.zip`): 1,792 total impressions, 16 clicks, 0.89% average CTR.
+- **Key Findings & GSC Diagnosis**:
+  1. *Top Search Opportunities (High Impressions, Page 1 Rankings, Low CTR)*:
+     - `/blog/india-vs-usa-it-jobs-2026`: 484 impressions at #6.31, 2 clicks (0.41% CTR). High volume query `"how much can i save hiring software engineers in india versus the us?"` generated 29 impressions at position 7.28 with 0 clicks due to missing targeted section answering the query.
+     - `/blog/c2c-vs-w2-vs-1099`: 53 impressions at #9.28 cannibalizing `/blog/c2c-vs-w2-vs-1099-it-contracts-guide` (37 impressions at #16.32).
+     - `/smartscreen`: 80 impressions at #11.1 with 0 clicks because Express server lacked dedicated meta title/description for `/smartscreen`.
+     - `/jobs`: 44 impressions with 9.09% CTR (strongest CTR on the platform).
+  2. *Missing / Unranked Target Keywords Identified*:
+     - `direct client it jobs`, `c2c it jobs usa`, `c2c contracts`, `corp to corp jobs`, `1099 vs c2c vs w2 rate calculator`, `ai video screening tool for recruiters`, `asynchronous candidate screening`, `submittal pack generator for us it recruiters`, `state client it requisitions`.
+- **Architectural & SEO Technical Enhancements**:
+  1. *Root SEO (`index.html`)*:
+     - Updated primary title: `"SmartHire — Direct-Client IT Jobs, C2C Contracts & AI Recruitment ATS Platform"`.
+     - Added comprehensive B2B recruitment meta keywords and enhanced description.
+     - Injected `SoftwareApplication` and `FAQPage` JSON-LD schemas.
+  2. *Homepage & Careers View*:
+     - Upgraded H1 on `Homepage.jsx` to `"SmartHire — Next-Gen AI Recruitment ATS & Direct-Client IT Staffing Platform"` and enhanced hero subtitle.
+     - Replaced generic heading on `WellfoundCareersView.jsx` with prominent H1 `"Direct-Client IT Jobs & C2C Contracts."` with C2C/W2/1099 scope.
+  3. *Targeted Content Expansion & FAQ Schema*:
+     - In `IndiaVsUsaJobs2026Article.jsx`, added dedicated section directly answering `"How much can I save hiring software engineers in India versus the US?"` with salary breakdown and embedded `FAQPage` JSON-LD schema for rich search snippet display.
+  4. *Server-Side Meta & 301 Redirects (`server/index.js`)*:
+     - Added dedicated SSR meta injection in `routeSeoMeta` for `/jobs`, `/smartscreen`, and blog articles.
+     - Added 301 permanent redirects:
+       - `/blog/c2c-vs-w2-vs-1099` -> 301 to `/blog/c2c-vs-w2-vs-1099-it-contracts-guide` (resolves Google index cannibalization).
+       - `/video-screening` & `/video-interview` -> 301 to `/smartscreen`.
+       - `/contact` -> 301 to `/about?section=inquiry#inquiry`.
+       - `/support` -> 301 to `/about?section=support#support`.
+     - Updated dynamic and static `/sitemap.xml` with priority 0.92 for `/smartscreen` and fresh 2026-11-24 dates.
+- **Verification & Deployment Protocol**:
+  - Unit tests: 42/42 tests passed in `ats_matching_engine.test.js`.
+  - Production build: `npm run build` in `smarthire-react` completed with 0 errors, 0 warnings (new main bundle `index-D-R0xhJD.js`).
+  - Git committed (`99295e4`) and pushed to GitHub `origin main`.
+  - Deployed production bundle to AWS Lightsail server (`34.194.119.199`), extracted to `/var/www/html/` and `/home/ubuntu/smarthire/dist/`, archives cleaned up immediately.
+  - Pruned asset bundles: Retained exactly 5 newest `index-*.js` bundles in `/var/www/html/assets/`.
+  - Root volume maintained healthy: 8.1GB free (56% used; Rule 5 compliance).
+  - PM2 `smarthire-ats` reloaded and verified online (PID 845109).
+  - Live domain verification:
+    - `https://smarthireus.com`: HTTP 200 serving `index-D-R0xhJD.js`.
+    - `https://smarthireus.com/jobs` & `/smartscreen`: Serving dedicated SEO titles and meta tags.
+    - `https://smarthireus.com/blog/c2c-vs-w2-vs-1099`: HTTP 301 redirecting to `/blog/c2c-vs-w2-vs-1099-it-contracts-guide`.
+
+### 2026-11-24 — Screening Demo Candidates Elimination, Permanent Job Site Candidate Persistence & Firestore Sync
+- **User Issue & Findings**:
+  1. *Candidate Video & Audio Screening (`/ats?tab=screening`)*:
+     - User reported: *"ismai demo candiate q a rhae hai jo maine link genrate kar ke bhi nahi bheje automatic q check karo fix karo update karo double ye error nahi hona cahiye okay"*.
+     - 187 candidates with format "Application" and status "New Submitted" (e.g. Animesh Business Analyst, Sai Balaji Naidu, Lekhya Gurram, Davar, Prakash, Mark, Maryam Andarabi, Shukoor Mohammed Abdul...) were appearing in the screening hub even though no screening link was ever generated for them.
+     - *Root Cause*: `syncScreeningSessions()` in `server/index.js` had automated loops (Section 3 and Section 4) that took candidates from `candidatesStore` where `appliedFrom === 'Job Site Application'` and auto-generated artificial screening session records with `format: 'Application'`. Moreover, the background email harvester had set `appliedFrom = 'Job Site Application'` on email spam leads, causing 165 email candidates to flood the screening hub.
+  2. *Candidate Database (`/inbox?tab=candidates&category=careers`)*:
+     - User reported: *"ismai 23 candiate ka bata raha hai but chrome browert mai only 2 dikharha hai dekho kay error hai bhai candiate kaha save ho raha hai"*.
+     - In Chrome, only 2 candidates appeared under Job Sites ("Sai Bharat" and "Vishal Patel"), whereas 25+ applicants were in Firestore `atsApplications`.
+     - *Root Cause*: Public applications submitted on `/jobs` are saved directly to Firestore `atsApplications` by the client without hitting `/api/candidates`. The backend server's `syncCandidatesFromFirestore()` was only executing on boot, and lacked high-priority preservation of `careers_portal` categorization when merging against old email spam or empty candidate records in `candidatesStore`.
+- **Architectural & Implementation Fixes**:
+  1. *Screening Hub Hardening*:
+     - Removed Sections 3 and 4 from `syncScreeningSessions()` in `server/index.js`.
+     - In `syncScreeningSessions()` and `GET /api/screening/sessions`, added a strict gate: only sessions with genuine recorded media (`masterMediaUrl` or `responses.some(r => r.mediaUrl)`) or an active recruiter invitation token are included.
+     - Pruned `screening_sessions.json` on Lightsail from 187 down to the 22 authentic video screening sessions (Anandi Ramaswamy, Client Assessment Candidate, Maham Alf, Mahendar Sitaram Neelkanth, etc.), permanently eliminating all 165 uninvited demo entries.
+  2. *Full Firestore Job Site Candidate Synchronization & Persistence*:
+     - Enhanced `syncCandidatesFromFirestore()` in `server/index.js` to process all applications in `atsApplications` with high priority, explicitly tagging them with `source: 'Job Site'`, `sourceCategory: 'careers_portal'`, and `appliedFrom: 'Job Site Application'`.
+     - Added background periodic sync every 3 minutes so newly submitted applications on `/jobs` are continuously merged into `candidatesStore` and persisted to `candidates.json` on disk.
+     - Sanitized email spam candidates so `appliedFrom` is stripped from non-application records.
+     - Merged all 25+ authentic Job Site candidates directly into `candidates.json` on Lightsail.
+- **Verification & Deployment Protocol**:
+  - Unit tests: 42/42 tests passed in `tests/ats_matching_engine.test.js`.
+  - Frontend production build: `npm run build` in `smarthire-react` completed in 18.06s with 0 errors, 0 warnings (new main bundle `index-JyAf49Op.js`).
+  - Git committed (`93e2dff`) and pushed to GitHub `origin main`.
+  - Deployed production bundle to AWS Lightsail server (`34.194.119.199`), extracted to `/var/www/html/` and pruned old bundles (retaining 5 newest `index-*.js`), temporary archives cleaned up immediately.
+  - Root volume maintained healthy: 8.1GB free (56% used; Rule 5 compliance).
+  - PM2 `smarthire-ats` reloaded and verified online (PID 843234).
+  - Live domain verification:
+    - `https://smarthireus.com`: HTTP 200 serving `index-JyAf49Op.js`.
+    - `GET /api/screening/sessions`: Returns exactly 22 authentic video sessions (0 fake demo sessions).
+    - `GET /api/recruiter/email-streams?all=true`: Confirmed all Job Sites applicants active and categorized under `careers_portal`.
+
 ### 2026-11-24 — UI Polish: Streamline Sidebar & Quick Portals, Portal Sync to Header, Clean Recruiter Column, Top Action Bar & Dynamic KPIs on Vendor Hotlists
 - **User Request & Requirements**:
   1. *Company Directory (`/ats?tab=contacts`)*:
