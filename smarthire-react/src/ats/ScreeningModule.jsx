@@ -80,68 +80,6 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [], cur
   const isSuper = isSuperAdmin || currentUserRole === 'superadmin' || currentUserRole === 'admin' || currentUserEmail === 'omkesh@coolsofttech.com' || currentUserEmail === 'omkesh.manjute@smarthire.com' || currentUserEmail === 'omkeshmanjute@gmail.com'
   const isManager = currentUserRole === 'manager'
 
-  // Derive list of all available recruiters across the organization
-  const allAvailableRecruiters = useMemo(() => {
-    const list = [
-      { name: 'Omkesh', email: 'omkesh@coolsofttech.com' },
-      { name: 'Kamlesh Bansod', email: 'kamlesh@coolsofttech.com' },
-      { name: 'Rohit Nagwani', email: 'rohit@coolsofttech.com' },
-      { name: 'Nishant Kathane', email: 'nishant@coolsofttech.com' },
-      { name: 'Pankaj', email: 'pankaj@coolsofttech.com' },
-      { name: 'Sukamal Chatterjee', email: 'kamal@coolsofttech.com' },
-      { name: 'Raj', email: 'raj@coolsofttech.com' },
-      { name: 'Ajay Arya', email: 'ajay@coolsofttech.com' },
-      { name: 'Gourav', email: 'gourav@coolsofttech.com' },
-      { name: 'Vaibhav Bisen', email: 'vaibhav@coolsofttech.com' },
-      { name: 'Naveen Bhardwaj', email: 'naveen@coolsofttech.com' },
-      { name: 'Rahul Sharma', email: 'rahul@coolsofttech.com' },
-      { name: 'Priya Verma', email: 'priya@coolsofttech.com' },
-      { name: 'Alok Manager', email: 'manager@coolsofttech.com' }
-    ]
-    try {
-      const stored = localStorage.getItem('smarthire_recruiters')
-      if (stored) {
-        const parsed = JSON.parse(stored)
-        if (Array.isArray(parsed)) {
-          parsed.forEach(u => {
-            if (u && u.name && !list.some(r => r.name.toLowerCase() === u.name.toLowerCase())) {
-              list.push({ name: u.name, email: u.email || '' })
-            }
-          })
-        }
-      }
-    } catch(e) {}
-    // Discover recruiters from active screening sessions
-    if (Array.isArray(sessions)) {
-      sessions.forEach(s => {
-        const rName = (s.recruiterName || s.createdByName || '').trim()
-        if (rName && !list.some(r => r.name.toLowerCase() === rName.toLowerCase())) {
-          list.push({ name: rName, email: s.recruiterEmail || s.createdByEmail || '' })
-        }
-      })
-    }
-    // If jobs have recruiters
-    if (Array.isArray(jobsList)) {
-      jobsList.forEach(j => {
-        if (j.recruiterName && !list.some(r => r.name.toLowerCase() === j.recruiterName.toLowerCase())) {
-          list.push({ name: j.recruiterName, email: '' })
-        }
-        if (Array.isArray(j.assignedRecruiters)) {
-          j.assignedRecruiters.forEach(ar => {
-            if (ar && typeof ar === 'string' && !list.some(r => r.name.toLowerCase() === ar.toLowerCase())) {
-              list.push({ name: ar, email: '' })
-            }
-          })
-        }
-      })
-    }
-    // Also include currentUser if not already present
-    if (currentUser?.name && !list.some(r => r.name.toLowerCase() === currentUser.name.toLowerCase())) {
-      list.push({ name: currentUser.name, email: currentUser.email || '' })
-    }
-    return list
-  }, [jobsList, currentUser, sessions])
-
   // Helper to attach authorization and recruiter identity headers for all screening API calls
   const getAuthHeaders = useCallback((contentTypeJson = false) => {
     let email = currentUserEmail || ''
@@ -208,6 +146,68 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [], cur
   const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
+
+  // Derive list of all available recruiters across the organization (declared AFTER sessions state)
+  const allAvailableRecruiters = useMemo(() => {
+    const list = [
+      { name: 'Omkesh', email: 'omkesh@coolsofttech.com' },
+      { name: 'Kamlesh Bansod', email: 'kamlesh@coolsofttech.com' },
+      { name: 'Rohit Nagwani', email: 'rohit@coolsofttech.com' },
+      { name: 'Nishant Kathane', email: 'nishant@coolsofttech.com' },
+      { name: 'Pankaj', email: 'pankaj@coolsofttech.com' },
+      { name: 'Sukamal Chatterjee', email: 'kamal@coolsofttech.com' },
+      { name: 'Raj', email: 'raj@coolsofttech.com' },
+      { name: 'Ajay Arya', email: 'ajay@coolsofttech.com' },
+      { name: 'Gourav', email: 'gourav@coolsofttech.com' },
+      { name: 'Vaibhav Bisen', email: 'vaibhav@coolsofttech.com' },
+      { name: 'Naveen Bhardwaj', email: 'naveen@coolsofttech.com' },
+      { name: 'Rahul Sharma', email: 'rahul@coolsofttech.com' },
+      { name: 'Priya Verma', email: 'priya@coolsofttech.com' },
+      { name: 'Alok Manager', email: 'manager@coolsofttech.com' }
+    ]
+    try {
+      const stored = localStorage.getItem('smarthire_recruiters')
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        if (Array.isArray(parsed)) {
+          parsed.forEach(u => {
+            if (u && u.name && !list.some(r => r.name.toLowerCase() === u.name.toLowerCase())) {
+              list.push({ name: u.name, email: u.email || '' })
+            }
+          })
+        }
+      }
+    } catch(e) {}
+    // Discover recruiters from active screening sessions
+    if (Array.isArray(sessions)) {
+      sessions.forEach(s => {
+        const rName = (s.recruiterName || s.createdByName || '').trim()
+        if (rName && !list.some(r => r.name.toLowerCase() === rName.toLowerCase())) {
+          list.push({ name: rName, email: s.recruiterEmail || s.createdByEmail || '' })
+        }
+      })
+    }
+    // If jobs have recruiters
+    if (Array.isArray(jobsList)) {
+      jobsList.forEach(j => {
+        if (j.recruiterName && !list.some(r => r.name.toLowerCase() === j.recruiterName.toLowerCase())) {
+          list.push({ name: j.recruiterName, email: '' })
+        }
+        if (Array.isArray(j.assignedRecruiters)) {
+          j.assignedRecruiters.forEach(ar => {
+            if (ar && typeof ar === 'string' && !list.some(r => r.name.toLowerCase() === ar.toLowerCase())) {
+              list.push({ name: ar, email: '' })
+            }
+          })
+        }
+      })
+    }
+    // Also include currentUser if not already present
+    if (currentUser?.name && !list.some(r => r.name.toLowerCase() === currentUser.name.toLowerCase())) {
+      list.push({ name: currentUser.name, email: currentUser.email || '' })
+    }
+    return list
+  }, [jobsList, currentUser, sessions])
 
   // Campaign Builder Modal States
   const [showCreateModal, setShowCreateModal] = useState(false)
