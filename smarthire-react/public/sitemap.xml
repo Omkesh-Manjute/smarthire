@@ -4,67 +4,81 @@
         xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
         http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
 
-  <!-- Core Landing Pages -->
+  <!-- Core Landing & Marketplace Pages -->
   <url>
     <loc>https://smarthireus.com/</loc>
-    <lastmod>2026-10-08</lastmod>
+    <lastmod>2026-11-24</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.00</priority>
   </url>
 
   <url>
     <loc>https://smarthireus.com/jobs</loc>
-    <lastmod>2026-10-08</lastmod>
+    <lastmod>2026-11-24</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.95</priority>
+  </url>
+
+  <url>
+    <loc>https://smarthireus.com/smartscreen</loc>
+    <lastmod>2026-11-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.92</priority>
   </url>
 
   <!-- Editorial Blog Hub & Articles -->
   <url>
     <loc>https://smarthireus.com/blog</loc>
-    <lastmod>2026-10-08</lastmod>
+    <lastmod>2026-11-24</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.90</priority>
   </url>
 
   <url>
     <loc>https://smarthireus.com/blog/h1b-2026-update-it-work-visa-options</loc>
-    <lastmod>2026-10-08</lastmod>
+    <lastmod>2026-11-24</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.88</priority>
   </url>
 
   <url>
     <loc>https://smarthireus.com/blog/c2c-vs-w2-vs-1099-it-contracts-guide</loc>
-    <lastmod>2026-10-08</lastmod>
+    <lastmod>2026-11-24</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.88</priority>
   </url>
 
   <url>
     <loc>https://smarthireus.com/blog/highest-paying-it-certifications-2026</loc>
-    <lastmod>2026-10-08</lastmod>
+    <lastmod>2026-11-24</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
   </url>
 
   <url>
     <loc>https://smarthireus.com/blog/ai-entry-level-it-jobs-2026</loc>
-    <lastmod>2026-10-08</lastmod>
+    <lastmod>2026-11-24</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
   </url>
 
   <url>
     <loc>https://smarthireus.com/blog/us-it-recruitment-market-2026</loc>
-    <lastmod>2026-10-08</lastmod>
+    <lastmod>2026-11-24</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
   </url>
 
   <url>
     <loc>https://smarthireus.com/blog/india-vs-usa-it-jobs-2026</loc>
-    <lastmod>2026-10-08</lastmod>
+    <lastmod>2026-11-24</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <url>
+    <loc>https://smarthireus.com/blog/data-center-staffing-boom</loc>
+    <lastmod>2026-11-24</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
   </url>
@@ -72,38 +86,23 @@
   <!-- Corporate & Compliance -->
   <url>
     <loc>https://smarthireus.com/about</loc>
-    <lastmod>2026-10-08</lastmod>
+    <lastmod>2026-11-24</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.70</priority>
   </url>
 
   <url>
-    <loc>https://smarthireus.com/contact</loc>
-    <lastmod>2026-10-08</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.60</priority>
-  </url>
-
-  <url>
     <loc>https://smarthireus.com/privacy</loc>
-    <lastmod>2026-10-08</lastmod>
+    <lastmod>2026-11-24</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.40</priority>
   </url>
 
   <url>
     <loc>https://smarthireus.com/terms</loc>
-    <lastmod>2026-10-08</lastmod>
+    <lastmod>2026-11-24</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.40</priority>
-  </url>
-
-
-  <url>
-    <loc>https://smarthireus.com/blog/how-enterprise-companies-screen-tech-contractors-with-asynchronous-video-sk</loc>
-    <lastmod>2026-11-19</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.88</priority>
   </url>
 
 </urlset>

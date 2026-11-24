@@ -2030,16 +2030,25 @@ export default function WellfoundCareersView({
 
             {/* Main Headline */}
             <h1 style={{
-              fontSize: 'clamp(32px, 4.5vw, 50px)',
+              fontSize: 'clamp(28px, 4vw, 46px)',
               fontWeight: 700,
               fontStyle: 'normal',
               letterSpacing: '-0.035em',
               color: colors.textPrimary,
-              margin: '0 0 24px',
-              lineHeight: 1.15
+              margin: '0 0 12px',
+              lineHeight: 1.18
             }}>
-              Find what's next<span style={{ color: colors.accentCoral }}>:</span>
+              Direct-Client IT Jobs &amp; C2C Contracts<span style={{ color: colors.accentCoral }}>.</span>
             </h1>
+            <p style={{
+              fontSize: '15px',
+              color: colors.textSecondary,
+              maxWidth: 720,
+              margin: '0 auto 24px',
+              lineHeight: 1.5
+            }}>
+              Explore 100+ verified direct-client requisitions across State Government, Healthcare &amp; Enterprise Clients. C2C, W2, and 1099 contracts with fast 1-click apply.
+            </p>
 
             {/* Dual-Input Search Pill Container */}
             <form

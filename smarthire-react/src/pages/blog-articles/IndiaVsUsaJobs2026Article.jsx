@@ -1,8 +1,55 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 
 export default function IndiaVsUsaJobs2026Article() {
   const [openFaq, setOpenFaq] = useState({})
+
+  useEffect(() => {
+    const faqSchema = {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "How much can I save hiring software engineers in India versus the US?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "US companies save 60% to 75% on total engineering payroll by hiring software engineers in India. A senior full-stack developer in the US costs $140,000–$180,000 base salary plus $30,000+ in employer payroll taxes and healthcare. An equivalent senior developer in India earns $35,000–$55,000 (₹30L–₹48L), delivering $90,000 to $130,000 in net annual savings per engineer."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How much more do US software engineers earn compared to Indian engineers?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "On paper, US base salaries are 4x to 8x higher at equivalent experience levels ($138,000 USD vs ₹18–25 Lakhs). However, after federal and state income taxes, healthcare premiums, and higher rent in US tech hubs, the practical take-home savings multiple narrows to approximately 2.5x to 3.5x."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can Indian software engineers work remotely for US companies on C2C or contractor basis?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Many US tech companies and staffing firms hire remote engineers in India as independent 1099/C2C contractors or via Global Capability Centers (GCCs). Hourly contractor rates for Indian developers typically range from $25/hr to $65/hr depending on cloud, AI, and backend specialization."
+          }
+        }
+      ]
+    };
+
+    let script = document.getElementById('india-usa-faq-schema');
+    if (!script) {
+      script = document.createElement('script');
+      script.id = 'india-usa-faq-schema';
+      script.type = 'application/ld+json';
+      script.innerHTML = JSON.stringify(faqSchema);
+      document.head.appendChild(script);
+    }
+
+    return () => {
+      const el = document.getElementById('india-usa-faq-schema');
+      if (el) el.remove();
+    };
+  }, []);
 
   const toggleFaq = (index) => {
     setOpenFaq(prev => ({ ...prev, [index]: !prev[index] }))
@@ -336,6 +383,10 @@ export default function IndiaVsUsaJobs2026Article() {
       </h2>
 
       {[
+        {
+          q: "How much can I save hiring software engineers in India versus the US?",
+          a: "US companies typically save 60% to 75% on total engineering payroll by hiring software engineers in India. A senior full-stack developer in the US costs $140,000–$180,000 base salary plus $30,000+ in employer payroll taxes and healthcare. An equivalent senior developer in India earns $35,000–$55,000 (₹30L–₹48L), delivering $90,000 to $130,000 in net annual savings per engineer."
+        },
         {
           q: "How much more do US software engineers earn compared to Indian engineers?",
           a: "On paper, US base salaries are often 5x to 15x higher at equivalent experience levels ($138,000 USD vs ₹14.5 Lakhs). However, after accounting for federal and state income taxes, healthcare premiums, and higher rent, the practical take-home multiple narrows to approximately 3x to 4x."

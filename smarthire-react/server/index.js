@@ -17965,24 +17965,28 @@ if (fs.existsSync(distPath)) {
 // For React Router support - fallback all non-API GET/HEAD requests to index.html with dynamic SEO canonicalization
 const routeSeoMeta = {
   '/jobs': {
-    title: 'Browse Direct-Client IT Jobs & Contracts | SmartHire',
-    desc: 'Explore 100+ high-paying direct-client IT positions across Cloud, Java, DevOps, Data & State Government projects.'
+    title: 'Direct-Client IT Jobs & C2C Contracts USA | SmartHire',
+    desc: 'Browse 100+ verified direct-client IT requisitions across C2C, W2, and 1099 contracts. State government, healthcare, cloud architecture, and high-paying developer roles with 1-click apply.'
+  },
+  '/smartscreen': {
+    title: 'SmartScreen — Asynchronous AI Video & Audio Candidate Screening | SmartHire',
+    desc: 'Automate technical candidate vetting with SmartScreen AI video interviews, proctoring, live speech-to-text transcripts, and automated fit scoring for staffing agencies.'
   },
   '/blog': {
-    title: 'IT Recruitment Market Insights & Career Blog | SmartHire',
-    desc: 'Expert hiring trends, compensation guides, C2C vs W2 comparisons, and IT work visa insights.'
+    title: 'IT Recruitment Market Insights, C2C Guides & Salary Reports | SmartHire',
+    desc: 'Expert hiring trends, compensation guides, C2C vs W2 rate comparisons, H-1B visa updates, and IT staffing strategies for 2026.'
   },
   '/blog/h1b-2026-update-it-work-visa-options': {
-    title: 'H-1B 2026 Update: Lottery, Fees & Best IT Visa Options | SmartHire',
-    desc: 'H-1B 2026 update for IT professionals: wage-weighted lottery, $100K fee ruling, new $103,265 proposal, and the best visa options (OPT, STEM OPT, EAD, TN, L-1) compared.'
+    title: 'H-1B 2026 Update: $100K Fee Policy, Wage Lottery & Best IT Work Visas | SmartHire',
+    desc: 'H-1B 2026 update for IT professionals: wage-weighted lottery, $100K fee ruling, minimum salary rules, and best work visa alternatives (OPT, STEM OPT, EAD, TN, C2C).'
   },
   '/blog/c2c-vs-w2-vs-1099-it-contracts-guide': {
-    title: 'C2C vs W2 vs 1099: Which IT Contract Type Is Best in 2026? | SmartHire',
-    desc: 'Confused about C2C, W2, and 1099 for IT contracts? This comprehensive 2026 guide breaks down tax implications, rate differences, S-Corp benefits, and take-home pay.'
+    title: 'C2C vs W2 vs 1099: Which IT Contract Pays More in 2026? Tax & Rate Guide | SmartHire',
+    desc: 'Compare C2C vs W2 vs 1099 IT contracts in 2026: hourly rate conversion formula, S-Corp tax write-offs, deductions, and take-home pay comparison for IT consultants.'
   },
   '/blog/highest-paying-it-certifications-2026': {
-    title: '10 Highest-Paying IT Certifications in 2026 (Real Salary Data) | SmartHire',
-    desc: 'The 10 highest-paying IT certifications in 2026, ranked by real salary data: cloud architect, CISSP, AWS Security, AI security and more, with cost and ROI.'
+    title: '10 Highest-Paying IT Certifications in 2026 ($180K+ Salaries Ranked) | SmartHire',
+    desc: 'Ranked by real salary data: Cloud Solutions Architect, CISSP, AWS Security, CISM, and AI certifications. Discover exam costs, difficulty, and salary ROI in 2026.'
   },
   '/blog/ai-entry-level-it-jobs-2026': {
     title: 'Is AI Killing Entry-Level IT Jobs in 2026? The Real Data | SmartHire',
@@ -17993,20 +17997,16 @@ const routeSeoMeta = {
     desc: 'US IT recruitment market 2026 explained: tech unemployment near 3%, AI and cybersecurity demand, salary trends, and how employers and candidates can win.'
   },
   '/blog/india-vs-usa-it-jobs-2026': {
-    title: 'India vs USA IT Jobs 2026: Salary, Taxes & Career Growth | SmartHire',
-    desc: 'India vs USA IT jobs in 2026 compared: real salary gap, taxes, cost of living, visas, job security and career growth. Find out where to build your tech career.'
+    title: 'India vs USA IT Jobs 2026: Salary ($140K vs $35K), Taxes & Cost of Living | SmartHire',
+    desc: 'India vs USA IT jobs compared: real salary gap ($140k vs $35k), taxes, cost of living, visa realities, and how much US employers save hiring developers in India vs the USA.'
   },
   '/about': {
-    title: 'About SmartHire | Enterprise ATS & IT Staffing Solutions',
-    desc: 'Learn how SmartHire bridges enterprise clients with top-tier technology talent.'
-  },
-  '/contact': {
-    title: 'Contact SmartHire | IT Recruitment & Client Partnerships',
-    desc: 'Get in touch with the SmartHire recruitment team and client relations specialists.'
+    title: 'About SmartHire | Enterprise ATS & Direct-Client IT Staffing Solutions',
+    desc: 'Learn how SmartHire bridges enterprise clients with top-tier technology talent across Corp-to-Corp, W2, and 1099 contracts.'
   },
   '/privacy': {
     title: 'Privacy Policy | SmartHire ATS',
-    desc: 'SmartHire data privacy practices and commitment to user data protection.'
+    desc: 'SmartHire data privacy practices and commitment to candidate and recruiter data protection.'
   },
   '/terms': {
     title: 'Terms of Service | SmartHire ATS',
@@ -18019,19 +18019,19 @@ app.get('/sitemap.xml', (_req, res) => {
   res.setHeader('Content-Type', 'application/xml; charset=utf-8');
   let sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://smarthireus.com/</loc><lastmod>2026-10-08</lastmod><changefreq>daily</changefreq><priority>1.00</priority></url>
-  <url><loc>https://smarthireus.com/jobs</loc><lastmod>2026-10-08</lastmod><changefreq>daily</changefreq><priority>0.95</priority></url>
-  <url><loc>https://smarthireus.com/blog</loc><lastmod>2026-10-08</lastmod><changefreq>weekly</changefreq><priority>0.90</priority></url>
-  <url><loc>https://smarthireus.com/blog/h1b-2026-update-it-work-visa-options</loc><lastmod>2026-10-08</lastmod><changefreq>weekly</changefreq><priority>0.88</priority></url>
-  <url><loc>https://smarthireus.com/blog/c2c-vs-w2-vs-1099-it-contracts-guide</loc><lastmod>2026-10-08</lastmod><changefreq>weekly</changefreq><priority>0.88</priority></url>
-  <url><loc>https://smarthireus.com/blog/highest-paying-it-certifications-2026</loc><lastmod>2026-10-08</lastmod><changefreq>monthly</changefreq><priority>0.85</priority></url>
-  <url><loc>https://smarthireus.com/blog/ai-entry-level-it-jobs-2026</loc><lastmod>2026-10-08</lastmod><changefreq>monthly</changefreq><priority>0.85</priority></url>
-  <url><loc>https://smarthireus.com/blog/us-it-recruitment-market-2026</loc><lastmod>2026-10-08</lastmod><changefreq>monthly</changefreq><priority>0.85</priority></url>
-  <url><loc>https://smarthireus.com/blog/india-vs-usa-it-jobs-2026</loc><lastmod>2026-10-08</lastmod><changefreq>monthly</changefreq><priority>0.85</priority></url>
-  <url><loc>https://smarthireus.com/about</loc><lastmod>2026-10-08</lastmod><changefreq>monthly</changefreq><priority>0.70</priority></url>
-  <url><loc>https://smarthireus.com/contact</loc><lastmod>2026-10-08</lastmod><changefreq>monthly</changefreq><priority>0.60</priority></url>
-  <url><loc>https://smarthireus.com/privacy</loc><lastmod>2026-10-08</lastmod><changefreq>yearly</changefreq><priority>0.40</priority></url>
-  <url><loc>https://smarthireus.com/terms</loc><lastmod>2026-10-08</lastmod><changefreq>yearly</changefreq><priority>0.40</priority></url>
+  <url><loc>https://smarthireus.com/</loc><lastmod>2026-11-24</lastmod><changefreq>daily</changefreq><priority>1.00</priority></url>
+  <url><loc>https://smarthireus.com/jobs</loc><lastmod>2026-11-24</lastmod><changefreq>daily</changefreq><priority>0.95</priority></url>
+  <url><loc>https://smarthireus.com/smartscreen</loc><lastmod>2026-11-24</lastmod><changefreq>weekly</changefreq><priority>0.92</priority></url>
+  <url><loc>https://smarthireus.com/blog</loc><lastmod>2026-11-24</lastmod><changefreq>weekly</changefreq><priority>0.90</priority></url>
+  <url><loc>https://smarthireus.com/blog/h1b-2026-update-it-work-visa-options</loc><lastmod>2026-11-24</lastmod><changefreq>weekly</changefreq><priority>0.88</priority></url>
+  <url><loc>https://smarthireus.com/blog/c2c-vs-w2-vs-1099-it-contracts-guide</loc><lastmod>2026-11-24</lastmod><changefreq>weekly</changefreq><priority>0.88</priority></url>
+  <url><loc>https://smarthireus.com/blog/highest-paying-it-certifications-2026</loc><lastmod>2026-11-24</lastmod><changefreq>monthly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://smarthireus.com/blog/ai-entry-level-it-jobs-2026</loc><lastmod>2026-11-24</lastmod><changefreq>monthly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://smarthireus.com/blog/us-it-recruitment-market-2026</loc><lastmod>2026-11-24</lastmod><changefreq>monthly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://smarthireus.com/blog/india-vs-usa-it-jobs-2026</loc><lastmod>2026-11-24</lastmod><changefreq>monthly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://smarthireus.com/about</loc><lastmod>2026-11-24</lastmod><changefreq>monthly</changefreq><priority>0.70</priority></url>
+  <url><loc>https://smarthireus.com/privacy</loc><lastmod>2026-11-24</lastmod><changefreq>yearly</changefreq><priority>0.40</priority></url>
+  <url><loc>https://smarthireus.com/terms</loc><lastmod>2026-11-24</lastmod><changefreq>yearly</changefreq><priority>0.40</priority></url>
 `;
 
   // Dynamically append top active jobs so Google automatically indexes individual job requisitions
@@ -18096,9 +18096,21 @@ app.use((req, res, next) => {
 
   const cleanPath = req.path.replace(/\/+$/, '') || '';
 
-  // 1. 301 Redirect duplicate /careers to canonical /jobs
+  // 1. 301 Redirect duplicate /careers to canonical /jobs and resolve cannibalization
   if (cleanPath === '/careers') {
     return res.redirect(301, '/jobs');
+  }
+  if (cleanPath === '/blog/c2c-vs-w2-vs-1099') {
+    return res.redirect(301, '/blog/c2c-vs-w2-vs-1099-it-contracts-guide');
+  }
+  if (cleanPath === '/video-screening' || cleanPath === '/video-interview') {
+    return res.redirect(301, '/smartscreen');
+  }
+  if (cleanPath === '/contact') {
+    return res.redirect(301, '/about?section=inquiry#inquiry');
+  }
+  if (cleanPath === '/support') {
+    return res.redirect(301, '/about?section=support#support');
   }
 
   // 2. Prevent search engines from indexing private candidate screening & chat rooms

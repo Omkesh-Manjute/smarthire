@@ -516,12 +516,12 @@ function Homepage() {
                 </div>
 
                 <h1 className="tf-hero-title">
-                  Next-Gen Recruitment Operating System{' '}
-                  <span className="tf-highlight-box">Built for Precision Staffing</span>
+                  SmartHire — Next-Gen AI Recruitment ATS &amp;{' '}
+                  <span className="tf-highlight-box">Direct-Client IT Staffing Platform</span>
                 </h1>
 
                 <p className="tf-hero-subtitle">
-                  Empower your staffing agency from candidate sourcing to client placement. Featuring SmartHire async video, voice & text AI screening, private recruiter vaults, sub-second requisition sync, and digital RTR compliance.
+                  SmartHire connects high-performing recruiters and enterprise clients with verified direct-client IT jobs (C2C, W2, 1099). Featuring asynchronous AI video &amp; audio screening, instant submittal pack generator, smart candidate vaults, and digital RTR compliance.
                 </p>
 
                 <div className="tf-hero-actions">

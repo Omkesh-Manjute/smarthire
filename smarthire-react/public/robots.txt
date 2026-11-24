@@ -2,10 +2,10 @@
 User-agent: *
 Allow: /
 Allow: /jobs
+Allow: /smartscreen
 Allow: /blog
 Allow: /blog/
 Allow: /about
-Allow: /contact
 Allow: /privacy
 Allow: /terms
 
