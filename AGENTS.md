@@ -66,6 +66,21 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
     - In resume views, every responsibility, project accomplishment, and contribution line must be formatted with an explicit bullet point (`•`) and proper indentation.
     - The engine must automatically detect responsibilities (lines following `Responsibilities:`, action verbs, or list items) even when converted from plain text or Word documents without literal Unicode bullets.
 
+### 2026-11-25 — Hotfix: Screening Module Variable Initialization Order (TDZ Error Fix)
+- **User Issue**:
+  - Clicking on Screening rendered an error boundary card: `"Temporary View Rendering Notice: Cannot access 'Q' before initialization"`.
+- **Root Cause**:
+  - `allAvailableRecruiters` (a `useMemo` hook at line 84 in `ScreeningModule.jsx`) referenced the `sessions` state array inside its body and dependency array before `const [sessions, setSessions] = useState([])` was reached at line 203.
+  - In JavaScript, `const` is subject to the Temporal Dead Zone (TDZ). When the hook executed on initial component mount, accessing `sessions` before its declaration threw a `ReferenceError`, minified as `Cannot access 'Q' before initialization`.
+- **Fix**:
+  - Re-ordered component declarations in `ScreeningModule.jsx` so `const [sessions, setSessions] = useState([])` is initialized at line 141, before `allAvailableRecruiters` (line 151).
+- **Verification & Deployment Protocol**:
+  - Local production build: `npm run build` completed in 4.91s with 0 errors, 0 warnings (new main bundle `index-Lj6e1SgQ.js`).
+  - Git committed (`e0ad334`) and pushed to GitHub `origin main`.
+  - Deployed to AWS Lightsail (`34.194.119.199`), bundle extracted to `/var/www/html/` and pruned old bundles (Rule 5 compliance).
+  - PM2 `smarthire-ats` reloaded and verified online (PID 847432).
+  - Live domain verification: `https://smarthireus.com` HTTP 200 serving `index-Lj6e1SgQ.js`, ATS Platform chunk `AtsPlatform-Ooras3Yz.js` HTTP 200.
+
 ### 2026-11-24 — Restoration of All Recruiter Screening Links, 60-Day Cloud Retention Badge, Candidate Job Sites Sanitization & Table Header Border Fix
 - **User Issues & Requirements**:
   1. *Video Retention Notice*: Added a small badge in top header next to "Screening" showing how many days videos are retained (`Video Retention: 60 Days • Auto-purged, transcripts permanent`).
