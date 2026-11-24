@@ -66,6 +66,33 @@ SmartHire ATS — a full-stack Applicant Tracking System (React frontend + Expre
     - In resume views, every responsibility, project accomplishment, and contribution line must be formatted with an explicit bullet point (`•`) and proper indentation.
     - The engine must automatically detect responsibilities (lines following `Responsibilities:`, action verbs, or list items) even when converted from plain text or Word documents without literal Unicode bullets.
 
+### 2026-11-24 — Restoration of All Recruiter Screening Links, 60-Day Cloud Retention Badge, Candidate Job Sites Sanitization & Table Header Border Fix
+- **User Issues & Requirements**:
+  1. *Video Retention Notice*: Added a small badge in top header next to "Screening" showing how many days videos are retained (`Video Retention: 60 Days • Auto-purged, transcripts permanent`).
+  2. *Missing Recruiter Screening Sessions & Active Links*:
+     - Recruiter interview data for Kamlesh Bansod (`SCR-1791828699970-467` for Amar Koduri), Ajay Arya, Pankaj, Rohit Nagwani, Sukamal, Nishant, and newly generated screening link `SCR-1795544544111-83` (Srikanth Kamepalli) were missing from the UI.
+     - *Root Cause*: Overly restrictive filter `return hasMedia || hasInvite` in `GET /api/screening/sessions` and `syncScreeningSessions()` was dropping valid recruiter screening links (`SCR-...`) before candidates recorded video.
+     - *Fix*: Removed restrictive media gate, allowing all genuine recruiter sessions (`SCR-...`) and active links to be preserved while strictly excluding empty artificial DEMO mocks. Restored all 49 authentic recruiter sessions on server. Updated `ScreeningModule.jsx` to dynamically populate all recruiters in the filter dropdown.
+  3. *Candidate Job Sites Overcount (278 -> 28)*:
+     - Badge showed 278 Job Sites applicants when only ~28 authentic candidates applied via `/jobs`.
+     - *Root Cause*: 249 email-scraped leads (`cand-email-...`) from Yahoo Spam and Yahoo Inbox were misclassified with `sourceCategory: 'careers_portal'`.
+     - *Fix*: Sanitized `candidates.json` and added automated sanitization in `syncCandidatesFromFirestore()` and `loadCandidatesFromDisk()`, correctly attributing spam to `email_spam` and inbox to `email_inbox`. Genuine Job Sites count restored to 28 authentic applicants.
+  4. *AI Requirement Match Header Overlap*:
+     - User reported header overlapping on `AI Requirement Match` in Candidate Database table.
+     - *Root Cause*: Conflicting `position: sticky` on both `<tr>` and `<th>` under Chrome caused subpixel border bleeding and visual overlap.
+     - *Fix*: Removed `position: sticky` from the `<tr>`, applied single-layer sticky styling to `<th>` with `whiteSpace: nowrap`, expanded width to 220px, and standardized borders.
+- **Verification & Deployment Protocol**:
+  - Unit tests: 42/42 tests passed in `tests/ats_matching_engine.test.js`.
+  - Frontend production build: `npm run build` completed in 5.19s with 0 errors, 0 warnings (new main bundle `index-GdSV1hPZ.js`).
+  - Git committed (`a6a8baa`) and pushed to GitHub `origin main`.
+  - Deployed to AWS Lightsail server (`34.194.119.199`), bundle extracted to `/var/www/html/` and pruned old bundles (retaining 5 newest `index-*.js`), temporary archives cleaned up immediately.
+  - Server disk space healthy: 8.1GB free (56% used; Rule 5 compliance).
+  - PM2 `smarthire-ats` reloaded and verified online (PID 847196).
+  - Live domain verification:
+    - `https://smarthireus.com`: HTTP 200 serving `index-GdSV1hPZ.js`.
+    - Live screening sessions: 49 authentic sessions, including Srikanth Kamepalli and Kamlesh Bansod.
+    - Live Job Sites count: 28 authentic candidates.
+
 ### 2026-11-24 — Google Search Console Performance Overhaul, High-Impression Query Capture, 301 Cannibalization Fix & Production Deployment
 - **User Request & Goal**:
   - User requested: *"https___smarthireus.com_-Performance-on-Search-2026-11-24 ye file dekho google console ki and uske accrding improve karna hai search mai ana cahiye and kay keyword nahi hai sab dekho find karo bro"*.
