@@ -84,7 +84,13 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [], cur
   const allAvailableRecruiters = useMemo(() => {
     const list = [
       { name: 'Omkesh', email: 'omkesh@coolsofttech.com' },
+      { name: 'Kamlesh Bansod', email: 'kamlesh@coolsofttech.com' },
+      { name: 'Rohit Nagwani', email: 'rohit@coolsofttech.com' },
+      { name: 'Nishant Kathane', email: 'nishant@coolsofttech.com' },
+      { name: 'Pankaj', email: 'pankaj@coolsofttech.com' },
       { name: 'Sukamal Chatterjee', email: 'kamal@coolsofttech.com' },
+      { name: 'Raj', email: 'raj@coolsofttech.com' },
+      { name: 'Ajay Arya', email: 'ajay@coolsofttech.com' },
       { name: 'Gourav', email: 'gourav@coolsofttech.com' },
       { name: 'Vaibhav Bisen', email: 'vaibhav@coolsofttech.com' },
       { name: 'Naveen Bhardwaj', email: 'naveen@coolsofttech.com' },
@@ -105,6 +111,15 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [], cur
         }
       }
     } catch(e) {}
+    // Discover recruiters from active screening sessions
+    if (Array.isArray(sessions)) {
+      sessions.forEach(s => {
+        const rName = (s.recruiterName || s.createdByName || '').trim()
+        if (rName && !list.some(r => r.name.toLowerCase() === rName.toLowerCase())) {
+          list.push({ name: rName, email: s.recruiterEmail || s.createdByEmail || '' })
+        }
+      })
+    }
     // If jobs have recruiters
     if (Array.isArray(jobsList)) {
       jobsList.forEach(j => {
@@ -125,7 +140,7 @@ export default function ScreeningModule({ jobsList = [], allCandidates = [], cur
       list.push({ name: currentUser.name, email: currentUser.email || '' })
     }
     return list
-  }, [jobsList, currentUser])
+  }, [jobsList, currentUser, sessions])
 
   // Helper to attach authorization and recruiter identity headers for all screening API calls
   const getAuthHeaders = useCallback((contentTypeJson = false) => {
@@ -1172,8 +1187,9 @@ SmartHire Recruitment Team`
 
     // Recruiter filter
     if (filterRecruiter !== 'all') {
-      const rec = (getRecruiterName(s) || '').toLowerCase()
-      if (rec !== filterRecruiter.toLowerCase()) return false
+      const rec = (getRecruiterName(s) || '').toLowerCase().trim()
+      const target = filterRecruiter.toLowerCase().trim()
+      if (rec !== target && !rec.includes(target) && !target.includes(rec)) return false
     }
 
     // Status filter

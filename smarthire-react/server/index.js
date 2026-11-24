@@ -580,15 +580,24 @@ async function syncCandidatesFromFirestore() {
       }
     }
 
-    // Sanitize email spam candidates: ensure they do NOT have appliedFrom: 'Job Site Application'
+    // Sanitize scraped/harvested email candidates: ensure they do NOT masquerade as Job Site applications
     const appEmailSet = new Set(firestoreApps.map(a => String(a.email || '').toLowerCase().trim()));
     candidatesStore.forEach(c => {
       if (!c) return;
+      const isEmailScraped = String(c.id || '').startsWith('cand-email') || String(c.candidate_id || '').startsWith('cand-email');
       const em = String(c.email || '').toLowerCase().trim();
-      if (!appEmailSet.has(em)) {
+      if (isEmailScraped && !appEmailSet.has(em)) {
+        delete c.appliedFrom;
+        if (c.sourceCategory === 'careers_portal' || !c.sourceCategory) {
+          c.sourceCategory = (c.folder === 'SPAM' || c.isSpamRecovery) ? 'email_spam' : 'email_inbox';
+        }
+        if (c.source === 'Job Site' || !c.source) {
+          c.source = (c.folder === 'SPAM' || c.isSpamRecovery) ? 'Yahoo Spam Folder' : 'Yahoo Inbox';
+        }
+      } else if (!appEmailSet.has(em)) {
         if (c.sourceCategory === 'email_spam' || c.sourceCategory === 'email_inbox') {
           delete c.appliedFrom;
-          if (c.source === 'Job Site') c.source = c.sourceCategory === 'email_spam' ? 'Spam Harvest' : 'Email Parser';
+          if (c.source === 'Job Site') c.source = c.sourceCategory === 'email_spam' ? 'Yahoo Spam Folder' : 'Yahoo Inbox';
         }
       }
     });
@@ -1086,6 +1095,21 @@ async function loadCandidatesFromDisk() {
         console.log(`🧹 Pruned ${beforeCount - candidatesStore.length} corrupted records from candidatesStore.`);
         saveCandidatesToDisk();
       }
+      // Sanitize scraped/harvested email candidates on load: ensure they do NOT masquerade as Job Site applications
+      candidatesStore.forEach(c => {
+        if (!c) return;
+        const isEmailScraped = String(c.id || '').startsWith('cand-email') || String(c.candidate_id || '').startsWith('cand-email');
+        if (isEmailScraped) {
+          delete c.appliedFrom;
+          if (c.sourceCategory === 'careers_portal' || !c.sourceCategory) {
+            c.sourceCategory = (c.folder === 'SPAM' || c.isSpamRecovery) ? 'email_spam' : 'email_inbox';
+          }
+          if (c.source === 'Job Site' || !c.source) {
+            c.source = (c.folder === 'SPAM' || c.isSpamRecovery) ? 'Yahoo Spam Folder' : 'Yahoo Inbox';
+          }
+        }
+      });
+
       console.log(`📂 Loaded ${candidatesStore.length} candidate(s) from disk.`)
     } else {
       candidatesStore = []
@@ -1694,6 +1718,31 @@ async function loadScreeningFromDisk() {
       screeningStore = [];
       console.log('📂 Created screening_sessions.json with empty store.');
     }
+
+    // Merge authentic recruiter sessions from master backup if missing (e.g. Kamlesh Bansod, Ajay Arya, Rohit Nagwani, Pankaj, etc.)
+    const masterBackupPath = '/home/ubuntu/screening_sessions.json.master_backup';
+    if (fs.existsSync(masterBackupPath)) {
+      try {
+        const masterRaw = fs.readFileSync(masterBackupPath, 'utf-8');
+        const masterList = JSON.parse(masterRaw);
+        if (Array.isArray(masterList)) {
+          let mergedCount = 0;
+          masterList.forEach(ms => {
+            if (!ms || !ms.sessionId || ms.sessionId.includes('DEMO')) return;
+            const exists = screeningStore.some(s => s && s.sessionId === ms.sessionId);
+            if (!exists) {
+              screeningStore.push(ms);
+              mergedCount++;
+            }
+          });
+          if (mergedCount > 0) {
+            console.log(`[Screening Load] Restored ${mergedCount} authentic recruiter screening session(s) from master backup.`);
+          }
+        }
+      } catch (backupErr) {
+        console.warn('[Screening Load] Master backup notice:', backupErr.message);
+      }
+    }
     syncScreeningSessions();
   } catch (err) {
     console.error('⚠️  Failed to load screening sessions:', err.message);
@@ -1867,13 +1916,16 @@ function syncScreeningSessions() {
     }
   }
 
-  // Strictly filter out any session that does NOT have genuine recorded video/audio media AND does NOT have an active recruiter invite
+  // Filter out deleted sessions and artificial empty DEMO test mocks, but preserve ALL genuine recruiter screening sessions and active links (e.g. Omkesh, Kamlesh Bansod, Ajay Arya, Rohit Nagwani, Sukamal, Pankaj, Nishant, Raj)
   const beforeCount = screeningStore.length;
   screeningStore = screeningStore.filter(s => {
     if (!s || isScreeningSessionDeleted(s)) return false;
-    const hasMedia = !!(s.masterMediaUrl || (s.responses && s.responses.some(r => r.mediaUrl)));
-    const hasInvite = !!(s.inviteToken || s.screeningInvitedByRecruiter);
-    return hasMedia || hasInvite;
+    const sid = String(s.sessionId || '').trim();
+    // Exclude artificial demo mock records with undefined candidate and undefined recruiter
+    if (sid.includes('DEMO') && !s.candidateName && !s.recruiterName && !s.createdByName) return false;
+    // Exclude accidental legacy fake applicants created with format 'Application' without media, without recruiter questions, and without active screening link
+    if (s.format === 'Application' && !s.masterMediaUrl && (!s.responses || !s.responses.length) && (!s.questions || !s.questions.length)) return false;
+    return true;
   });
   if (screeningStore.length !== beforeCount) {
     changed = true;
@@ -8272,9 +8324,10 @@ app.get('/api/screening/sessions', authenticateToken, (req, res) => {
 
   let list = (screeningStore || []).filter(s => {
     if (!s || isScreeningSessionDeleted(s)) return false;
-    const hasMedia = !!(s.masterMediaUrl || s.videoUrl || (Array.isArray(s.responses) && s.responses.some(r => r.mediaUrl)));
-    const hasInvite = !!(s.inviteToken || s.screeningInvitedByRecruiter);
-    return hasMedia || hasInvite;
+    const sid = String(s.sessionId || '').trim();
+    if (sid.includes('DEMO') && !s.candidateName && !s.recruiterName && !s.createdByName) return false;
+    if (s.format === 'Application' && !s.masterMediaUrl && (!s.responses || !s.responses.length) && (!s.questions || !s.questions.length)) return false;
+    return true;
   });
 
   if (isClient) {

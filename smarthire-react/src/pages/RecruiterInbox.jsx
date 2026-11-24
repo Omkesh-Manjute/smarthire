@@ -11877,17 +11877,13 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                     <thead>
                       <tr style={{
                         backgroundColor: isLight ? '#F1F5F9' : '#1E293B',
-                        borderBottom: `1px solid ${isLight ? '#CBD5E1' : '#334155'}`,
                         color: isLight ? '#334155' : '#CBD5E1',
                         fontSize: 11,
                         fontWeight: 700,
                         textTransform: 'uppercase',
-                        letterSpacing: '0.5px',
-                        position: 'sticky',
-                        top: 0,
-                        zIndex: 10
+                        letterSpacing: '0.5px'
                       }}>
-                        <th style={{ padding: '8px 8px', width: 36, minWidth: 36, maxWidth: 36, textAlign: 'center', position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F1F5F9' : '#1E293B', border: `1px solid ${isLight ? '#CBD5E1' : '#334155'}` }}>
+                        <th style={{ padding: '8px 8px', width: 36, minWidth: 36, maxWidth: 36, textAlign: 'center', position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F1F5F9' : '#1E293B', border: `1px solid ${isLight ? '#CBD5E1' : '#334155'}`, whiteSpace: 'nowrap' }}>
                           <input
                             type="checkbox"
                             style={{ cursor: 'pointer', accentColor: '#4A154B' }}
@@ -11901,16 +11897,16 @@ export default function RecruiterInbox({ defaultViewMode, defaultTableCategory }
                             }}
                           />
                         </th>
-                        <th style={{ padding: '8px 10px', width: 175, minWidth: 150, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F1F5F9' : '#1E293B', border: `1px solid ${isLight ? '#CBD5E1' : '#334155'}` }}>Candidate</th>
-                        <th style={{ padding: '8px 10px', width: 165, minWidth: 140, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F1F5F9' : '#1E293B', border: `1px solid ${isLight ? '#CBD5E1' : '#334155'}` }}>Role</th>
-                        <th style={{ padding: '8px 6px', width: 75, minWidth: 70, textAlign: 'center', position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F1F5F9' : '#1E293B', border: `1px solid ${isLight ? '#CBD5E1' : '#334155'}` }}>Exp</th>
-                        <th style={{ padding: '8px 10px', width: 210, minWidth: 190, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F1F5F9' : '#1E293B', border: `1px solid ${isLight ? '#CBD5E1' : '#334155'}` }}>AI Requirement Match</th>
-                        <th style={{ padding: '8px 6px', width: 85, minWidth: 75, textAlign: 'center', position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F1F5F9' : '#1E293B', border: `1px solid ${isLight ? '#CBD5E1' : '#334155'}` }}>Match %</th>
-                        <th style={{ padding: '8px 10px', width: 140, minWidth: 120, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F1F5F9' : '#1E293B', border: `1px solid ${isLight ? '#CBD5E1' : '#334155'}` }}>Key Skills</th>
-                        <th style={{ padding: '8px 10px', width: 110, minWidth: 95, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F1F5F9' : '#1E293B', border: `1px solid ${isLight ? '#CBD5E1' : '#334155'}` }}>Location</th>
-                        <th style={{ padding: '8px 6px', width: 75, minWidth: 65, textAlign: 'center', position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F1F5F9' : '#1E293B', border: `1px solid ${isLight ? '#CBD5E1' : '#334155'}` }}>Relocate</th>
-                        <th style={{ padding: '8px 6px', width: 75, minWidth: 65, textAlign: 'center', position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F1F5F9' : '#1E293B', border: `1px solid ${isLight ? '#CBD5E1' : '#334155'}` }}>Received</th>
-                        <th style={{ padding: '8px 10px', width: 110, minWidth: 95, textAlign: 'center', position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F1F5F9' : '#1E293B', border: `1px solid ${isLight ? '#CBD5E1' : '#334155'}` }}>Actions</th>
+                        <th style={{ padding: '8px 10px', width: 175, minWidth: 150, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F1F5F9' : '#1E293B', border: `1px solid ${isLight ? '#CBD5E1' : '#334155'}`, whiteSpace: 'nowrap' }}>Candidate</th>
+                        <th style={{ padding: '8px 10px', width: 165, minWidth: 140, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F1F5F9' : '#1E293B', border: `1px solid ${isLight ? '#CBD5E1' : '#334155'}`, whiteSpace: 'nowrap' }}>Role</th>
+                        <th style={{ padding: '8px 6px', width: 75, minWidth: 70, textAlign: 'center', position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F1F5F9' : '#1E293B', border: `1px solid ${isLight ? '#CBD5E1' : '#334155'}`, whiteSpace: 'nowrap' }}>Exp</th>
+                        <th style={{ padding: '8px 10px', width: 220, minWidth: 200, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F1F5F9' : '#1E293B', border: `1px solid ${isLight ? '#CBD5E1' : '#334155'}`, whiteSpace: 'nowrap' }}>AI Requirement Match</th>
+                        <th style={{ padding: '8px 6px', width: 85, minWidth: 75, textAlign: 'center', position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F1F5F9' : '#1E293B', border: `1px solid ${isLight ? '#CBD5E1' : '#334155'}`, whiteSpace: 'nowrap' }}>Match %</th>
+                        <th style={{ padding: '8px 10px', width: 140, minWidth: 120, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F1F5F9' : '#1E293B', border: `1px solid ${isLight ? '#CBD5E1' : '#334155'}`, whiteSpace: 'nowrap' }}>Key Skills</th>
+                        <th style={{ padding: '8px 10px', width: 110, minWidth: 95, position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F1F5F9' : '#1E293B', border: `1px solid ${isLight ? '#CBD5E1' : '#334155'}`, whiteSpace: 'nowrap' }}>Location</th>
+                        <th style={{ padding: '8px 6px', width: 75, minWidth: 65, textAlign: 'center', position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F1F5F9' : '#1E293B', border: `1px solid ${isLight ? '#CBD5E1' : '#334155'}`, whiteSpace: 'nowrap' }}>Relocate</th>
+                        <th style={{ padding: '8px 6px', width: 75, minWidth: 65, textAlign: 'center', position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F1F5F9' : '#1E293B', border: `1px solid ${isLight ? '#CBD5E1' : '#334155'}`, whiteSpace: 'nowrap' }}>Received</th>
+                        <th style={{ padding: '8px 10px', width: 110, minWidth: 95, textAlign: 'center', position: 'sticky', top: 0, zIndex: 10, backgroundColor: isLight ? '#F1F5F9' : '#1E293B', border: `1px solid ${isLight ? '#CBD5E1' : '#334155'}`, whiteSpace: 'nowrap' }}>Actions</th>
                       </tr>
                     </thead>
                     <tbody>

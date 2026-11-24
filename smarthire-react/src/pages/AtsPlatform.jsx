@@ -868,6 +868,27 @@ export default function AtsPlatform() {
                 · SmartHire Enterprise Workspace
               </span>
             )}
+            {activeTab === 'screening' && (
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '4px 10px',
+                backgroundColor: '#F8FAFC',
+                border: '1px solid #CBD5E1',
+                borderRadius: '6px',
+                fontSize: '12px',
+                fontWeight: '600',
+                color: '#334155'
+              }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg>
+                <span>Video Retention: <strong style={{ color: '#0F172A', fontWeight: '700' }}>60 Days</strong></span>
+                <span style={{ fontSize: '11px', color: '#64748B', fontWeight: '500' }}>• Auto-purged, transcripts permanent</span>
+              </div>
+            )}
           </div>
 
           {/* Right Utility Cluster: Notifications & User Avatar */}
